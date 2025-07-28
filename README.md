@@ -16,14 +16,9 @@ OGFMSI (Online Gym Facility Management with Sales and Inventory) is a comprehens
 
 ## **Create your own branch (one time action):**
 
-- `git checkout -b [your-branch-name]`
-- example: `git checkout -b jest`
-
-- `npm install`
-- to install necessary files
-
-- create a file named `.gitignore`
-- copy paste this: `node_modules/`
+- `git checkout -b [your-branch-name]` example: `git checkout -b jest`
+- `npm install` to install necessary files
+- create a file in root: `.gitignore` then copy paste this: `node_modules/`
 
 ## **Push your code to main branch (repeatable):**
 

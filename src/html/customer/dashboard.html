@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/src/images/client_logo.jpg" />
+
+    <!-- search for "🔑 CLIENT" all through-out the project to refactor client branding -->
+    <!-- 🔑 CLIENT -->
+    <title>Fitworx Gym - Dashboard</title>
+
+    <!-- main css -->
+    <!-- add new css here 👆 -->
+
+    <!-- icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- tailwindcss (for easier css) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- sweetalert2 (for dialogs) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- custom font (just in case) -->
+    <!-- <style>
+      @font-face {
+        font-family: "Brela";
+        src: url("/font/brela-regular.ttf") format("truetype");
+        font-weight: bold;
+        font-style: italic;
+      }
+    </style> -->
+  </head>
+  <body
+    class="bg-gradient-to-br from-orange-50 to-orange-100 min-h-screen flex flex-col cursor-default relative"
+  >
+    <!-- 🔴 README: comments with 🔥 are project main components -->
+
+    <!-- do not remove: -->
+    <div id="customer_dashboard"></div>
+
+    <!-- 🔥 header 🔥 -->
+    <nav
+      class="absolute left-0 top-0 bg-orange-700 border-b-4 border-orange-600 text-white sticky top-0 z-50"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16"
+      >
+        <!-- branding -->
+        <header class="flex items-center space-x-4">
+          <div class="flex items-center space-x-4">
+            <div class="relative">
+              <div class="bg-white rounded-xl p-2 shadow-lg">
+                <img
+                  src="/src/images/client_logo.jpg"
+                  class="h-8 w-8 object-cover rounded-lg"
+                />
+                <span
+                  class="absolute -top-1 -right-1 block h-4 w-4 bg-green-400 rounded-full border-2 border-white shadow-md animate-pulse"
+                ></span>
+              </div>
+            </div>
+            <div class="flex flex-col">
+              <h1 class="flex gap-1 text-xl font-bold text-white">
+                <!-- 🔑 CLIENT -->
+                Fitworx Gym
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="green"
+                  stroke="#ffffff"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-badge-check-icon lucide-badge-check mt-1"
+                >
+                  <path
+                    d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
+                  />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              </h1>
+              <div class="text-xs text-orange-200 flex gap-1">
+                Logged in as:
+                <b id="welcomeUser">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ffffff"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-loader-circle-icon lucide-loader-circle animate-spin"
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                </b>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- status -->
+        <div class="hidden md:flex items-center space-x-4">
+          <!-- info -->
+          <div class="flex items-center space-x-6">
+            <div class="text-center">
+              <div class="flex items-center space-x-2">
+                <span class="text-orange-300 font-bold">🏦</span>
+                <span class="text-sm font-medium">Facility Open</span>
+              </div>
+              <div class="text-xs text-orange-200 mt-1">Ready to serve you</div>
+            </div>
+
+            <div class="border-l border-r border-orange-600 px-6">
+              <div class="text-center">
+                <div class="flex items-center space-x-2">
+                  <span class="text-orange-300 font-bold">⏰</span>
+                  <!-- 🔑 CLIENT -->
+                  <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
+                </div>
+                <div class="text-xs text-orange-200 mt-1">Operating Hours</div>
+              </div>
+            </div>
+
+            <!-- <div class="border-l border-orange-600 pl-6">
+              <div class="text-center">
+                <div
+                  id="clock"
+                  class="text-sm font-mono font-bold bg-orange-600 px-3 py-1 rounded-lg"
+                ></div>
+                <div class="text-xs text-orange-200 mt-1">Current Time</div>
+              </div>
+            </div> -->
+          </div>
+
+          <!-- logout -->
+          <div class="ml-6">
+            <a
+              href=""
+              class="inline-flex items-center px-4 py-1.5 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all focus:ring-2 focus:ring-orange-100 text-xs font-medium"
+            >
+              <svg
+                class="w-3.5 h-3.5 mr-1.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              Logout
+            </a>
+          </div>
+        </div>
+
+        <!-- dropdown button -->
+        <div class="md:hidden">
+          <button
+            type="button"
+            id="mobile-menu-button"
+            class="inline-flex items-center justify-center py-2 px-4 rounded-lg bg-orange-600 text-orange-100 hover:text-white hover:bg-orange-500 transition-colors"
+          >
+            <span class="text-lg font-bold">☰</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- dropdown menu -->
+      <div
+        id="mobile-menu"
+        class="absolute left-0 top-0 hidden md:hidden z-50 w-full mt-[68px]"
+      >
+        <div
+          class="p-4 pb-4 space-y-4 border-b-4 border-orange-600 bg-orange-800"
+        >
+          <!-- status -->
+          <div class="space-y-4">
+            <div class="bg-orange-600 rounded-full p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <span class="text-orange-300 font-bold">🏦</span>
+                  <span class="text-sm font-medium">Facility Open</span>
+                </div>
+                <span class="text-xs text-orange-200">Ready to serve you</span>
+              </div>
+            </div>
+
+            <div class="bg-orange-600 rounded-full p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <span class="text-orange-300 font-bold">⏰</span>
+                  <!-- 🔑 CLIENT -->
+                  <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
+                </div>
+                <span class="text-xs text-orange-200">Operating Hours</span>
+              </div>
+            </div>
+
+            <!-- <div class="bg-orange-600 rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <span class="text-orange-300 font-bold">🕐</span>
+                  <div
+                    id="mobile-clock"
+                    class="text-sm font-mono font-bold"
+                  ></div>
+                </div>
+                <span class="text-xs text-orange-200">Current Time</span>
+              </div>
+            </div> -->
+          </div>
+
+          <!-- logout -->
+          <div class="max-w-[100px] ms-auto">
+            <a
+              href=""
+              class="flex items-center px-3 py-2 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all focus:ring-2 focus:ring-orange-100 text-sm font-medium"
+            >
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 🔥 welcome 🔥 -->
+    <div
+      class="absolute left-0 top-0 bg-gradient-to-r from-orange-900 via-orange-800 to-orange-700 text-white relative overflow-hidden min-h-screen flex items-center"
+    >
+      <!-- background elements -->
+      <div class="absolute inset-0">
+        <div
+          class="absolute top-20 left-10 w-72 h-72 bg-orange-500/5 rounded-full blur-3xl animate-pulse"
+        ></div>
+        <div
+          class="absolute bottom-20 right-10 w-96 h-96 bg-orange-400/5 rounded-full blur-3xl animate-pulse"
+          style="animation-delay: 1s"
+        ></div>
+        <div
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-600/5 rounded-full blur-2xl animate-pulse"
+          style="animation-delay: 2s"
+        ></div>
+      </div>
+
+      <!-- geometric pattern overlay -->
+      <div class="absolute inset-0 opacity-10">
+        <svg
+          class="w-full h-full"
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern
+              id="grid"
+              width="10"
+              height="10"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 10 0 L 0 0 0 10"
+                fill="none"
+                stroke="white"
+                stroke-width="0.5"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      <div class="container mx-auto px-4 py-16 relative z-10">
+        <div class="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+          <!-- text -->
+          <div class="space-y-8">
+            <div
+              class="inline-flex items-center px-4 py-2 bg-orange-500/20 rounded-full border border-orange-400/30 backdrop-blur-sm"
+            >
+              <span class="text-orange-200 text-sm font-medium">
+                💪 Premium Experience Awaits
+              </span>
+            </div>
+
+            <div class="space-y-4">
+              <h1
+                class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight"
+              >
+                <span class="block">Welcome!</span>
+              </h1>
+              <div
+                class="w-24 h-1 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full"
+              ></div>
+            </div>
+            <p
+              class="text-lg sm:text-xl text-orange-100 leading-relaxed max-w-lg"
+            >
+              <!-- 🔑 CLIENT -->
+              Experience top-notch facilities and expert guidance. Book your
+              session now!
+            </p>
+
+            <!-- buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+              <a
+                href=""
+                class="group inline-flex items-center justify-center px-8 py-4 bg-white text-orange-700 rounded-lg hover:bg-orange-50 transition-all duration-300 text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <div class="me-2">📙</div>
+                <div class="xl:flex lg:hidden md:hidden sm:hidden">
+                  Click to Start Booking
+                </div>
+                <div class="hidden xl:hidden lg:flex md:flex sm:flex">
+                  Start Booking
+                </div>
+              </a>
+              <a
+                href=""
+                id="subscription-form"
+                class="group inline-flex items-center justify-center px-8 py-4 bg-transparent text-white rounded-lg hover:bg-white/10 transition-all duration-300 text-base font-semibold border-2 border-white/30 hover:border-white/60 backdrop-blur-sm"
+              >
+                <div class="me-2">🎫</div>
+                <!-- 🔑 CLIENT -->
+                <div class="xl:flex lg:hidden md:hidden sm:hidden">
+                  Explore Gym Monthly Pass
+                </div>
+                <div class="hidden xl:hidden lg:flex md:flex sm:flex">
+                  Monthly Pass
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- visual elements -->
+          <div class="relative lg:flex hidden items-center justify-center">
+            <div class="relative">
+              <div
+                class="w-80 h-80 rounded-full border-4 border-orange-400/30 flex items-center justify-center relative"
+              >
+                <div
+                  class="w-64 h-64 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-600/20 backdrop-blur-sm border border-orange-400/20 flex items-center justify-center"
+                >
+                  <div
+                    class="w-32 h-32 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-dumbbell-icon lucide-dumbbell text-orange-200"
+                    >
+                      <path
+                        d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"
+                      />
+                      <path d="m2.5 21.5 1.4-1.4" />
+                      <path d="m20.1 3.9 1.4-1.4" />
+                      <path
+                        d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"
+                      />
+                      <path d="m9.6 14.4 4.8-4.8" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div
+                  class="absolute -top-4 -right-4 w-8 h-8 bg-orange-400 rounded-full animate-bounce"
+                ></div>
+                <div
+                  class="absolute -bottom-6 -left-6 w-6 h-6 bg-orange-500 rounded-full animate-bounce"
+                  style="animation-delay: 0.5s"
+                ></div>
+                <div
+                  class="absolute top-1/2 -right-8 w-4 h-4 bg-orange-300 rounded-full animate-bounce"
+                  style="animation-delay: 1s"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔥 main 🔥 -->
+
+    <!-- 🔥 footer 🔥 -->
+    <footer
+      class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 text-white py-8"
+    >
+      <div class="container mx-auto px-4">
+        <!-- grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <!-- client info -->
+          <div class="space-y-4">
+            <div class="flex grid space-y-2">
+              <div class="flex items-center space-x-3">
+                <img
+                  src="/src/images/client_logo.jpg"
+                  class="h-10 w-10 object-cover rounded-md"
+                />
+                <!-- 🔑 CLIENT -->
+                <h3 class="text-xl font-bold">Fitworx Gym</h3>
+              </div>
+              <p class="text-gray-400 pr-4 pb-4 leading-relaxed">
+                Transform your fitness journey with our modern facilities and
+                expert guidance.
+              </p>
+              <p class="text-sm flex grid space-y-1">
+                <b class="text-gray-300">Located at:</b>
+                <span class="text-gray-400"
+                  >Capt. F. S. Samano, Caloocan, Metro Manila</span
+                >
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b border-gray-600 pb-2">
+              Quick Links
+            </h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="/src/modules_html/customer_side/about_us.html"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/src/modules_html/customer_side/privacy_policy.html"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Privacy Policy</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/src/modules_html/customer_side/terms_of_service.html"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Terms of Service</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <!-- 🔑 CLIENT -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b border-gray-600 pb-2">
+              Operating Hours
+            </h3>
+            <ul class="flex grid space-y-2 text-sm">
+              <span class="text-gray-300"><b>Monday - Sunday:</b></span>
+              <span class="text-gray-400">9:00 AM - 11:59 AM</span>
+            </ul>
+            <!-- <div class="text-sm bg-orange-800 p-3 rounded">
+              <p class="text-orange-100 font-medium pb-2">Note:</p>
+              <p class="text-orange-100">
+                We are open every day from 9:00 AM to 11:59 PM only.
+              </p>
+            </div> -->
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b border-gray-600 pb-2">
+              Contact Us
+            </h3>
+            <ul class="space-y-3">
+              <!-- 🔑 CLIENT -->
+              <li class="text-gray-400 text-sm">
+                <b class="text-gray-300">Mobile:</b> (63+) 933-874-5377
+              </li>
+              <li class="text-gray-400 text-sm">
+                <b class="text-gray-300">Email:</b> fitworxgym082@gmail.com
+              </li>
+              <li class="text-gray-400 text-sm flex space-x-2">
+                <b class="text-gray-300">Social Media:</b>
+                <div class="flex space-x-4">
+                  <a
+                    href="https://www.facebook.com/fitworxgymph"
+                    class="text-orange-200 hover:text-white transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-facebook-icon lucide-facebook"
+                    >
+                      <path
+                        d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"
+                      />
+                    </svg>
+                  </a>
+                  <a
+                    href="https://www.instagram.com/fitworxgym/"
+                    class="text-orange-200 hover:text-white transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-instagram-icon lucide-instagram"
+                    >
+                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                      <path
+                        d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
+                      />
+                      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                    </svg>
+                  </a>
+                  <a
+                    href="https://www.tiktok.com/@fitworxgym"
+                    class="text-orange-200 hover:text-white transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="#ffffff"
+                      stroke="none"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-instagram-icon lucide-instagram"
+                    >
+                      <path
+                        d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.69 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.02 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.33 1.07-.33 1.63.02 1.01.47 2 1.22 2.73.97.94 2.4 1.24 3.68.89.95-.25 1.78-.77 2.33-1.55.42-.66.67-1.43.71-2.22.02-2.74.01-5.47.02-8.21z"
+                      />
+                    </svg>
+                  </a>
+                </div>
+              </li>
+            </ul>
+            <!-- <div class="mt-6">
+              <h4 class="text-sm font-medium text-orange-200 mb-2">
+                Join our newsletter
+              </h4>
+              <form class="flex">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  class="w-full px-3 py-2 text-sm rounded-l-lg focus:outline-none text-gray-700"
+                />
+                <button
+                  type="submit"
+                  class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-r-lg text-sm transition-colors"
+                >
+                  Subscribe
+                </button>
+              </form>
+            </div> -->
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-600">
+          <div
+            class="flex flex-col md:flex-row justify-between items-center text-gray-500"
+          >
+            <p class="text-sm order-2 md:order-1 mt-4 md:mt-0">
+              <!-- 🔑 CLIENT -->
+              &copy; 2025 Fitworx Gym. All rights reserved.
+            </p>
+            <div class="flex space-x-4 order-1 md:order-2">
+              <a
+                href="/src/modules_html/customer_side/privacy_policy.html"
+                class="hover:text-white text-sm transition-colors"
+                >Privacy Policy</a
+              >
+              <a
+                href="/src/modules_html/customer_side/terms_of_service.html"
+                class="hover:text-white text-sm transition-colors"
+                >Terms of Service</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- 🔥 modals 🔥 -->
+
+    <!-- terms and conditions -->
+    <div class="terms-container hidden">
+      <div class="terms-header cursor-default">
+        <h2>Gym Rules</h2>
+        <p>Please review and accept our policies before proceeding</p>
+      </div>
+
+      <div class="terms-grid cursor-default">
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-dumbbell"></i>
+          </div>
+          <span class="term-text">No dropping dumbbells</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-broom"></i>
+          </div>
+          <span class="term-text">Wipe down equipment</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-directions"></i>
+          </div>
+          <span class="term-text">Follow instructions</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <span class="term-text">Not liable for injuries</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-tshirt"></i>
+          </div>
+          <span class="term-text">Proper attire required</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-utensils"></i>
+          </div>
+          <span class="term-text">No food or drinks</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-smoking-ban"></i>
+          </div>
+          <span class="term-text">No smoking</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-eye"></i>
+          </div>
+          <span class="term-text">Watch belongings</span>
+        </div>
+      </div>
+
+      <div class="checkbox-wrapper cursor-default">
+        <label class="checkbox-label">
+          <input type="checkbox" id="agreeCheckbox" class="checkbox-input" />
+          <span class="checkbox-text"
+            >I have read and agree to the terms and conditions</span
+          >
+        </label>
+      </div>
+
+      <div class="terms-footer cursor-default">
+        By accepting these terms, you acknowledge that you have read and
+        understood all gym policies.
+      </div>
+    </div>
+
+    <!-- main js -->
+    <script src="/src/js/customer_dashboard.js"></script>
+    <!-- add new js here 👆 -->
+  </body>
+</html>
