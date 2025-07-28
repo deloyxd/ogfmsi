@@ -1,0 +1,102 @@
+/* This file covers all html styles of the project */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+.nav-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+header {
+  transition: background 0.3s ease-out;
+}
+
+.carousel-item {
+  transition: all 1s ease-out;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.1);
+}
+
+.carousel-item.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pricing-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(-45deg, #eea303, #ffe7b8);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    border-radius: 0.5rem;
+}
+
+.pricing-card:hover::before {
+    opacity: 1;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero-section {
+    padding-top: 100px;
+  }
+  .hero-section h2 {
+    font-size: 2rem;
+  }
+  .hero-section p {
+    font-size: 1rem;
+  }
+  .features-section .grid {
+    grid-template-columns: 1fr;
+  }
+  .special-classes-section .grid {
+    grid-template-columns: 1fr;
+  }
+  .membership-section .grid {
+    grid-template-columns: 1fr;
+  }
+  .faq-feedback-section .grid {
+    grid-template-columns: 1fr;
+  }
+  .footer .grid {
+    grid-template-columns: 1fr;
+  }
+}

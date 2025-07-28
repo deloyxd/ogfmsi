@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/src/images/client_logo.jpg" />
+
+    <!-- search for "🔑 CLIENT" all through-out the project to refactor client branding -->
+    <!-- 🔑 CLIENT -->
+    <title>Fitworx Gym - Login</title>
+
+    <!-- main css -->
+    <link rel="stylesheet" href="/src/css/customer_login.css" />
+    <!-- add new css here 👆 -->
+
+    <!-- icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- tailwindcss (for easier css) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- sweetalert2 (for dialogs) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- custom font (just in case) -->
+    <!-- <style>
+      @font-face {
+        font-family: "Brela";
+        src: url("/font/brela-regular.ttf") format("truetype");
+        font-weight: bold;
+        font-style: italic;
+      }
+    </style> -->
+  </head>
+  <body
+    class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black cursor-default lg:overflow-x-hidden overflow-y-auto"
+  >
+    <!-- 🔴 README: comments with 🔥 are project main components -->
+
+    <!-- do not remove: -->
+    <div id="customer_login"></div>
+
+    <!-- 🔥 main 🔥 -->
+    <div class="min-h-screen">
+      <div class="grid grid-cols-1 lg:grid-cols-2 min-h-screen login-container">
+        <!-- welcome -->
+        <div
+          class="welcome-section pt-16 pb-16 flex flex-col justify-center items-center relative overflow-hidden"
+        >
+          <div
+            id="welcomeText"
+            class="relative z-10 text-center lg:text-left space-y-6 lg:space-y-8 animate-slide-in-left"
+          >
+            <div class="space-y-4">
+              <div
+                class="inline-block px-4 py-2 bg-white bg-opacity-20 rounded-full text-white text-sm font-medium backdrop-blur-sm"
+              >
+                <!-- 🔑 CLIENT -->
+                🏋️‍♀️ Premium Fitness Experience
+              </div>
+              <h1
+                class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight tracking-tight uppercase"
+              >
+                Welcome to<br />
+                <!-- 🔑 CLIENT -->
+                <span
+                  class="bg-gradient-to-r from-yellow-300 to-orange-100 bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] uppercase"
+                  >Fitworx Gym</span
+                >
+              </h1>
+              <p class="text-white text-xl sm:text-2xl opacity-90 font-light">
+                <!-- 🔑 CLIENT -->
+                Transform your body, transform your<br />life with our premium
+                fitness experience.
+              </p>
+            </div>
+
+            <div
+              class="flex flex-col sm:flex-row gap-4 pt-6 sm:justify-center lg:justify-start"
+            >
+              <!-- 🔑 CLIENT (items) -->
+              <div class="flex items-center space-x-3 text-white">
+                <div
+                  class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                >
+                  <i class="fas fa-dumbbell text-white"></i>
+                </div>
+                <div>
+                  <p class="font-semibold">State-of-art Equipment</p>
+                  <p class="text-sm opacity-75">Latest fitness technology</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 text-white">
+                <div
+                  class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                >
+                  <i class="fas fa-users text-white"></i>
+                </div>
+                <div>
+                  <p class="font-semibold">Freelance Trainers</p>
+                  <p class="text-sm opacity-75">Professional guidance</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🔑 CLIENT -->
+          <div
+            class="relative z-10 mt-12 lg:mt-16 text-center lg:text-left animate-slide-in-left"
+          >
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-2">
+              Fitworx Gym
+            </h2>
+            <p class="text-white opacity-90 text-lg sm:text-xl font-light">
+              Your premium fitness destination
+            </p>
+          </div>
+        </div>
+
+        <!-- form -->
+        <div
+          class="w-full p-8 sm:p-12 lg:p-16 bg-gradient-to-b from-gray-900 to-black flex items-center justify-center relative"
+          id="formSection"
+        >
+          <!-- background elements -->
+          <div class="absolute inset-0 overflow-hidden">
+            <div
+              class="absolute top-32 right-20 w-64 h-64 bg-red-500 rounded-full blur-3xl opacity-0 animate-[pulse_9s_ease_infinite_0s]"
+            ></div>
+            <div
+              class="absolute bottom-20 left-16 w-48 h-48 bg-red-500 rounded-full blur-3xl opacity-0 animate-[pulse_11s_ease_infinite_3s]"
+            ></div>
+          </div>
+
+          <div class="w-full max-w-lg relative z-10 animate-slide-in-right">
+            <div class="text-center mb-10 lg:mb-12">
+              <div
+                class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full mb-6"
+              >
+                <i class="fas fa-user-circle text-5xl text-white"></i>
+              </div>
+              <h3
+                class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4"
+                id="formTitle"
+              >
+                Sign in to an Account
+              </h3>
+              <p class="text-gray-400 text-lg sm:text-xl" id="formSubtitle">
+                <!-- 🔑 CLIENT -->
+                Start your fitness journey today
+              </p>
+              <div
+                class="w-24 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto mt-4 rounded-full"
+              ></div>
+            </div>
+
+            <form class="space-y-6 lg:space-y-8" id="loginForm">
+              <div class="relative hidden" id="fullNameField">
+                <div
+                  class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"
+                >
+                  <i class="fas fa-user text-gray-400 z-10"></i>
+                </div>
+                <input
+                  type="text"
+                  id="fullName"
+                  class="w-full pl-14 pr-4 py-4 sm:py-5 rounded-2xl bg-gray-800 bg-opacity-50 border-2 border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 transition-all duration-300 backdrop-blur-sm input-field"
+                  placeholder="Full Name"
+                />
+              </div>
+
+              <div class="relative">
+                <div
+                  class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"
+                >
+                  <i class="fas fa-envelope text-gray-400 z-10"></i>
+                </div>
+                <input
+                  type="text"
+                  id="username"
+                  class="w-full pl-14 pr-4 py-4 sm:py-5 rounded-2xl bg-gray-800 bg-opacity-50 border-2 border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 transition-all duration-300 backdrop-blur-sm input-field"
+                  placeholder="Username"
+                />
+              </div>
+
+              <div class="relative">
+                <div
+                  class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"
+                >
+                  <i class="fas fa-lock text-gray-400 z-10"></i>
+                </div>
+                <input
+                  type="password"
+                  id="password"
+                  class="w-full pl-14 pr-16 py-4 sm:py-5 rounded-2xl bg-gray-800 bg-opacity-50 border-2 border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 transition-all duration-300 backdrop-blur-sm input-field"
+                  placeholder="Password"
+                  required
+                />
+                <button
+                  type="button"
+                  id="showPassword"
+                  class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors duration-300 p-2"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                class="w-full py-4 sm:py-5 px-8 rounded-2xl font-bold text-lg text-white bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/25 submit-button uppercase"
+              >
+                <span
+                  class="flex items-center justify-center space-x-2 tracking-[2px]"
+                >
+                  <span>Sign In</span>
+                  <i class="fas fa-arrow-right"></i>
+                </span>
+              </button>
+            </form>
+
+            <div class="text-center mt-10 lg:mt-12">
+              <div class="flex items-center justify-center space-x-4 mb-6">
+                <div class="h-px bg-gray-600 flex-1"></div>
+                <span class="text-gray-400 text-sm">OR</span>
+                <div class="h-px bg-gray-600 flex-1"></div>
+              </div>
+              <p class="text-gray-400 text-base">
+                <span id="toggleText">Don't have an account?</span>
+                <a
+                  href=""
+                  class="text-orange-500 hover:text-orange-400 font-semibold ml-2 transition-colors duration-300 relative group"
+                  id="toggleForm"
+                >
+                  Sign up for free
+                  <span
+                    class="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"
+                  ></span>
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔥 modals 🔥 -->
+
+    <!-- terms and conditions -->
+    <div class="terms-container hidden">
+      <div class="terms-header cursor-default">
+        <h2>Gym Rules</h2>
+        <p>Please review and accept our policies before proceeding</p>
+      </div>
+
+      <div class="terms-grid cursor-default">
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-dumbbell"></i>
+          </div>
+          <span class="term-text">No dropping dumbbells</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-broom"></i>
+          </div>
+          <span class="term-text">Wipe down equipment</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-directions"></i>
+          </div>
+          <span class="term-text">Follow instructions</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <span class="term-text">Not liable for injuries</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-tshirt"></i>
+          </div>
+          <span class="term-text">Proper attire required</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-utensils"></i>
+          </div>
+          <span class="term-text">No food or drinks</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-smoking-ban"></i>
+          </div>
+          <span class="term-text">No smoking</span>
+        </div>
+        <div class="term-item">
+          <div class="icon-container">
+            <i class="fas fa-eye"></i>
+          </div>
+          <span class="term-text">Watch belongings</span>
+        </div>
+      </div>
+
+      <div class="checkbox-wrapper cursor-default">
+        <label class="checkbox-label">
+          <input type="checkbox" id="agreeCheckbox" class="checkbox-input" />
+          <span class="checkbox-text"
+            >I have read and agree to the terms and conditions</span
+          >
+        </label>
+      </div>
+
+      <div class="terms-footer cursor-default">
+        By accepting these terms, you acknowledge that you have read and
+        understood all gym policies.
+      </div>
+    </div>
+
+    <!-- success dialog modal -->
+    <div
+      id="successModal"
+      class="modal fixed flex inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50"
+    >
+      <div
+        class="bg-zinc-900 rounded-lg p-6 text-center shadow-xl border-2 border-green-500"
+      >
+        <div class="mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="text-green-500 mx-auto"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <h3
+          id="success-title"
+          class="text-xl font-bold text-white uppercase"
+        ></h3>
+        <p
+          id="success-message"
+          class="text-gray-400 text-sm mt-2 uppercase tracking-wider"
+        ></p>
+      </div>
+    </div>
+
+    <!-- 🔥 sound effects 🔥 -->
+    <audio id="success-sfx" src="/src/sfx/success.mp3"></audio>
+    <audio id="error-sfx" src="/src/sfx/error.mp3"></audio>
+
+    <!-- main js -->
+    <script type="module" src="/src/js/modal.js"></script>
+    <script type="module" src="/src/js/customer_login.js"></script>
+    <!-- add new js here 👆 -->
+
+    <!-- imported js -->
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/toastify-js"
+    ></script>
+  </body>
+</html>
