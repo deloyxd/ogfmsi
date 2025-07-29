@@ -75,15 +75,12 @@ function resetInputFields() {
 async function submitClicked(e) {
   e.preventDefault();
 
-  const submitBtn =
-    document.getElementById('loginForm').lastChild.previousSibling;
+  const submitBtn = document.getElementById('loginForm').lastChild.previousSibling;
   console.log(submitBtn);
   const isLoginMode = formTitle.textContent.includes('Sign in');
   const sanitizedUsername = sanitizeInput(username.value.trim());
   const sanitizedPassword = password.value;
-  const sanitizedFullName = isLoginMode
-    ? ''
-    : sanitizeInput(fullName.value.trim());
+  const sanitizedFullName = isLoginMode ? '' : sanitizeInput(fullName.value.trim());
 
   const oldSubmitBtn = submitBtn.innerHTML;
   submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -123,9 +120,7 @@ async function submitClicked(e) {
           position: 'center',
           backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
           stopOnFocus: true,
-          callback: () =>
-            (window.location.href =
-              '/src/modules_html/customer_side/dashboard.html'),
+          callback: () => (window.location.href = '/src/modules_html/customer_side/dashboard.html'),
         }).showToast();
       } else {
         Toastify({
@@ -143,9 +138,7 @@ async function submitClicked(e) {
       Toastify({
         text:
           data.error ||
-          (isLoginMode
-            ? 'Login Failed. Please check your credentials.'
-            : 'Registration Failed. Please try again.'),
+          (isLoginMode ? 'Login Failed. Please check your credentials.' : 'Registration Failed. Please try again.'),
         duration: 3000,
         close: true,
         gravity: 'top',
@@ -178,8 +171,7 @@ async function submitClicked(e) {
 }
 
 function showPasswordClicked() {
-  const type =
-    password.getAttribute('type') === 'password' ? 'text' : 'password';
+  const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
   password.setAttribute('type', type);
 
   this.querySelector('i').classList.toggle('fa-eye');
@@ -194,16 +186,12 @@ function toggleFormClicked(e) {
   const isLoginMode = formTitle.textContent.includes('Sign in');
 
   // 🔑 CLIENT
-  formTitle.textContent = isLoginMode
-    ? 'Create Account'
-    : 'Sign in to an Account';
+  formTitle.textContent = isLoginMode ? 'Create Account' : 'Sign in to an Account';
   formSubtitle.textContent = isLoginMode
     ? 'Join us and start your fitness journey'
     : 'Start your fitness journey today';
 
-  toggleText.textContent = isLoginMode
-    ? 'Already have an account?'
-    : "Don't have an account?";
+  toggleText.textContent = isLoginMode ? 'Already have an account?' : "Don't have an account?";
   toggleButton.innerHTML =
     (isLoginMode ? 'Sign in here ' : 'Sign up for free ') +
     `<span class="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>`;

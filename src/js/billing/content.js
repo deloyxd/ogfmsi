@@ -114,11 +114,7 @@ function showTab(tabIndex) {
   billingSection2Input.value = '';
   billingSection2Input.addEventListener('input', (event) => {
     const searchTerm = event.target.value;
-    for (
-      let i = 2;
-      i < billingSection2Empty.parentElement.children.length;
-      i++
-    ) {
+    for (let i = 2; i < billingSection2Empty.parentElement.children.length; i++) {
       const child = billingSection2Empty.parentElement.children[i];
       const textContent = child.children[0].textContent;
 
@@ -143,15 +139,10 @@ function showTab(tabIndex) {
     if (modal.checkIfEmpty(billingSection2Input.parentElement)) return;
 
     let transaction;
-    for (
-      let i = 2;
-      i < billingSection2Empty.parentElement.children.length;
-      i++
-    ) {
+    for (let i = 2; i < billingSection2Empty.parentElement.children.length; i++) {
       if (
-        billingSection2Empty.parentElement.children[i].children[0].textContent
-          .trim()
-          .split(/\s+/)[0] == billingSection2Input.value
+        billingSection2Empty.parentElement.children[i].children[0].textContent.trim().split(/\s+/)[0] ==
+        billingSection2Input.value
       ) {
         transaction = billingSection2Empty.parentElement.children[i];
         i = 9999;
@@ -182,15 +173,11 @@ function showTab(tabIndex) {
       payment: {
         actor: {
           id: transaction.children[1].textContent.trim().split(' ')[0].trim(),
-          data: transaction.children[1].lastElementChild.innerHTML
-            .split('<br>')
-            .map((item) => item.trim()),
+          data: transaction.children[1].lastElementChild.innerHTML.split('<br>').map((item) => item.trim()),
         },
         user: {
           id: transaction.children[2].textContent.trim().split(' ')[0].trim(),
-          data: transaction.children[2].lastElementChild.innerHTML
-            .split('<br>')
-            .map((item) => item.trim()),
+          data: transaction.children[2].lastElementChild.innerHTML.split('<br>').map((item) => item.trim()),
         },
         type: 'cash',
         purpose: transaction.children[0].textContent.trim(),
@@ -210,10 +197,8 @@ function showTab(tabIndex) {
 }
 
 function completeTransaction(id, result) {
-  const billingCompleteRecentItem =
-    billingCompleteRecentEmpty.nextElementSibling.cloneNode(true);
-  const billingCompleteAllItem =
-    billingCompleteAllEmpty.nextElementSibling.cloneNode(true);
+  const billingCompleteRecentItem = billingCompleteRecentEmpty.nextElementSibling.cloneNode(true);
+  const billingCompleteAllItem = billingCompleteAllEmpty.nextElementSibling.cloneNode(true);
 
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -237,25 +222,14 @@ function completeTransaction(id, result) {
   billingCompleteAllItem.classList.remove('hidden');
 
   billingCompleteRecentEmpty.classList.add('hidden');
-  billingCompleteRecentEmpty.nextElementSibling.insertAdjacentElement(
-    'afterend',
-    billingCompleteRecentItem
-  );
+  billingCompleteRecentEmpty.nextElementSibling.insertAdjacentElement('afterend', billingCompleteRecentItem);
   billingCompleteAllEmpty.classList.add('hidden');
-  billingCompleteAllEmpty.nextElementSibling.insertAdjacentElement(
-    'afterend',
-    billingCompleteAllItem
-  );
+  billingCompleteAllEmpty.nextElementSibling.insertAdjacentElement('afterend', billingCompleteAllItem);
 
   for (let i = 2; i < billingSection2Empty.parentElement.children.length; i++) {
-    if (
-      billingSection2Empty.parentElement.children[i].children[0].textContent
-        .trim()
-        .split(/\s+/)[0] == id
-    ) {
+    if (billingSection2Empty.parentElement.children[i].children[0].textContent.trim().split(/\s+/)[0] == id) {
       billingSection2Empty.parentElement.children[i].remove();
-      if (billingSection2Empty.parentElement.children.length == 2)
-        billingSection2Empty.classList.remove('hidden');
+      if (billingSection2Empty.parentElement.children.length == 2) billingSection2Empty.classList.remove('hidden');
       i = 9999;
     }
   }
@@ -347,10 +321,7 @@ export function processPayment(user) {
 
   billingItem.classList.remove('hidden');
   billingSection2Empty.classList.add('hidden');
-  billingSection2Empty.nextElementSibling.insertAdjacentElement(
-    'afterend',
-    billingItem
-  );
+  billingSection2Empty.nextElementSibling.insertAdjacentElement('afterend', billingItem);
 }
 
 export default { processPayment };

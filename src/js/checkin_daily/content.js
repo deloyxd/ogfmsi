@@ -125,10 +125,7 @@ function showTab(tabIndex) {
 
     let user;
     for (let i = 3; i < checkin_daily_all.children.length; i++) {
-      if (
-        checkin_daily_all.children[i].dataset.id ==
-        checkinDailySection2Input.value
-      ) {
+      if (checkin_daily_all.children[i].dataset.id == checkinDailySection2Input.value) {
         user = checkin_daily_all.children[i];
         i = 9999;
       }
@@ -141,27 +138,16 @@ function showTab(tabIndex) {
 
     for (let i = 3; i < checkin_daily_recent.children.length; i++) {
       if (checkin_daily_recent.children[i].dataset.id == user.dataset.id) {
-        modal.openConfirmationModal(
-          'Multiple pending transaction: User with multiple pending transactions',
-          () => {
-            processCheckinUser(
-              user.dataset.id,
-              user.dataset.name,
-              user.dataset.contact
-            );
-            checkinDailySection2Input.value = '';
-            modal.closeConfirmationModal();
-          }
-        );
+        modal.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
+          processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact);
+          checkinDailySection2Input.value = '';
+          modal.closeConfirmationModal();
+        });
         return;
       }
     }
 
-    processCheckinUser(
-      user.dataset.id,
-      user.dataset.name,
-      user.dataset.contact
-    );
+    processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact);
     checkinDailySection2Input.value = '';
   };
 }
@@ -189,10 +175,7 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
 
   function continueRegisterNewUser() {
     checkinDailyAllEmpty.classList.add('hidden');
-    checkinDailyAllEmpty.nextElementSibling.insertAdjacentElement(
-      'afterend',
-      clone
-    );
+    checkinDailyAllEmpty.nextElementSibling.insertAdjacentElement('afterend', clone);
 
     const action = {
       module: 'Check-in',
@@ -208,8 +191,7 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
     };
     dataSync.enqueue(action, data);
 
-    if (currentActiveTab == 2)
-      checkin_daily_tab1.lastElementChild.classList.remove('hidden');
+    if (currentActiveTab == 2) checkin_daily_tab1.lastElementChild.classList.remove('hidden');
 
     modal.toast(clone.dataset.name + ', successfully registered!', 'success');
     modal.closeModal();
@@ -217,14 +199,8 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
 
   for (let i = 3; i < checkin_daily_all.children.length; i++) {
     const user = checkin_daily_all.children[i];
-    if (
-      user.dataset.name.toLowerCase().trim() ==
-      clone.dataset.name.toLowerCase().trim()
-    ) {
-      modal.openConfirmationModal(
-        'Data duplication: User with same details',
-        continueRegisterNewUser
-      );
+    if (user.dataset.name.toLowerCase().trim() == clone.dataset.name.toLowerCase().trim()) {
+      modal.openConfirmationModal('Data duplication: User with same details', continueRegisterNewUser);
       return;
     }
   }
@@ -246,10 +222,7 @@ export function processCheckinUser(id, username, emailContact) {
 
   clone.classList.remove('hidden');
   checkinDailyRecentEmpty.classList.add('hidden');
-  checkinDailyRecentEmpty.nextElementSibling.insertAdjacentElement(
-    'afterend',
-    clone
-  );
+  checkinDailyRecentEmpty.nextElementSibling.insertAdjacentElement('afterend', clone);
 
   const action = {
     module: 'Check-in',
@@ -265,8 +238,7 @@ export function processCheckinUser(id, username, emailContact) {
   dataSync.enqueue(action, data);
   billing.processPayment(data);
 
-  if (currentActiveTab == 1)
-    checkin_daily_tab2.lastElementChild.classList.remove('hidden');
+  if (currentActiveTab == 1) checkin_daily_tab2.lastElementChild.classList.remove('hidden');
 
   modal.toast(username + ', is now ready for check-in payment!', 'success');
 }

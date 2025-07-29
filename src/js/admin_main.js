@@ -5,9 +5,7 @@ function checkIfJsShouldNotRun(id) {
 }
 
 function setupSidebar() {
-  const sidebarButtons = document.querySelectorAll(
-    '.sidebar-main-btn, .sidebar-sub-btn'
-  );
+  const sidebarButtons = document.querySelectorAll('.sidebar-main-btn, .sidebar-sub-btn');
   sidebarButtons;
   sidebarButtons.forEach((button) => {
     const type = button.getAttribute('data-type');
@@ -68,9 +66,7 @@ function showSection(sectionName) {
 }
 
 function updateActiveSidebar(sectionName) {
-  const buttons = document.querySelectorAll(
-    '.sidebar-main-btn, .sidebar-sub-btn'
-  );
+  const buttons = document.querySelectorAll('.sidebar-main-btn, .sidebar-sub-btn');
   buttons.forEach((btn) => {
     btn.classList.remove('active', 'bg-gray-700', 'text-white');
     btn.classList.add('text-gray-300');
@@ -111,10 +107,7 @@ export function openModal(btn, inputs, ...callback) {
 export function openConfirmationModal(action, callback) {
   const originalModalContainer = document.querySelector('#modalContainer');
   tempModalConfirmationContainer = originalModalContainer.cloneNode(true);
-  originalModalContainer.insertAdjacentElement(
-    'afterend',
-    tempModalConfirmationContainer
-  );
+  originalModalContainer.insertAdjacentElement('afterend', tempModalConfirmationContainer);
 
   setupModalTheme('red', tempModalConfirmationContainer);
 
@@ -130,14 +123,10 @@ export function openConfirmationModal(action, callback) {
     },
   };
 
-  const modalTitle =
-    tempModalConfirmationContainer.querySelector('#modalTitle');
-  const modalSubtitle =
-    tempModalConfirmationContainer.querySelector('#modalSubtitle');
-  const modalMainBtn =
-    tempModalConfirmationContainer.querySelector('#modalMainBtn');
-  const modalSubBtn =
-    tempModalConfirmationContainer.querySelector('#modalSubBtn');
+  const modalTitle = tempModalConfirmationContainer.querySelector('#modalTitle');
+  const modalSubtitle = tempModalConfirmationContainer.querySelector('#modalSubtitle');
+  const modalMainBtn = tempModalConfirmationContainer.querySelector('#modalMainBtn');
+  const modalSubBtn = tempModalConfirmationContainer.querySelector('#modalSubBtn');
 
   modalTitle.textContent = data.title;
   modalSubtitle.innerHTML = data.subtitle;
@@ -198,9 +187,7 @@ function setupModalTheme(base, container) {
     const splitData = base.split('//');
     customColor = splitData[0];
   } else {
-    const textColorClass = Array.from(base.classList).find((className) =>
-      /^text-[a-z]+-\d+$/.test(className)
-    );
+    const textColorClass = Array.from(base.classList).find((className) => /^text-[a-z]+-\d+$/.test(className));
     const colorMatch = textColorClass.match(/text-([a-z]+)-(\d+)/);
     const [a, color, b] = colorMatch;
     customColor = color;
@@ -224,10 +211,7 @@ function setupModalTheme(base, container) {
 
       const [fullMatch, c, d] = match;
 
-      element.classList.replace(
-        fullMatch,
-        `${fullMatch.split('-')[0]}-${customColor}-${fullMatch.split('-')[2]}`
-      );
+      element.classList.replace(fullMatch, `${fullMatch.split('-')[0]}-${customColor}-${fullMatch.split('-')[2]}`);
     });
   });
 }
@@ -249,8 +233,7 @@ function setupModalBase(defaultData, inputs, callback) {
       title: defaultData.dataset.title.trim(),
       subtitle: defaultData.dataset.subtitle?.trim() || '',
       button: {
-        main:
-          defaultData.dataset.main?.trim() || defaultData.textContent.trim(),
+        main: defaultData.dataset.main?.trim() || defaultData.textContent.trim(),
         sub: defaultData.dataset.sub?.trim() || '',
       },
     };
@@ -277,18 +260,14 @@ function setupModalBase(defaultData, inputs, callback) {
   }
 
   if (inputs.image) {
-    const originalContainer =
-      tempModalContainer.querySelector('#input-image').parentElement
-        .parentElement;
+    const originalContainer = tempModalContainer.querySelector('#input-image').parentElement.parentElement;
     const imageContainerParent = originalContainer.cloneNode(true);
-    const imageContainerTexts =
-      imageContainerParent.children[0].lastElementChild.children;
+    const imageContainerTexts = imageContainerParent.children[0].lastElementChild.children;
     const imageContainer = imageContainerParent.children[0].children[1];
     imageContainer.src = inputs.image.src;
 
     const imageBlurContainer = imageContainerParent.children[0].children[2];
-    if (inputs.image.type === 'live')
-      imageBlurContainer.classList.remove('hidden');
+    if (inputs.image.type === 'live') imageBlurContainer.classList.remove('hidden');
     const imageUploadInput = imageContainerParent.children[0].children[3];
     const imageUploadBtn = imageContainerParent.children[0].children[4];
     imageUploadBtn.onclick = () => imageUploadInput.click();
@@ -311,8 +290,7 @@ function setupModalBase(defaultData, inputs, callback) {
       const clone = imageContainerInputsContainer.children[0].cloneNode(true);
 
       clone.children[1].addEventListener('input', () => {
-        if (inputs.image.type === 'live')
-          imageContainerTexts[index].textContent = clone.children[1].value;
+        if (inputs.image.type === 'live') imageContainerTexts[index].textContent = clone.children[1].value;
         input.value = clone.children[1].value;
       });
 
@@ -329,9 +307,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
   if (inputs.radio) {
     const type = 'radio';
-    const originalContainer = tempModalContainer.querySelector(
-      `#input-${type}`
-    ).parentElement;
+    const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
     const radioContainer = originalContainer.cloneNode(true);
     const label = radioContainer.children[0];
     label.textContent = inputs.radio_label;
@@ -361,9 +337,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
   function setupRenderInput(type, render, offset) {
     if (render) {
-      const originalContainer = tempModalContainer.querySelector(
-        `#input-${type}`
-      ).parentElement;
+      const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
 
       render.forEach((input, index) => {
         const clone = originalContainer.cloneNode(true);
@@ -394,8 +368,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
     if (data.icon) input.querySelectorAll('p')[0].textContent = data.icon;
     if (data.title) input.querySelectorAll('p')[1].textContent = data.title;
-    if (data.subtitle)
-      input.querySelectorAll('p')[2].textContent = data.subtitle;
+    if (data.subtitle) input.querySelectorAll('p')[2].textContent = data.subtitle;
 
     input.dispatchEvent(new Event('input'));
 
