@@ -13,11 +13,11 @@
   }
 
   .btn-main {
-    @apply bg-white rounded-lg py-3 duration-300 text-sm uppercase font-bold px-3;
+    @apply rounded-lg bg-white px-3 py-3 text-sm font-bold uppercase duration-300;
   }
 
   .btn-main:hover {
-    @apply text-white -translate-y-1 scale-105 shadow-xl;
+    @apply -translate-y-1 scale-105 text-white shadow-xl;
   }
 
   .btn-sub {
@@ -25,11 +25,11 @@
   }
 
   .btn-sub:hover {
-    @apply text-white translate-y-1 scale-95 shadow-lg;
+    @apply translate-y-1 scale-95 text-white shadow-lg;
   }
 
   .section-stats-base {
-    @apply relative rounded-xl border-2 bg-gradient-to-br from-white to-gray-200 shadow-lg font-bold text-gray-500;
+    @apply relative rounded-xl border-2 bg-gradient-to-br from-white to-gray-200 font-bold text-gray-500 shadow-lg;
   }
 
   .section-content-base {
@@ -63,7 +63,7 @@
   }
 
   .section-h2 {
-    @apply flex items-center gap-3 font-bold tracking-wider uppercase text-white;
+    @apply flex items-center gap-3 font-bold uppercase tracking-wider text-white;
   }
 
   .section-h2-h {
@@ -75,7 +75,7 @@
   }
 
   .section-h-c {
-    @apply absolute left-1/2 -translate-x-1/2 flex items-center h-full gap-2 overflow-hidden -skew-x-12 px-3;
+    @apply absolute left-1/2 flex h-full -translate-x-1/2 -skew-x-12 items-center gap-2 overflow-hidden px-3;
   }
 
   .section-stats {
@@ -83,7 +83,7 @@
   }
 
   .section-stats-h {
-    @apply text-base leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis;
+    @apply overflow-hidden text-ellipsis whitespace-nowrap text-base leading-relaxed;
   }
 
   .section-stats-c {
@@ -91,7 +91,7 @@
   }
 
   .section-stats-f {
-    @apply abs-br m-2 p-1 cursor-pointer;
+    @apply abs-br m-2 cursor-pointer p-1;
   }
 
   .section-content {
@@ -111,7 +111,7 @@
   }
 
   .section-content-h-f {
-    @apply flex items-center gap-4 mr-4;
+    @apply mr-4 flex items-center gap-4;
   }
 
   .section-content-search-main {
@@ -123,7 +123,7 @@
   }
 
   .section-content-search-sub {
-    @apply w-full rounded-lg pl-9 border-2 p-3 focus:outline-none focus:ring-2 duration-300;
+    @apply w-full rounded-lg border-2 p-3 pl-9 duration-300 focus:outline-none focus:ring-2;
   }
 
   .section-content-searchicon {
@@ -131,15 +131,15 @@
   }
 
   .section-content-searchicon svg {
-    @apply w-5 h-5;
+    @apply h-5 w-5;
   }
 
   .section-content-settings {
-    @apply rounded-full bg-gray-300 text-2xl shadow-lg duration-300 scale-95;
+    @apply scale-95 rounded-full bg-gray-300 text-2xl shadow-lg duration-300;
   }
 
   .section-content-settings:hover {
-    @apply scale-105 translate-y-1 -translate-x-1;
+    @apply -translate-x-1 translate-y-1 scale-105;
   }
 
   .section-content-list-title {
@@ -147,11 +147,11 @@
   }
 
   .section-content-list-empty {
-    @apply text-gray-400 font-bold flexbox p-2 gap-2 scrollbar-light;
+    @apply flexbox scrollbar-light gap-2 p-2 font-bold text-gray-400;
   }
 
   .section-content-list-item {
-    @apply text-gray-600 text-sm font-medium border-b-2 bg-gray-300 border-gray-400 duration-300 rounded-lg px-6 py-4 grid grid-cols-3 gap-2 whitespace-nowrap;
+    @apply grid grid-cols-3 gap-2 whitespace-nowrap rounded-lg border-b-2 border-gray-400 bg-gray-300 px-6 py-4 text-sm font-medium text-gray-600 duration-300;
   }
 
   .section-content-list-item:hover {
@@ -159,7 +159,7 @@
   }
 
   .section-content-submit {
-    @apply w-full rounded-lg p-3 text-white font-bold duration-300;
+    @apply w-full rounded-lg p-3 font-bold text-white duration-300;
   }
 
   .section-content-submit:hover {
@@ -202,16 +202,16 @@
     @apply absolute inset-0;
   }
   .abs-tl {
-    @apply absolute top-0 left-0;
+    @apply absolute left-0 top-0;
   }
   .abs-tb {
-    @apply absolute top-0 bottom-0;
+    @apply absolute bottom-0 top-0;
   }
   .abs-br {
     @apply absolute bottom-0 right-0;
   }
   .full {
-    @apply w-full h-full;
+    @apply h-full w-full;
   }
 }
 
@@ -276,7 +276,7 @@
 }
 
 .flash-effect::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;

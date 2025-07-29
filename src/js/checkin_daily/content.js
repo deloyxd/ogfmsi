@@ -1,6 +1,6 @@
-import modal from "../admin_main.js";
-import billing from "../billing/content.js";
-import dataSync from "../data_sync/content.js";
+import modal from '../admin_main.js';
+import billing from '../billing/content.js';
+import dataSync from '../data_sync/content.js';
 
 const active = checkin_daily_tab1.className;
 const inactive = checkin_daily_tab2.className;
@@ -19,9 +19,9 @@ function showTab(tabIndex) {
   currentActiveTab = tabIndex;
 
   if (tabIndex == 1) {
-    checkin_daily_tab1.lastElementChild.classList.add("hidden");
+    checkin_daily_tab1.lastElementChild.classList.add('hidden');
   } else {
-    checkin_daily_tab2.lastElementChild.classList.add("hidden");
+    checkin_daily_tab2.lastElementChild.classList.add('hidden');
   }
 
   if (activeTimeout) {
@@ -34,50 +34,50 @@ function showTab(tabIndex) {
   checkin_daily_tab1.replaceWith(tab1Clone);
   checkin_daily_tab2.replaceWith(tab2Clone);
 
-  const newTab1 = document.getElementById("checkin_daily_tab1");
-  const newTab2 = document.getElementById("checkin_daily_tab2");
+  const newTab1 = document.getElementById('checkin_daily_tab1');
+  const newTab2 = document.getElementById('checkin_daily_tab2');
 
-  newTab1.children[0].classList.remove("text-gray-300");
-  newTab1.children[1].classList.remove("hidden");
-  newTab1.children[2].classList.add("hidden");
-  newTab2.children[0].classList.remove("text-gray-300");
-  newTab2.children[1].classList.remove("hidden");
-  newTab2.children[2].classList.add("hidden");
+  newTab1.children[0].classList.remove('text-gray-300');
+  newTab1.children[1].classList.remove('hidden');
+  newTab1.children[2].classList.add('hidden');
+  newTab2.children[0].classList.remove('text-gray-300');
+  newTab2.children[1].classList.remove('hidden');
+  newTab2.children[2].classList.add('hidden');
 
   if (tabIndex == 1) {
-    newTab1.children[0].classList.remove("text-gray-300");
-    newTab1.children[1].classList.remove("hidden");
-    newTab1.children[2].classList.add("hidden");
-    newTab2.children[0].classList.add("text-gray-300");
-    newTab2.children[1].classList.add("hidden");
-    newTab2.children[2].classList.remove("hidden");
+    newTab1.children[0].classList.remove('text-gray-300');
+    newTab1.children[1].classList.remove('hidden');
+    newTab1.children[2].classList.add('hidden');
+    newTab2.children[0].classList.add('text-gray-300');
+    newTab2.children[1].classList.add('hidden');
+    newTab2.children[2].classList.remove('hidden');
   } else {
-    newTab1.children[0].classList.add("text-gray-300");
-    newTab1.children[1].classList.add("hidden");
-    newTab1.children[2].classList.remove("hidden");
-    newTab2.children[0].classList.remove("text-gray-300");
-    newTab2.children[1].classList.remove("hidden");
-    newTab2.children[2].classList.add("hidden");
+    newTab1.children[0].classList.add('text-gray-300');
+    newTab1.children[1].classList.add('hidden');
+    newTab1.children[2].classList.remove('hidden');
+    newTab2.children[0].classList.remove('text-gray-300');
+    newTab2.children[1].classList.remove('hidden');
+    newTab2.children[2].classList.add('hidden');
   }
 
   activeTimeout = setTimeout(() => {
     if (tabIndex == 1) {
-      newTab2.children[0].classList.remove("text-gray-300");
-      newTab2.children[1].classList.remove("hidden");
-      newTab2.children[2].classList.add("hidden");
+      newTab2.children[0].classList.remove('text-gray-300');
+      newTab2.children[1].classList.remove('hidden');
+      newTab2.children[2].classList.add('hidden');
     } else {
-      newTab1.children[0].classList.remove("text-gray-300");
-      newTab1.children[1].classList.remove("hidden");
-      newTab1.children[2].classList.add("hidden");
+      newTab1.children[0].classList.remove('text-gray-300');
+      newTab1.children[1].classList.remove('hidden');
+      newTab1.children[2].classList.add('hidden');
     }
     activeTimeout = null;
   }, TAB_SWITCH_DELAY);
 
-  newTab1.addEventListener("click", () => {
+  newTab1.addEventListener('click', () => {
     showTab(1);
   });
 
-  newTab2.addEventListener("click", () => {
+  newTab2.addEventListener('click', () => {
     showTab(2);
   });
 
@@ -89,8 +89,8 @@ function showTab(tabIndex) {
     newTab2.className = active;
   }
 
-  checkinDailySection1Search.value = "";
-  checkinDailySection1Search.addEventListener("input", (event) => {
+  checkinDailySection1Search.value = '';
+  checkinDailySection1Search.addEventListener('input', (event) => {
     const searchTerm = event.target.value.toLowerCase().trim();
     let children;
     if (tabIndex == 1) {
@@ -104,20 +104,20 @@ function showTab(tabIndex) {
       const textContent = child.textContent.toLowerCase();
 
       if (textContent.includes(searchTerm)) {
-        child.classList.remove("hidden");
+        child.classList.remove('hidden');
       } else {
-        child.classList.add("hidden");
+        child.classList.add('hidden');
       }
     }
   });
-  checkinDailySection1Search.dispatchEvent(new Event("input"));
+  checkinDailySection1Search.dispatchEvent(new Event('input'));
 
   if (tabIndex == 1) {
-    checkin_daily_all.classList.remove("hidden");
-    checkin_daily_recent.classList.add("hidden");
+    checkin_daily_all.classList.remove('hidden');
+    checkin_daily_recent.classList.add('hidden');
   } else {
-    checkin_daily_all.classList.add("hidden");
-    checkin_daily_recent.classList.remove("hidden");
+    checkin_daily_all.classList.add('hidden');
+    checkin_daily_recent.classList.remove('hidden');
   }
 
   checkinDailySection2MainBtn.onclick = () => {
@@ -135,21 +135,21 @@ function showTab(tabIndex) {
     }
 
     if (!user) {
-      modal.toast("There's no user with that ID!", "error");
+      modal.toast("There's no user with that ID!", 'error');
       return;
     }
 
     for (let i = 3; i < checkin_daily_recent.children.length; i++) {
       if (checkin_daily_recent.children[i].dataset.id == user.dataset.id) {
         modal.openConfirmationModal(
-          "Multiple pending transaction: User with multiple pending transactions",
+          'Multiple pending transaction: User with multiple pending transactions',
           () => {
             processCheckinUser(
               user.dataset.id,
               user.dataset.name,
               user.dataset.contact
             );
-            checkinDailySection2Input.value = "";
+            checkinDailySection2Input.value = '';
             modal.closeConfirmationModal();
           }
         );
@@ -162,7 +162,7 @@ function showTab(tabIndex) {
       user.dataset.name,
       user.dataset.contact
     );
-    checkinDailySection2Input.value = "";
+    checkinDailySection2Input.value = '';
   };
 }
 
@@ -171,13 +171,13 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
 
   const randomId_A = Math.floor(100000 + Math.random() * 900000);
   const randomId_B = Math.floor(100000 + Math.random() * 900000);
-  clone.children[0].textContent = "U" + randomId_A + "" + randomId_B;
+  clone.children[0].textContent = 'U' + randomId_A + '' + randomId_B;
   clone.children[1].children[0].src = image;
   clone.children[1].children[1].textContent = `${firstName} ${lastName}`;
-  clone.children[2].textContent = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+  clone.children[2].textContent = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
   clone.dataset.id = clone.children[0].textContent;
@@ -185,19 +185,19 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
   clone.dataset.date = clone.children[2].textContent;
   clone.dataset.contact = emailContact;
 
-  clone.classList.remove("hidden");
+  clone.classList.remove('hidden');
 
   function continueRegisterNewUser() {
-    checkinDailyAllEmpty.classList.add("hidden");
+    checkinDailyAllEmpty.classList.add('hidden');
     checkinDailyAllEmpty.nextElementSibling.insertAdjacentElement(
-      "afterend",
+      'afterend',
       clone
     );
 
     const action = {
-      module: "Check-in",
-      submodule: "Daily Pass",
-      description: "Register user",
+      module: 'Check-in',
+      submodule: 'Daily Pass',
+      description: 'Register user',
     };
     const data = {
       id: clone.dataset.id,
@@ -209,9 +209,9 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
     dataSync.enqueue(action, data);
 
     if (currentActiveTab == 2)
-      checkin_daily_tab1.lastElementChild.classList.remove("hidden");
+      checkin_daily_tab1.lastElementChild.classList.remove('hidden');
 
-    modal.toast(clone.dataset.name + ", successfully registered!", "success");
+    modal.toast(clone.dataset.name + ', successfully registered!', 'success');
     modal.closeModal();
   }
 
@@ -222,7 +222,7 @@ export function registerNewUser(image, firstName, lastName, emailContact) {
       clone.dataset.name.toLowerCase().trim()
     ) {
       modal.openConfirmationModal(
-        "Data duplication: User with same details",
+        'Data duplication: User with same details',
         continueRegisterNewUser
       );
       return;
@@ -237,24 +237,24 @@ export function processCheckinUser(id, username, emailContact) {
 
   clone.children[0].textContent = id;
   clone.children[1].children[1].textContent = username;
-  clone.children[2].textContent = "Pending";
+  clone.children[2].textContent = 'Pending';
 
   clone.dataset.id = id;
   clone.dataset.name = username;
   clone.dataset.time = clone.children[2].textContent;
   clone.dataset.contact = emailContact;
 
-  clone.classList.remove("hidden");
-  checkinDailyRecentEmpty.classList.add("hidden");
+  clone.classList.remove('hidden');
+  checkinDailyRecentEmpty.classList.add('hidden');
   checkinDailyRecentEmpty.nextElementSibling.insertAdjacentElement(
-    "afterend",
+    'afterend',
     clone
   );
 
   const action = {
-    module: "Check-in",
-    submodule: "Daily Pass",
-    description: "Process check-in user",
+    module: 'Check-in',
+    submodule: 'Daily Pass',
+    description: 'Process check-in user',
   };
   const data = {
     id: clone.dataset.id,
@@ -266,13 +266,13 @@ export function processCheckinUser(id, username, emailContact) {
   billing.processPayment(data);
 
   if (currentActiveTab == 1)
-    checkin_daily_tab2.lastElementChild.classList.remove("hidden");
+    checkin_daily_tab2.lastElementChild.classList.remove('hidden');
 
-  modal.toast(username + ", is now ready for check-in payment!", "success");
+  modal.toast(username + ', is now ready for check-in payment!', 'success');
 }
 
 export default { registerNewUser, checkInUser: processCheckinUser };
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener('DOMContentLoaded', function () {
   showTab(1);
 });

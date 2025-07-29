@@ -43,7 +43,7 @@
     </style> -->
   </head>
   <body
-    class="dark:bg-dark-900 cursor-default overflow-x-hidden overflow-y-auto bg-orange-100 text-gray-900"
+    class="dark:bg-dark-900 cursor-default overflow-y-auto overflow-x-hidden bg-orange-100 text-gray-900"
   >
     <!-- 🔴 README: comments with 🔥 are project main components -->
 
@@ -52,7 +52,7 @@
 
     <!-- 🔥 header 🔥 -->
     <nav
-      class="nav-shadow bg-opacity-95 fixed top-0 z-50 w-full bg-orange-800 p-4 text-white backdrop-blur-md"
+      class="nav-shadow fixed top-0 z-50 w-full bg-orange-800 bg-opacity-95 p-4 text-white backdrop-blur-md"
     >
       <div class="container mx-auto">
         <!-- desktop view -->
@@ -65,7 +65,7 @@
                 class="h-14 w-14 rounded-full ring-2 ring-orange-400 ring-offset-2 ring-offset-orange-800 transition-all duration-500 group-hover:scale-110 group-hover:ring-4 group-hover:ring-yellow-400"
               />
               <div
-                class="absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 border-white bg-green-500"
+                class="absolute -right-1 -top-1 h-4 w-4 animate-pulse rounded-full border-2 border-white bg-green-500"
               ></div>
             </div>
             <div
@@ -73,13 +73,13 @@
               class="redirect-to-dashboard transform rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-yellow-500 px-8 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
             >
               <h1
-                class="text-3xl font-black tracking-wide text-white uppercase drop-shadow-lg"
+                class="text-3xl font-black uppercase tracking-wide text-white drop-shadow-lg"
               >
                 <!-- 🔑 CLIENT -->
                 Fitworx Gym
               </h1>
               <span
-                class="text-xs font-semibold tracking-widest text-orange-100 uppercase"
+                class="text-xs font-semibold uppercase tracking-widest text-orange-100"
               >
                 <!-- 🔑 CLIENT (update client motto) -->
                 Push Your Limits
@@ -99,7 +99,7 @@
               >
                 <!-- sun icon -->
                 <svg
-                  class="absolute top-1/2 left-1/2 hidden h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-amber-500 dark:block"
+                  class="absolute left-1/2 top-1/2 hidden h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-amber-500 dark:block"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -109,7 +109,7 @@
                 </svg>
                 <!-- moon icon -->
                 <svg
-                  class="absolute top-1/2 left-1/2 block h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-slate-600 dark:hidden"
+                  class="absolute left-1/2 top-1/2 block h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-slate-600 dark:hidden"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -173,7 +173,7 @@
               <!-- admin dropdown -->
               <div
                 id="dropdown-menu"
-                class="ring-opacity-5 absolute right-0 z-50 mt-3 hidden w-48 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl ring-1 ring-black focus:outline-none"
+                class="absolute right-0 z-50 mt-3 hidden w-48 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
               >
                 <div class="gap-2">
                   <div
@@ -216,20 +216,20 @@
                 class="h-12 w-12 rounded-full border-2 border-orange-400 shadow-lg"
               />
               <div
-                class="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full border border-white bg-green-400"
+                class="absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full border border-white bg-green-400"
               ></div>
             </div>
             <div
               class="rounded-lg bg-gradient-to-r from-orange-600 to-yellow-500 px-4 py-2 shadow-md"
             >
               <h1
-                class="text-xl font-black tracking-wider text-white uppercase drop-shadow-md"
+                class="text-xl font-black uppercase tracking-wider text-white drop-shadow-md"
               >
                 <!-- 🔑 CLIENT -->
                 Fitworx Gym
               </h1>
               <span
-                class="text-xs font-medium tracking-widest text-orange-100 uppercase"
+                class="text-xs font-medium uppercase tracking-widest text-orange-100"
               >
                 <!-- 🔑 CLIENT -->
                 Push Your Limits
@@ -278,41 +278,41 @@
     </nav>
 
     <!-- 🔥 carousel component 🔥 -->
-    <header class="relative overflow-hidden pt-32 pb-16 text-white">
+    <header class="relative overflow-hidden pb-16 pt-32 text-white">
       <div
-        class="absolute inset-0 bg-orange-600 opacity-100 transition-opacity duration-50 dark:opacity-0"
+        class="duration-50 absolute inset-0 bg-orange-600 opacity-100 transition-opacity dark:opacity-0"
       ></div>
       <div
-        class="bg-dark-800 absolute inset-0 opacity-0 transition-opacity duration-50 dark:opacity-100"
+        class="bg-dark-800 duration-50 absolute inset-0 opacity-0 transition-opacity dark:opacity-100"
       ></div>
       <!-- animated background pattern -->
       <div class="absolute inset-0 opacity-10">
         <div
-          class="absolute top-0 left-0 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform animate-pulse rounded-full bg-white blur-xl"
+          class="absolute left-0 top-0 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform animate-pulse rounded-full bg-white blur-xl"
         ></div>
         <div
-          class="absolute right-0 bottom-0 h-80 w-80 translate-x-1/2 translate-y-1/2 transform animate-pulse rounded-full bg-white blur-xl"
+          class="absolute bottom-0 right-0 h-80 w-80 translate-x-1/2 translate-y-1/2 transform animate-pulse rounded-full bg-white blur-xl"
         ></div>
         <div
-          class="absolute top-1/2 left-1/3 h-64 w-64 animate-[bounce_2s_infinite] rounded-full bg-white blur-xl"
+          class="absolute left-1/3 top-1/2 h-64 w-64 animate-[bounce_2s_infinite] rounded-full bg-white blur-xl"
         ></div>
       </div>
 
       <!-- geometric shapes -->
       <div class="absolute inset-0 overflow-hidden">
         <div
-          class="absolute top-20 right-10 h-16 w-16 rotate-90 animate-[spin_5s_linear_infinite] border-2 border-white/20"
+          class="absolute right-10 top-20 h-16 w-16 rotate-90 animate-[spin_5s_linear_infinite] border-2 border-white/20"
         ></div>
         <div
           class="absolute bottom-20 left-20 h-12 w-12 animate-[bounce_2s_infinite] rounded-full bg-white/10 blur-md"
         ></div>
         <div
-          class="absolute top-1/3 right-1/4 h-8 w-8 rotate-12 transform animate-pulse bg-white/30"
+          class="absolute right-1/4 top-1/3 h-8 w-8 rotate-12 transform animate-pulse bg-white/30"
         ></div>
       </div>
 
       <div
-        class="relative z-10 container mx-auto grid items-center gap-8 px-4 lg:grid-cols-2"
+        class="container relative z-10 mx-auto grid items-center gap-8 px-4 lg:grid-cols-2"
       >
         <div class="animate-fade-in-left">
           <div
@@ -322,7 +322,7 @@
             🏋️ Premium Fitness Experience
           </div>
           <h2
-            class="mb-6 text-5xl leading-tight font-black tracking-tight lg:text-6xl"
+            class="mb-6 text-5xl font-black leading-tight tracking-tight lg:text-6xl"
           >
             Transform Your<br />
             <span
@@ -472,7 +472,7 @@
       <div
         class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"
       ></div>
-      <section class="relative z-10 container mx-auto px-4 py-16">
+      <section class="container relative z-10 mx-auto px-4 py-16">
         <h2
           class="mb-12 bg-gradient-to-r from-orange-300 to-red-600 bg-clip-text text-center text-3xl font-black text-transparent dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
         >
@@ -509,7 +509,7 @@
               <h3 class="mb-2 text-xl font-semibold text-red-500">
                 New Equipment Arrived
               </h3>
-              <p class="text-opacity-70 text-red-500">
+              <p class="text-red-500 text-opacity-70">
                 Latest additions including state-of-the-art treadmills and
                 premium weightlifting gear.
               </p>
@@ -543,7 +543,7 @@
               <h3 class="mb-2 text-xl font-semibold text-white">
                 Special Offer
               </h3>
-              <p class="text-opacity-70 text-white">
+              <p class="text-white text-opacity-70">
                 Get 20% off on annual memberships when you sign up this month.
                 Limited time offer!
               </p>
@@ -577,7 +577,7 @@
               <h3 class="mb-2 text-xl font-semibold text-red-500">
                 New HIIT Classes
               </h3>
-              <p class="text-opacity-70 text-red-500">
+              <p class="text-red-500 text-opacity-70">
                 Join our newly launched high-intensity interval training
                 sessions with certified trainers.
               </p>
@@ -599,21 +599,21 @@
         <!-- background elements -->
         <div class="absolute inset-0 opacity-5">
           <div
-            class="absolute top-10 left-10 h-32 w-32 rounded-full bg-orange-400 blur-2xl"
+            class="absolute left-10 top-10 h-32 w-32 rounded-full bg-orange-400 blur-2xl"
           ></div>
           <div
-            class="absolute right-20 bottom-20 h-40 w-40 rounded-full bg-orange-600 blur-3xl"
+            class="absolute bottom-20 right-20 h-40 w-40 rounded-full bg-orange-600 blur-3xl"
           ></div>
           <div
-            class="absolute top-1/2 left-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-orange-300 blur-3xl"
+            class="absolute left-1/2 top-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-orange-300 blur-3xl"
           ></div>
         </div>
 
-        <div class="relative z-10 container mx-auto px-4">
+        <div class="container relative z-10 mx-auto px-4">
           <!-- header -->
           <div class="mb-16 text-center">
             <h3
-              class="mb-6 text-5xl leading-tight font-black text-gray-900 lg:text-6xl dark:text-white"
+              class="mb-6 text-5xl font-black leading-tight text-gray-900 lg:text-6xl dark:text-white"
             >
               Why Choose
               <span
@@ -638,7 +638,7 @@
             <!-- feature 1 -->
             <div class="feature-item">
               <div
-                class="group feature-card relative transform overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+                class="feature-card group relative transform overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
               >
                 <!-- card background gradient -->
                 <div
@@ -655,7 +655,7 @@
                       class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     ></div>
                     <div
-                      class="absolute top-4 right-4 rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white"
+                      class="absolute right-4 top-4 rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white"
                     >
                       Quality
                     </div>
@@ -718,7 +718,7 @@
             <!-- feature 2 -->
             <div class="feature-item">
               <div
-                class="group feature-card relative transform overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+                class="feature-card group relative transform overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
               >
                 <div
                   class="absolute inset-0 bg-gradient-to-br from-orange-50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:from-orange-900/20"
@@ -734,7 +734,7 @@
                       class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     ></div>
                     <div
-                      class="absolute top-4 right-4 rounded-full bg-green-500 px-3 py-1 text-xs font-bold text-white"
+                      class="absolute right-4 top-4 rounded-full bg-green-500 px-3 py-1 text-xs font-bold text-white"
                     >
                       Popular
                     </div>
@@ -794,7 +794,7 @@
             <!-- feature 3 -->
             <div class="feature-item">
               <div
-                class="group feature-card relative transform overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+                class="feature-card group relative transform overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
               >
                 <div
                   class="absolute inset-0 bg-gradient-to-br from-orange-50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:from-orange-900/20"
@@ -810,7 +810,7 @@
                       class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     ></div>
                     <div
-                      class="absolute top-4 right-4 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white"
+                      class="absolute right-4 top-4 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white"
                     >
                       Premium
                     </div>
@@ -933,7 +933,7 @@
                 </div>
 
                 <p
-                  class="mb-8 text-lg leading-relaxed font-medium text-gray-700"
+                  class="mb-8 text-lg font-medium leading-relaxed text-gray-700"
                 >
                   Unleash your inner athlete on our professional-grade
                   basketball court! Whether you're a seasoned player or a
@@ -992,7 +992,7 @@
                 </div>
 
                 <p
-                  class="mb-8 text-lg leading-relaxed font-medium text-gray-700"
+                  class="mb-8 text-lg font-medium leading-relaxed text-gray-700"
                 >
                   Get ready to sweat, smile, and have the time of your life with
                   our explosive Zumba classes!
@@ -1098,7 +1098,7 @@
 
           <!-- 🔑 CLIENT (items) -->
           <div class="grid justify-center gap-8 lg:grid-cols-2 lg:grid-cols-4">
-            <div class="group goal-item">
+            <div class="goal-item group">
               <div
                 data-color="yellow"
                 class="transform rounded-2xl border-2 border-yellow-100 bg-white p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:scale-110 hover:border-yellow-300 hover:shadow-2xl hover:shadow-yellow-500"
@@ -1115,7 +1115,7 @@
                 <h4 class="mb-4 text-2xl font-bold text-gray-900">
                   Weight Loss
                 </h4>
-                <p class="leading-relaxed font-medium text-gray-600">
+                <p class="font-medium leading-relaxed text-gray-600">
                   Personalized programs to help you shed pounds
                 </p>
                 <div class="mt-6 h-2 w-full rounded-full bg-yellow-100">
@@ -1126,7 +1126,7 @@
               </div>
             </div>
 
-            <div class="group goal-item">
+            <div class="goal-item group">
               <div
                 data-color="orange"
                 class="transform rounded-2xl border-2 border-orange-100 bg-white p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:scale-110 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-500"
@@ -1143,7 +1143,7 @@
                 <h4 class="mb-4 text-2xl font-bold text-gray-900">
                   Muscle Gain
                 </h4>
-                <p class="leading-relaxed font-medium text-gray-600">
+                <p class="font-medium leading-relaxed text-gray-600">
                   Scientific approach to building muscle mass
                 </p>
                 <div class="mt-6 h-2 w-full rounded-full bg-orange-100">
@@ -1154,7 +1154,7 @@
               </div>
             </div>
 
-            <div class="group goal-item">
+            <div class="goal-item group">
               <div
                 data-color="red"
                 class="transform rounded-2xl border-2 border-red-100 bg-white p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:scale-110 hover:border-red-300 hover:shadow-2xl hover:shadow-red-500"
@@ -1169,7 +1169,7 @@
                   </div>
                 </div>
                 <h4 class="mb-4 text-2xl font-bold text-gray-900">Endurance</h4>
-                <p class="leading-relaxed font-medium text-gray-600">
+                <p class="font-medium leading-relaxed text-gray-600">
                   Build stamina and cardiovascular strength
                 </p>
                 <div class="mt-6 h-2 w-full rounded-full bg-red-100">
@@ -1180,7 +1180,7 @@
               </div>
             </div>
 
-            <div class="group goal-item">
+            <div class="goal-item group">
               <div
                 data-color="green"
                 class="transform rounded-2xl border-2 border-green-100 bg-white p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:scale-110 hover:border-green-300 hover:shadow-2xl hover:shadow-green-500"
@@ -1195,7 +1195,7 @@
                   </div>
                 </div>
                 <h4 class="mb-4 text-2xl font-bold text-gray-900">Wellness</h4>
-                <p class="leading-relaxed font-medium text-gray-600">
+                <p class="font-medium leading-relaxed text-gray-600">
                   Holistic approach to health and fitness
                 </p>
                 <div class="mt-6 h-2 w-full rounded-full bg-green-100">
@@ -1240,7 +1240,7 @@
               <!-- 🔑 CLIENT -->
               Expert coaches dedicated to transforming your fitness journey
             </p>
-            <div class="mt-6 mb-4 flex items-center justify-center space-x-2">
+            <div class="mb-4 mt-6 flex items-center justify-center space-x-2">
               <div class="h-1 w-12 rounded-full bg-orange-400"></div>
               <div class="h-4 w-4 rounded-full bg-orange-500"></div>
               <div class="h-1 w-12 rounded-full bg-orange-400"></div>
@@ -1459,7 +1459,7 @@
       <div
         class="bg-dark-700 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"
       ></div>
-      <section class="relative z-10 container mx-auto max-w-6xl px-6 py-20">
+      <section class="container relative z-10 mx-auto max-w-6xl px-6 py-20">
         <div class="mb-16 text-center">
           <div class="mb-4 pb-4">
             <!-- 🔑 CLIENT -->
@@ -1850,7 +1850,7 @@
         class="from-dark-900 to-dark-700 absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-300 dark:opacity-100"
       ></div>
       <section class="relative z-10 overflow-hidden py-16">
-        <div class="relative z-10 container mx-auto px-4">
+        <div class="container relative z-10 mx-auto px-4">
           <!-- header -->
           <div class="relative mb-16 text-center">
             <div class="group relative inline-block">
@@ -1860,9 +1860,9 @@
                 So, Where Are We?
               </h3>
               <div
-                class="absolute inset-0 scale-110 -rotate-1 rounded-full bg-white shadow-md shadow-orange-500 transition duration-300 group-hover:rotate-0 dark:shadow-lg dark:shadow-orange-500"
+                class="absolute inset-0 -rotate-1 scale-110 rounded-full bg-white shadow-md shadow-orange-500 transition duration-300 group-hover:rotate-0 dark:shadow-lg dark:shadow-orange-500"
               >
-                <div class="absolute top-0 right-0">
+                <div class="absolute right-0 top-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="32"
@@ -1894,11 +1894,11 @@
           <div class="grid items-stretch gap-8 lg:grid-cols-3">
             <div class="group relative h-full lg:col-span-2">
               <div
-                class="transform overflow-hidden rounded-2xl border border-green-500 bg-white shadow-lg shadow-green-900 transition-all duration-300 group-hover:scale-[102%] hover:shadow-green-500"
+                class="transform overflow-hidden rounded-2xl border border-green-500 bg-white shadow-lg shadow-green-900 transition-all duration-300 hover:shadow-green-500 group-hover:scale-[102%]"
               >
                 <div
                   id="live-location"
-                  class="absolute top-4 right-4 z-10 z-[500] transform cursor-pointer rounded-full border-2 border-white bg-green-500 px-3 py-1 text-white shadow-2xl shadow-lg shadow-green-500 transition-all duration-300 hover:scale-105"
+                  class="absolute right-4 top-4 z-10 z-[500] transform cursor-pointer rounded-full border-2 border-white bg-green-500 px-3 py-1 text-white shadow-2xl shadow-lg shadow-green-500 transition-all duration-300 hover:scale-105"
                 >
                   <div class="flex flex-col text-base font-light">
                     <span class="absolute animate-ping">🔴</span>
@@ -1916,7 +1916,7 @@
               >
                 <!-- decorative corner -->
                 <div
-                  class="absolute top-0 right-0 h-20 w-20 rounded-bl-full bg-orange-300 transition duration-300 group-hover/parent:scale-[2] group-hover/parent:bg-orange-500 group-hover/parent:blur-lg"
+                  class="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-orange-300 transition duration-300 group-hover/parent:scale-[2] group-hover/parent:bg-orange-500 group-hover/parent:blur-lg"
                 ></div>
 
                 <h4
@@ -1932,7 +1932,7 @@
                   <!-- address -->
                   <div class="group/child location-item relative">
                     <div
-                      class="flex items-start gap-4 rounded-xl border border-l-4 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 p-4 transition-all duration-200 group-hover/child:-translate-y-1 group-hover/child:shadow-lg group-hover/child:shadow-orange-500 group-hover/parent:border-orange-700"
+                      class="flex items-start gap-4 rounded-xl border border-l-4 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 p-4 transition-all duration-200 group-hover/child:-translate-y-1 group-hover/parent:border-orange-700 group-hover/child:shadow-lg group-hover/child:shadow-orange-500"
                     >
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 transition duration-200 group-hover/child:scale-110 group-hover/parent:bg-orange-700"
@@ -1959,12 +1959,12 @@
                       </div>
                       <div>
                         <p
-                          class="mb-1 text-xs font-medium tracking-wide text-orange-600 uppercase group-hover/parent:text-orange-700"
+                          class="mb-1 text-xs font-medium uppercase tracking-wide text-orange-600 group-hover/parent:text-orange-700"
                         >
                           Address
                         </p>
                         <p
-                          class="text-sm leading-relaxed font-medium text-gray-700"
+                          class="text-sm font-medium leading-relaxed text-gray-700"
                         >
                           Capt. F. S. Samano, Caloocan, Metro Manila
                         </p>
@@ -1975,7 +1975,7 @@
                   <!-- hours -->
                   <div class="group/child location-item relative">
                     <div
-                      class="flex items-start gap-4 rounded-xl border border-l-4 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 p-4 transition-all duration-200 group-hover/child:-translate-y-1 group-hover/child:shadow-lg group-hover/child:shadow-orange-500 group-hover/parent:border-orange-700"
+                      class="flex items-start gap-4 rounded-xl border border-l-4 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 p-4 transition-all duration-200 group-hover/child:-translate-y-1 group-hover/parent:border-orange-700 group-hover/child:shadow-lg group-hover/child:shadow-orange-500"
                     >
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 transition duration-200 group-hover/child:scale-110 group-hover/parent:bg-orange-700"
@@ -1996,7 +1996,7 @@
                       </div>
                       <div>
                         <p
-                          class="mb-1 text-xs font-medium tracking-wide text-orange-600 uppercase group-hover/parent:text-orange-700"
+                          class="mb-1 text-xs font-medium uppercase tracking-wide text-orange-600 group-hover/parent:text-orange-700"
                         >
                           Hours
                         </p>
@@ -2010,7 +2010,7 @@
                   <!-- phone -->
                   <div class="group/child location-item relative">
                     <div
-                      class="mb-4 flex items-start gap-4 rounded-xl border border-l-4 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 p-4 transition-all duration-200 group-hover/child:-translate-y-1 group-hover/child:shadow-lg group-hover/child:shadow-orange-500 group-hover/parent:border-orange-700"
+                      class="mb-4 flex items-start gap-4 rounded-xl border border-l-4 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 p-4 transition-all duration-200 group-hover/child:-translate-y-1 group-hover/parent:border-orange-700 group-hover/child:shadow-lg group-hover/child:shadow-orange-500"
                     >
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 transition duration-200 group-hover/child:scale-110 group-hover/parent:bg-orange-700"
@@ -2031,7 +2031,7 @@
                       </div>
                       <div>
                         <p
-                          class="mb-1 text-xs font-medium tracking-wide text-orange-600 uppercase group-hover/parent:text-orange-700"
+                          class="mb-1 text-xs font-medium uppercase tracking-wide text-orange-600 group-hover/parent:text-orange-700"
                         >
                           Contact
                         </p>
@@ -2049,7 +2049,7 @@
                 <a
                   href="https://www.google.com/maps/place/Fitworx+Gym/@14.7669421,121.0416393,17z/data=!3m1!4b1!4m6!3m5!1s0x3397b15cafadc1fd:0x6e899f7ad07653bc!8m2!3d14.7669369!4d121.0442142!16s%2Fg%2F11fhypwt56?entry=ttu&g_ep=EgoyMDI1MDIwNS4xIKXMDSoASAFQAw%3D%3D"
                   target="_blank"
-                  class="group/child relative mt-auto inline-flex w-full transform items-center justify-center gap-2 overflow-hidden rounded-xl bg-orange-500 px-6 py-4 text-white shadow-lg transition-all duration-300 group-hover/parent:bg-orange-700 hover:-translate-y-1 hover:bg-orange-600 hover:shadow-xl"
+                  class="group/child relative mt-auto inline-flex w-full transform items-center justify-center gap-2 overflow-hidden rounded-xl bg-orange-500 px-6 py-4 text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-orange-600 hover:shadow-xl group-hover/parent:bg-orange-700"
                 >
                   <div
                     class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 opacity-0 transition-opacity duration-300 group-hover/child:opacity-100"
@@ -2076,7 +2076,7 @@
                   </svg>
                   <span class="relative z-10 font-bold">Get Directions</span>
                   <div
-                    class="bg-opacity-20 absolute top-0 right-0 h-8 w-8 translate-x-2 -translate-y-2 transform rounded-full bg-white transition-transform duration-300 group-hover/child:scale-150"
+                    class="absolute right-0 top-0 h-8 w-8 -translate-y-2 translate-x-2 transform rounded-full bg-white bg-opacity-20 transition-transform duration-300 group-hover/child:scale-150"
                   ></div>
                 </a>
               </div>
@@ -2095,7 +2095,7 @@
         class="from-dark-700 to-dark-900 absolute inset-0 bg-gradient-to-bl opacity-0 transition-opacity duration-300 dark:opacity-100"
       ></div>
       <section class="relative z-10 overflow-hidden py-20">
-        <div class="relative z-10 container mx-auto max-w-7xl px-6">
+        <div class="container relative z-10 mx-auto max-w-7xl px-6">
           <div class="grid items-start gap-16 lg:grid-cols-2">
             <!-- 🔑 CLIENT (items) -->
             <!-- faq -->
@@ -2133,7 +2133,7 @@
               <div class="space-y-6">
                 <div class="faq-item group">
                   <div
-                    class="transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:scale-102 hover:border-orange-200 hover:shadow-2xl"
+                    class="hover:scale-102 transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:border-orange-200 hover:shadow-2xl"
                   >
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
@@ -2183,7 +2183,7 @@
 
                 <div class="faq-item group">
                   <div
-                    class="transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:scale-102 hover:border-orange-200 hover:shadow-2xl"
+                    class="hover:scale-102 transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:border-orange-200 hover:shadow-2xl"
                   >
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
@@ -2226,7 +2226,7 @@
 
                 <div class="faq-item group">
                   <div
-                    class="transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:scale-102 hover:border-orange-200 hover:shadow-2xl"
+                    class="hover:scale-102 transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:border-orange-200 hover:shadow-2xl"
                   >
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
@@ -2270,7 +2270,7 @@
 
                 <div class="faq-item group">
                   <div
-                    class="transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:scale-102 hover:border-orange-200 hover:shadow-2xl"
+                    class="hover:scale-102 transform overflow-hidden rounded-2xl border-2 border-orange-100 bg-white shadow-lg transition-all duration-300 hover:border-orange-200 hover:shadow-2xl"
                   >
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
@@ -2368,7 +2368,7 @@
                           id="name"
                           name="name"
                           required
-                          class="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none"
+                          class="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-200"
                           placeholder="Enter your full name"
                         />
                         <div
@@ -2404,7 +2404,7 @@
                           id="email"
                           name="email"
                           required
-                          class="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none"
+                          class="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-200"
                           placeholder="your.email@example.com"
                         />
                         <div
@@ -2440,7 +2440,7 @@
                         name="feedback"
                         rows="5"
                         required
-                        class="w-full resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none"
+                        class="w-full resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-200"
                         placeholder="Share your thoughts about our gym..."
                       ></textarea>
                     </div>
@@ -2595,9 +2595,9 @@
       ></div>
       <section class="relative z-10 overflow-hidden py-20 text-white">
         <div class="absolute inset-0 bg-black/10"></div>
-        <div class="relative z-10 container mx-auto px-6 text-center">
+        <div class="container relative z-10 mx-auto px-6 text-center">
           <div class="mb-16">
-            <h3 class="mb-6 text-5xl font-black tracking-wider uppercase">
+            <h3 class="mb-6 text-5xl font-black uppercase tracking-wider">
               <!-- 🔑 CLIENT -->
               unleash your potential
             </h3>
@@ -2618,7 +2618,7 @@
                   class="relative bg-gradient-to-r from-orange-500 to-red-600 px-8 py-6"
                 >
                   <div
-                    class="absolute top-0 right-0 h-32 w-32 translate-x-16 -translate-y-16 rounded-full bg-white/20"
+                    class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-white/20"
                   ></div>
                   <div class="relative z-10">
                     <span
@@ -2703,7 +2703,7 @@
                   class="relative bg-gradient-to-r from-orange-500 to-red-600 px-8 py-6"
                 >
                   <div
-                    class="absolute top-0 right-0 h-32 w-32 translate-x-16 -translate-y-16 rounded-full bg-white/20"
+                    class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-white/20"
                   ></div>
                   <div class="relative z-10">
                     <span
@@ -2801,7 +2801,7 @@
                 <!-- 🔑 CLIENT -->
                 <h3 class="text-xl font-bold">Fitworx Gym</h3>
               </div>
-              <p class="pr-4 pb-4 leading-relaxed text-gray-400">
+              <p class="pb-4 pr-4 leading-relaxed text-gray-400">
                 Transform your fitness journey with our modern facilities and
                 expert guidance.
               </p>
@@ -2994,7 +2994,7 @@
     <!-- success dialog modal -->
     <div
       id="successModal"
-      class="modal bg-opacity-70 fixed inset-0 z-50 flex hidden items-center justify-center bg-black"
+      class="modal fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-70"
     >
       <div
         class="rounded-lg border-2 border-green-500 bg-zinc-900 p-6 text-center shadow-xl"
@@ -3018,11 +3018,11 @@
         </div>
         <h3
           id="success-title"
-          class="text-xl font-bold text-white uppercase"
+          class="text-xl font-bold uppercase text-white"
         ></h3>
         <p
           id="success-message"
-          class="mt-2 text-sm tracking-wider text-gray-400 uppercase"
+          class="mt-2 text-sm uppercase tracking-wider text-gray-400"
         ></p>
       </div>
     </div>
@@ -3030,7 +3030,7 @@
     <!-- admin login modal -->
     <div
       id="adminLoginModal"
-      class="modal bg-opacity-70 fixed inset-0 z-50 flex hidden items-center justify-center bg-black"
+      class="modal fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-70"
     >
       <!-- content -->
       <div
@@ -3059,11 +3059,11 @@
               <path d="M16 16v4" />
             </svg>
           </div>
-          <h2 class="text-2xl font-bold text-white uppercase">
+          <h2 class="text-2xl font-bold uppercase text-white">
             <!-- 🔑 CLIENT -->
             staff only
           </h2>
-          <p class="mt-1 text-sm tracking-wider text-gray-400 uppercase">
+          <p class="mt-1 text-sm uppercase tracking-wider text-gray-400">
             <!-- 🔑 CLIENT -->
             Power up your workflow
           </p>
@@ -3094,7 +3094,7 @@
             <input
               type="text"
               id="admin-username"
-              class="w-full rounded-lg border-2 border-zinc-700 bg-zinc-800 py-3 pr-4 pl-10 text-white placeholder-gray-500 transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
+              class="w-full rounded-lg border-2 border-zinc-700 bg-zinc-800 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition-colors focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
               placeholder="User ID"
             />
           </div>
@@ -3121,7 +3121,7 @@
             <input
               type="password"
               id="admin-password"
-              class="w-full rounded-lg border-2 border-zinc-700 bg-zinc-800 py-3 pr-4 pl-10 text-white placeholder-gray-500 transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
+              class="w-full rounded-lg border-2 border-zinc-700 bg-zinc-800 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition-colors focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
               placeholder="Password"
             />
           </div>
@@ -3151,7 +3151,7 @@
         <div class="mt-6 flex gap-3">
           <button
             id="cancelBtn"
-            class="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-zinc-700 bg-zinc-800 px-4 py-3 text-white uppercase transition-colors duration-200 hover:bg-zinc-700"
+            class="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-zinc-700 bg-zinc-800 px-4 py-3 uppercase text-white transition-colors duration-200 hover:bg-zinc-700"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -3171,7 +3171,7 @@
           </button>
           <button
             id="loginBtn"
-            class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 font-bold text-white uppercase transition-colors duration-200 hover:bg-orange-600"
+            class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 font-bold uppercase text-white transition-colors duration-200 hover:bg-orange-600"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -3198,7 +3198,7 @@
     <!-- demo video modal -->
     <div
       id="videoModal"
-      class="bg-opacity-90 fixed inset-0 z-50 flex hidden items-center justify-center bg-black backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm"
     >
       <div
         class="animate-fade-in relative flex h-full max-h-screen w-full max-w-7xl items-center justify-center p-4"
@@ -3211,7 +3211,7 @@
         <!-- close button with style -->
         <button
           id="closeVideoBtn"
-          class="absolute top-6 right-6 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xl font-bold text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-orange-600"
+          class="absolute right-6 top-6 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xl font-bold text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-orange-600"
         >
           ✕
         </button>
@@ -3237,28 +3237,28 @@
 
           <!-- decorative elements -->
           <div
-            class="absolute -top-2 -left-2 h-6 w-6 rounded-tl-lg border-t-2 border-l-2 border-orange-400"
+            class="absolute -left-2 -top-2 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-orange-400"
           ></div>
           <div
-            class="absolute -top-2 -right-2 h-6 w-6 rounded-tr-lg border-t-2 border-r-2 border-orange-400"
+            class="absolute -right-2 -top-2 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-orange-400"
           ></div>
           <div
             class="absolute -bottom-2 -left-2 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-orange-400"
           ></div>
           <div
-            class="absolute -right-2 -bottom-2 h-6 w-6 rounded-br-lg border-r-2 border-b-2 border-orange-400"
+            class="absolute -bottom-2 -right-2 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-orange-400"
           ></div>
         </div>
 
         <!-- floating particles effect -->
         <div
-          class="absolute top-20 left-20 h-2 w-2 animate-ping rounded-full bg-orange-400"
+          class="absolute left-20 top-20 h-2 w-2 animate-ping rounded-full bg-orange-400"
         ></div>
         <div
-          class="absolute right-32 bottom-32 h-3 w-3 animate-pulse rounded-full bg-orange-300"
+          class="absolute bottom-32 right-32 h-3 w-3 animate-pulse rounded-full bg-orange-300"
         ></div>
         <div
-          class="absolute top-40 right-24 h-1 w-1 animate-bounce rounded-full bg-white"
+          class="absolute right-24 top-40 h-1 w-1 animate-bounce rounded-full bg-white"
         ></div>
 
         <!-- video title overlay -->

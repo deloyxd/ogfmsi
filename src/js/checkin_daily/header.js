@@ -1,19 +1,19 @@
-import modal from "../admin_main.js";
-import content from "./content.js";
+import modal from '../admin_main.js';
+import content from './content.js';
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener('DOMContentLoaded', function () {
   const mainBtn = Array.from(
-    document.querySelectorAll(".section-main-btn")
-  ).find((btn) => btn.dataset.section === "checkin_daily");
-  mainBtn.addEventListener("click", () => {
+    document.querySelectorAll('.section-main-btn')
+  ).find((btn) => btn.dataset.section === 'checkin_daily');
+  mainBtn.addEventListener('click', () => {
     const inputs = {
       image: {
-        src: "/src/images/client_logo.jpg",
-        type: "normal",
+        src: '/src/images/client_logo.jpg',
+        type: 'normal',
         short: [
-          { placeholder: "First name", value: "", required: true },
-          { placeholder: "Last name", value: "", required: true },
-          { placeholder: "Email / contact", value: "" },
+          { placeholder: 'First name', value: '', required: true },
+          { placeholder: 'Last name', value: '', required: true },
+          { placeholder: 'Email / contact', value: '' },
         ],
       },
     };

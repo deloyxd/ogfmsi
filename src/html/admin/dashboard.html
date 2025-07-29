@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -33,7 +33,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body
-    class="min-h-screen cursor-default overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-x-hidden"
+    class="min-h-screen cursor-default overflow-y-auto overflow-x-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black"
   >
     <!-- 🔴 README: comments with 🔥 are project main components -->
 
@@ -42,10 +42,10 @@
 
     <!-- 🔥 sidebar 🔥 -->
     <aside
-      class="fixed top-0 left-0 z-50 h-screen w-48 border-r border-gray-700 bg-gray-800 shadow-2xl xl:w-64 flexbox"
+      class="flexbox fixed left-0 top-0 z-50 h-screen w-48 border-r border-gray-700 bg-gray-800 shadow-2xl xl:w-64"
     >
       <!-- header -->
-      <header class="border-b border-gray-700 p-6 flex-shrink-0">
+      <header class="flex-shrink-0 border-b border-gray-700 p-6">
         <!-- 🔑 CLIENT -->
         <p class="text-xl font-bold text-white">Fitworx Gym</p>
         <p class="text-sm text-gray-400">Welcome, User!</p>
@@ -56,7 +56,7 @@
       </header>
 
       <!-- body -->
-      <nav class="flex-1 scrollbar-dark max-h-[calc(100vh-160px)] pt-4">
+      <nav class="scrollbar-dark max-h-[calc(100vh-160px)] flex-1 pt-4">
         <ul class="space-y-2 px-4">
           <li>
             <button class="active sidebar-main-btn" data-section="dashboard">
@@ -64,10 +64,10 @@
               Dashboard
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -90,26 +90,26 @@
               ></i>
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
               </div>
             </button>
-            <ul class="mt-2 ml-4 hidden space-y-1" id="checkin-dropdown">
+            <ul class="ml-4 mt-2 hidden space-y-1" id="checkin-dropdown">
               <li>
                 <button class="sidebar-sub-btn" data-section="checkin-daily">
                   <i class="fas fa-ticket-simple mr-3"></i>
                   Daily Pass
 
                   <!-- red dot -->
-                  <div class="absolute top-2 right-2 hidden">
+                  <div class="absolute right-2 top-2 hidden">
                     <div class="relative h-2 w-2">
                       <div
-                        class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                        class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                       ></div>
                       <div
                         class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -124,10 +124,10 @@
                   Monthly Pass
 
                   <!-- red dot -->
-                  <div class="absolute top-2 right-2 hidden">
+                  <div class="absolute right-2 top-2 hidden">
                     <div class="relative h-2 w-2">
                       <div
-                        class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                        class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                       ></div>
                       <div
                         class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -144,10 +144,10 @@
               Equipment
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -160,10 +160,10 @@
               Reservation
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -176,10 +176,10 @@
               Billing
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -192,10 +192,10 @@
               Reports
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -208,10 +208,10 @@
               Data Sync
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -224,10 +224,10 @@
               Settings
 
               <!-- red dot -->
-              <div class="absolute top-2 right-2 hidden">
+              <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                   <div
-                    class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                    class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                   ></div>
                   <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
                 </div>
@@ -239,7 +239,7 @@
 
       <!-- footer -->
       <footer
-        class="flex-shrink-0 border-t border-gray-700 p-2 2xl:p-4 bg-gray-800 2xl:h-[80px]"
+        class="flex-shrink-0 border-t border-gray-700 bg-gray-800 p-2 2xl:h-[80px] 2xl:p-4"
       >
         <button
           id="logout"
@@ -252,11 +252,11 @@
     </aside>
 
     <!-- main -->
-    <div class="min-h-screen ml-48 p-4 xl:ml-64 2xl:p-8">
+    <div class="ml-48 min-h-screen p-4 xl:ml-64 2xl:p-8">
       <!-- 🔥 dashboard 🔥 -->
       <section id="dashboard-section" class="section gap-4 2xl:gap-8">
         <!-- header -->
-        <header class="section-h p-4 2xl:p-8 from-orange-500 to-red-500">
+        <header class="section-h from-orange-500 to-red-500 p-4 2xl:p-8">
           <!-- start -->
           <div class="section-h2">
             <div class="section-h2-h">
@@ -274,17 +274,17 @@
           <div class="section-h-c bg-orange-500">
             <div
               id="dashboardHeaderContent"
-              class="w-[235px] 2xl:w-[302px] font-bold text-orange-300 text-sm xl:text-base 2xl:text-lg text-center"
+              class="w-[235px] text-center text-sm font-bold text-orange-300 xl:text-base 2xl:w-[302px] 2xl:text-lg"
             >
               There's no news yet. Create one! 👉
             </div>
             <button
-              class="announcementBtn hidden text-violet-500 relative h-full w-36 skew-x-24 border-x-2 border-white duration-300 hover:scale-105 xl:w-40 2xl:w-48 overflow-hidden"
+              class="announcementBtn skew-x-24 relative hidden h-full w-36 overflow-hidden border-x-2 border-white text-violet-500 duration-300 hover:scale-105 xl:w-40 2xl:w-48"
             >
               <img
                 src="/src/images/carousel_image_2.jpg"
                 alt="default announcement image"
-                class="object-cover full"
+                class="full object-cover"
               />
               <div class="abs-f backdrop-blur-[2px]"></div>
               <div
@@ -292,7 +292,7 @@
               >
                 <p class="text-xs xl:text-base 2xl:text-lg"></p>
                 <p
-                  class="-mt-1 -mb-1 text-base xl:text-xl 2xl:text-2xl text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
+                  class="-mb-1 -mt-1 text-base text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)] xl:text-xl 2xl:text-2xl"
                 ></p>
                 <p class="text-sm xl:text-lg 2xl:text-xl"></p>
               </div>
@@ -305,7 +305,7 @@
               data-section="dashboard"
               data-title="Create Announcement 📢"
               data-subtitle="Announcement form"
-              class="section-main-btn active:scale-95 active:translate-y-1 active:shadow-none text-violet-500 hover:bg-violet-500 active:bg-violet-600 hover:shadow-violet-700"
+              class="section-main-btn text-violet-500 hover:bg-violet-500 hover:shadow-violet-700 active:translate-y-1 active:scale-95 active:bg-violet-600 active:shadow-none"
             >
               Announce 📢
             </button>
@@ -322,7 +322,7 @@
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-5 lg:gap-4">
           <div
             data-section="dashboard"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-orange-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-orange-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average daily earning"
@@ -334,14 +334,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Avg <b class="text-orange-500">Daily</b> Earning
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="dashboard"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-orange-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-orange-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average weekly earning"
@@ -353,14 +353,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Avg <b class="text-orange-500">Weekly</b> Earning
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="dashboard"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-orange-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-orange-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average monthly earning"
@@ -372,14 +372,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Avg <b class="text-orange-500">Monthly</b> Earning
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="dashboard"
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-orange-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-orange-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Active <b class="text-orange-500">Monthly</b> Passes
@@ -388,7 +388,7 @@
           </div>
           <div
             data-section="dashboard"
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-orange-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-orange-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Active <b class="text-orange-500">Reservations</b>
@@ -400,7 +400,7 @@
         <!-- content -->
         <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
           <!-- section 1 -->
-          <div class="col-span-1 flexbox 2xl:col-span-8">
+          <div class="flexbox col-span-1 2xl:col-span-8">
             <div class="section-content border-orange-500">
               <!-- header -->
               <div class="section-content-h h-[96px]">
@@ -415,7 +415,7 @@
                       Monthly pass growth tracker
                     </p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
                   </button>
                   <button
@@ -427,14 +427,14 @@
                       Users due for monthly pass renewals
                     </p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -446,12 +446,12 @@
 
                 <div class="section-content-h-f">
                   <!-- search bar -->
-                  <div class="hidden relative mr-1">
+                  <div class="relative mr-1 hidden">
                     <input
                       autocomplete="off"
                       id="dashboardSection1Search"
                       placeholder="Search keyword..."
-                      class="section-content-search-main w-48 xl:w-56 2xl:w-64 focus:ring-orange-500"
+                      class="section-content-search-main w-48 focus:ring-orange-500 xl:w-56 2xl:w-64"
                     />
                     <div class="section-content-searchicon">
                       <svg
@@ -476,7 +476,7 @@
                   >
                     <div
                       id="dashboard_section1_settings"
-                      class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                      class="pb-[4px] pl-[1px] group-hover:animate-spin"
                     >
                       ⚙
                     </div>
@@ -492,7 +492,7 @@
                 <!-- tab 2 content -->
                 <div
                   id="dashboard_renewal"
-                  class="h-[375px] hidden scrollbar-light"
+                  class="scrollbar-light hidden h-[375px]"
                 >
                   <div class="section-content-list-title grid-cols-3">
                     <p>User ID</p>
@@ -504,13 +504,13 @@
                   </div>
                   <div
                     id="dashboardRenewalEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No upcoming monthly pass renewals yet</p>
                     <p class="text-sm">Range: Two weeks notice</p>
                   </div>
                   <div
-                    class="relative grid grid-cols-3 items-center hidden border-b border-gray-200 p-4 hover:bg-white duration-300"
+                    class="relative grid hidden grid-cols-3 items-center border-b border-gray-200 p-4 duration-300 hover:bg-white"
                   >
                     <p class="font-medium text-gray-900"></p>
                     <div class="flex items-center gap-3">
@@ -523,7 +523,7 @@
                     <p class="pl-4 font-medium text-gray-900"></p>
                     <button
                       id="renewBtn"
-                      class="absolute right-0 mr-4 rounded-lg bg-sky-500 px-4 py-2 text-white hover:bg-sky-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none hover:-translate-y-1 hover:shadow-lg hover:shadow-sky-400"
+                      class="absolute right-0 mr-4 rounded-lg bg-sky-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-sky-600 hover:shadow-lg hover:shadow-sky-400 active:scale-95 active:shadow-none"
                     >
                       Renew 🎫
                     </button>
@@ -534,8 +534,8 @@
           </div>
 
           <!-- section 2 -->
-          <div class="col-span-1 flexbox 2xl:col-span-4">
-            <div class="section-content-base p-6 border-orange-500">
+          <div class="flexbox col-span-1 2xl:col-span-4">
+            <div class="section-content-base border-orange-500 p-6">
               <div class="mb-6 flex items-center justify-between gap-3">
                 <div>
                   <p class="text-lg font-bold">User Statistic Analysis</p>
@@ -550,7 +550,7 @@
                 >
                   <div
                     id="dashboard_section2_settings"
-                    class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                    class="pb-[4px] pl-[1px] group-hover:animate-spin"
                   >
                     ⚙
                   </div>
@@ -570,7 +570,7 @@
         class="section hidden gap-4 2xl:gap-8"
       >
         <!-- header -->
-        <header class="section-h p-4 2xl:p-8 from-blue-500 to-indigo-500">
+        <header class="section-h from-blue-500 to-indigo-500 p-4 2xl:p-8">
           <!-- start -->
           <div class="section-h2">
             <div class="section-h2-h">
@@ -587,7 +587,7 @@
           <!-- middle -->
           <div class="section-h-c bg-blue-500">
             <div
-              class="w-[235px] 2xl:w-[302px] font-bold text-white text-sm xl:text-base 2xl:text-lg text-center"
+              class="w-[235px] text-center text-sm font-bold text-white xl:text-base 2xl:w-[302px] 2xl:text-lg"
             >
               <p id="checkinDailyHeaderContent" class="skew-x-12">
                 📆 July 25, 2025 ⌚ 7:30AM
@@ -601,7 +601,7 @@
               data-section="checkin_daily"
               data-title="Register New User 💪"
               data-subtitle="New user form"
-              class="section-main-btn active:scale-95 active:translate-y-1 active:shadow-none text-green-500 hover:bg-green-500 active:bg-green-600 hover:shadow-green-700"
+              class="section-main-btn text-green-500 hover:bg-green-500 hover:shadow-green-700 active:translate-y-1 active:scale-95 active:bg-green-600 active:shadow-none"
             >
               Register New User 💪
             </button>
@@ -617,7 +617,7 @@
         <!-- stats -->
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-4 lg:gap-4">
           <div
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-blue-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               <b class="text-blue-500">Today's</b> Check-Ins
@@ -626,7 +626,7 @@
           </div>
           <div
             data-section="checkin_daily"
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-blue-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average daily check-in"
@@ -642,7 +642,7 @@
           </div>
           <div
             data-section="checkin_daily"
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-blue-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average weekly check-in"
@@ -658,7 +658,7 @@
           </div>
           <div
             data-section="checkin_daily"
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-blue-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average monthly check-in"
@@ -677,7 +677,7 @@
         <!-- content -->
         <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
           <!-- section 1 -->
-          <div class="col-span-1 flexbox 2xl:col-span-8">
+          <div class="flexbox col-span-1 2xl:col-span-8">
             <div class="section-content border-blue-500">
               <!-- header -->
               <div class="section-content-h h-[96px]">
@@ -690,14 +690,14 @@
                     <p>Registered Daily Users</p>
                     <p class="text-sm text-gray-500">Daily users monitoring</p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -714,14 +714,14 @@
                       Today's user daily check-ins
                     </p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -738,7 +738,7 @@
                       autocomplete="off"
                       id="checkinDailySection1Search"
                       placeholder="Search keyword..."
-                      class="section-content-search-main w-48 xl:w-56 2xl:w-64 focus:ring-blue-500"
+                      class="section-content-search-main w-48 focus:ring-blue-500 xl:w-56 2xl:w-64"
                     />
                     <div class="section-content-searchicon">
                       <svg
@@ -763,7 +763,7 @@
                   >
                     <div
                       id="checkin_daily_section1_settings"
-                      class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                      class="pb-[4px] pl-[1px] group-hover:animate-spin"
                     >
                       ⚙
                     </div>
@@ -774,7 +774,7 @@
               <!-- content -->
               <div class="p-6">
                 <!-- tab 1 content -->
-                <div id="checkin_daily_all" class="h-[375px] scrollbar-light">
+                <div id="checkin_daily_all" class="scrollbar-light h-[375px]">
                   <div class="section-content-list-title grid-cols-3">
                     <p>User ID</p>
                     <p class="pl-4">User</p>
@@ -785,12 +785,12 @@
                   </div>
                   <div
                     id="checkinDailyAllEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No registered users yet</p>
                   </div>
                   <div
-                    class="relative grid grid-cols-3 items-center hidden border-b border-gray-200 p-4 hover:bg-white duration-300 font-medium text-gray-900"
+                    class="relative grid hidden grid-cols-3 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white"
                   >
                     <p></p>
                     <div class="flex items-center gap-3">
@@ -803,7 +803,7 @@
                     <p class="pl-4"></p>
                     <button
                       id="userDetailsBtn"
-                      class="absolute right-0 mr-4 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-orange-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-orange-400"
+                      class="absolute right-0 mr-4 rounded-lg bg-orange-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-400 active:translate-y-1 active:scale-95 active:bg-orange-700 active:shadow-none"
                     >
                       Details ⚙
                     </button>
@@ -813,7 +813,7 @@
                 <!-- tab 2 content -->
                 <div
                   id="checkin_daily_recent"
-                  class="h-[375px] hidden scrollbar-light"
+                  class="scrollbar-light hidden h-[375px]"
                 >
                   <div class="section-content-list-title grid-cols-3">
                     <p>User ID</p>
@@ -825,12 +825,12 @@
                   </div>
                   <div
                     id="checkinDailyRecentEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No check-ins today</p>
                   </div>
                   <div
-                    class="relative grid grid-cols-3 items-center hidden border-b border-gray-200 p-4 hover:bg-white duration-300 font-medium text-gray-900"
+                    class="relative grid hidden grid-cols-3 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white"
                   >
                     <p></p>
                     <div class="flex items-center gap-3">
@@ -841,16 +841,16 @@
                       <p></p>
                     </div>
                     <p class="pl-4"></p>
-                    <div class="absolute right-0 mr-4 gap-3 flex">
+                    <div class="absolute right-0 mr-4 flex gap-3">
                       <button
                         id="userDetailsBtn"
-                        class="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-orange-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-orange-400"
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-400 active:translate-y-1 active:scale-95 active:bg-orange-700 active:shadow-none"
                       >
                         Details ⚙
                       </button>
                       <button
                         id="userVoidBtn"
-                        class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-red-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-red-400"
+                        class="rounded-lg bg-red-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-red-600 hover:shadow-lg hover:shadow-red-400 active:translate-y-1 active:scale-95 active:bg-red-700 active:shadow-none"
                       >
                         Void 📕
                       </button>
@@ -862,8 +862,8 @@
           </div>
 
           <!-- section 2 -->
-          <div class="col-span-1 flexbox 2xl:col-span-4">
-            <div class="section-content-base p-6 border-blue-500">
+          <div class="flexbox col-span-1 2xl:col-span-4">
+            <div class="section-content-base border-blue-500 p-6">
               <div class="mb-6 flex items-center justify-between gap-3">
                 <div>
                   <p class="text-lg font-bold">Quick Check-In</p>
@@ -877,7 +877,7 @@
                 >
                   <div
                     id="checkin_daily_section2_settings"
-                    class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                    class="pb-[4px] pl-[1px] group-hover:animate-spin"
                   >
                     ⚙
                   </div>
@@ -887,7 +887,7 @@
                 <div class="w-full">
                   <div
                     id="checkinDailySection2Empty"
-                    class="section-content-list-empty items-center justify-center w-full h-[250px] bg-gray-200 rounded-lg"
+                    class="section-content-list-empty h-[250px] w-full items-center justify-center rounded-lg bg-gray-200"
                   >
                     <p>Status: No connection</p>
                     <p class="text-sm">No uploaded QR yet</p>
@@ -921,7 +921,7 @@
                 </div>
                 <button
                   id="checkinDailySection2MainBtn"
-                  class="section-content-submit active:scale-95 active:bg-blue-700 bg-blue-500 hover:bg-blue-600 hover:shadow-blue-400"
+                  class="section-content-submit bg-blue-500 hover:bg-blue-600 hover:shadow-blue-400 active:scale-95 active:bg-blue-700"
                 >
                   Submit Check-In
                 </button>
@@ -934,7 +934,7 @@
       <!-- 🔥 billing 🔥 -->
       <section id="billing-section" class="section hidden gap-4 2xl:gap-8">
         <!-- header -->
-        <header class="section-h p-4 2xl:p-8 from-green-500 to-green-700">
+        <header class="section-h from-green-500 to-green-700 p-4 2xl:p-8">
           <!-- start -->
 
           <div class="section-h2">
@@ -952,7 +952,7 @@
           <!-- middle -->
           <div class="section-h-c bg-green-500">
             <div
-              class="w-[235px] 2xl:w-[302px] font-bold text-green-300 text-sm xl:text-base 2xl:text-lg text-center"
+              class="w-[235px] text-center text-sm font-bold text-green-300 xl:text-base 2xl:w-[302px] 2xl:text-lg"
             ></div>
           </div>
 
@@ -960,7 +960,7 @@
           <div class="flex gap-2 2xl:gap-4">
             <button
               data-section="billing"
-              class="section-main-btn active:scale-95 active:translate-y-1 active:shadow-none text-yellow-500 hover:bg-yellow-500 active:bg-yellow-600 hover:shadow-yellow-700"
+              class="section-main-btn text-yellow-500 hover:bg-yellow-500 hover:shadow-yellow-700 active:translate-y-1 active:scale-95 active:bg-yellow-600 active:shadow-none"
             >
               Manual Transaction 💳
             </button>
@@ -977,7 +977,7 @@
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-5 lg:gap-4">
           <div
             data-section="billing"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-green-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-green-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="today cash sales"
@@ -989,14 +989,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               <b class="text-green-500">Today's</b> Cash Sales
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="billing"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-green-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-green-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="today cashless sales"
@@ -1008,14 +1008,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               <b class="text-green-500">Today's</b> Cashless Sales
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="billing"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-green-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-green-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average daily sales"
@@ -1027,14 +1027,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Avg <b class="text-green-500">Daily</b> Sales
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="billing"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-green-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-green-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average weekly sales"
@@ -1046,14 +1046,14 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Avg <b class="text-green-500">Weekly</b> Sales
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
           <div
             data-section="billing"
-            class="section-stats min-h-[86px] xl:min-h-[108px] border-green-500 p-3 xl:p-4"
+            class="section-stats min-h-[86px] border-green-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <div
               data-type="average monthly sales"
@@ -1065,17 +1065,17 @@
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               Avg <b class="text-green-500">Monthly</b> Sales
             </p>
-            <p class="text-xs bottom-0 mt-4 lg:absolute lg:mb-5 xl:text-sm">
+            <p class="bottom-0 mt-4 text-xs lg:absolute lg:mb-5 xl:text-sm">
               (Click to show)
             </p>
-            <p class="hidden section-stats-c text-2xl xl:text-3xl">0</p>
+            <p class="section-stats-c hidden text-2xl xl:text-3xl">0</p>
           </div>
         </div>
 
         <!-- content -->
         <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
           <!-- section 1 -->
-          <div class="col-span-1 flexbox 2xl:col-span-8">
+          <div class="flexbox col-span-1 2xl:col-span-8">
             <div class="section-content border-green-500">
               <!-- header -->
               <div class="section-content-h h-[96px]">
@@ -1090,14 +1090,14 @@
                       Today's total complete transaction
                     </p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -1114,14 +1114,14 @@
                       Total complete transaction
                     </p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -1138,7 +1138,7 @@
                       autocomplete="off"
                       id="billingSection1Search"
                       placeholder="Search keyword..."
-                      class="section-content-search-main w-48 xl:w-56 2xl:w-64 focus:ring-green-500"
+                      class="section-content-search-main w-48 focus:ring-green-500 xl:w-56 2xl:w-64"
                     />
                     <div class="section-content-searchicon">
                       <svg
@@ -1163,7 +1163,7 @@
                   >
                     <div
                       id="billing_section1_settings"
-                      class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                      class="pb-[4px] pl-[1px] group-hover:animate-spin"
                     >
                       ⚙
                     </div>
@@ -1176,7 +1176,7 @@
                 <!-- tab 1 content -->
                 <div
                   id="billing_complete_recent"
-                  class="h-[375px] scrollbar-light"
+                  class="scrollbar-light h-[375px]"
                 >
                   <div class="section-content-list-title grid-cols-6">
                     <p class="col-span-1">Transaction ID</p>
@@ -1188,26 +1188,26 @@
                   </div>
                   <div
                     id="billingCompleteRecentEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No complete transactions today</p>
                   </div>
                   <div
-                    class="relative hidden grid grid-cols-6 items-center border-b border-gray-200 p-4 hover:bg-white duration-300 font-medium text-gray-900"
+                    class="relative grid hidden grid-cols-6 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white"
                   >
                     <p class="col-span-1"></p>
                     <p class="col-span-2 pl-4"></p>
                     <p class="col-span-3 pl-4"></p>
-                    <div class="absolute right-0 mr-4 gap-3 flex">
+                    <div class="absolute right-0 mr-4 flex gap-3">
                       <button
                         id="billingDetailsBtn"
-                        class="rounded-lg bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-yellow-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-yellow-400"
+                        class="rounded-lg bg-yellow-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600 hover:shadow-lg hover:shadow-yellow-400 active:translate-y-1 active:scale-95 active:bg-yellow-700 active:shadow-none"
                       >
                         Details 📒
                       </button>
                       <button
                         id="billingVoidBtn"
-                        class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-red-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-red-400"
+                        class="rounded-lg bg-red-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-red-600 hover:shadow-lg hover:shadow-red-400 active:translate-y-1 active:scale-95 active:bg-red-700 active:shadow-none"
                       >
                         Void 📕
                       </button>
@@ -1218,7 +1218,7 @@
                 <!-- tab 2 content -->
                 <div
                   id="billing_complete_all"
-                  class="hidden h-[375px] scrollbar-light"
+                  class="scrollbar-light hidden h-[375px]"
                 >
                   <div class="section-content-list-title grid-cols-6">
                     <p class="col-span-1">Transaction ID</p>
@@ -1230,26 +1230,26 @@
                   </div>
                   <div
                     id="billingCompleteAllEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No complete transactions yet</p>
                   </div>
                   <div
-                    class="relative hidden grid grid-cols-6 items-center border-b border-gray-200 p-4 hover:bg-white duration-300 font-medium text-gray-900"
+                    class="relative grid hidden grid-cols-6 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white"
                   >
                     <p class="col-span-1"></p>
                     <p class="col-span-2 pl-4"></p>
                     <p class="col-span-3 pl-4"></p>
-                    <div class="absolute right-0 mr-4 gap-3 flex">
+                    <div class="absolute right-0 mr-4 flex gap-3">
                       <button
                         id="billingDetailsBtn"
-                        class="rounded-lg bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-yellow-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-yellow-400"
+                        class="rounded-lg bg-yellow-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600 hover:shadow-lg hover:shadow-yellow-400 active:translate-y-1 active:scale-95 active:bg-yellow-700 active:shadow-none"
                       >
                         Details 📒
                       </button>
                       <button
                         id="billingVoidBtn"
-                        class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-red-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-red-400"
+                        class="rounded-lg bg-red-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-red-600 hover:shadow-lg hover:shadow-red-400 active:translate-y-1 active:scale-95 active:bg-red-700 active:shadow-none"
                       >
                         Void 📕
                       </button>
@@ -1261,8 +1261,8 @@
           </div>
 
           <!-- section 2 -->
-          <div class="col-span-1 flexbox 2xl:col-span-4">
-            <div class="section-content-base p-6 border-green-500">
+          <div class="flexbox col-span-1 2xl:col-span-4">
+            <div class="section-content-base border-green-500 p-6">
               <div class="mb-6 flex items-center justify-between gap-3">
                 <div>
                   <p class="text-lg font-bold">Pending Payment Queue</p>
@@ -1276,7 +1276,7 @@
                 >
                   <div
                     id="billing_section2_settings"
-                    class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                    class="pb-[4px] pl-[1px] group-hover:animate-spin"
                   >
                     ⚙
                   </div>
@@ -1284,7 +1284,7 @@
               </div>
               <div class="flexbox items-center gap-6">
                 <div
-                  class="section-content-list-empty w-full h-[250px] bg-gray-200 rounded-lg"
+                  class="section-content-list-empty h-[250px] w-full rounded-lg bg-gray-200"
                 >
                   <div
                     id="billingSection2Empty"
@@ -1292,7 +1292,7 @@
                   >
                     <p class="self-center">No pending payment yet</p>
                   </div>
-                  <p class="hidden section-content-list-item"></p>
+                  <p class="section-content-list-item hidden"></p>
                 </div>
                 <div class="relative w-full">
                   <input
@@ -1322,7 +1322,7 @@
                 </div>
                 <button
                   id="billingSection2MainBtn"
-                  class="section-content-submit active:scale-95 active:bg-green-700 bg-green-500 hover:bg-green-600 hover:shadow-green-400"
+                  class="section-content-submit bg-green-500 hover:bg-green-600 hover:shadow-green-400 active:scale-95 active:bg-green-700"
                 >
                   Process Transaction
                 </button>
@@ -1335,7 +1335,7 @@
       <!-- 🔥 data sync 🔥 -->
       <section id="data-sync-section" class="section hidden gap-4 2xl:gap-8">
         <!-- header -->
-        <header class="section-h p-4 2xl:p-8 from-pink-500 to-rose-500">
+        <header class="section-h from-pink-500 to-rose-500 p-4 2xl:p-8">
           <!-- start -->
           <div class="section-h2">
             <div class="section-h2-h">
@@ -1352,7 +1352,7 @@
           <!-- middle -->
           <div class="section-h-c bg-pink-500">
             <div
-              class="w-[235px] 2xl:w-[302px] font-bold text-white text-sm xl:text-base 2xl:text-lg text-center"
+              class="w-[235px] text-center text-sm font-bold text-white xl:text-base 2xl:w-[302px] 2xl:text-lg"
             >
               <p
                 id="dataSyncHeaderContent"
@@ -1369,7 +1369,7 @@
           <div class="flex gap-2 2xl:gap-4">
             <button
               data-section="data_sync"
-              class="section-main-btn active:scale-95 active:translate-y-1 active:shadow-none text-indigo-500 hover:bg-indigo-500 active:bg-indigo-600 hover:shadow-indigo-700"
+              class="section-main-btn text-indigo-500 hover:bg-indigo-500 hover:shadow-indigo-700 active:translate-y-1 active:scale-95 active:bg-indigo-600 active:shadow-none"
             >
               Switch 🧠 Sync Status
             </button>
@@ -1385,7 +1385,7 @@
         <!-- stats -->
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-4">
           <div
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-pink-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-pink-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               <b class="text-pink-500">Today's</b> Synced Data
@@ -1393,7 +1393,7 @@
             <p class="section-stats-c text-2xl xl:text-3xl">0</p>
           </div>
           <div
-            class="section-stats-base min-h-[86px] xl:min-h-[108px] border-pink-500 p-3 xl:p-4"
+            class="section-stats-base min-h-[86px] border-pink-500 p-3 xl:min-h-[108px] xl:p-4"
           >
             <p class="section-stats-h xl:mb-2 xl:text-lg">
               <b class="text-pink-500">Total</b> Synced Data
@@ -1405,7 +1405,7 @@
         <!-- content -->
         <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
           <!-- section 1 -->
-          <div class="col-span-1 flexbox 2xl:col-span-8">
+          <div class="flexbox col-span-1 2xl:col-span-8">
             <div class="section-content border-pink-500">
               <!-- header -->
               <div class="section-content-h h-[96px]">
@@ -1420,14 +1420,14 @@
                       Today's total synced data log
                     </p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -1442,14 +1442,14 @@
                     <p>Total Synced Data</p>
                     <p class="text-sm text-gray-500">All synced data log</p>
                     <i
-                      class="fas fa-spinner text-gray-400 animate-spin hidden"
+                      class="fas fa-spinner hidden animate-spin text-gray-400"
                     ></i>
 
                     <!-- red dot -->
-                    <div class="absolute top-2 right-2 hidden">
+                    <div class="absolute right-2 top-2 hidden">
                       <div class="relative h-2 w-2">
                         <div
-                          class="absolute full scale-105 rounded-full bg-red-500 animate-ping opacity-75"
+                          class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"
                         ></div>
                         <div
                           class="absolute h-2 w-2 rounded-full bg-red-500"
@@ -1466,7 +1466,7 @@
                       autocomplete="off"
                       id="dataSyncSection1Search"
                       placeholder="Search keyword..."
-                      class="section-content-search-main w-48 xl:w-56 2xl:w-64 focus:ring-pink-500"
+                      class="section-content-search-main w-48 focus:ring-pink-500 xl:w-56 2xl:w-64"
                     />
                     <div class="section-content-searchicon">
                       <svg
@@ -1491,7 +1491,7 @@
                   >
                     <div
                       id="data_sync_section1_settings"
-                      class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                      class="pb-[4px] pl-[1px] group-hover:animate-spin"
                     >
                       ⚙
                     </div>
@@ -1502,7 +1502,7 @@
               <!-- content -->
               <div class="p-6">
                 <!-- tab 1 content -->
-                <div id="data_sync_recent" class="h-[375px] scrollbar-light">
+                <div id="data_sync_recent" class="scrollbar-light h-[375px]">
                   <div class="section-content-list-title grid-cols-6">
                     <p class="col-span-1">Actor</p>
                     <p class="col-span-3 pl-4">Action</p>
@@ -1513,19 +1513,19 @@
                   </div>
                   <div
                     id="dataSyncRecentEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No synced data today</p>
                   </div>
                   <div
-                    class="relative hidden grid grid-cols-6 items-center border-b border-gray-200 p-4 hover:bg-white duration-300 font-medium text-gray-900"
+                    class="relative grid hidden grid-cols-6 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white"
                   >
                     <p class="col-span-1"></p>
                     <p class="col-span-3 pl-4"></p>
                     <p class="col-span-2 pl-4"></p>
                     <button
                       id="dataSyncDetailsBtn"
-                      class="absolute right-0 mr-4 rounded-lg bg-rose-500 px-4 py-2 text-white hover:bg-rose-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-rose-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-rose-400"
+                      class="absolute right-0 mr-4 rounded-lg bg-rose-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-400 active:translate-y-1 active:scale-95 active:bg-rose-700 active:shadow-none"
                     >
                       Data 🧠
                     </button>
@@ -1535,7 +1535,7 @@
                 <!-- tab 2 content -->
                 <div
                   id="data_sync_all"
-                  class="hidden h-[375px] scrollbar-light"
+                  class="scrollbar-light hidden h-[375px]"
                 >
                   <div class="section-content-list-title grid-cols-6">
                     <p class="col-span-1">Actor</p>
@@ -1547,19 +1547,19 @@
                   </div>
                   <div
                     id="dataSyncAllEmpty"
-                    class="h-[325px] section-content-list-empty items-center justify-center"
+                    class="section-content-list-empty h-[325px] items-center justify-center"
                   >
                     <p>No synced data yet</p>
                   </div>
                   <div
-                    class="relative hidden grid grid-cols-6 items-center border-b border-gray-200 p-4 hover:bg-white duration-300 font-medium text-gray-900"
+                    class="relative grid hidden grid-cols-6 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white"
                   >
                     <p class="col-span-1"></p>
                     <p class="col-span-3 pl-4"></p>
                     <p class="col-span-2 pl-4"></p>
                     <button
                       id="dataSyncDetailsBtn"
-                      class="absolute right-0 mr-4 rounded-lg bg-rose-500 px-4 py-2 text-white hover:bg-rose-600 duration-300 hover:scale-105 active:scale-95 active:shadow-none active:translate-y-1 active:bg-rose-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-rose-400"
+                      class="absolute right-0 mr-4 rounded-lg bg-rose-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-400 active:translate-y-1 active:scale-95 active:bg-rose-700 active:shadow-none"
                     >
                       Data 🧠
                     </button>
@@ -1570,8 +1570,8 @@
           </div>
 
           <!-- section 2 -->
-          <div class="col-span-1 flexbox 2xl:col-span-4">
-            <div class="section-content-base p-6 border-pink-500">
+          <div class="flexbox col-span-1 2xl:col-span-4">
+            <div class="section-content-base border-pink-500 p-6">
               <div class="mb-6 flex items-center justify-between gap-3">
                 <div>
                   <p class="text-lg font-bold">Sync Queue</p>
@@ -1585,7 +1585,7 @@
                 >
                   <div
                     id="data_sync_section2_settings"
-                    class="group-hover:animate-spin pb-[4px] pl-[1px]"
+                    class="pb-[4px] pl-[1px] group-hover:animate-spin"
                   >
                     ⚙
                   </div>
@@ -1593,7 +1593,7 @@
               </div>
               <div class="flexbox items-center gap-6">
                 <div
-                  class="section-content-list-empty w-full h-[250px] bg-gray-200 rounded-lg"
+                  class="section-content-list-empty h-[250px] w-full rounded-lg bg-gray-200"
                 >
                   <div
                     id="dataSyncSection2Empty"
@@ -1601,7 +1601,7 @@
                   >
                     <p class="self-center">No data to sync yet</p>
                   </div>
-                  <p class="hidden section-content-list-item"></p>
+                  <p class="section-content-list-item hidden"></p>
                 </div>
                 <div class="relative w-full">
                   <input
@@ -1631,7 +1631,7 @@
                 </div>
                 <button
                   id="dataSyncSection2MainBtn"
-                  class="section-content-submit active:scale-95 active:bg-pink-700 bg-pink-500 hover:bg-pink-600 hover:shadow-pink-400"
+                  class="section-content-submit bg-pink-500 hover:bg-pink-600 hover:shadow-pink-400 active:scale-95 active:bg-pink-700"
                 >
                   Force Dequeue
                 </button>
@@ -1643,140 +1643,8 @@
     </div>
 
     <!-- 🔥 dynamic modal 🔥 -->
-    <dialog
-      id="modalContainer"
-      data-color="amber"
-      class="bg-black/30 opacity-0 hidden flex w-full h-full inset-0 overflow-hidden duration-300 content-center"
-    >
-      <div
-        class="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden m-auto -translate-y-6 scale-95 duration-300"
-      >
-        <div
-          class="bg-gradient-to-br from-amber-500 to-amber-800 p-7 text-white flex flex-col gap-2 text-center"
-        >
-          <p id="modalTitle" class="text-3xl font-medium"></p>
-          <p id="modalSubtitle" class="hidden text-sm"></p>
-        </div>
-        <div class="p-8 flex flex-col">
-          <form class="flex flex-col gap-4">
-            <div class="hidden grid grid-cols-2 gap-6">
-              <div
-                class="relative rounded-lg p-4 border-2 border-gray-300 flex flex-col gap-4 hover:border-amber-500 duration-300"
-              >
-                <label class="font-medium text-sm text-gray-600">Image</label>
-                <img
-                  id="input-image"
-                  class="rounded-lg min-h-[12.5rem] max-h-[9rem] w-full object-cover"
-                />
-                <div
-                  class="hidden absolute inset-0 mt-[3.3rem] mx-4 min-h-[12.5rem] max-h-[9rem] rounded-lg bg-black/30 backdrop-blur-[2px]"
-                ></div>
-                <input
-                  type="file"
-                  id="input-image-upload"
-                  accept="image/*"
-                  class="hidden"
-                />
-                <button
-                  type="button"
-                  class="absolute top-0 right-0 mx-4 my-3.5 text-xs py-1 px-2 bg-gray-200 rounded-lg font-bold text-gray-500 duration-300 hover:bg-amber-500 hover:text-white"
-                >
-                  Upload Photo
-                </button>
-                <div
-                  class="absolute inset-0 mt-[3.3rem] mx-4 min-h-[12.5rem] max-h-[9rem] text-center content-center font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-                >
-                  <p class="text-lg -mb-1"></p>
-                  <p
-                    class="text-4xl text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
-                  ></p>
-                  <p class="text-xl"></p>
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-4">
-                <div class="hidden flex flex-col gap-2 font-medium">
-                  <label class="text-sm text-gray-600"> </label>
-                  <input
-                    autocomplete="off"
-                    class="px-4 py-3 border-2 bg-gray-100 border-gray-300 rounded-md duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
-                    placeholder="Input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="hidden flex flex-col gap-2 font-medium">
-              <label class="text-sm text-gray-600"> </label>
-              <input
-                autocomplete="off"
-                id="input-short"
-                class="px-4 py-3 border-2 bg-gray-100 border-gray-300 rounded-md duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
-                placeholder="Input"
-              />
-            </div>
-
-            <div class="hidden flex flex-col gap-2 font-medium">
-              <label class="text-sm text-gray-600"> </label>
-              <div class="cursor-pointer relative">
-                <select
-                  id="input-spinner"
-                  class="cursor-pointer w-full px-4 py-3 appearance-none border-2 bg-gray-100 border-gray-300 rounded-md duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
-                >
-                  <option
-                    value=""
-                    disabled
-                    selected
-                    class="font-medium"
-                  ></option>
-                  <option value="" class="font-medium"></option>
-                </select>
-                <p class="absolute top-0 right-0 m-4 text-xs text-gray-400">
-                  ▼
-                </p>
-              </div>
-            </div>
-
-            <div class="hidden flex flex-col gap-2 font-medium text-sm">
-              <label class="text-gray-600"> </label>
-              <textarea
-                id="input-large"
-                autocomplete="off"
-                class="resize-none px-4 py-3 border-2 bg-gray-100 border-gray-300 rounded-md duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
-                placeholder="Input"
-                rows="7"
-              ></textarea>
-            </div>
-
-            <div class="hidden flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-600"> </label>
-              <div id="input-radio" class="grid gap-6 h-36">
-                <div
-                  class="hidden cursor-pointer space-y-2 rounded-md bg-gray-100 border-2 border-gray-300 duration-300 hover:border-amber-500 text-center content-center"
-                >
-                  <p class="text-4xl"></p>
-                  <p class="font-medium"></p>
-                  <p class="text-sm text-gray-500"></p>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex gap-4">
-              <button
-                type="button"
-                id="modalSubBtn"
-                class="hidden w-full text-white bg-gray-500 rounded-lg mt-4 p-4 font-bold hover:scale-105 active:scale-95 duration-300 shadow-lg hover:shadow-xl hover:shadow-gray-500 active:shadow-none active:bg-gray-600 hover:bg-gray-400"
-              ></button>
-              <button
-                id="modalMainBtn"
-                type="button"
-                class="w-full text-white bg-amber-600 rounded-lg mt-4 p-4 font-bold hover:scale-105 active:scale-95 duration-300 shadow-lg hover:shadow-xl hover:shadow-amber-600 active:shadow-none active:bg-amber-700 hover:bg-amber-500"
-              ></button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </dialog>
+    <div id="test"></div>
+    <script src="/src/js/test.js"></script>
 
     <!-- main js -->
     <script type="module" src="/src/js/admin_main.js"></script>

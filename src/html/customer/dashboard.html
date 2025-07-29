@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -35,7 +35,7 @@
     </style> -->
   </head>
   <body
-    class="bg-gradient-to-br from-orange-50 to-orange-100 min-h-screen flex flex-col cursor-default relative"
+    class="relative flex min-h-screen cursor-default flex-col bg-gradient-to-br from-orange-50 to-orange-100"
   >
     <!-- 🔴 README: comments with 🔥 are project main components -->
 
@@ -44,22 +44,22 @@
 
     <!-- 🔥 header 🔥 -->
     <nav
-      class="absolute left-0 top-0 bg-orange-700 border-b-4 border-orange-600 text-white sticky top-0 z-50"
+      class="absolute sticky left-0 top-0 z-50 border-b-4 border-orange-600 bg-orange-700 text-white"
     >
       <div
-        class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16"
+        class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4"
       >
         <!-- branding -->
         <header class="flex items-center space-x-4">
           <div class="flex items-center space-x-4">
             <div class="relative">
-              <div class="bg-white rounded-xl p-2 shadow-lg">
+              <div class="rounded-xl bg-white p-2 shadow-lg">
                 <img
                   src="/src/images/client_logo.jpg"
-                  class="h-8 w-8 object-cover rounded-lg"
+                  class="h-8 w-8 rounded-lg object-cover"
                 />
                 <span
-                  class="absolute -top-1 -right-1 block h-4 w-4 bg-green-400 rounded-full border-2 border-white shadow-md animate-pulse"
+                  class="absolute -right-1 -top-1 block h-4 w-4 animate-pulse rounded-full border-2 border-white bg-green-400 shadow-md"
                 ></span>
               </div>
             </div>
@@ -85,7 +85,7 @@
                   <path d="m9 12 2 2 4-4" />
                 </svg>
               </h1>
-              <div class="text-xs text-orange-200 flex gap-1">
+              <div class="flex gap-1 text-xs text-orange-200">
                 Logged in as:
                 <b id="welcomeUser">
                   <svg
@@ -109,25 +109,25 @@
         </header>
 
         <!-- status -->
-        <div class="hidden md:flex items-center space-x-4">
+        <div class="hidden items-center space-x-4 md:flex">
           <!-- info -->
           <div class="flex items-center space-x-6">
             <div class="text-center">
               <div class="flex items-center space-x-2">
-                <span class="text-orange-300 font-bold">🏦</span>
+                <span class="font-bold text-orange-300">🏦</span>
                 <span class="text-sm font-medium">Facility Open</span>
               </div>
-              <div class="text-xs text-orange-200 mt-1">Ready to serve you</div>
+              <div class="mt-1 text-xs text-orange-200">Ready to serve you</div>
             </div>
 
             <div class="border-l border-r border-orange-600 px-6">
               <div class="text-center">
                 <div class="flex items-center space-x-2">
-                  <span class="text-orange-300 font-bold">⏰</span>
+                  <span class="font-bold text-orange-300">⏰</span>
                   <!-- 🔑 CLIENT -->
                   <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
                 </div>
-                <div class="text-xs text-orange-200 mt-1">Operating Hours</div>
+                <div class="mt-1 text-xs text-orange-200">Operating Hours</div>
               </div>
             </div>
 
@@ -146,10 +146,10 @@
           <div class="ml-6">
             <a
               href=""
-              class="inline-flex items-center px-4 py-1.5 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all focus:ring-2 focus:ring-orange-100 text-xs font-medium"
+              class="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-xs font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
             >
               <svg
-                class="w-3.5 h-3.5 mr-1.5"
+                class="mr-1.5 h-3.5 w-3.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -171,7 +171,7 @@
           <button
             type="button"
             id="mobile-menu-button"
-            class="inline-flex items-center justify-center py-2 px-4 rounded-lg bg-orange-600 text-orange-100 hover:text-white hover:bg-orange-500 transition-colors"
+            class="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-orange-100 transition-colors hover:bg-orange-500 hover:text-white"
           >
             <span class="text-lg font-bold">☰</span>
           </button>
@@ -181,27 +181,27 @@
       <!-- dropdown menu -->
       <div
         id="mobile-menu"
-        class="absolute left-0 top-0 hidden md:hidden z-50 w-full mt-[68px]"
+        class="absolute left-0 top-0 z-50 mt-[68px] hidden w-full md:hidden"
       >
         <div
-          class="p-4 pb-4 space-y-4 border-b-4 border-orange-600 bg-orange-800"
+          class="space-y-4 border-b-4 border-orange-600 bg-orange-800 p-4 pb-4"
         >
           <!-- status -->
           <div class="space-y-4">
-            <div class="bg-orange-600 rounded-full p-4">
+            <div class="rounded-full bg-orange-600 p-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                  <span class="text-orange-300 font-bold">🏦</span>
+                  <span class="font-bold text-orange-300">🏦</span>
                   <span class="text-sm font-medium">Facility Open</span>
                 </div>
                 <span class="text-xs text-orange-200">Ready to serve you</span>
               </div>
             </div>
 
-            <div class="bg-orange-600 rounded-full p-4">
+            <div class="rounded-full bg-orange-600 p-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                  <span class="text-orange-300 font-bold">⏰</span>
+                  <span class="font-bold text-orange-300">⏰</span>
                   <!-- 🔑 CLIENT -->
                   <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
                 </div>
@@ -224,13 +224,13 @@
           </div>
 
           <!-- logout -->
-          <div class="max-w-[100px] ms-auto">
+          <div class="ms-auto max-w-[100px]">
             <a
               href=""
-              class="flex items-center px-3 py-2 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all focus:ring-2 focus:ring-orange-100 text-sm font-medium"
+              class="flex items-center rounded-full bg-white px-3 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
             >
               <svg
-                class="w-4 h-4 mr-2"
+                class="mr-2 h-4 w-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -251,19 +251,19 @@
 
     <!-- 🔥 welcome 🔥 -->
     <div
-      class="absolute left-0 top-0 bg-gradient-to-r from-orange-900 via-orange-800 to-orange-700 text-white relative overflow-hidden min-h-screen flex items-center"
+      class="absolute relative left-0 top-0 flex min-h-screen items-center overflow-hidden bg-gradient-to-r from-orange-900 via-orange-800 to-orange-700 text-white"
     >
       <!-- background elements -->
       <div class="absolute inset-0">
         <div
-          class="absolute top-20 left-10 w-72 h-72 bg-orange-500/5 rounded-full blur-3xl animate-pulse"
+          class="absolute left-10 top-20 h-72 w-72 animate-pulse rounded-full bg-orange-500/5 blur-3xl"
         ></div>
         <div
-          class="absolute bottom-20 right-10 w-96 h-96 bg-orange-400/5 rounded-full blur-3xl animate-pulse"
+          class="absolute bottom-20 right-10 h-96 w-96 animate-pulse rounded-full bg-orange-400/5 blur-3xl"
           style="animation-delay: 1s"
         ></div>
         <div
-          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-600/5 rounded-full blur-2xl animate-pulse"
+          class="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 transform animate-pulse rounded-full bg-orange-600/5 blur-2xl"
           style="animation-delay: 2s"
         ></div>
       </div>
@@ -271,7 +271,7 @@
       <!-- geometric pattern overlay -->
       <div class="absolute inset-0 opacity-10">
         <svg
-          class="w-full h-full"
+          class="h-full w-full"
           viewBox="0 0 100 100"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -294,30 +294,30 @@
         </svg>
       </div>
 
-      <div class="container mx-auto px-4 py-16 relative z-10">
-        <div class="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+      <div class="container relative z-10 mx-auto px-4 py-16">
+        <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
           <!-- text -->
           <div class="space-y-8">
             <div
-              class="inline-flex items-center px-4 py-2 bg-orange-500/20 rounded-full border border-orange-400/30 backdrop-blur-sm"
+              class="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-500/20 px-4 py-2 backdrop-blur-sm"
             >
-              <span class="text-orange-200 text-sm font-medium">
+              <span class="text-sm font-medium text-orange-200">
                 💪 Premium Experience Awaits
               </span>
             </div>
 
             <div class="space-y-4">
               <h1
-                class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight"
+                class="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl xl:text-7xl"
               >
                 <span class="block">Welcome!</span>
               </h1>
               <div
-                class="w-24 h-1 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full"
+                class="h-1 w-24 rounded-full bg-gradient-to-r from-orange-400 to-orange-600"
               ></div>
             </div>
             <p
-              class="text-lg sm:text-xl text-orange-100 leading-relaxed max-w-lg"
+              class="max-w-lg text-lg leading-relaxed text-orange-100 sm:text-xl"
             >
               <!-- 🔑 CLIENT -->
               Experience top-notch facilities and expert guidance. Book your
@@ -325,30 +325,30 @@
             </p>
 
             <!-- buttons -->
-            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+            <div class="flex flex-col gap-4 pt-4 sm:flex-row">
               <a
                 href=""
-                class="group inline-flex items-center justify-center px-8 py-4 bg-white text-orange-700 rounded-lg hover:bg-orange-50 transition-all duration-300 text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                class="group inline-flex transform items-center justify-center rounded-lg bg-white px-8 py-4 text-base font-semibold text-orange-700 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-orange-50 hover:shadow-xl"
               >
                 <div class="me-2">📙</div>
-                <div class="xl:flex lg:hidden md:hidden sm:hidden">
+                <div class="sm:hidden md:hidden lg:hidden xl:flex">
                   Click to Start Booking
                 </div>
-                <div class="hidden xl:hidden lg:flex md:flex sm:flex">
+                <div class="hidden sm:flex md:flex lg:flex xl:hidden">
                   Start Booking
                 </div>
               </a>
               <a
                 href=""
                 id="subscription-form"
-                class="group inline-flex items-center justify-center px-8 py-4 bg-transparent text-white rounded-lg hover:bg-white/10 transition-all duration-300 text-base font-semibold border-2 border-white/30 hover:border-white/60 backdrop-blur-sm"
+                class="group inline-flex items-center justify-center rounded-lg border-2 border-white/30 bg-transparent px-8 py-4 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/60 hover:bg-white/10"
               >
                 <div class="me-2">🎫</div>
                 <!-- 🔑 CLIENT -->
-                <div class="xl:flex lg:hidden md:hidden sm:hidden">
+                <div class="sm:hidden md:hidden lg:hidden xl:flex">
                   Explore Gym Monthly Pass
                 </div>
-                <div class="hidden xl:hidden lg:flex md:flex sm:flex">
+                <div class="hidden sm:flex md:flex lg:flex xl:hidden">
                   Monthly Pass
                 </div>
               </a>
@@ -356,16 +356,16 @@
           </div>
 
           <!-- visual elements -->
-          <div class="relative lg:flex hidden items-center justify-center">
+          <div class="relative hidden items-center justify-center lg:flex">
             <div class="relative">
               <div
-                class="w-80 h-80 rounded-full border-4 border-orange-400/30 flex items-center justify-center relative"
+                class="relative flex h-80 w-80 items-center justify-center rounded-full border-4 border-orange-400/30"
               >
                 <div
-                  class="w-64 h-64 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-600/20 backdrop-blur-sm border border-orange-400/20 flex items-center justify-center"
+                  class="flex h-64 w-64 items-center justify-center rounded-full border border-orange-400/20 bg-gradient-to-br from-orange-500/20 to-orange-600/20 backdrop-blur-sm"
                 >
                   <div
-                    class="w-32 h-32 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center"
+                    class="flex h-32 w-32 items-center justify-center rounded-full bg-white/10 backdrop-blur-md"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -393,14 +393,14 @@
                 </div>
 
                 <div
-                  class="absolute -top-4 -right-4 w-8 h-8 bg-orange-400 rounded-full animate-bounce"
+                  class="absolute -right-4 -top-4 h-8 w-8 animate-bounce rounded-full bg-orange-400"
                 ></div>
                 <div
-                  class="absolute -bottom-6 -left-6 w-6 h-6 bg-orange-500 rounded-full animate-bounce"
+                  class="absolute -bottom-6 -left-6 h-6 w-6 animate-bounce rounded-full bg-orange-500"
                   style="animation-delay: 0.5s"
                 ></div>
                 <div
-                  class="absolute top-1/2 -right-8 w-4 h-4 bg-orange-300 rounded-full animate-bounce"
+                  class="absolute -right-8 top-1/2 h-4 w-4 animate-bounce rounded-full bg-orange-300"
                   style="animation-delay: 1s"
                 ></div>
               </div>
@@ -414,27 +414,27 @@
 
     <!-- 🔥 footer 🔥 -->
     <footer
-      class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 text-white py-8"
+      class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 py-8 text-white"
     >
       <div class="container mx-auto px-4">
         <!-- grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <!-- client info -->
           <div class="space-y-4">
             <div class="flex grid space-y-2">
               <div class="flex items-center space-x-3">
                 <img
                   src="/src/images/client_logo.jpg"
-                  class="h-10 w-10 object-cover rounded-md"
+                  class="h-10 w-10 rounded-md object-cover"
                 />
                 <!-- 🔑 CLIENT -->
                 <h3 class="text-xl font-bold">Fitworx Gym</h3>
               </div>
-              <p class="text-gray-400 pr-4 pb-4 leading-relaxed">
+              <p class="pb-4 pr-4 leading-relaxed text-gray-400">
                 Transform your fitness journey with our modern facilities and
                 expert guidance.
               </p>
-              <p class="text-sm flex grid space-y-1">
+              <p class="flex grid space-y-1 text-sm">
                 <b class="text-gray-300">Located at:</b>
                 <span class="text-gray-400"
                   >Capt. F. S. Samano, Caloocan, Metro Manila</span
@@ -444,28 +444,28 @@
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b border-gray-600 pb-2">
+            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">
               Quick Links
             </h3>
             <ul class="space-y-2">
               <li>
                 <a
                   href="/src/modules_html/customer_side/about_us.html"
-                  class="text-gray-400 hover:text-white transition-colors"
+                  class="text-gray-400 transition-colors hover:text-white"
                   >About Us</a
                 >
               </li>
               <li>
                 <a
                   href="/src/modules_html/customer_side/privacy_policy.html"
-                  class="text-gray-400 hover:text-white transition-colors"
+                  class="text-gray-400 transition-colors hover:text-white"
                   >Privacy Policy</a
                 >
               </li>
               <li>
                 <a
                   href="/src/modules_html/customer_side/terms_of_service.html"
-                  class="text-gray-400 hover:text-white transition-colors"
+                  class="text-gray-400 transition-colors hover:text-white"
                   >Terms of Service</a
                 >
               </li>
@@ -474,7 +474,7 @@
 
           <!-- 🔑 CLIENT -->
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b border-gray-600 pb-2">
+            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">
               Operating Hours
             </h3>
             <ul class="flex grid space-y-2 text-sm">
@@ -490,23 +490,23 @@
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b border-gray-600 pb-2">
+            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">
               Contact Us
             </h3>
             <ul class="space-y-3">
               <!-- 🔑 CLIENT -->
-              <li class="text-gray-400 text-sm">
+              <li class="text-sm text-gray-400">
                 <b class="text-gray-300">Mobile:</b> (63+) 933-874-5377
               </li>
-              <li class="text-gray-400 text-sm">
+              <li class="text-sm text-gray-400">
                 <b class="text-gray-300">Email:</b> fitworxgym082@gmail.com
               </li>
-              <li class="text-gray-400 text-sm flex space-x-2">
+              <li class="flex space-x-2 text-sm text-gray-400">
                 <b class="text-gray-300">Social Media:</b>
                 <div class="flex space-x-4">
                   <a
                     href="https://www.facebook.com/fitworxgymph"
-                    class="text-orange-200 hover:text-white transition-colors"
+                    class="text-orange-200 transition-colors hover:text-white"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -527,7 +527,7 @@
                   </a>
                   <a
                     href="https://www.instagram.com/fitworxgym/"
-                    class="text-orange-200 hover:text-white transition-colors"
+                    class="text-orange-200 transition-colors hover:text-white"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -550,7 +550,7 @@
                   </a>
                   <a
                     href="https://www.tiktok.com/@fitworxgym"
-                    class="text-orange-200 hover:text-white transition-colors"
+                    class="text-orange-200 transition-colors hover:text-white"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -593,23 +593,23 @@
           </div>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-gray-600">
+        <div class="mt-8 border-t border-gray-600 pt-6">
           <div
-            class="flex flex-col md:flex-row justify-between items-center text-gray-500"
+            class="flex flex-col items-center justify-between text-gray-500 md:flex-row"
           >
-            <p class="text-sm order-2 md:order-1 mt-4 md:mt-0">
+            <p class="order-2 mt-4 text-sm md:order-1 md:mt-0">
               <!-- 🔑 CLIENT -->
               &copy; 2025 Fitworx Gym. All rights reserved.
             </p>
-            <div class="flex space-x-4 order-1 md:order-2">
+            <div class="order-1 flex space-x-4 md:order-2">
               <a
                 href="/src/modules_html/customer_side/privacy_policy.html"
-                class="hover:text-white text-sm transition-colors"
+                class="text-sm transition-colors hover:text-white"
                 >Privacy Policy</a
               >
               <a
                 href="/src/modules_html/customer_side/terms_of_service.html"
-                class="hover:text-white text-sm transition-colors"
+                class="text-sm transition-colors hover:text-white"
                 >Terms of Service</a
               >
             </div>
