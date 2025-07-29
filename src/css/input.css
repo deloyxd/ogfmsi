@@ -107,7 +107,7 @@
   }
 
   .section-content-tab {
-    @apply relative p-6 duration-300;
+    @apply relative px-3 duration-300;
   }
 
   .section-content-h-f {
