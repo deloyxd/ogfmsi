@@ -2,9 +2,9 @@ import modal from '../admin_main.js';
 import content from './content.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const mainBtn = Array.from(
-    document.querySelectorAll('.section-main-btn')
-  ).find((btn) => btn.dataset.section === 'checkin_daily');
+  const mainBtn = Array.from(document.querySelectorAll('.section-main-btn')).find(
+    (btn) => btn.dataset.section === 'checkin_daily'
+  );
   mainBtn.addEventListener('click', () => {
     const inputs = {
       image: {

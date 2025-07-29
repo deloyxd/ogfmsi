@@ -5,9 +5,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const maxAnnouncementCount = 3;
   let announcementCount = 0;
 
-  const mainBtn = Array.from(
-    document.querySelectorAll('.section-main-btn')
-  ).find((btn) => btn.dataset.section === 'dashboard');
+  const mainBtn = Array.from(document.querySelectorAll('.section-main-btn')).find(
+    (btn) => btn.dataset.section === 'dashboard'
+  );
   mainBtn.addEventListener('click', () => {
     if (announcementCount == maxAnnouncementCount) {
       modal.toast('Delete an announcement first!', 'error');
@@ -44,17 +44,14 @@ document.addEventListener('DOMContentLoaded', function () {
       createAnnouncement(result);
     });
   });
-  const dashboardSubBtn = Array.from(
-    document.querySelectorAll('.section-sub-btn')
-  ).find((btn) => btn.dataset.section === 'dashboard');
+  const dashboardSubBtn = Array.from(document.querySelectorAll('.section-sub-btn')).find(
+    (btn) => btn.dataset.section === 'dashboard'
+  );
   // dashboardSubBtn.addEventListener("click", () => (window.location.href = "/"));
 
   function createAnnouncement(result) {
     announcementCount++;
-    injectDataToAnnouncementItem(
-      document.querySelector('.announcementBtn').cloneNode(true),
-      result
-    );
+    injectDataToAnnouncementItem(document.querySelector('.announcementBtn').cloneNode(true), result);
     dashboardHeaderContent.classList.add('hidden');
     dashboardSubBtn.classList.remove('hidden');
 
@@ -138,10 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
           day: 'numeric',
         }),
       };
-      if (
-        actionType.toLowerCase().includes('create') ||
-        actionType.toLowerCase().includes('update')
-      ) {
+      if (actionType.toLowerCase().includes('create') || actionType.toLowerCase().includes('update')) {
         data.image = element.children[0].src;
         data.title = title;
         data.description = element.dataset.description;
@@ -151,8 +145,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     element.classList.remove('hidden');
 
-    document
-      .querySelector('.announcementBtn')
-      .parentElement.appendChild(element);
+    document.querySelector('.announcementBtn').parentElement.appendChild(element);
   }
 });

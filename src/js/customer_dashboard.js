@@ -7,10 +7,7 @@ function setupMobileDropdown() {
   });
 
   document.addEventListener('click', function (event) {
-    if (
-      !mobileMenu.contains(event.target) &&
-      !mobileMenuButton.contains(event.target)
-    ) {
+    if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
       mobileMenu.classList.add('hidden');
     }
   });

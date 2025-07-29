@@ -70,8 +70,7 @@ function setupDarkMode() {
   // check for saved theme preference, otherwise use system preference
   if (
     localStorage.theme === 'dark' ||
-    (!('theme' in localStorage) &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches)
+    (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
   ) {
     html.classList.add('dark');
   } else {
@@ -96,10 +95,7 @@ function setupLoginDropdown() {
 
   // close dropdown when clicking outside
   window.addEventListener('click', function (e) {
-    if (
-      !dropdownToggle.contains(e.target) &&
-      !dropdownMenu.contains(e.target)
-    ) {
+    if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
       dropdownMenu.classList.add('hidden');
     }
   });
@@ -241,10 +237,7 @@ function setupCycleComponent(id) {
       if (id.includes('news')) {
         innerDiv.classList.add('-translate-y-2');
         innerDiv.classList.add('shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]'); // shadow-2xl
-        innerDiv.classList.add(
-          `shadow-${innerDiv.dataset.color}` +
-            (innerDiv.dataset.color === `black` ? '' : `-600`)
-        );
+        innerDiv.classList.add(`shadow-${innerDiv.dataset.color}` + (innerDiv.dataset.color === `black` ? '' : `-600`));
       } else if (id.includes('feature')) {
         innerDiv.classList.add('shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]');
         innerDiv.classList.add('scale-105');
@@ -275,36 +268,25 @@ function setupCycleComponent(id) {
     if (innerDiv) {
       if (id.includes('news')) {
         innerDiv.classList.remove('-translate-y-2');
+        innerDiv.classList.remove('shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]');
         innerDiv.classList.remove(
-          'shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]'
-        );
-        innerDiv.classList.remove(
-          `shadow-${innerDiv.dataset.color}` +
-            (innerDiv.dataset.color === `black` ? '' : `-600`)
+          `shadow-${innerDiv.dataset.color}` + (innerDiv.dataset.color === `black` ? '' : `-600`)
         );
       } else if (id.includes('feature')) {
-        innerDiv.classList.remove(
-          'shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]'
-        );
+        innerDiv.classList.remove('shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]');
         innerDiv.classList.remove('scale-105');
       } else if (id.includes('class')) {
-        innerDiv.classList.remove(
-          'shadow-[0_10px_15px_-3px_rgb(0_0_0_/_0.25)]'
-        );
+        innerDiv.classList.remove('shadow-[0_10px_15px_-3px_rgb(0_0_0_/_0.25)]');
         innerDiv.classList.remove(`shadow-orange-500`);
       } else if (id.includes('goal')) {
         innerDiv.classList.remove('-translate-y-2');
-        innerDiv.classList.remove(
-          'shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]'
-        );
+        innerDiv.classList.remove('shadow-[0_25px_50px_-12px_rgb(0_0_0_/_0.25)]');
         innerDiv.classList.remove('scale-110');
         innerDiv.classList.remove(`border-${innerDiv.dataset.color}-300`);
         innerDiv.classList.remove(`shadow-${innerDiv.dataset.color}-500`);
       } else if (id.includes('location')) {
         innerDiv.classList.remove('-translate-y-1');
-        innerDiv.classList.remove(
-          'shadow-[0_10px_15px_-3px_rgb(0_0_0_/_0.25)]'
-        );
+        innerDiv.classList.remove('shadow-[0_10px_15px_-3px_rgb(0_0_0_/_0.25)]');
         innerDiv.classList.remove(`shadow-orange-500`);
       } else if (id.includes('pricing')) {
         innerDiv.classList.remove(`shadow-orange-600`);
@@ -373,43 +355,38 @@ function setupBMICalculator() {
     if (document.getElementById('bmiValue').textContent === 'NaN') {
       category = 'Error';
     }
-    document.getElementById('bmiCategory').textContent =
-      `Category: ${category}`;
+    document.getElementById('bmiCategory').textContent = `Category: ${category}`;
     document.getElementById('bmiResult').classList.remove('hidden');
   });
 }
 
 function setupCalorieCalculator() {
-  document
-    .getElementById('calorieForm')
-    .addEventListener('submit', function (e) {
-      e.preventDefault();
-      const age = parseInt(document.getElementById('age').value);
-      const gender = document.getElementById('gender').value;
-      const activity = parseFloat(document.getElementById('activity').value);
-      const weight = parseFloat(document.getElementById('weight').value);
-      const height = parseFloat(document.getElementById('height').value);
+  document.getElementById('calorieForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const age = parseInt(document.getElementById('age').value);
+    const gender = document.getElementById('gender').value;
+    const activity = parseFloat(document.getElementById('activity').value);
+    const weight = parseFloat(document.getElementById('weight').value);
+    const height = parseFloat(document.getElementById('height').value);
 
-      let bmr;
-      if (gender === 'male') {
-        bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-      } else {
-        bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-      }
+    let bmr;
+    if (gender === 'male') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
 
-      const calories = Math.round(bmr * activity);
+    const calories = Math.round(bmr * activity);
 
-      document.getElementById('calorieValue').textContent = calories;
-      if (document.getElementById('calorieValue').textContent === 'NaN') {
-        document.getElementById('calorieDescription').textContent =
-          'You must calculate your BMI first';
-      } else {
-        document.getElementById('calorieDescription').textContent =
-          'Daily calories needed to maintain current weight';
-      }
+    document.getElementById('calorieValue').textContent = calories;
+    if (document.getElementById('calorieValue').textContent === 'NaN') {
+      document.getElementById('calorieDescription').textContent = 'You must calculate your BMI first';
+    } else {
+      document.getElementById('calorieDescription').textContent = 'Daily calories needed to maintain current weight';
+    }
 
-      document.getElementById('calorieResult').classList.remove('hidden');
-    });
+    document.getElementById('calorieResult').classList.remove('hidden');
+  });
 }
 
 function setupLocationComponents() {
@@ -424,11 +401,7 @@ function setupLocationComponents() {
 
   // 🔑 CLIENT
   const marker = L.marker([14.7669369, 121.0442142]).addTo(map);
-  marker
-    .bindPopup(
-      '<b>Fitworx Gym</b><br>Capt. F. S. Samano, Caloocan, Metro Manila'
-    )
-    .openPopup();
+  marker.bindPopup('<b>Fitworx Gym</b><br>Capt. F. S. Samano, Caloocan, Metro Manila').openPopup();
 
   const liveLocationBtn = document.getElementById('live-location');
   liveLocationBtn.addEventListener('click', function () {

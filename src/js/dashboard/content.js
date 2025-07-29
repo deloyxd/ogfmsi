@@ -88,26 +88,11 @@ function showTab(tabIndex) {
       contextChart1 = new Chart(context1, {
         type: 'line',
         data: {
-          labels: [
-            'Jan',
-            'Feb',
-            'Mar',
-            'Apr',
-            'May',
-            'Jun',
-            'Jul',
-            'Aug',
-            'Sep',
-            'Oct',
-            'Nov',
-            'Dec',
-          ],
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
           datasets: [
             {
               label: 'Active Monthly Pass (Click to toggle)',
-              data: [
-                120, 190, 170, 220, 260, 300, 350, 400, 380, 420, 450, 500,
-              ],
+              data: [120, 190, 170, 220, 260, 300, 350, 400, 380, 420, 450, 500],
               borderColor: '#f97316',
               backgroundColor: 'rgba(249, 115, 22, 0.1)',
               borderWidth: 3,
@@ -193,13 +178,7 @@ function setupChart2() {
   contextChart2 = new Chart(context2, {
     type: 'pie',
     data: {
-      labels: [
-        'Ages 16-19',
-        'Ages 20-25',
-        'Ages 26-30',
-        'Ages 30-35',
-        'Ages 35+',
-      ],
+      labels: ['Ages 16-19', 'Ages 20-25', 'Ages 26-30', 'Ages 30-35', 'Ages 35+'],
       datasets: [
         {
           label: 'User Count',

@@ -51,8 +51,7 @@ function setupDarkMode() {
   // check for saved theme preference, otherwise use system preference
   if (
     localStorage.theme === 'dark' ||
-    (!('theme' in localStorage) &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches)
+    (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
   ) {
     html.classList.add('dark');
   } else {
@@ -77,10 +76,7 @@ function setupLoginDropdown() {
 
   // close dropdown when clicking outside
   window.addEventListener('click', function (e) {
-    if (
-      !dropdownToggle.contains(e.target) &&
-      !dropdownMenu.contains(e.target)
-    ) {
+    if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
       dropdownMenu.classList.add('hidden');
     }
   });
