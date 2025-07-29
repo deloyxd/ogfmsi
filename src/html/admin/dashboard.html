@@ -1287,6 +1287,233 @@
           </div>
         </div>
       </section>
+
+      <!-- 🔥 Reports 🔥 -->
+      <section id="reports-section" class="section hidden gap-4 2xl:gap-8">
+        <!-- header -->
+        <header class="section-h from-yellow-500 to-yellow-700 p-4 2xl:p-8">
+          <div class="section-h2">
+            <div class="section-h2-h">
+              <img src="/src/images/client_logo.jpg" />
+            </div>
+            <div class="flexbox">
+              <p class="text-lg xl:text-xl 2xl:text-2xl">Reports</p>
+              <p class="text-xs text-white/80 xl:text-sm 2xl:text-base">Data Overview</p>
+            </div>
+          </div>
+          <div class="section-h-c bg-yellow-500">
+            <div class="w-[235px] text-center text-sm font-bold text-yellow-300 xl:text-base 2xl:w-[302px] 2xl:text-lg"></div>
+          </div>
+          <div class="flex gap-2 2xl:gap-4">
+            <button id="reportsExportPDF" class="section-main-btn text-red-500 hover:bg-red-500 hover:shadow-red-700 active:translate-y-1 active:scale-95 active:bg-red-600 active:shadow-none">
+              Export to PDF 📄
+            </button>
+          </div>
+        </header>
+        <!-- content -->
+        <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
+          <!-- section 1 -->
+          <div class="flexbox col-span-1 2xl:col-span-12">
+            <div class="section-content border-yellow-500">
+              <!-- header -->
+              <div class="section-content-h h-[96px]">
+                <!-- tabs -->
+                <div class="section-content-h2">
+                  <button id="reports_tab1" class="section-content-tab bg-gray-200 hover:bg-gray-300">
+                    <p>Monthly Members</p>
+                    <p class="text-sm text-gray-500">All monthly pass members</p>
+                    <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                  </button>
+                  <button id="reports_tab2" class="section-content-tab bg-transparent hover:bg-gray-200">
+                    <p>Regular</p>
+                    <p class="text-sm text-gray-500">Regular users</p>
+                    <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                  </button>
+                  <button id="reports_tab3" class="section-content-tab bg-transparent hover:bg-gray-200">
+                    <p>Student</p>
+                    <p class="text-sm text-gray-500">Student users</p>
+                    <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                  </button>
+                  <button id="reports_tab4" class="section-content-tab bg-transparent hover:bg-gray-200">
+                    <p>Supplements</p>
+                    <p class="text-sm text-gray-500">Supplements sales</p>
+                    <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                  </button>
+                  <button id="reports_tab5" class="section-content-tab bg-transparent hover:bg-gray-200">
+                    <p>Reservation</p>
+                    <p class="text-sm text-gray-500">Reservation records</p>
+                    <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                  </button>
+                </div>
+                <div class="section-content-h-f">
+                  <div class="relative mr-1">
+                    <input autocomplete="off" id="reportsSectionSearch" placeholder="Search keyword..." class="section-content-search-main w-48 focus:ring-yellow-500 xl:w-56 2xl:w-64" />
+                    <div class="section-content-searchicon">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <button class="section-content-settings group hover:shadow-yellow-500">
+                    <div id="reports_section_settings" class="pb-[4px] pl-[1px] group-hover:animate-spin">⚙</div>
+                  </button>
+                </div>
+              </div>
+              <!-- content -->
+              <div class="p-6">
+                <!-- tab 1 content - Monthly Members -->
+                <div id="reports_monthly_members" class="scrollbar-light h-[375px]">
+                  <div class="section-content-list-title grid-cols-8">
+                    <p class="col-span-1 text-xs">Member ID</p>
+                    <p class="col-span-1 pl-2 text-xs">Member Name</p>
+                    <p class="col-span-1 pl-2 text-xs">Type</p>
+                    <p class="col-span-1 pl-2 text-xs">Status</p>
+                    <p class="col-span-1 pl-2 text-xs">Start Date</p>
+                    <p class="col-span-1 pl-2 text-xs">End Date</p>
+                    <p class="col-span-1 pl-2 text-xs">Amount</p>
+                    <p class="col-span-1 pl-2 text-xs">Renewal Amount</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[12.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[25%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[37.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[50%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[62.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[75%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="reportsMonthlyMembersEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No monthly members found</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-8 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                  </div>
+                </div>
+                <!-- tab 2 content - Regular -->
+                <div id="reports_regular" class="scrollbar-light hidden h-[375px]">
+                  <div class="section-content-list-title grid-cols-6">
+                    <p class="col-span-1 text-xs">ID</p>
+                    <p class="col-span-1 pl-2 text-xs">Type</p>
+                    <p class="col-span-2 pl-2 text-xs">Client Name</p>
+                    <p class="col-span-1 pl-2 text-xs">Time In</p>
+                    <p class="col-span-1 pl-2 text-xs">Amount</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[16.67%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[33.33%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[66.67%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[83.33%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="reportsRegularEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No regular users found</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-6 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-2 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                  </div>
+                </div>
+                <!-- tab 3 content - Student -->
+                <div id="reports_student" class="scrollbar-light hidden h-[375px]">
+                  <div class="section-content-list-title grid-cols-6">
+                    <p class="col-span-1 text-xs">ID</p>
+                    <p class="col-span-1 pl-2 text-xs">Type</p>
+                    <p class="col-span-2 pl-2 text-xs">Client Name</p>
+                    <p class="col-span-1 pl-2 text-xs">Time In</p>
+                    <p class="col-span-1 pl-2 text-xs">Amount</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[16.67%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[33.33%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[66.67%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[83.33%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="reportsStudentEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No student users found</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-6 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-2 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                  </div>
+                </div>
+                <!-- tab 4 content - Supplements -->
+                <div id="reports_supplements" class="scrollbar-light hidden h-[375px]">
+                  <div class="section-content-list-title grid-cols-7">
+                    <p class="col-span-1 text-xs">Product ID</p>
+                    <p class="col-span-1 pl-2 text-xs">Product Name</p>
+                    <p class="col-span-1 pl-2 text-xs">Quantity</p>
+                    <p class="col-span-1 pl-2 text-xs">Price</p>
+                    <p class="col-span-1 pl-2 text-xs">Quantity Sold</p>
+                    <p class="col-span-1 pl-2 text-xs">Total Sales</p>
+                    <p class="col-span-1 pl-2 text-xs">Date</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[14.29%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[28.57%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[42.86%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[57.14%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[71.43%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[85.71%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="reportsSupplementsEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No supplement sales found</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-7 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                  </div>
+                </div>
+                <!-- tab 5 content - Reservation -->
+                <div id="reports_reservation" class="scrollbar-light hidden h-[375px]">
+                  <div class="section-content-list-title grid-cols-8">
+                    <p class="col-span-1 text-xs">Reservation ID</p>
+                    <p class="col-span-1 pl-2 text-xs">Service Type</p>
+                    <p class="col-span-1 pl-2 text-xs">Customer Name</p>
+                    <p class="col-span-1 pl-2 text-xs">Start Time</p>
+                    <p class="col-span-1 pl-2 text-xs">End Time</p>
+                    <p class="col-span-1 pl-2 text-xs">Reservation Date</p>
+                    <p class="col-span-1 pl-2 text-xs">Additional Members</p>
+                    <p class="col-span-1 pl-2 text-xs">Price</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[12.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[25%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[37.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[50%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[62.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[75%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="reportsReservationEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No reservations found</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-8 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                    <p class="col-span-1 pl-2 text-xs"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
 
     <!-- 🔥 dynamic modal 🔥 -->
@@ -1314,6 +1541,9 @@
     <script type="module" src="/src/js/data_sync/header.js"></script>
     <script type="module" src="/src/js/data_sync/stats.js"></script>
     <script type="module" src="/src/js/data_sync/content.js"></script>
+    <script type="module" src="/src/js/reports/header.js"></script>
+    <script type="module" src="/src/js/reports/stats.js"></script>
+    <script type="module" src="/src/js/reports/content.js"></script>
     <!-- add new js here 👆 -->
 
     <!-- imported js -->
