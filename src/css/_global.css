@@ -10,7 +10,8 @@ body {
 }
 
 .nav-shadow {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
@@ -37,7 +38,9 @@ header {
 section {
   opacity: 0;
   transform: translateY(20px);
-  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  transition:
+    transform 0.3s ease-out,
+    opacity 0.3s ease-out;
 }
 
 section.visible {
@@ -46,21 +49,21 @@ section.visible {
 }
 
 .pricing-card::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(-45deg, #eea303, #ffe7b8);
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-    border-radius: 0.5rem;
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(-45deg, #eea303, #ffe7b8);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  border-radius: 0.5rem;
 }
 
 .pricing-card:hover::before {
-    opacity: 1;
+  opacity: 1;
 }
 
 @keyframes fadeInUp {

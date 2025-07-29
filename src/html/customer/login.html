@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -36,7 +36,7 @@
     </style> -->
   </head>
   <body
-    class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black cursor-default lg:overflow-x-hidden overflow-y-auto"
+    class="min-h-screen cursor-default overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-black lg:overflow-x-hidden"
   >
     <!-- 🔴 README: comments with 🔥 are project main components -->
 
@@ -45,33 +45,33 @@
 
     <!-- 🔥 main 🔥 -->
     <div class="min-h-screen">
-      <div class="grid grid-cols-1 lg:grid-cols-2 min-h-screen login-container">
+      <div class="login-container grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <!-- welcome -->
         <div
-          class="welcome-section pt-16 pb-16 flex flex-col justify-center items-center relative overflow-hidden"
+          class="welcome-section relative flex flex-col items-center justify-center overflow-hidden pb-16 pt-16"
         >
           <div
             id="welcomeText"
-            class="relative z-10 text-center lg:text-left space-y-6 lg:space-y-8 animate-slide-in-left"
+            class="animate-slide-in-left relative z-10 space-y-6 text-center lg:space-y-8 lg:text-left"
           >
             <div class="space-y-4">
               <div
-                class="inline-block px-4 py-2 bg-white bg-opacity-20 rounded-full text-white text-sm font-medium backdrop-blur-sm"
+                class="inline-block rounded-full bg-white bg-opacity-20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
               >
                 <!-- 🔑 CLIENT -->
                 🏋️‍♀️ Premium Fitness Experience
               </div>
               <h1
-                class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight tracking-tight uppercase"
+                class="text-4xl font-black uppercase leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl"
               >
                 Welcome to<br />
                 <!-- 🔑 CLIENT -->
                 <span
-                  class="bg-gradient-to-r from-yellow-300 to-orange-100 bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] uppercase"
+                  class="bg-gradient-to-r from-yellow-300 to-orange-100 bg-clip-text uppercase text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                   >Fitworx Gym</span
                 >
               </h1>
-              <p class="text-white text-xl sm:text-2xl opacity-90 font-light">
+              <p class="text-xl font-light text-white opacity-90 sm:text-2xl">
                 <!-- 🔑 CLIENT -->
                 Transform your body, transform your<br />life with our premium
                 fitness experience.
@@ -79,12 +79,12 @@
             </div>
 
             <div
-              class="flex flex-col sm:flex-row gap-4 pt-6 sm:justify-center lg:justify-start"
+              class="flex flex-col gap-4 pt-6 sm:flex-row sm:justify-center lg:justify-start"
             >
               <!-- 🔑 CLIENT (items) -->
               <div class="flex items-center space-x-3 text-white">
                 <div
-                  class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  class="flex h-12 w-12 items-center justify-center rounded-full bg-white bg-opacity-20 backdrop-blur-sm"
                 >
                   <i class="fas fa-dumbbell text-white"></i>
                 </div>
@@ -95,7 +95,7 @@
               </div>
               <div class="flex items-center space-x-3 text-white">
                 <div
-                  class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  class="flex h-12 w-12 items-center justify-center rounded-full bg-white bg-opacity-20 backdrop-blur-sm"
                 >
                   <i class="fas fa-users text-white"></i>
                 </div>
@@ -109,12 +109,12 @@
 
           <!-- 🔑 CLIENT -->
           <div
-            class="relative z-10 mt-12 lg:mt-16 text-center lg:text-left animate-slide-in-left"
+            class="animate-slide-in-left relative z-10 mt-12 text-center lg:mt-16 lg:text-left"
           >
-            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-2">
+            <h2 class="mb-2 text-3xl font-bold text-white sm:text-4xl">
               Fitworx Gym
             </h2>
-            <p class="text-white opacity-90 text-lg sm:text-xl font-light">
+            <p class="text-lg font-light text-white opacity-90 sm:text-xl">
               Your premium fitness destination
             </p>
           </div>
@@ -122,87 +122,87 @@
 
         <!-- form -->
         <div
-          class="w-full p-8 sm:p-12 lg:p-16 bg-gradient-to-b from-gray-900 to-black flex items-center justify-center relative"
+          class="relative flex w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black p-8 sm:p-12 lg:p-16"
           id="formSection"
         >
           <!-- background elements -->
           <div class="absolute inset-0 overflow-hidden">
             <div
-              class="absolute top-32 right-20 w-64 h-64 bg-red-500 rounded-full blur-3xl opacity-0 animate-[pulse_9s_ease_infinite_0s]"
+              class="absolute right-20 top-32 h-64 w-64 animate-[pulse_9s_ease_infinite_0s] rounded-full bg-red-500 opacity-0 blur-3xl"
             ></div>
             <div
-              class="absolute bottom-20 left-16 w-48 h-48 bg-red-500 rounded-full blur-3xl opacity-0 animate-[pulse_11s_ease_infinite_3s]"
+              class="absolute bottom-20 left-16 h-48 w-48 animate-[pulse_11s_ease_infinite_3s] rounded-full bg-red-500 opacity-0 blur-3xl"
             ></div>
           </div>
 
-          <div class="w-full max-w-lg relative z-10 animate-slide-in-right">
-            <div class="text-center mb-10 lg:mb-12">
+          <div class="animate-slide-in-right relative z-10 w-full max-w-lg">
+            <div class="mb-10 text-center lg:mb-12">
               <div
-                class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full mb-6"
+                class="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600"
               >
                 <i class="fas fa-user-circle text-5xl text-white"></i>
               </div>
               <h3
-                class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4"
+                class="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl"
                 id="formTitle"
               >
                 Sign in to an Account
               </h3>
-              <p class="text-gray-400 text-lg sm:text-xl" id="formSubtitle">
+              <p class="text-lg text-gray-400 sm:text-xl" id="formSubtitle">
                 <!-- 🔑 CLIENT -->
                 Start your fitness journey today
               </p>
               <div
-                class="w-24 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto mt-4 rounded-full"
+                class="mx-auto mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-orange-500 to-orange-600"
               ></div>
             </div>
 
             <form class="space-y-6 lg:space-y-8" id="loginForm">
               <div class="relative hidden" id="fullNameField">
                 <div
-                  class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6"
                 >
-                  <i class="fas fa-user text-gray-400 z-10"></i>
+                  <i class="fas fa-user z-10 text-gray-400"></i>
                 </div>
                 <input
                   type="text"
                   id="fullName"
-                  class="w-full pl-14 pr-4 py-4 sm:py-5 rounded-2xl bg-gray-800 bg-opacity-50 border-2 border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 transition-all duration-300 backdrop-blur-sm input-field"
+                  class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-4 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
                   placeholder="Full Name"
                 />
               </div>
 
               <div class="relative">
                 <div
-                  class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6"
                 >
-                  <i class="fas fa-envelope text-gray-400 z-10"></i>
+                  <i class="fas fa-envelope z-10 text-gray-400"></i>
                 </div>
                 <input
                   type="text"
                   id="username"
-                  class="w-full pl-14 pr-4 py-4 sm:py-5 rounded-2xl bg-gray-800 bg-opacity-50 border-2 border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 transition-all duration-300 backdrop-blur-sm input-field"
+                  class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-4 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
                   placeholder="Username"
                 />
               </div>
 
               <div class="relative">
                 <div
-                  class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6"
                 >
-                  <i class="fas fa-lock text-gray-400 z-10"></i>
+                  <i class="fas fa-lock z-10 text-gray-400"></i>
                 </div>
                 <input
                   type="password"
                   id="password"
-                  class="w-full pl-14 pr-16 py-4 sm:py-5 rounded-2xl bg-gray-800 bg-opacity-50 border-2 border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 transition-all duration-300 backdrop-blur-sm input-field"
+                  class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-16 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
                   placeholder="Password"
                   required
                 />
                 <button
                   type="button"
                   id="showPassword"
-                  class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors duration-300 p-2"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 transform p-2 text-gray-400 transition-colors duration-300 hover:text-orange-500"
                 >
                   <i class="fas fa-eye"></i>
                 </button>
@@ -210,7 +210,7 @@
 
               <button
                 type="submit"
-                class="w-full py-4 sm:py-5 px-8 rounded-2xl font-bold text-lg text-white bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/25 submit-button uppercase"
+                class="submit-button w-full transform rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 px-8 py-4 text-lg font-bold uppercase text-white transition-all duration-300 hover:scale-105 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 hover:shadow-2xl hover:shadow-orange-500/25 focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 sm:py-5"
               >
                 <span
                   class="flex items-center justify-center space-x-2 tracking-[2px]"
@@ -221,22 +221,22 @@
               </button>
             </form>
 
-            <div class="text-center mt-10 lg:mt-12">
-              <div class="flex items-center justify-center space-x-4 mb-6">
-                <div class="h-px bg-gray-600 flex-1"></div>
-                <span class="text-gray-400 text-sm">OR</span>
-                <div class="h-px bg-gray-600 flex-1"></div>
+            <div class="mt-10 text-center lg:mt-12">
+              <div class="mb-6 flex items-center justify-center space-x-4">
+                <div class="h-px flex-1 bg-gray-600"></div>
+                <span class="text-sm text-gray-400">OR</span>
+                <div class="h-px flex-1 bg-gray-600"></div>
               </div>
-              <p class="text-gray-400 text-base">
+              <p class="text-base text-gray-400">
                 <span id="toggleText">Don't have an account?</span>
                 <a
                   href=""
-                  class="text-orange-500 hover:text-orange-400 font-semibold ml-2 transition-colors duration-300 relative group"
+                  class="group relative ml-2 font-semibold text-orange-500 transition-colors duration-300 hover:text-orange-400"
                   id="toggleForm"
                 >
                   Sign up for free
                   <span
-                    class="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"
+                    class="absolute bottom-0 left-0 h-0.5 w-0 bg-orange-500 transition-all duration-300 group-hover:w-full"
                   ></span>
                 </a>
               </p>
@@ -324,10 +324,10 @@
     <!-- success dialog modal -->
     <div
       id="successModal"
-      class="modal fixed flex inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50"
+      class="modal fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-70"
     >
       <div
-        class="bg-zinc-900 rounded-lg p-6 text-center shadow-xl border-2 border-green-500"
+        class="rounded-lg border-2 border-green-500 bg-zinc-900 p-6 text-center shadow-xl"
       >
         <div class="mb-4">
           <svg
@@ -340,7 +340,7 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="text-green-500 mx-auto"
+            class="mx-auto text-green-500"
           >
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -348,11 +348,11 @@
         </div>
         <h3
           id="success-title"
-          class="text-xl font-bold text-white uppercase"
+          class="text-xl font-bold uppercase text-white"
         ></h3>
         <p
           id="success-message"
-          class="text-gray-400 text-sm mt-2 uppercase tracking-wider"
+          class="mt-2 text-sm uppercase tracking-wider text-gray-400"
         ></p>
       </div>
     </div>

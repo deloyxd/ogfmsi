@@ -1,26 +1,26 @@
-import global from "./_global.js";
+import global from './_global.js';
 
 export function showTermsAndConditions() {
-  const termsContainer = document.querySelector(".terms-container");
-  termsContainer.classList.remove("hidden");
+  const termsContainer = document.querySelector('.terms-container');
+  termsContainer.classList.remove('hidden');
   Swal.fire({
-    width: "600px",
+    width: '600px',
     html: termsContainer.innerHTML,
     showConfirmButton: true,
-    confirmButtonText: "Accept & Continue",
-    confirmButtonColor: "#ea580c",
+    confirmButtonText: 'Accept & Continue',
+    confirmButtonColor: '#ea580c',
     allowOutsideClick: false,
     allowEscapeKey: false,
-    background: "#ffffff",
+    background: '#ffffff',
     preConfirm: () => {
-      const agreeCheckbox = Swal.getPopup().querySelector("#agreeCheckbox");
+      const agreeCheckbox = Swal.getPopup().querySelector('#agreeCheckbox');
       if (!agreeCheckbox.checked) {
-        Swal.showValidationMessage("You must agree to the terms to proceed");
+        Swal.showValidationMessage('You must agree to the terms to proceed');
       }
       return agreeCheckbox.checked;
     },
     willClose: () => {
-      termsContainer.classList.add("hidden");
+      termsContainer.classList.add('hidden');
     },
   });
 }
@@ -37,52 +37,52 @@ function checkIfJsShouldNotRun(id) {
 
 const sanitizeInput = (input) => {
   return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
 };
 
-const username = document.getElementById("username");
-const password = document.getElementById("password");
-const fullName = document.getElementById("fullName");
-const fullNameField = document.getElementById("fullNameField");
-const formTitle = document.getElementById("formTitle");
-const formSubtitle = document.getElementById("formSubtitle");
-const toggleText = document.getElementById("toggleText");
-const toggleButton = document.getElementById("toggleForm");
-const welcomeText = document.getElementById("welcomeText");
+const username = document.getElementById('username');
+const password = document.getElementById('password');
+const fullName = document.getElementById('fullName');
+const fullNameField = document.getElementById('fullNameField');
+const formTitle = document.getElementById('formTitle');
+const formSubtitle = document.getElementById('formSubtitle');
+const toggleText = document.getElementById('toggleText');
+const toggleButton = document.getElementById('toggleForm');
+const welcomeText = document.getElementById('welcomeText');
 
 function setupLoginForm() {
-  const loginForm = document.getElementById("loginForm");
-  const showPasswordButton = document.getElementById("showPassword");
+  const loginForm = document.getElementById('loginForm');
+  const showPasswordButton = document.getElementById('showPassword');
 
   resetInputFields();
 
-  loginForm.addEventListener("submit", submitClicked);
-  showPasswordButton.addEventListener("click", showPasswordClicked);
-  toggleButton.addEventListener("click", toggleFormClicked);
+  loginForm.addEventListener('submit', submitClicked);
+  showPasswordButton.addEventListener('click', showPasswordClicked);
+  toggleButton.addEventListener('click', toggleFormClicked);
 }
 
 function resetInputFields() {
-  username.value = "";
-  password.value = "";
-  fullName.value = "";
+  username.value = '';
+  password.value = '';
+  fullName.value = '';
 }
 
 async function submitClicked(e) {
   e.preventDefault();
 
   const submitBtn =
-    document.getElementById("loginForm").lastChild.previousSibling;
+    document.getElementById('loginForm').lastChild.previousSibling;
   console.log(submitBtn);
-  const isLoginMode = formTitle.textContent.includes("Sign in");
+  const isLoginMode = formTitle.textContent.includes('Sign in');
   const sanitizedUsername = sanitizeInput(username.value.trim());
   const sanitizedPassword = password.value;
   const sanitizedFullName = isLoginMode
-    ? ""
+    ? ''
     : sanitizeInput(fullName.value.trim());
 
   const oldSubmitBtn = submitBtn.innerHTML;
@@ -92,7 +92,7 @@ async function submitClicked(e) {
             </svg>`;
   submitBtn.disabled = true;
   try {
-    const endpoint = isLoginMode ? "/login" : "/register";
+    const endpoint = isLoginMode ? '/login' : '/register';
     const requestBody = isLoginMode
       ? { username: sanitizedUsername, password: sanitizedPassword }
       : {
@@ -102,39 +102,39 @@ async function submitClicked(e) {
         };
 
     const response = await fetch(`${global.API_BASE_URL}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      global.playSFX("success-sfx");
+      global.playSFX('success-sfx');
 
       if (isLoginMode) {
-        sessionStorage.setItem("full_name", data.user.full_name);
+        sessionStorage.setItem('full_name', data.user.full_name);
 
         Toastify({
-          text: "Login successful!",
+          text: 'Login successful!',
           duration: 3000,
           close: true,
-          gravity: "top",
-          position: "center",
-          backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+          gravity: 'top',
+          position: 'center',
+          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
           stopOnFocus: true,
           callback: () =>
             (window.location.href =
-              "/src/modules_html/customer_side/dashboard.html"),
+              '/src/modules_html/customer_side/dashboard.html'),
         }).showToast();
       } else {
         Toastify({
-          text: "Your account has been created successfully!",
+          text: 'Your account has been created successfully!',
           duration: 3000,
           close: true,
-          gravity: "top",
-          position: "center",
-          backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+          gravity: 'top',
+          position: 'center',
+          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
           stopOnFocus: true,
           callback: toggleForms,
         }).showToast();
@@ -144,32 +144,32 @@ async function submitClicked(e) {
         text:
           data.error ||
           (isLoginMode
-            ? "Login Failed. Please check your credentials."
-            : "Registration Failed. Please try again."),
+            ? 'Login Failed. Please check your credentials.'
+            : 'Registration Failed. Please try again.'),
         duration: 3000,
         close: true,
-        gravity: "top",
-        position: "center",
-        backgroundColor: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        gravity: 'top',
+        position: 'center',
+        backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)',
         stopOnFocus: true,
       }).showToast();
     }
   } catch (error) {
-    global.playSFX("error-sfx");
+    global.playSFX('error-sfx');
 
     /* 💀 DANGEROUS 💀 REMOVE BEFORE DEPLOYING TO PRODUCTION */
     // console.error("API Error:", error); // 👈
     /* 💀 DANGEROUS 💀 REMOVE BEFORE DEPLOYING TO PRODUCTION */
 
     Swal.fire({
-      title: "Oops!",
-      text: "Something went wrong. Please try again later.",
-      icon: "error",
-      confirmButtonText: "OK",
-      confirmButtonColor: "#ef4444",
-      background: "#fef2f2",
-      iconColor: "#b91c1c",
-      color: "#7f1d1d",
+      title: 'Oops!',
+      text: 'Something went wrong. Please try again later.',
+      icon: 'error',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#ef4444',
+      background: '#fef2f2',
+      iconColor: '#b91c1c',
+      color: '#7f1d1d',
     });
   }
 
@@ -179,11 +179,11 @@ async function submitClicked(e) {
 
 function showPasswordClicked() {
   const type =
-    password.getAttribute("type") === "password" ? "text" : "password";
-  password.setAttribute("type", type);
+    password.getAttribute('type') === 'password' ? 'text' : 'password';
+  password.setAttribute('type', type);
 
-  this.querySelector("i").classList.toggle("fa-eye");
-  this.querySelector("i").classList.toggle("fa-eye-slash");
+  this.querySelector('i').classList.toggle('fa-eye');
+  this.querySelector('i').classList.toggle('fa-eye-slash');
 }
 
 function toggleFormClicked(e) {
@@ -191,26 +191,26 @@ function toggleFormClicked(e) {
 
   resetInputFields();
 
-  const isLoginMode = formTitle.textContent.includes("Sign in");
+  const isLoginMode = formTitle.textContent.includes('Sign in');
 
   // 🔑 CLIENT
   formTitle.textContent = isLoginMode
-    ? "Create Account"
-    : "Sign in to an Account";
+    ? 'Create Account'
+    : 'Sign in to an Account';
   formSubtitle.textContent = isLoginMode
-    ? "Join us and start your fitness journey"
-    : "Start your fitness journey today";
+    ? 'Join us and start your fitness journey'
+    : 'Start your fitness journey today';
 
   toggleText.textContent = isLoginMode
-    ? "Already have an account?"
+    ? 'Already have an account?'
     : "Don't have an account?";
   toggleButton.innerHTML =
-    (isLoginMode ? "Sign in here " : "Sign up for free ") +
+    (isLoginMode ? 'Sign in here ' : 'Sign up for free ') +
     `<span class="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>`;
 
   updatePanelText(isLoginMode);
 
-  fullNameField.classList.toggle("hidden", !isLoginMode);
+  fullNameField.classList.toggle('hidden', !isLoginMode);
 }
 
 function updatePanelText(isLoginMode) {
@@ -310,8 +310,8 @@ function updatePanelText(isLoginMode) {
           </div>`;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  if (checkIfJsShouldNotRun("customer_login")) return;
+document.addEventListener('DOMContentLoaded', function () {
+  if (checkIfJsShouldNotRun('customer_login')) return;
   setupLoginForm();
   updatePanelText(false);
   showTermsAndConditions();

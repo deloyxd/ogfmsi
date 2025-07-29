@@ -1,5 +1,5 @@
 .welcome-section {
-  background-image: url("/src/images/background_image_1.jpg");
+  background-image: url('/src/images/background_image_1.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -8,7 +8,7 @@
 }
 
 .welcome-section::after {
-  content: "";
+  content: '';
   position: fixed;
   top: 0;
   left: 0;
@@ -191,7 +191,7 @@
 
 @media (max-width: 1024px) {
   .welcome-section::after {
-    content: "";
+    content: '';
     position: fixed;
     top: 0;
     left: 0;
