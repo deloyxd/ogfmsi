@@ -260,17 +260,18 @@ function setupModalBase(defaultData, inputs, callback) {
   }
 
   if (inputs.image) {
-    const originalContainer = tempModalContainer.querySelector('#input-image').parentElement.parentElement;
+    const originalContainer = tempModalContainer.querySelector('#input-image').parentElement.parentElement.parentElement;
     const imageContainerParent = originalContainer.cloneNode(true);
-    const imageContainerTexts = imageContainerParent.children[0].lastElementChild.children;
-    const imageContainer = imageContainerParent.children[0].children[1];
+    const imageContainerTexts = imageContainerParent.children[0].children[1].lastElementChild.children;
+    const imageContainer = imageContainerParent.children[0].children[1].children[0];
     imageContainer.src = inputs.image.src;
 
-    const imageBlurContainer = imageContainerParent.children[0].children[2];
+    const imageBlurContainer = imageContainerParent.children[0].children[1].children[1];
     if (inputs.image.type === 'live') imageBlurContainer.classList.remove('hidden');
-    const imageUploadInput = imageContainerParent.children[0].children[3];
-    const imageUploadBtn = imageContainerParent.children[0].children[4];
+    const imageUploadInput = imageContainerParent.children[0].children[2];
+    const imageUploadBtn = imageContainerParent.children[0].children[3];
     imageUploadBtn.onclick = () => imageUploadInput.click();
+    imageContainer.parentElement.onclick = () => imageUploadInput.click();
 
     imageUploadInput.addEventListener('change', (e) => {
       const file = e.target.files[0];

@@ -1,48 +1,50 @@
 <dialog
   id="modalContainer"
   data-color="amber"
-  class="inset-0 flex hidden h-full w-full content-center overflow-hidden bg-black/30 opacity-0 duration-300"
+  class="fixed inset-0 flex hidden h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300"
 >
   <div
-    class="m-auto w-full max-w-2xl -translate-y-6 scale-95 overflow-hidden rounded-2xl bg-white shadow-xl duration-300"
+    class="m-auto w-full max-w-lg -translate-y-6 scale-95 overflow-hidden rounded-2xl bg-white shadow-xl duration-300 2xl:max-w-2xl"
   >
-    <div class="flex flex-col gap-2 bg-gradient-to-br from-amber-500 to-amber-800 p-7 text-center text-white">
-      <p id="modalTitle" class="text-3xl font-medium"></p>
-      <p id="modalSubtitle" class="hidden text-sm"></p>
+    <div
+      class="flex flex-col gap-1 bg-gradient-to-br from-amber-500 to-amber-800 p-4 text-center text-white 2xl:gap-2 2xl:p-7"
+    >
+      <p id="modalTitle" class="text-xl font-medium 2xl:text-3xl"></p>
+      <p id="modalSubtitle" class="hidden text-xs 2xl:text-sm"></p>
     </div>
-    <div class="flex flex-col p-8">
-      <form class="flex flex-col gap-4">
-        <div class="grid hidden grid-cols-2 gap-6">
+    <div class="flex flex-col p-4 2xl:p-8">
+      <form class="flex flex-col gap-2 2xl:gap-4">
+        <div class="grid hidden grid-cols-5 gap-3 2xl:gap-6">
           <div
-            class="relative flex flex-col gap-4 rounded-lg border-2 border-gray-300 p-4 duration-300 hover:border-amber-500"
+            class="relative col-span-2 flex flex-col gap-2 rounded-lg border-2 border-gray-300 p-2 duration-300 hover:border-amber-500 2xl:gap-4 2xl:p-4"
           >
-            <label class="text-sm font-medium text-gray-600">Image</label>
-            <img id="input-image" class="max-h-[9rem] min-h-[12.5rem] w-full rounded-lg object-cover" />
-            <div
-              class="absolute inset-0 mx-4 mt-[3.3rem] hidden max-h-[9rem] min-h-[12.5rem] rounded-lg bg-black/30 backdrop-blur-[2px]"
-            ></div>
+            <label class="text-xs font-medium text-gray-600 2xl:text-sm">Image</label>
+            <div class="relative max-h-[136px] min-h-[136px] cursor-pointer 2xl:max-h-[176px] 2xl:min-h-[176px]">
+              <img id="input-image" class="h-full w-full rounded-lg object-cover" />
+              <div class="absolute inset-0 rounded-lg bg-black/30 backdrop-blur-[2px]"></div>
+              <div
+                class="absolute inset-0 content-center text-center font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+              >
+                <p class="-mb-1 text-sm 2xl:text-base"></p>
+                <p class="text-2xl text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)] 2xl:text-3xl"></p>
+                <p class="2xl:text-lg"></p>
+              </div>
+            </div>
             <input type="file" id="input-image-upload" accept="image/*" class="hidden" />
             <button
               type="button"
-              class="absolute right-0 top-0 mx-4 my-3.5 rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-500 duration-300 hover:bg-amber-500 hover:text-white"
+              class="absolute right-0 top-0 mx-2 my-1.5 hidden rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-500 duration-300 hover:bg-amber-500 hover:text-white 2xl:m-4 2xl:flex"
             >
               Upload Photo
             </button>
-            <div
-              class="absolute inset-0 mx-4 mt-[3.3rem] max-h-[9rem] min-h-[12.5rem] content-center text-center font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-            >
-              <p class="-mb-1 text-lg"></p>
-              <p class="text-4xl text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"></p>
-              <p class="text-xl"></p>
-            </div>
           </div>
 
-          <div class="flex flex-col gap-4">
+          <div class="col-span-3 flex flex-col gap-2 2xl:gap-4">
             <div class="flex hidden flex-col gap-2 font-medium">
-              <label class="text-sm text-gray-600"></label>
+              <label class="text-xs text-gray-600 2xl:text-sm"></label>
               <input
                 autocomplete="off"
-                class="rounded-md border-2 border-gray-300 bg-gray-100 px-4 py-3 duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+                class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-3 2xl:py-2 2xl:text-base"
                 placeholder="Input"
               />
             </div>
@@ -50,17 +52,16 @@
         </div>
 
         <div class="flex hidden flex-col gap-2 font-medium">
-          <label class="text-sm text-gray-600"></label>
+          <label class="text-xs text-gray-600 2xl:text-sm"></label>
           <input
             autocomplete="off"
-            id="input-short"
-            class="rounded-md border-2 border-gray-300 bg-gray-100 px-4 py-3 duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+            class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-3 2xl:py-2 2xl:text-base"
             placeholder="Input"
           />
         </div>
 
         <div class="flex hidden flex-col gap-2 font-medium">
-          <label class="text-sm text-gray-600"></label>
+          <label class="text-xs text-gray-600 2xl:text-sm"></label>
           <div class="relative cursor-pointer">
             <select
               id="input-spinner"
@@ -73,19 +74,19 @@
           </div>
         </div>
 
-        <div class="flex hidden flex-col gap-2 text-sm font-medium">
-          <label class="text-gray-600"></label>
+        <div class="flex hidden flex-col gap-2 font-medium">
+          <label class="text-xs text-gray-600 2xl:text-sm"></label>
           <textarea
             id="input-large"
             autocomplete="off"
-            class="resize-none rounded-md border-2 border-gray-300 bg-gray-100 px-4 py-3 duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+            class="resize-none rounded-md border-2 border-gray-300 bg-gray-100 px-3 py-2 text-xs duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-4 2xl:py-3 2xl:text-sm"
             placeholder="Input"
             rows="7"
           ></textarea>
         </div>
 
         <div class="flex hidden flex-col gap-2">
-          <label class="text-sm font-medium text-gray-600"></label>
+          <label class="text-xs font-medium text-gray-600 2xl:text-sm"></label>
           <div id="input-radio" class="grid h-36 gap-6">
             <div
               class="hidden cursor-pointer content-center space-y-2 rounded-md border-2 border-gray-300 bg-gray-100 text-center duration-300 hover:border-amber-500"
@@ -97,16 +98,16 @@
           </div>
         </div>
 
-        <div class="flex gap-4">
+        <div class="flex mt-2 2xl:mt-4  gap-2 2xl:gap-4">
           <button
             type="button"
             id="modalSubBtn"
-            class="mt-4 hidden w-full rounded-lg bg-gray-500 p-4 font-bold text-white shadow-lg duration-300 hover:scale-105 hover:bg-gray-400 hover:shadow-xl hover:shadow-gray-500 active:scale-95 active:bg-gray-600 active:shadow-none"
+            class="hidden w-full rounded-lg bg-gray-500 p-4 font-bold text-white shadow-lg duration-300 hover:scale-105 hover:bg-gray-400 hover:shadow-xl hover:shadow-gray-500 active:scale-95 active:bg-gray-600 active:shadow-none"
           ></button>
           <button
             id="modalMainBtn"
             type="button"
-            class="mt-4 w-full rounded-lg bg-amber-600 p-4 font-bold text-white shadow-lg duration-300 hover:scale-105 hover:bg-amber-500 hover:shadow-xl hover:shadow-amber-600 active:scale-95 active:bg-amber-700 active:shadow-none"
+            class="w-full rounded-lg bg-amber-600 p-4 font-bold text-white shadow-lg duration-300 hover:scale-105 hover:bg-amber-500 hover:shadow-xl hover:shadow-amber-600 active:scale-95 active:bg-amber-700 active:shadow-none"
           ></button>
         </div>
       </form>

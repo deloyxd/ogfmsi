@@ -39,29 +39,29 @@ function showTab(tabIndex) {
 
   if (tabIndex == 1) {
     newTab1.children[0].classList.remove('text-gray-300');
-    newTab1.children[1].classList.remove('hidden');
-    newTab1.children[2].classList.add('hidden');
+    newTab1.children[1].children[0].classList.remove('hidden');
+    newTab1.children[1].children[1].classList.add('hidden');
     newTab2.children[0].classList.add('text-gray-300');
-    newTab2.children[1].classList.add('hidden');
-    newTab2.children[2].classList.remove('hidden');
+    newTab2.children[1].children[0].classList.add('hidden');
+    newTab2.children[1].children[1].classList.remove('hidden');
   } else {
     newTab1.children[0].classList.add('text-gray-300');
-    newTab1.children[1].classList.add('hidden');
-    newTab1.children[2].classList.remove('hidden');
+    newTab1.children[1].children[0].classList.add('hidden');
+    newTab1.children[1].children[1].classList.remove('hidden');
     newTab2.children[0].classList.remove('text-gray-300');
-    newTab2.children[1].classList.remove('hidden');
-    newTab2.children[2].classList.add('hidden');
+    newTab2.children[1].children[0].classList.remove('hidden');
+    newTab2.children[1].children[1].classList.add('hidden');
   }
 
   activeTimeout = setTimeout(() => {
     if (tabIndex == 1) {
       newTab2.children[0].classList.remove('text-gray-300');
-      newTab2.children[1].classList.remove('hidden');
-      newTab2.children[2].classList.add('hidden');
+      newTab2.children[1].children[0].classList.remove('hidden');
+      newTab2.children[1].children[1].classList.add('hidden');
     } else {
       newTab1.children[0].classList.remove('text-gray-300');
-      newTab1.children[1].classList.remove('hidden');
-      newTab1.children[2].classList.add('hidden');
+      newTab1.children[1].children[0].classList.remove('hidden');
+      newTab1.children[1].children[1].classList.add('hidden');
     }
     activeTimeout = null;
   }, TAB_SWITCH_DELAY);
