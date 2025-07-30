@@ -1545,7 +1545,7 @@
           </div>
           <div class="section-h-c bg-gray-700">
             <div class="w-[235px] text-center text-sm font-bold text-white xl:text-base 2xl:w-[302px] 2xl:text-lg">
-              <p class="skew-x-12">Customize your dashboard</p>
+              <p class="skew-x-12">Welcome to the Settings</p>
             </div>
           </div>
           <div class="flex gap-2 2xl:gap-4">
@@ -1557,6 +1557,331 @@
 
         <!-- content -->
          
+      </section>
+
+      <!-- 🔥 equipment 🔥 -->
+      <section id="equipment-section" class="section hidden gap-4 2xl:gap-8">
+        <!-- header -->
+        <header class="section-h from-indigo-500 to-purple-500 p-4 2xl:p-8">
+          <div class="section-h2">
+            <div class="section-h2-h">
+              <img src="/src/images/client_logo.jpg" />
+            </div>
+            <div class="flexbox">
+              <p class="text-lg xl:text-xl 2xl:text-2xl">Equipment Management</p>
+              <p class="text-xs text-white/80 xl:text-sm 2xl:text-base">Maintain and track gym equipment</p>
+            </div>
+          </div>
+          <div class="section-h-c bg-indigo-500">
+            <div class="w-[235px] text-center text-sm font-bold text-indigo-300 xl:text-base 2xl:w-[302px] 2xl:text-lg">
+              <p class="skew-x-12">Welcome to Equipment Maintenance 💪</p>
+            </div>
+          </div>
+          <div class="flex gap-2 2xl:gap-4">
+            <!-- <button
+              data-section="equipment"
+              data-title="Add Equipment 🔧"
+              data-subtitle="Equipment registration form"
+              class="section-main-btn text-purple-500 hover:bg-purple-500 hover:shadow-purple-700 active:translate-y-1 active:scale-95 active:bg-purple-600 active:shadow-none"
+            >
+              Add Equipment 🔧
+            </button> -->
+            <button data-section="equipment" class="section-sub-btn text-indigo-500 hover:bg-indigo-600">
+              Maintenance Log 📋
+            </button>
+          </div>
+        </header>
+
+        <!-- stats -->
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-4 lg:gap-4">
+          <div class="section-stats-base min-h-[86px] border-indigo-500 p-3 xl:min-h-[108px] xl:p-4">
+            <p class="section-stats-h xl:mb-2 xl:text-lg">
+              <b class="text-indigo-500">Total</b>
+              Equipment
+            </p>
+            <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+          </div>
+          <div
+            data-section="equipment"
+            class="section-stats-base min-h-[86px] border-indigo-500 p-3 xl:min-h-[108px] xl:p-4"
+          >
+            <div data-type="active equipment" title="See breakdown" class="section-stats-f">🔧</div>
+            <p class="section-stats-h xl:mb-2 xl:text-lg">
+              <b class="text-indigo-500">Active</b>
+              Equipment
+            </p>
+            <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+          </div>
+          <div
+            data-section="equipment"
+            class="section-stats-base min-h-[86px] border-indigo-500 p-3 xl:min-h-[108px] xl:p-4"
+          >
+            <div data-type="maintenance due" title="See breakdown" class="section-stats-f">⚠️</div>
+            <p class="section-stats-h xl:mb-2 xl:text-lg">
+              <b class="text-indigo-500">Maintenance</b>
+              Due
+            </p>
+            <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+          </div>
+          <div
+            data-section="equipment"
+            class="section-stats-base min-h-[86px] border-indigo-500 p-3 xl:min-h-[108px] xl:p-4"
+          >
+            <div data-type="out of service" title="See breakdown" class="section-stats-f">🚫</div>
+            <p class="section-stats-h xl:mb-2 xl:text-lg">
+              <b class="text-indigo-500">Out of</b>
+              Service
+            </p>
+            <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+          </div>
+        </div>
+
+        <!-- content -->
+        <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
+          <!-- section 1 -->
+          <div class="flexbox col-span-1 2xl:col-span-8">
+            <div class="section-content border-indigo-500">
+              <!-- header -->
+              <div class="section-content-h h-[96px]">
+                <!-- tabs -->
+                <div class="section-content-h2">
+                  <button id="equipment_tab1" class="section-content-tab bg-gray-200 hover:bg-gray-300">
+                    <p class="mb-6 text-base">Equipment Inventory</p>
+                    <div class="absolute inset-0 mt-6 content-center">
+                      <p class="text-xs text-gray-500">All gym equipment list</p>
+                      <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                    </div>
+
+                    <!-- red dot -->
+                    <div class="absolute right-2 top-2 hidden">
+                      <div class="relative h-2 w-2">
+                        <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                        <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                      </div>
+                    </div>
+                  </button>
+                  <button id="equipment_tab2" class="section-content-tab bg-transparent hover:bg-gray-200">
+                    <p class="mb-6 text-base">Maintenance Schedule</p>
+                    <div class="absolute inset-0 mt-6 content-center">
+                      <p class="text-xs text-gray-500">Upcoming maintenance tasks</p>
+                      <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+                    </div>
+
+                    <!-- red dot -->
+                    <div class="absolute right-2 top-2 hidden">
+                      <div class="relative h-2 w-2">
+                        <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                        <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <div class="section-content-h-f">
+                  <!-- search bar -->
+                  <div class="relative mr-1">
+                    <input
+                      autocomplete="off"
+                      id="equipmentSection1Search"
+                      placeholder="Search equipment..."
+                      class="section-content-search-main w-48 focus:ring-indigo-500 xl:w-56 2xl:w-64"
+                    />
+                    <div class="section-content-searchicon">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- settings -->
+                  <button class="section-content-settings group hover:shadow-indigo-500">
+                    <div id="equipment_section1_settings" class="pb-[4px] pl-[1px] group-hover:animate-spin">⚙</div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- content -->
+              <div class="p-6">
+                <!-- tab 1 content -->
+                <div id="equipment_inventory" class="scrollbar-light h-[375px]">
+                  <div class="section-content-list-title grid-cols-8">
+                    <p class="col-span-1">Equipment ID</p>
+                    <p class="col-span-2 pl-4">Name</p>
+                    <p class="col-span-1 pl-4">Type</p>
+                    <p class="col-span-1 pl-4">Status</p>
+                    <p class="col-span-1 pl-4">Last Maintenance</p>
+                    <p class="col-span-1 pl-4">Next Maintenance</p>
+                    <p class="col-span-1 pl-4">Actions</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[12.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[37.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[50%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[62.5%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[75%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[87.5%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="equipmentInventoryEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No equipment found</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-8 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-2 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <div class="absolute right-0 mr-4 flex gap-3">
+                      <button
+                        id="equipmentEditBtn"
+                        class="rounded-lg bg-blue-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-400 active:translate-y-1 active:scale-95 active:bg-blue-700 active:shadow-none"
+                      >
+                        Edit ✏️
+                      </button>
+                      <button
+                        id="equipmentMaintenanceBtn"
+                        class="rounded-lg bg-yellow-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600 hover:shadow-lg hover:shadow-yellow-400 active:translate-y-1 active:scale-95 active:bg-yellow-700 active:shadow-none"
+                      >
+                        Maintenance 🔧
+                      </button>
+                      <button
+                        id="equipmentDeleteBtn"
+                        class="rounded-lg bg-red-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-red-600 hover:shadow-lg hover:shadow-red-400 active:translate-y-1 active:scale-95 active:bg-red-700 active:shadow-none"
+                      >
+                        Delete 🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- tab 2 content -->
+                <div id="equipment_maintenance" class="scrollbar-light hidden h-[375px]">
+                  <div class="section-content-list-title grid-cols-7">
+                    <p class="col-span-1">Equipment ID</p>
+                    <p class="col-span-2 pl-4">Equipment Name</p>
+                    <p class="col-span-1 pl-4">Due Date</p>
+                    <p class="col-span-1 pl-4">Priority</p>
+                    <p class="col-span-1 pl-4">Type</p>
+                    <p class="col-span-1 pl-4">Actions</p>
+                    <span class="abs-f w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[14.3%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[42.9%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[57.1%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[71.4%] w-px bg-gray-400"></span>
+                    <span class="abs-tb left-[85.7%] w-px bg-gray-400"></span>
+                  </div>
+                  <div id="equipmentMaintenanceEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+                    <p>No maintenance scheduled</p>
+                  </div>
+                  <div class="relative grid hidden grid-cols-7 items-center border-b border-gray-200 p-4 font-medium text-gray-900 duration-300 hover:bg-white">
+                    <p class="col-span-1 text-xs"></p>
+                    <p class="col-span-2 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <p class="col-span-1 pl-4 text-xs"></p>
+                    <div class="absolute right-0 mr-4 flex gap-3">
+                      <button
+                        id="maintenanceCompleteBtn"
+                        class="rounded-lg bg-green-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-green-600 hover:shadow-lg hover:shadow-green-400 active:translate-y-1 active:scale-95 active:bg-green-700 active:shadow-none"
+                      >
+                        Complete ✅
+                      </button>
+                      <button
+                        id="maintenanceRescheduleBtn"
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-400 active:translate-y-1 active:scale-95 active:bg-orange-700 active:shadow-none"
+                      >
+                        Reschedule 📅
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- section 2 -->
+          <div class="flexbox col-span-1 2xl:col-span-4">
+            <div class="section-content-base border-indigo-500 p-6">
+              <!-- header -->
+              <div class="mb-6">
+                <h3 class="text-lg font-bold text-gray-900 xl:text-xl">Quick Actions</h3>
+                <p class="text-sm text-gray-500">Manage equipment maintenance</p>
+              </div>
+
+              <!-- content -->
+              <div class="space-y-4">
+                <!-- add equipment form -->
+                <div class="space-y-3">
+                  <input
+                    id="equipmentSection2Input"
+                    type="text"
+                    placeholder="Equipment name..."
+                    class="section-content-search-sub border-indigo-500 focus:ring-indigo-500"
+                  />
+                  <button
+                    id="equipmentSection2MainBtn"
+                    class="section-content-submit w-full border-indigo-500 bg-indigo-500 text-white hover:bg-indigo-600 hover:shadow-indigo-500 active:bg-indigo-700"
+                  >
+                    Add Equipment ➕
+                  </button>
+                </div>
+
+                <!-- maintenance summary -->
+                <div class="mt-6 space-y-3">
+                  <h4 class="font-semibold text-gray-900">Maintenance Summary</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">This Week:</span>
+                      <span class="font-medium text-indigo-600">0 tasks</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">This Month:</span>
+                      <span class="font-medium text-indigo-600">0 tasks</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Overdue:</span>
+                      <span class="font-medium text-red-600">0 tasks</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- equipment status -->
+                <div class="mt-6 space-y-3">
+                  <h4 class="font-semibold text-gray-900">Equipment Status</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center justify-between">
+                      <span class="text-gray-600">Operational</span>
+                      <span class="flex items-center">
+                        <span class="mr-2 h-2 w-2 rounded-full bg-green-500"></span>
+                        <span class="font-medium text-green-600">0</span>
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-gray-600">Maintenance Due</span>
+                      <span class="flex items-center">
+                        <span class="mr-2 h-2 w-2 rounded-full bg-yellow-500"></span>
+                        <span class="font-medium text-yellow-600">0</span>
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-gray-600">Out of Service</span>
+                      <span class="flex items-center">
+                        <span class="mr-2 h-2 w-2 rounded-full bg-red-500"></span>
+                        <span class="font-medium text-red-600">0</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
     </div>
@@ -1590,6 +1915,9 @@
     <script type="module" src="/src/js/reports/stats.js"></script>
     <script type="module" src="/src/js/reports/content.js"></script>
     <script type="module" src="/src/js/settings/settings.js"></script>
+    <script type="module" src="/src/js/equipment/header.js"></script>
+    <script type="module" src="/src/js/equipment/stats.js"></script>
+    <script type="module" src="/src/js/equipment/content.js"></script>
     <!-- add new js here 👆 -->
 
     <!-- imported js -->
