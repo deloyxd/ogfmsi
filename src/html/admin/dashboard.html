@@ -112,6 +112,53 @@
               </li>
             </ul>
           </li>
+            <li>
+            <button class="sidebar-main-btn justify-between" data-type="dropdown" data-section="store">
+              <div class="flex items-center">
+               <i class="fas fa-store mr-3"></i>
+                Store
+              </div>
+              <i class="fas fa-chevron-down duration-300" id="store-arrow"></i>
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+            <ul class="ml-4 mt-2 hidden space-y-1" id="store-dropdown">
+              <li>
+                <button class="sidebar-sub-btn" data-section="sales">
+                 <i class="fas fa-shopping-cart mr-3"></i>
+                  Sales
+
+                  <!-- red dot -->
+                  <div class="absolute right-2 top-2 hidden">
+                    <div class="relative h-2 w-2">
+                      <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                      <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                    </div>
+                  </div>
+                </button>
+              </li>
+              <li>
+                <button class="sidebar-sub-btn" data-section="inventory">
+                 <i class="fas fa-box mr-3"></i>
+                  Sales Inventory
+
+                  <!-- red dot -->
+                  <div class="absolute right-2 top-2 hidden">
+                    <div class="relative h-2 w-2">
+                      <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                      <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                    </div>
+                  </div>
+                </button>
+              </li>
+            </ul>
+          </li>
           <li>
             <button class="sidebar-main-btn" data-section="equipment">
               <i class="fas fa-dumbbell mr-3"></i>
@@ -756,6 +803,265 @@
           </div>
         </div>
       </section>
+
+  <!-- 🔥 Store - sales and inventory 🔥 -->
+    <section id="sales-section" class="section hidden gap-4 2xl:gap-8">
+  <!-- header -->
+  <header class="section-h from-blue-500 to-indigo-500 p-4 2xl:p-8">
+    <!-- start -->
+    <div class="section-h2">
+      <div class="section-h2-h">
+        <img src="/src/images/client_logo.jpg" />
+      </div>
+      <div class="flexbox">
+        <p class="text-lg xl:text-xl 2xl:text-2xl">Store</p>
+        <p class="text-xs text-white/80 xl:text-sm 2xl:text-base">Sales Area</p>
+      </div>
+    </div>
+
+    <!-- middle -->
+    <div class="section-h-c bg-blue-500">
+      <div class="w-[235px] text-center text-sm font-bold text-white xl:text-base 2xl:w-[302px] 2xl:text-lg">
+        <p id="salesHeaderContent" class="skew-x-12">📆 July 25, 2025 ⌚ 7:30AM</p>
+      </div>
+    </div>
+
+    <!-- end -->
+    <div class="flex gap-2 2xl:gap-4">
+      <button
+        data-section="sales_form"
+        data-title="Add Product"
+        data-subtitle="Add product form"
+        class="section-main-btn text-green-500 hover:bg-green-500 hover:shadow-green-700 active:translate-y-1 active:scale-95 active:bg-green-600 active:shadow-none"
+      >
+        Add Product 🛒
+      </button>
+      <button data-section="sales" class="section-sub-btn text-blue-500 hover:bg-blue-600">
+        Logs 📜
+      </button>
+    </div>
+  </header>
+
+  <!-- stats -->
+  <div class="grid grid-cols-1 gap-2 lg:grid-cols-4 lg:gap-4">
+    <div class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4">
+      <p class="section-stats-h xl:mb-2 xl:text-lg">
+        <b class="text-blue-500">Today's</b>
+        Check-Ins
+      </p>
+      <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+    </div>
+    <div
+      data-section="sales"
+      class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
+    >
+      <div data-type="average daily check-in" title="See breakdown" class="section-stats-f">🧾</div>
+      <p class="section-stats-h xl:mb-2 xl:text-lg">
+        Avg
+        <b class="text-blue-500">Daily</b>
+        Check-In
+      </p>
+      <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+    </div>
+    <div
+      data-section="sales"
+      class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
+    >
+      <div data-type="average weekly check-in" title="See breakdown" class="section-stats-f">🧾</div>
+      <p class="section-stats-h xl:mb-2 xl:text-lg">
+        Avg
+        <b class="text-blue-500">Weekly</b>
+        Check-Ins
+      </p>
+      <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+    </div>
+    <div
+      data-section="sales"
+      class="section-stats-base min-h-[86px] border-blue-500 p-3 xl:min-h-[108px] xl:p-4"
+    >
+      <div data-type="average monthly check-in" title="See breakdown" class="section-stats-f">🧾</div>
+      <p class="section-stats-h xl:mb-2 xl:text-lg">
+        Avg
+        <b class="text-blue-500">Monthly</b>
+        Check-Ins
+      </p>
+      <p class="section-stats-c text-2xl xl:text-3xl">0</p>
+    </div>
+  </div>
+
+  <!-- content -->
+  <div class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
+    <!-- section 1 -->
+    <div class="flexbox col-span-1 2xl:col-span-8">
+      <div class="section-content border-blue-500">
+        <!-- header -->
+        <div class="section-content-h h-[96px]">
+          <!-- tabs -->
+          <div class="section-content-h2">
+            <button id="sales_tab1" class="section-content-tab bg-gray-200 hover:bg-gray-300">
+              <p class="mb-6 text-base">Registered Daily Users</p>
+              <div class="absolute inset-0 mt-6 content-center">
+                <p class="text-xs text-gray-500">Daily users monitoring</p>
+                <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+              </div>
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+            <button id="sales_tab2" class="section-content-tab bg-transparent hover:bg-gray-200">
+              <p class="mb-6 text-base">Recent Daily Check-Ins</p>
+              <div class="absolute inset-0 mt-6 content-center">
+                <p class="text-xs text-gray-500">Today's user daily check-ins</p>
+                <i class="fas fa-spinner hidden animate-spin text-gray-400"></i>
+              </div>
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div class="section-content-h-f">
+            <!-- search bar -->
+            <div class="relative mr-1">
+              <input
+                autocomplete="off"
+                id="salesSection1Search"
+                placeholder="Search keyword..."
+                class="section-content-search-main w-48 focus:ring-blue-500 xl:w-56 2xl:w-64"
+              />
+              <div class="section-content-searchicon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <!-- settings -->
+            <button class="section-content-settings group hover:shadow-blue-500">
+              <div id="sales_section1_settings" class="pb-[4px] pl-[1px] group-hover:animate-spin">
+                ⚙
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- content -->
+        <div class="p-6">
+          <!-- tab 1 content -->
+          <div id="sales_all" class="scrollbar-light h-[375px]">
+            <div class="section-content-list-title grid grid-cols-5 relative">
+              <p>Product ID</p>
+              <p class="pl-4">Product Name</p>
+              <p class="pl-4">Type of Product</p>
+              <p class="pl-4">Date</p>
+              <p class="pl-4">Quantity</p>
+
+              <!-- Vertical dividers -->
+              <span class="absolute top-0 bottom-0 left-1/5 w-px bg-gray-400"></span>
+              <span class="absolute top-0 bottom-0 left-2/5 w-px bg-gray-400"></span>
+              <span class="absolute top-0 bottom-0 left-3/5 w-px bg-gray-400"></span>
+              <span class="absolute top-0 bottom-0 left-4/5 w-px bg-gray-400"></span>
+            </div>
+            <div id="salesAllEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+              <p>No registered users yet</p>
+            </div>
+            <!-- hidden row template remains unchanged -->
+          </div>
+
+          <!-- tab 2 content -->
+          <div id="sales_recent" class="scrollbar-light hidden h-[375px]">
+            <div class="section-content-list-title grid-cols-3">
+              <p>User ID</p>
+              <p class="pl-4">User</p>
+              <p class="pl-4">Check-in Time</p>
+              <span class="abs-f w-px bg-gray-400"></span>
+              <span class="abs-tb left-1/3 w-px bg-gray-400"></span>
+              <span class="abs-tb left-2/3 w-px bg-gray-400"></span>
+            </div>
+            <div id="salesRecentEmpty" class="section-content-list-empty h-[325px] items-center justify-center">
+              <p>No check-ins today</p>
+            </div>
+            <!-- hidden row template remains unchanged -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- section 2 -->
+    <div class="flexbox col-span-1 2xl:col-span-4">
+      <div class="section-content-base border-blue-500 p-6">
+        <div class="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <p class="text-lg font-bold">Quick Check-In</p>
+            <p class="text-sm text-gray-500">Upload user QR code or enter ID manually</p>
+          </div>
+
+          <button class="section-content-settings group hover:shadow-blue-500">
+            <div id="sales_section2_settings" class="pb-[4px] pl-[1px] group-hover:animate-spin">⚙</div>
+          </button>
+        </div>
+        <div class="flexbox items-center gap-6">
+          <div class="w-full">
+            <div
+              id="salesSection2Empty"
+              class="section-content-list-empty h-[250px] w-full items-center justify-center rounded-lg bg-gray-200"
+            >
+              <p>Status: No connection</p>
+              <p class="text-sm">No uploaded QR yet</p>
+            </div>
+          </div>
+          <div class="relative w-full">
+            <input
+              autocomplete="off"
+              id="salesSection2Input"
+              placeholder="Enter user ID..."
+              class="section-content-search-sub border-blue-500 focus:ring-blue-500"
+            />
+            <div class="section-content-searchicon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-chevrons-left-right-ellipsis-icon lucide-chevrons-left-right-ellipsis"
+              >
+                <path d="M12 12h.01" />
+                <path d="M16 12h.01" />
+                <path d="m17 7 5 5-5 5" />
+                <path d="m7 7-5 5 5 5" />
+                <path d="M8 12h.01" />
+              </svg>
+            </div>
+          </div>
+          <button
+            id="salesSection2MainBtn"
+            class="section-content-submit bg-blue-500 hover:bg-blue-600 hover:shadow-blue-400 active:scale-95 active:bg-blue-700"
+          >
+            Submit Check-In
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+    </section>
 
       <!-- 🔥 billing 🔥 -->
       <section id="billing-section" class="section hidden gap-4 2xl:gap-8">
@@ -1580,6 +1886,9 @@
     <script type="module" src="/src/js/checkin_daily/header.js"></script>
     <script type="module" src="/src/js/checkin_daily/stats.js"></script>
     <script type="module" src="/src/js/checkin_daily/content.js"></script>
+    <script type="module" src="/src/js/sales/header.js"></script>
+    <script type="module" src="/src/js/sales/content.js"></script>
+    <script type="module" src="/src/js/sales/stats.js"></script>
     <script type="module" src="/src/js/billing/header.js"></script>
     <script type="module" src="/src/js/billing/stats.js"></script>
     <script type="module" src="/src/js/billing/content.js"></script>
