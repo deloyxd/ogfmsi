@@ -167,12 +167,13 @@ function showSection(sectionName) {
         }
       }
 
-      function loadContent() {
+      async function loadContent() {
         const sectionOne = document.getElementById(`${sectionName}_tab`).parentElement;
         const sectionTwo = document.getElementById('sectionContent').children[1];
         setupSectionOne();
         setupSectionTwo();
-        loadCustomContents(`${sectionName}_content.html`);
+        await loadCustomContents(`${sectionName}_content.html`);
+        document.dispatchEvent(new CustomEvent('ogfmsiAdminMainLoaded'));
 
         function setupSectionOne() {
           Array.from(sectionOne.children).forEach((el, i) => {
@@ -193,6 +194,9 @@ function showSection(sectionName) {
             if (dataset['sectiononesettings'] == 1)
               sectionOne.parentElement.children[1].children[1].classList.remove('hidden');
             if (dataset['listtitletexts'][i] != '[]') {
+              const tableParent = document.createElement('div');
+              tableParent.dataset.sectionindex = 1;
+              tableParent.dataset.tabindex = i + 1;
               const table = document.createElement('table');
               table.className = 'w-full border-collapse cursor-default hidden';
               const thead = document.createElement('thead');
@@ -239,55 +243,13 @@ function showSection(sectionName) {
 
               tbody.appendChild(dataRow);
               table.appendChild(tbody);
+              tableParent.appendChild(table);
 
-              sectionOne.parentElement.parentElement.lastElementChild.appendChild(table);
+              sectionOne.parentElement.parentElement.lastElementChild.appendChild(tableParent);
             }
 
             clone.classList.remove('hidden');
             sectionOne.appendChild(clone);
-          }
-
-          const resizers = document.querySelectorAll('.resizer');
-          let isResizing = false;
-          let currentColumn;
-          let startX;
-          let startWidth;
-
-          resizers.forEach((resizer) => {
-            resizer.addEventListener('mousedown', (e) => {
-              e.preventDefault();
-              isResizing = true;
-              currentColumn = resizer.parentElement;
-              startX = e.clientX;
-              startWidth = currentColumn.offsetWidth;
-
-              document.addEventListener('mousemove', handleMouseMove);
-              document.addEventListener('mouseup', stopResize);
-            });
-          });
-
-          function handleMouseMove(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-
-            const width = startWidth + e.clientX - startX;
-
-            if (width > 50) {
-              currentColumn.style.width = `${width}px`;
-              currentColumn.parentElement.parentElement.style.tableLayout = 'auto';
-            }
-          }
-
-          function stopResize(e) {
-            e.preventDefault();
-
-            isResizing = false;
-            document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('resizing'));
-            document.body.style.cursor = '';
-            currentColumn.parentElement.parentElement.style.tableLayout = 'fixed';
-
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', stopResize);
           }
         }
 
@@ -305,7 +267,7 @@ function showSection(sectionName) {
             const sectionTwoContent = sectionTwo.children[0].children[1];
             const sectionTwoListContainer = document.createElement('div');
             sectionTwoListContainer.className = 'section-content-list-empty w-full rounded-lg bg-gray-200';
-            let totalSectionTwoListContainerHeight = 398;
+            let totalSectionTwoListContainerHeight = 401;
             if (dataset['sectiontwoemptylist']) {
               const sectionTwoListEmpty = document.createElement('div');
               sectionTwoListEmpty.id = `${sectionName}SectionTwoListEmpty`;
@@ -377,10 +339,51 @@ function showSection(sectionName) {
         async function loadCustomContents(fetchCustomHtmlFile) {
           const response = await fetch(fetchCustomHtmlFile);
           const html = await response.text();
-          const sectionOneCustomContents = '';
-          const sectionTwoCustomContent = '';
-          sectionOne.appendChild(sectionOneCustomContents);
-          sectionTwo.appendChild(sectionTwoCustomContent);
+          const contentParent = sectionOne.parentElement.parentElement.children[1];
+          contentParent.innerHTML += html;
+        }
+
+        const resizers = document.querySelectorAll('.resizer');
+        let isResizing = false;
+        let currentColumn;
+        let startX;
+        let startWidth;
+
+        resizers.forEach((resizer) => {
+          resizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isResizing = true;
+            currentColumn = resizer.parentElement;
+            startX = e.clientX;
+            startWidth = currentColumn.offsetWidth;
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', stopResize);
+          });
+        });
+
+        function handleMouseMove(e) {
+          e.preventDefault();
+          if (!isResizing) return;
+
+          const width = startWidth + e.clientX - startX;
+
+          if (width > 50) {
+            currentColumn.style.width = `${width}px`;
+            currentColumn.parentElement.parentElement.style.tableLayout = 'auto';
+          }
+        }
+
+        function stopResize(e) {
+          e.preventDefault();
+
+          isResizing = false;
+          document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('resizing'));
+          document.body.style.cursor = '';
+          currentColumn.parentElement.parentElement.style.tableLayout = 'fixed';
+
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', stopResize);
         }
       }
     }
