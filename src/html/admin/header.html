@@ -1,0 +1,30 @@
+<div class="section-h from-${mainColor}-500 to-${subColor}-500 p-4 2xl:p-8">
+  <div class="section-h2">
+    <div class="section-h2-h">
+      <img src="/src/images/client_logo.jpg" />
+    </div>
+    <div class="flexbox">
+      <p class="text-lg xl:text-xl 2xl:text-2xl">${title}</p>
+      <p class="text-xs text-white/80 xl:text-sm 2xl:text-base">${subtitle}</p>
+    </div>
+  </div>
+  <div class="section-h-c bg-${mainColor}-500">
+    <div
+      id="middleText"
+      class="text-${mainColor}-300 w-[235px] text-center text-sm font-bold xl:text-base 2xl:w-[302px] 2xl:text-lg"
+    >
+      ${middletext}
+    </div>
+  </div>
+  <div class="flex gap-2 2xl:gap-4">
+    <button
+      data-section="${sectionName}"
+      class="section-main-btn text-${btnColor}-500 hover:bg-${btnColor}-500 hover:shadow-${btnColor}-700 active:bg-${btnColor}-600 active:translate-y-1 active:scale-95 active:shadow-none"
+    >
+      ${mainbtntext}
+    </button>
+    <button data-section="${sectionName}" class="section-sub-btn text-${subColor}-500 hover:bg-${subColor}-600 hidden">
+      ${subbtntext}
+    </button>
+  </div>
+</div>

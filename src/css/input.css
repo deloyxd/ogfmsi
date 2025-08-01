@@ -55,7 +55,7 @@
 
   /* Unique components */
   .section {
-    @apply flexbox;
+    @apply flexbox gap-4;
   }
 
   .section-h {
@@ -159,7 +159,7 @@
   }
 
   .section-content-submit {
-    @apply w-full rounded-lg p-3 font-bold text-white duration-300;
+    @apply w-full rounded-lg p-3 text-center font-bold text-white duration-300;
   }
 
   .section-content-submit:hover {
@@ -186,6 +186,10 @@
   @media (width >= 96rem) {
     .btn-main {
       @apply px-6 text-base;
+    }
+
+    .section {
+      @apply gap-8;
     }
 
     .section-h-c {

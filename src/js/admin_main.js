@@ -58,9 +58,343 @@ function showSection(sectionName) {
   });
 
   const targetSection = document.getElementById(sectionName + '-section');
-  if (targetSection) {
-    targetSection.classList.remove('hidden');
+  if (!targetSection) {
+    alert("There's no section with that id!");
+    return;
   }
+
+  const [mainColor, subColor, btnColor] = targetSection.dataset.color.split('-');
+  const baseDataset = { sectionName, mainColor, subColor, btnColor };
+
+  const components = [
+    {
+      name: 'header',
+      fields: ['title', 'subtitle', 'middletext', 'mainbtntext', 'subbtntext'],
+    },
+    {
+      name: 'stats',
+      fields: ['toggles', 'startingtexts', 'highlighttexts', 'endingtexts', 'types'],
+    },
+    {
+      name: 'content',
+      fields: [
+        'sectioncount',
+        'tabtitles',
+        'subtitles',
+        'sectiononesettings',
+        'sectiononesearchtext',
+        'listtitletexts',
+        'listitembtnids',
+        'listitembtntexts',
+        'listitembtncolors',
+        'sectiontwotitletexts',
+        'sectiontwosettings',
+        'sectiontwosearchtext',
+        'sectiontwoemptylist',
+        'sectiontwobtntext',
+      ],
+    },
+  ];
+
+  components.forEach(async ({ name, fields }) => {
+    const element = document.getElementById(`${sectionName}-section-${name}`);
+    if (element) {
+      const dataset = { ...baseDataset };
+      let totalClones = 0;
+      fields.forEach((field) => {
+        if (name.includes('content') && field.includes('sectioncount')) totalClones = element.dataset[field];
+        const fieldValues = element.dataset[field];
+        if (fieldValues && fieldValues.includes(':')) {
+          if (totalClones == 0) totalClones = fieldValues.split(':').length;
+          dataset[field] = [];
+          fieldValues.split(':').forEach((datasetField) => {
+            dataset[field].push(datasetField);
+          });
+          return;
+        }
+        dataset[field] = fieldValues?.trim() || '';
+      });
+
+      await loadComponent(name, element, dataset);
+      if (name.includes('stats')) {
+        loadStats();
+      }
+      if (name.includes('content')) {
+        loadContent();
+      }
+
+      function loadStats() {
+        const original = document.getElementById('sectionStats');
+        Array.from(original.parentElement.children).forEach((el, i) => {
+          if (i > 0) el.remove();
+        });
+        original.parentElement.classList.add(`lg:grid-cols-${totalClones}`);
+        for (let i = 0; i < totalClones; i++) {
+          const clone = original.cloneNode(true);
+
+          const statsTexts = clone.children[1];
+          fields.forEach((field) => {
+            switch (field) {
+              case 'toggles':
+                if (dataset[field][i] == 1) {
+                  clone.classList.remove('section-stats-base');
+                  clone.classList.add('section-stats');
+                  const statsToggle = clone.children[2];
+                  const statsValue = clone.children[3];
+                  statsToggle.classList.remove('hidden');
+                  statsValue.classList.add('hidden');
+                }
+                break;
+              case 'startingtexts':
+                statsTexts.innerHTML = dataset[field][i];
+                break;
+              case 'highlighttexts':
+                statsTexts.innerHTML =
+                  statsTexts.innerHTML + ` <b class="text-${dataset.mainColor}-500">${dataset[field][i]}</b>`;
+                break;
+              case 'endingtexts':
+                statsTexts.innerHTML = statsTexts.innerHTML + ' ' + dataset[field][i];
+                break;
+              case 'types':
+                const statsType = clone.children[0];
+                statsType.dataset.type = dataset[field][i];
+                break;
+            }
+          });
+
+          clone.classList.remove('hidden');
+          original.parentElement.appendChild(clone);
+        }
+      }
+
+      function loadContent() {
+        const sectionOne = document.getElementById(`${sectionName}_tab`).parentElement;
+        const sectionTwo = document.getElementById('sectionContent').children[1];
+        setupSectionOne();
+        setupSectionTwo();
+        loadCustomContents(`${sectionName}_content.html`);
+
+        function setupSectionOne() {
+          Array.from(sectionOne.children).forEach((el, i) => {
+            if (i > 0) el.remove();
+          });
+
+          for (let i = 0; i < dataset['tabtitles'].length; i++) {
+            const clone = sectionOne.children[0].cloneNode(true);
+            clone.id = `${sectionName}_tab${i + 1}`;
+
+            clone.children[0].textContent = dataset['tabtitles'][i];
+            clone.children[1].children[0].textContent = dataset['subtitles'][i];
+            if (dataset['sectiononesearchtext']) {
+              sectionOne.parentElement.children[1].children[0].classList.remove('hidden');
+              sectionOne.parentElement.children[1].children[0].children[0].placeholder =
+                dataset['sectiononesearchtext'];
+            }
+            if (dataset['sectiononesettings'] == 1)
+              sectionOne.parentElement.children[1].children[1].classList.remove('hidden');
+            if (dataset['listtitletexts'][i] != '[]') {
+              const table = document.createElement('table');
+              table.className = 'w-full border-collapse cursor-default hidden';
+              const thead = document.createElement('thead');
+              const headerRow = document.createElement('tr');
+              const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
+              titleTexts.forEach((titleText, index) => {
+                const th = document.createElement('th');
+                th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
+                th.textContent = titleText;
+                if (index < titleTexts.length - 1) {
+                  const resizer = document.createElement('div');
+                  resizer.className =
+                    'resizer absolute right-0 top-0 h-full cursor-col-resize bg-black/10 hover:bg-black/30 active:w-1.5 active:bg-black/30 group-hover:w-1.5';
+                  th.appendChild(resizer);
+                }
+                headerRow.appendChild(th);
+              });
+              thead.appendChild(headerRow);
+              table.appendChild(thead);
+              const tbody = document.createElement('tbody');
+              const dataRow = document.createElement('tr');
+
+              for (let j = 0; j < titleTexts.length; j++) {
+                const td = document.createElement('td');
+                td.className = 'relative border border-gray-300 px-2 py-4';
+                td.textContent = 'Sample text';
+                if (dataset['listitembtnids'] && j == titleTexts.length - 1) {
+                  const itemBtns = document.createElement('div');
+                  itemBtns.className = 'absolute top-0 right-0 m-2 flex gap-2';
+                  const itemBtnIds = dataset['listitembtnids'][i].slice(1, -1).split('//');
+                  const itemBtnTexts = dataset['listitembtntexts'][i].slice(1, -1).split('//');
+                  const itemBtnColors = dataset['listitembtncolors'][i].slice(1, -1).split('//');
+                  for (let k = 0; k < itemBtnIds.length; k++) {
+                    const btn = document.createElement('button');
+                    btn.id = itemBtnIds[k];
+                    btn.textContent = itemBtnTexts[k];
+                    btn.className = `rounded-lg bg-${itemBtnColors[k]}-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-${itemBtnColors[k]}-600 hover:shadow-lg hover:shadow-${itemBtnColors[k]}-400 active:scale-95 active:shadow-none`;
+                    itemBtns.appendChild(btn);
+                  }
+                  td.appendChild(itemBtns);
+                }
+                dataRow.appendChild(td);
+              }
+
+              tbody.appendChild(dataRow);
+              table.appendChild(tbody);
+
+              sectionOne.parentElement.parentElement.lastElementChild.appendChild(table);
+            }
+
+            clone.classList.remove('hidden');
+            sectionOne.appendChild(clone);
+          }
+
+          const resizers = document.querySelectorAll('.resizer');
+          let isResizing = false;
+          let currentColumn;
+          let startX;
+          let startWidth;
+
+          resizers.forEach((resizer) => {
+            resizer.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              isResizing = true;
+              currentColumn = resizer.parentElement;
+              startX = e.clientX;
+              startWidth = currentColumn.offsetWidth;
+
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', stopResize);
+            });
+          });
+
+          function handleMouseMove(e) {
+            e.preventDefault();
+            if (!isResizing) return;
+
+            const width = startWidth + e.clientX - startX;
+
+            if (width > 50) {
+              currentColumn.style.width = `${width}px`;
+              currentColumn.parentElement.parentElement.style.tableLayout = 'auto';
+            }
+          }
+
+          function stopResize(e) {
+            e.preventDefault();
+
+            isResizing = false;
+            document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('resizing'));
+            document.body.style.cursor = '';
+            currentColumn.parentElement.parentElement.style.tableLayout = 'fixed';
+
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', stopResize);
+          }
+        }
+
+        function setupSectionTwo() {
+          if (totalClones == 2) {
+            const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
+            sectionTwoTitles.children[0].textContent = dataset['sectiontwotitletexts'][0];
+            sectionTwoTitles.children[1].textContent = dataset['sectiontwotitletexts'][1];
+            const sectionTwoSettings = sectionTwo.children[0].children[0].children[1];
+
+            if (dataset['sectiontwosettings'] && dataset['sectiontwosettings'] == 1) {
+              sectionTwoSettings.classList.remove('hidden');
+            }
+
+            const sectionTwoContent = sectionTwo.children[0].children[1];
+            const sectionTwoListContainer = document.createElement('div');
+            sectionTwoListContainer.className = 'section-content-list-empty w-full rounded-lg bg-gray-200';
+            let totalSectionTwoListContainerHeight = 398;
+            if (dataset['sectiontwoemptylist']) {
+              const sectionTwoListEmpty = document.createElement('div');
+              sectionTwoListEmpty.id = `${sectionName}SectionTwoListEmpty`;
+              sectionTwoListEmpty.className = 'flex h-full justify-center';
+              sectionTwoListEmpty.innerHTML = `
+                  <p class="self-center">${dataset['sectiontwoemptylist']}</p>
+              `;
+              sectionTwoListContainer.appendChild(sectionTwoListEmpty);
+
+              const sectionTwoListItem = document.createElement('p');
+              sectionTwoListItem.className = 'section-content-list-item hidden';
+              sectionTwoListContainer.appendChild(sectionTwoListItem);
+            }
+            sectionTwoContent.appendChild(sectionTwoListContainer);
+
+            if (dataset['sectiontwosearchtext']) {
+              totalSectionTwoListContainerHeight -= 76;
+              const sectionTwoSearchParent = document.createElement('div');
+              sectionTwoSearchParent.className = 'relative w-full';
+
+              const searchInput = document.createElement('input');
+              searchInput.autocomplete = 'off';
+              searchInput.id = `${sectionName}SectionTwoSearch`;
+              searchInput.placeholder = dataset['sectiontwosearchtext'];
+              searchInput.className = `section-content-search-sub border-${mainColor}-500 focus:ring-${mainColor}-500`;
+              sectionTwoSearchParent.appendChild(searchInput);
+
+              const searchIcon = document.createElement('div');
+              searchIcon.className = 'section-content-searchicon';
+              searchIcon.innerHTML = `
+                  <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-chevrons-left-right-ellipsis-icon lucide-chevrons-left-right-ellipsis"
+                >
+                  <path d="M12 12h.01" />
+                  <path d="M16 12h.01" />
+                  <path d="m17 7 5 5-5 5" />
+                  <path d="m7 7-5 5 5 5" />
+                  <path d="M8 12h.01" />
+                </svg>
+              `;
+              sectionTwoSearchParent.appendChild(searchIcon);
+
+              sectionTwoContent.appendChild(sectionTwoSearchParent);
+            }
+
+            if (dataset['sectiontwobtntext']) {
+              totalSectionTwoListContainerHeight -= 72;
+              const sectionTwoMainBtn = document.createElement('div');
+
+              sectionTwoMainBtn.id = `${sectionName}SectionTwoMainBtn`;
+              sectionTwoMainBtn.className = `section-content-submit bg-${mainColor}-500 hover:bg-${mainColor}-600 hover:shadow-${mainColor}-400 active:scale-95 active:bg-${mainColor}-700`;
+              sectionTwoMainBtn.textContent = dataset['sectiontwobtntext'];
+
+              sectionTwoContent.appendChild(sectionTwoMainBtn);
+            }
+
+            sectionTwoListContainer.classList.add(`h-[${totalSectionTwoListContainerHeight}px]`);
+            sectionTwo.classList.remove('hidden');
+          }
+        }
+
+        async function loadCustomContents(fetchCustomHtmlFile) {
+          const response = await fetch(fetchCustomHtmlFile);
+          const html = await response.text();
+          const sectionOneCustomContents = '';
+          const sectionTwoCustomContent = '';
+          sectionOne.appendChild(sectionOneCustomContents);
+          sectionTwo.appendChild(sectionTwoCustomContent);
+        }
+      }
+    }
+  });
+
+  async function loadComponent(componentName, element, dataset) {
+    const response = await fetch(`${componentName}.html`);
+    const html = await response.text();
+    element.innerHTML = html.replace(/\$\{(\w+)\}/g, (match, varName) =>
+      dataset[varName] !== undefined ? dataset[varName] : match
+    );
+  }
+
+  targetSection.classList.remove('hidden');
 
   updateActiveSidebar(sectionName);
 }
@@ -79,6 +413,8 @@ function updateActiveSidebar(sectionName) {
     activeBtn.lastElementChild.classList.add('hidden');
   }
 }
+
+export let mainColor, subColor, btnColor;
 
 let tempModalContainer = null;
 let tempModalConfirmationContainer = null;
@@ -260,7 +596,8 @@ function setupModalBase(defaultData, inputs, callback) {
   }
 
   if (inputs.image) {
-    const originalContainer = tempModalContainer.querySelector('#input-image').parentElement.parentElement.parentElement;
+    const originalContainer =
+      tempModalContainer.querySelector('#input-image').parentElement.parentElement.parentElement;
     const imageContainerParent = originalContainer.cloneNode(true);
     const imageContainerTexts = imageContainerParent.children[0].children[1].lastElementChild.children;
     const imageContainer = imageContainerParent.children[0].children[1].children[0];
@@ -418,6 +755,9 @@ export function checkIfEmpty(inputs) {
 }
 
 export default {
+  mainColor,
+  subColor,
+  btnColor,
   openModal,
   openConfirmationModal,
   closeModal,
