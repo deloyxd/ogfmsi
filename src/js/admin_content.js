@@ -1,6 +1,7 @@
-document.addEventListener('ogfmsiAdminMainLoaded', () => {
-  const sectionName = 'dashboard';
-  const tabCount = document.getElementById(`${sectionName}_tab`).parentElement.children.length - 1;
+import main from './admin_main.js';
+
+document.addEventListener('ogfmsiAdminMainLoaded', function () {
+  const tabCount = document.getElementById(`${main.sharedState.sectionName}_tab`).parentElement.children.length - 1;
 
   let lastTabSwitchTime = 0;
   const TAB_SWITCH_DELAY = 1000;
@@ -20,9 +21,21 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
       activeTimeout = null;
     }
 
+    main.sharedState.tabIndex = tabIndex;
+
+    const searchInput = document.getElementById(`${main.sharedState.sectionName}SectionOneSearch`);
+    searchInput.value = '';
+    searchInput.dataset.tabindex = tabIndex;
+    const emptyListParent = document.getElementById(`${main.sharedState.sectionName}SectionOneListEmpty${tabIndex}`);
+    if (emptyListParent) {
+      searchInput.dataset.columncount =
+        emptyListParent.parentElement.parentElement.parentElement.children[0].children[0].children.length;
+    }
+    searchInput.dispatchEvent(new Event('input'));
+
     const inactiveTabs = [];
     for (let i = 1; i <= tabCount; i++) {
-      const tabParent = document.getElementById(`${sectionName}_tab${i}`);
+      const tabParent = document.getElementById(`${main.sharedState.sectionName}_tab${i}`);
 
       const newTab = tabParent.cloneNode(true);
       tabParent.replaceWith(newTab);
@@ -48,9 +61,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
     const contentParent = document.querySelectorAll(`[data-sectionindex="1"]`);
     contentParent.forEach((tab) => {
       if (tabIndex == tab.dataset.tabindex) {
-        tab.children[0].classList.remove('hidden');
+        tab.classList.remove('hidden');
       } else {
-        tab.children[0].classList.add('hidden');
+        tab.classList.add('hidden');
       }
     });
 

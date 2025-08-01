@@ -147,7 +147,7 @@
   }
 
   .section-content-list-empty {
-    @apply flexbox scrollbar-light gap-2 p-2 font-bold text-gray-400;
+    @apply flexbox scrollbar-light gap-2 p-2;
   }
 
   .section-content-list-item {

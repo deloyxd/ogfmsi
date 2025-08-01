@@ -1,5 +1,6 @@
-<div id="sectionContent" class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
-  <div class="flexbox col-span-1 2xl:col-span-8">
+<!-- do not modify -jest -->
+<div id="${sectionName}SectionContent" class="grid grid-cols-1 gap-2 xl:gap-8 2xl:grid-cols-12 2xl:gap-4">
+  <div class="flex flex-col col-span-1 2xl:col-span-8">
     <div class="section-content border-${mainColor}-500">
       <div class="section-content-h h-[96px]">
         <div class="section-content-h2">
@@ -11,7 +12,7 @@
             </div>
             <div class="absolute right-2 top-2 hidden">
               <div class="relative h-2 w-2">
-                <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                <div class="h-full w-full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
                 <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
               </div>
             </div>
@@ -44,7 +45,7 @@
       <div class="scrollbar-light min-h-[425px] p-6"></div>
     </div>
   </div>
-  <div class="flexbox col-span-1 hidden 2xl:col-span-4">
+  <div class="flex flex-col col-span-1 hidden 2xl:col-span-4">
     <div class="section-content-base border-${mainColor}-500 p-6">
       <div class="mb-6 flex items-center justify-between gap-3">
         <div>
@@ -55,7 +56,7 @@
           <div id="${sectionName}SectionTwoSettings" class="pb-[4px] pl-[1px] group-hover:animate-spin">⚙</div>
         </button>
       </div>
-      <div class="flexbox items-center gap-6"></div>
+      <div class="flex flex-col items-center gap-6"></div>
     </div>
   </div>
 </div>

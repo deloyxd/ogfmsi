@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/src/images/client_logo.jpg" />
+
+    <!-- search for "🔑 CLIENT" all through-out the project to refactor client branding -->
+    <!-- 🔑 CLIENT -->
+    <title>Fitworx Gym - Dashboard</title>
+
+    <!-- main css -->
+    <link href="/src/css/output.css" rel="stylesheet" />
+    <!-- add new css here 👆 -->
+
+    <!-- icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- tailwind (for easier css) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- toastify (for quick notifications) -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+
+    <!-- charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body
+    class="min-h-screen cursor-default overflow-y-auto overflow-x-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black"
+  >
+    <!-- 🔴 README: comments with 🔥 are project main components -->
+
+    <!-- do not remove: -->
+    <div id="admin_main"></div>
+
+    <!-- 🔥 sidebar 🔥 -->
+    <aside
+      class="flexbox fixed left-0 top-0 z-50 h-screen w-48 border-r border-gray-700 bg-gray-800 shadow-2xl xl:w-64"
+    >
+      <!-- header -->
+      <header class="flex-shrink-0 border-b border-gray-700 p-6">
+        <!-- 🔑 CLIENT -->
+        <p class="text-xl font-bold text-white">Fitworx Gym</p>
+        <p class="text-sm text-gray-400">Welcome, User!</p>
+        <div class="mt-3 flex text-sm text-gray-400">
+          <p>Role:</p>
+          <b id="role" class="ml-1">👨‍💼 Staff</b>
+        </div>
+      </header>
+
+      <!-- body -->
+      <nav class="scrollbar-dark max-h-[calc(100vh-160px)] flex-1 pt-4">
+        <ul class="space-y-2 px-4">
+          <li>
+            <button class="active sidebar-main-btn" data-section="dashboard">
+              <i class="fas fa-chart-line mr-3"></i>
+              Dashboard
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-main-btn justify-between" data-type="dropdown" data-section="checkin">
+              <div class="flex items-center">
+                <i class="fas fa-users mr-3"></i>
+                Check-in
+              </div>
+              <i class="fas fa-chevron-down duration-300" id="checkin-arrow"></i>
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+            <ul class="ml-4 mt-2 hidden space-y-1" id="checkin-dropdown">
+              <li>
+                <button class="sidebar-sub-btn" data-section="checkin-daily">
+                  <i class="fas fa-ticket-simple mr-3"></i>
+                  Daily Pass
+
+                  <!-- red dot -->
+                  <div class="absolute right-2 top-2 hidden">
+                    <div class="relative h-2 w-2">
+                      <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                      <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                    </div>
+                  </div>
+                </button>
+              </li>
+              <li>
+                <button class="sidebar-sub-btn" data-section="checkin-monthly">
+                  <i class="fas fa-ticket mr-3"></i>
+                  Monthly Pass
+
+                  <!-- red dot -->
+                  <div class="absolute right-2 top-2 hidden">
+                    <div class="relative h-2 w-2">
+                      <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                      <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                    </div>
+                  </div>
+                </button>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <button class="sidebar-main-btn" data-section="equipment">
+              <i class="fas fa-dumbbell mr-3"></i>
+              Equipment
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-main-btn" data-section="reservation">
+              <i class="fas fa-calendar-alt mr-3"></i>
+              Reservation
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-main-btn" data-section="billing">
+              <i class="fas fa-coins mr-3"></i>
+              Billing
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-main-btn" data-section="reports">
+              <i class="fas fa-file mr-3"></i>
+              Reports
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-main-btn" data-section="datasync">
+              <i class="fas fa-rotate mr-3"></i>
+              Data Sync
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-main-btn" data-section="settings">
+              <i class="fas fa-cog mr-3"></i>
+              Settings
+
+              <!-- red dot -->
+              <div class="absolute right-2 top-2 hidden">
+                <div class="relative h-2 w-2">
+                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                </div>
+              </div>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- footer -->
+      <footer class="flex-shrink-0 border-t border-gray-700 bg-gray-800 p-2 2xl:h-[80px] 2xl:p-4">
+        <button
+          id="logout"
+          class="flex w-full items-center rounded-lg px-4 py-3 text-gray-300 duration-300 hover:bg-gray-700 hover:text-white"
+        >
+          <i class="fas fa-sign-out-alt mr-3"></i>
+          Logout
+        </button>
+      </footer>
+    </aside>
+
+    <!-- main -->
+    <div class="ml-48 min-h-screen p-4 xl:ml-64 2xl:p-8">
+      <!--
+
+      📌 parent:
+      color: main-sub-button colors
+
+      📌 header:
+      title: header title text
+      subtitle: header subtitle text
+      middletext: middle text (enables middle text)
+      mainbtntext: main button text
+      subbtntext: sub button text (enables sub button)
+      customcontent: 1 enables custom header content
+
+      📌 stats:
+      toggles: 1 means the stat can be toggled on or off, and the separator "::" helps to count how many stats are there
+      startingtexts: starting stat texts without highlight, separated by "::"
+      highlighttexts: stat texts with highlight, separated by "::"
+      endingtexts: ending stat texts without highlight, separated by "::"
+      types: breakdown button type identifiers, separated by "::"
+
+      📌 content:
+      sectioncount: 1 or 2 only
+      tabtitles: tab titles, separated by "::" (only section 1 can have tabs)
+      subtitles: tab subtitles, separated by "::"
+      sectiononesearchtext: section 1 search text (enables search)
+      sectiononesettings: 1 enables settings
+      listemptytexts: empty list texts, tabs separated by "::"
+      listtitletexts: [column titles, separated by "//"], tabs separated by "::"
+      listitembtnids: [item button ids, separated by "//"], tabs separated by "::"
+      listitembtntexts: [item button texts, separated by "//"], tabs separated by "::"
+      listitembtncolors: [item button colors, separated by "//"], tabs separated by "::"
+      sectiontwotitletexts: section 2 title::subtitle
+      sectiontwosettings: 1 enables settings
+      sectiontwoemptylist: section 2 empty list text (enables list)
+      sectiontwosearchtext: section 2 search text (enables search)
+      sectiontwobtntext: section 2 button text (enables button)
+      
+      -->
+
+      <!-- 🔥 dashboard 🔥 -->
+      <section id="dashboard-section" data-color="orange-red-violet" class="section">
+        <div
+          id="dashboard-section-header"
+          data-title="What's New?"
+          data-subtitle="Announcements"
+          data-middletext="There's no news yet. Create one! 👉"
+          data-mainbtntext="Announce 📢"
+          data-mainformtitle="Create Announcement 📢"
+          data-mainformsubtitle="Announcement form"
+          data-subbtntext="Check 👁‍🗨"
+          data-customcontent="1"
+        ></div>
+        <div
+          id="dashboard-section-stats"
+          data-toggles="1::1::1::0::0"
+          data-startingtexts="Avg::Avg::Avg::Active::Active"
+          data-highlighttexts="Daily::Weekly::Monthly::Monthly Passes::Reservations"
+          data-endingtexts="Earning::Earning::Earning::::"
+          data-types="average daily earning::average weekly earning::average monthly earning::active monthly passes::active reservations"
+        ></div>
+        <div
+          id="dashboard-section-content"
+          data-sectioncount="2"
+          data-tabtitles="Active Monthly Pass Growth::Upcoming Monthly Pass Renewals"
+          data-subtitles="Monthly pass growth tracker::Users due for monthly pass renewals"
+          data-sectiononesearchtext="Search keyword..."
+          data-sectiononesettings="1"
+          data-listemptytexts="::<p>No upcoming monthly pass renewals yet</p><p class='text-sm'>Range: Two weeks notice</p>"
+          data-listtitletexts="[]::[User ID//User//Expires After]"
+          data-listitembtnids="[]::[renewBtn]"
+          data-listitembtntexts="[]::[Renew 🎫]"
+          data-listitembtncolors="[]::[sky]"
+          data-sectiontwotitletexts="User Statistic Analysis::Below the chart, you can click legends to toggle"
+          data-sectiontwosettings="1"
+        ></div>
+      </section>
+
+      <!-- 🔥 checkin-daily 🔥 -->
+      <section id="checkin-daily-section" data-color="blue-indigo-green" class="section">
+        <div
+          id="checkin-daily-section-header"
+          data-title="Daily Check-In"
+          data-subtitle="Track User Attendance"
+          data-middletext='<p class="skew-x-12 text-white">📆 July 25, 2025 ⌚ 7:30AM</p>'
+          data-mainbtntext="Register New User 💪"
+          data-subbtntext="Logs 📜"
+        ></div>
+        <div
+          id="checkin-daily-section-stats"
+          data-toggles="0::0::0::0"
+          data-startingtexts="::Avg::Avg::Avg"
+          data-highlighttexts="Today's::Daily::Weekly::Monthly"
+          data-endingtexts="Check-Ins::Check-Ins::Check-Ins::Check-Ins"
+        ></div>
+        <div
+          id="checkin-daily-section-content"
+          data-sectioncount="2"
+          data-tabtitles="Registered Daily Users::Recent Daily Check-Ins"
+          data-subtitles="Daily users monitoring::Today's user daily check-ins"
+          data-sectiononesearchtext="Search keyword..."
+          data-sectiononesettings="1"
+          data-listemptytexts="No registered users yet::No check-ins today"
+          data-listtitletexts="[User ID//User//Date Registered]::[User ID//User//Check-in Time]"
+          data-listitembtnids="[userDetailsBtn]::[renewBtn//userVoidBtn]"
+          data-listitembtntexts="[Details ⚙]::[Details ⚙//Void 📕]"
+          data-listitembtncolors="[orange]::[orange//red]"
+          data-sectiontwotitletexts="Quick Check-In::Upload user QR code or enter ID manually"
+          data-sectiontwosettings="1"
+          data-sectiontwoemptylist='<p>Status - No connection</p><p class="text-sm">No uploaded QR yet</p>'
+          data-sectiontwosearchtext="Enter user ID..."
+          data-sectiontwobtntext="Submit Check-In"
+        ></div>
+      </section>
+
+      <!-- 🔥 billing 🔥 -->
+      <section id="billing-section" data-color="green-cyan-yellow" class="section">
+        <div
+          id="billing-section-header"
+          data-title="Billing"
+          data-subtitle="Transaction Processing"
+          data-mainbtntext="Manual Transaction 💳"
+          data-subbtntext="Logs 📜"
+        ></div>
+        <div
+          id="billing-section-stats"
+          data-toggles="1::1::1::1::1"
+          data-startingtexts="::::Avg::Avg::Avg"
+          data-highlighttexts="Today's::Today's::Daily::Weekly::Monthly"
+          data-endingtexts="Cash Sales::Cashless Sales::Sales::Sales::Sales"
+        ></div>
+        <div
+          id="billing-section-content"
+          data-sectioncount="2"
+          data-tabtitles="Recent Complete Transaction Log::All Complete Transactions Log"
+          data-subtitles="Today's total complete transaction::Total complete transaction"
+          data-sectiononesearchtext="Search keyword..."
+          data-sectiononesettings="1"
+          data-listemptytexts="No complete transactions today::No complete transactions yet"
+          data-listtitletexts="[Transaction ID//User ID//Date & Time]::[Transaction ID//User ID//Date & Time]"
+          data-listitembtnids="[billingDetailsBtn//billingVoidBtn]::[billingDetailsBtn//billingVoidBtn]"
+          data-listitembtntexts="[Details 📒//Void 📕]::[Details 📒//Void 📕]"
+          data-listitembtncolors="[yellow//red]::[yellow//red]"
+          data-sectiontwotitletexts="Pending Payment Queue::Recent pending transactions"
+          data-sectiontwosettings="1"
+          data-sectiontwoemptylist="No pending payment yet"
+          data-sectiontwosearchtext="Enter transaction ID..."
+          data-sectiontwobtntext="Process Transaction"
+        ></div>
+      </section>
+
+      <!-- 🔥 reports 🔥 -->
+      <section id="reports-section" data-color="violet-fuchsia-red" class="section">
+        <div
+          id="reports-section-header"
+          data-title="Reports"
+          data-subtitle="Data Overview"
+          data-mainbtntext="Export to PDF 📄"
+        ></div>
+        <div id="reports-section-stats"></div>
+        <div
+          id="reports-section-content"
+          data-sectioncount="1"
+          data-tabtitles="Monthly Members::Regular::Student::Supplements::Reservation"
+          data-subtitles="All monthly pass members::Regular users::Student users::Supplements sales::Reservation records"
+          data-sectiononesearchtext="Search keyword..."
+          data-sectiononesettings="1"
+          data-listemptytexts="No monthly members found::No regular users found::No student users found::No supplement sales found::No reservations found"
+          data-listtitletexts="[Member ID//Member Name//Type//Status//Start Date//End Date//Amount//Renewal Amount]::[ID//Type//Client Name//Time In//Amount]::[ID//Type//Client Name//Time In//Amount]::[Product ID//Product Name//Quantity//Price//Quantity Sold//Total Sales//Date]::[Reservation ID//Service Type//Customer Name//Start Time//End Time//Reservation Date//Additional Members//Price]"
+          data-listitembtnids="[userDetailsBtn]::[userDetailsBtn]::[userDetailsBtn]::[userDetailsBtn]::[userDetailsBtn]"
+          data-listitembtntexts="[Details 📙]::[Details 📙]::[Details 📙]::[Details 📙]::[Details 📙]"
+          data-listitembtncolors="[orange]::[orange]::[orange]::[orange]::[orange]"
+        ></div>
+      </section>
+
+      <!-- 🔥 datasync 🔥 -->
+      <section id="datasync-section" data-color="pink-rose-indigo" class="section">
+        <div
+          id="datasync-section-header"
+          data-title="Data Sync"
+          data-subtitle="Automatic Data Syncing Log"
+          data-middletext='<p
+                id="dataSyncHeaderContent"
+                class="skew-x-12"
+                data-auto-rest="Youre online!<br />Im resting 😴 for now."
+                data-auto-awake="Oh, youre offline!<br />Im awake 😎 so Im on it!"
+                data-force-rest="Status: Resting 😴"
+                data-force-awake="Status: Awake 🤩"
+              ></p>'
+          data-mainbtntext="Switch 🧠 Sync Status"
+          data-subbtntext="Logs 📜"
+        ></div>
+        <div
+          id="datasync-section-stats"
+          data-toggles="0::0"
+          data-startingtexts="::"
+          data-highlighttexts="Today's::Total"
+          data-endingtexts="Synced Data::Synced Data"
+        ></div>
+        <div
+          id="datasync-section-content"
+          data-sectioncount="2"
+          data-tabtitles="Recent Synced Data Tracker::Total Synced Data"
+          data-subtitles="Today's total synced data log::All synced data log"
+          data-sectiononesearchtext="Search keyword..."
+          data-sectiononesettings="1"
+          data-listemptytexts="No synced data today::No synced data yet"
+          data-listtitletexts="[Actor//Action//Sync Date & Time]::[Actor//Action//Sync Date & Time]"
+          data-listitembtnids="[dataSyncDetailsBtn]::[dataSyncDetailsBtn]"
+          data-listitembtntexts="[Data 🧠]::[Data 🧠]"
+          data-listitembtncolors="[rose]::[rose]"
+          data-sectiontwotitletexts="Sync Queue::These data will auto-sync once the internet is back"
+          data-sectiontwosettings="1"
+          data-sectiontwoemptylist="No data to sync yet"
+          data-sectiontwosearchtext="Enter any ID..."
+          data-sectiontwobtntext="Force Dequeue"
+        ></div>
+      </section>
+
+      <!-- 🔥 settings 🔥 -->
+      <section id="settings-section" data-color="slate-neutral-sky" class="section">
+        <div
+          id="settings-section-header"
+          data-title="Settings"
+          data-subtitle="Manage your preferences"
+          data-middletext="Customize your dashboard"
+          data-mainbtntext="Save Changes 💾"
+        ></div>
+        <div id="settings-section-stats"></div>
+        <div id="settings-section-content"></div>
+      </section>
+    </div>
+
+    <!-- 🔥 dynamic modal 🔥 -->
+    <div id="admin_modal"></div>
+    <script>
+      async function loadModal() {
+        const response = await fetch('admin_modal.html');
+        const html = await response.text();
+        document.getElementById('admin_modal').innerHTML = html;
+      }
+      loadModal();
+    </script>
+
+    <!-- main js -->
+    <script type="module" src="/src/js/admin_main.js"></script>
+    <script type="module" src="/src/js/admin_stats.js"></script>
+    <script type="module" src="/src/js/admin_content.js"></script>
+    <script type="module" src="/src/js/admin_dashboard.js"></script>
+    <script type="module" src="/src/js/admin_checkin_daily.js"></script>
+    <script type="module" src="/src/js/admin_checkin_monthly.js"></script>
+    <script type="module" src="/src/js/admin_billing.js"></script>
+    <script type="module" src="/src/js/admin_reports.js"></script>
+    <script type="module" src="/src/js/admin_datasync.js"></script>
+    <script type="module" src="/src/js/admin_settings.js"></script>
+    <!-- add new js here 👆 -->
+
+    <!-- imported js -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  </body>
+</html>
