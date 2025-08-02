@@ -1,6 +1,6 @@
 node_modules/
 .vscode/
-/src/css/output.css  # Ignore the compiled CSS file
+/src/css/output.css
 .env
 .env.local
 *.env*

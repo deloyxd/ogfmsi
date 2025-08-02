@@ -103,7 +103,9 @@ async function loadSectionSilently(sectionName) {
   let containsCustomContents = false;
 
   for (const { name, fields } of components) {
-    const element = document.getElementById(`${sectionName}-section-${name}`);
+    const mainParent = document.getElementById(`${sectionName}-section`);
+    const element = mainParent.querySelector(`#section-${name}`);
+    element.id = `${sectionName}-section-${name}`;
     if (element) {
       const dataset = { ...baseDataset };
       let statsCloneCount = 0;
@@ -216,7 +218,7 @@ async function loadSectionSilently(sectionName) {
           for (let i = 0; i < dataset['tabtitles'].length; i++) {
             const clone = sectionOne.children[0].cloneNode(true);
             clone.id = `${sectionName}_tab${i + 1}`;
-
+            
             clone.children[0].textContent = dataset['tabtitles'][i];
             clone.children[1].children[0].textContent = dataset['subtitles'][i];
             if (dataset['sectiononesearchtext'] && i == 0) {
@@ -888,17 +890,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 async function showLoadingAndPreloadSections() {
-  const sectionsToLoad = [
-    'checkin-daily',
-    'checkin-monthly',
-    'equipment',
-    'reservation',
-    'billing',
-    'reports',
-    'datasync',
-    'settings',
-    'dashboard',
-  ];
+  const sectionsToLoad = ['dashboard', 'checkin-daily', 'billing', 'reports', 'datasync', 'settings'];
   const loadingOverlay = createLoadingOverlay();
   document.body.appendChild(loadingOverlay);
 

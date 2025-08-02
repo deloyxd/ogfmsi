@@ -33,6 +33,36 @@
     <!-- do not remove: -->
     <div id="admin_main"></div>
 
+    <!-- 🔥 dynamic sidebar 🔥 -->
+    <aside
+      class="flexbox fixed left-0 top-0 z-50 h-screen w-48 border-r border-gray-700 bg-gray-800 shadow-2xl xl:w-64"
+    >
+      <!-- header -->
+      <header class="flex-shrink-0 border-b border-gray-700 p-6">
+        <!-- 🔑 CLIENT -->
+        <p class="text-xl font-bold text-white">Fitworx Gym</p>
+        <p class="text-sm text-gray-400">Welcome, User!</p>
+        <div class="mt-3 flex text-sm text-gray-400">
+          <p>Role:</p>
+          <b id="role" class="ml-1">👨‍💼 Staff</b>
+        </div>
+      </header>
+
+      <!-- body -->
+      <nav id="sidebar-body" class="scrollbar-dark max-h-[calc(100vh-160px)] flex-1 pt-4"></nav>
+
+      <!-- footer -->
+      <footer class="flex-shrink-0 border-t border-gray-700 bg-gray-800 p-2 2xl:h-[80px] 2xl:p-4">
+        <button
+          id="logout"
+          class="flex w-full items-center rounded-lg px-4 py-3 text-gray-300 duration-300 hover:bg-gray-700 hover:text-white"
+        >
+          <i class="fas fa-sign-out-alt mr-3"></i>
+          Logout
+        </button>
+      </footer>
+    </aside>
+
     <!-- main -->
     <div class="ml-48 min-h-screen p-4 xl:ml-64 2xl:p-8">
       <!--
@@ -75,9 +105,9 @@
       -->
 
       <!-- 🔥 dashboard 🔥 -->
-      <section id="dashboard-section" data-color="orange-red-violet" class="section">
+      <section id="dashboard-section" data-icons="fa-chart-line" data-color="orange-red-violet" class="section">
         <div
-          id="dashboard-section-header"
+          id="section-header"
           data-title="What's New?"
           data-subtitle="Announcements"
           data-middletext="There's no news yet. Create one! 👉"
@@ -88,7 +118,7 @@
           data-customcontent="1"
         ></div>
         <div
-          id="dashboard-section-stats"
+          id="section-stats"
           data-toggles="1::1::1::0::0"
           data-startingtexts="Avg::Avg::Avg::Active::Active"
           data-highlighttexts="Daily::Weekly::Monthly::Monthly Passes::Reservations"
@@ -96,7 +126,7 @@
           data-types="average daily earning::average weekly earning::average monthly earning::active monthly passes::active reservations"
         ></div>
         <div
-          id="dashboard-section-content"
+          id="section-content"
           data-sectioncount="2"
           data-tabtitles="Active Monthly Pass Growth::Upcoming Monthly Pass Renewals"
           data-subtitles="Monthly pass growth tracker::Users due for monthly pass renewals"
@@ -113,9 +143,15 @@
       </section>
 
       <!-- 🔥 checkin-daily 🔥 -->
-      <section id="checkin-daily-section" data-color="blue-indigo-green" class="section">
+      <section
+        id="checkin-daily-section"
+        data-icons="fa-users::fa-ticket-simple"
+        data-sectiontexts="Check In::Daily Pass"
+        data-color="blue-indigo-green"
+        class="section"
+      >
         <div
-          id="checkin-daily-section-header"
+          id="section-header"
           data-title="Daily Check-In"
           data-subtitle="Track User Attendance"
           data-middletext='<p class="skew-x-12 text-white">📆 July 25, 2025 ⌚ 7:30AM</p>'
@@ -123,14 +159,14 @@
           data-subbtntext="Logs 📜"
         ></div>
         <div
-          id="checkin-daily-section-stats"
+          id="section-stats"
           data-toggles="0::0::0::0"
           data-startingtexts="::Avg::Avg::Avg"
           data-highlighttexts="Today's::Daily::Weekly::Monthly"
           data-endingtexts="Check-Ins::Check-Ins::Check-Ins::Check-Ins"
         ></div>
         <div
-          id="checkin-daily-section-content"
+          id="section-content"
           data-sectioncount="2"
           data-tabtitles="Registered Daily Users::Recent Daily Check-Ins"
           data-subtitles="Daily users monitoring::Today's user daily check-ins"
@@ -150,23 +186,23 @@
       </section>
 
       <!-- 🔥 billing 🔥 -->
-      <section id="billing-section" data-color="green-cyan-yellow" class="section">
+      <section id="billing-section" data-icons="fa-coins" data-color="green-cyan-yellow" class="section">
         <div
-          id="billing-section-header"
+          id="section-header"
           data-title="Billing"
           data-subtitle="Transaction Processing"
           data-mainbtntext="Manual Transaction 💳"
           data-subbtntext="Logs 📜"
         ></div>
         <div
-          id="billing-section-stats"
+          id="section-stats"
           data-toggles="1::1::1::1::1"
           data-startingtexts="::::Avg::Avg::Avg"
           data-highlighttexts="Today's::Today's::Daily::Weekly::Monthly"
           data-endingtexts="Cash Sales::Cashless Sales::Sales::Sales::Sales"
         ></div>
         <div
-          id="billing-section-content"
+          id="section-content"
           data-sectioncount="2"
           data-tabtitles="Recent Complete Transaction Log::All Complete Transactions Log"
           data-subtitles="Today's total complete transaction::Total complete transaction"
@@ -186,25 +222,25 @@
       </section>
 
       <!-- 🔥 reports 🔥 -->
-      <section id="reports-section" data-color="violet-fuchsia-red" class="section">
+      <section id="reports-section" data-icons="fa-file" data-color="violet-fuchsia-red" class="section">
         <div
-          id="reports-section-header"
+          id="section-header"
           data-title="Reports"
           data-subtitle="Data Overview"
           data-mainbtntext="Export to PDF 📄"
         ></div>
         <div
-          id="reports-section-stats"
+          id="section-stats"
           data-toggles="0::0::0::0::0"
           data-startingtexts="::::::Total::Total"
           data-highlighttexts="Monthly::Regular::Student::Supplement::Reservations"
           data-endingtexts="Users::Users::Users::Sales::"
         ></div>
         <div
-          id="reports-section-content"
+          id="section-content"
           data-sectioncount="1"
-          data-tabtitles="Monthly Pass User Statistics::Regular Daily User Metrics::Student Transportation Usage::Supplement Purchase Summary::Overall Booking Totals"
-          data-subtitles="Monthly users::Daily regulars::Student users::Supplement sales::Reservations total"
+          data-tabtitles="Monthly Pass Users::Regular / Daily Users::Students::Supplements::Reservations"
+          data-subtitles="::::::::"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="1"
           data-listemptytexts="No monthly members found::No regular users found::No student users found::No supplement sales found::No reservations found"
@@ -216,9 +252,15 @@
       </section>
 
       <!-- 🔥 datasync 🔥 -->
-      <section id="datasync-section" data-color="pink-rose-indigo" class="section">
+      <section
+        id="datasync-section"
+        data-icons="fa-rotate"
+        data-sectiontexts="Data Sync"
+        data-color="pink-rose-indigo"
+        class="section"
+      >
         <div
-          id="datasync-section-header"
+          id="section-header"
           data-title="Data Sync"
           data-subtitle="Automatic Data Syncing Log"
           data-middletext='<p
@@ -233,14 +275,14 @@
           data-subbtntext="Logs 📜"
         ></div>
         <div
-          id="datasync-section-stats"
+          id="section-stats"
           data-toggles="0::0"
           data-startingtexts="::"
           data-highlighttexts="Today's::Total"
           data-endingtexts="Synced Data::Synced Data"
         ></div>
         <div
-          id="datasync-section-content"
+          id="section-content"
           data-sectioncount="2"
           data-tabtitles="Recent Synced Data Tracker::Total Synced Data"
           data-subtitles="Today's total synced data log::All synced data log"
@@ -260,209 +302,24 @@
       </section>
 
       <!-- 🔥 settings 🔥 -->
-      <section id="settings-section" data-color="slate-neutral-sky" class="section">
+      <section id="settings-section" data-icons="fa-cog" data-color="slate-neutral-sky" class="section">
         <div
-          id="settings-section-header"
+          id="section-header"
           data-title="Settings"
           data-subtitle="Manage your preferences"
           data-middletext="Customize your dashboard"
           data-mainbtntext="Save Changes 💾"
         ></div>
-        <div id="settings-section-stats"></div>
-        <div id="settings-section-content"></div>
+        <div id="section-stats"></div>
+        <div id="section-content"></div>
       </section>
     </div>
 
-    <!-- 🔥 dynamic sidebar 🔥 -->
-    <aside
-      class="flexbox fixed left-0 top-0 z-50 h-screen w-48 border-r border-gray-700 bg-gray-800 shadow-2xl xl:w-64"
-    >
-      <!-- header -->
-      <header class="flex-shrink-0 border-b border-gray-700 p-6">
-        <!-- 🔑 CLIENT -->
-        <p class="text-xl font-bold text-white">Fitworx Gym</p>
-        <p class="text-sm text-gray-400">Welcome, User!</p>
-        <div class="mt-3 flex text-sm text-gray-400">
-          <p>Role:</p>
-          <b id="role" class="ml-1">👨‍💼 Staff</b>
-        </div>
-      </header>
-
-      <!-- body -->
-      <nav class="scrollbar-dark max-h-[calc(100vh-160px)] flex-1 pt-4">
-        <ul class="space-y-2 px-4">
-          <li>
-            <button class="active sidebar-main-btn" data-section="dashboard">
-              <i class="fas fa-chart-line mr-3"></i>
-              Dashboard
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-          <li>
-            <button class="sidebar-main-btn justify-between" data-type="dropdown" data-section="checkin">
-              <div class="flex items-center">
-                <i class="fas fa-users mr-3"></i>
-                Check-in
-              </div>
-              <i class="fas fa-chevron-down duration-300" id="checkin-arrow"></i>
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-            <ul class="ml-4 mt-2 hidden space-y-1" id="checkin-dropdown">
-              <li>
-                <button class="sidebar-sub-btn" data-section="checkin-daily">
-                  <i class="fas fa-ticket-simple mr-3"></i>
-                  Daily Pass
-
-                  <!-- red dot -->
-                  <div class="absolute right-2 top-2 hidden">
-                    <div class="relative h-2 w-2">
-                      <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                      <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                    </div>
-                  </div>
-                </button>
-              </li>
-              <li>
-                <button class="sidebar-sub-btn" data-section="checkin-monthly">
-                  <i class="fas fa-ticket mr-3"></i>
-                  Monthly Pass
-
-                  <!-- red dot -->
-                  <div class="absolute right-2 top-2 hidden">
-                    <div class="relative h-2 w-2">
-                      <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                      <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                    </div>
-                  </div>
-                </button>
-              </li>
-            </ul>
-          </li>
-          <li>
-            <button class="sidebar-main-btn" data-section="equipment">
-              <i class="fas fa-dumbbell mr-3"></i>
-              Equipment
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-          <li>
-            <button class="sidebar-main-btn" data-section="reservation">
-              <i class="fas fa-calendar-alt mr-3"></i>
-              Reservation
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-          <li>
-            <button class="sidebar-main-btn" data-section="billing">
-              <i class="fas fa-coins mr-3"></i>
-              Billing
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-          <li>
-            <button class="sidebar-main-btn" data-section="reports">
-              <i class="fas fa-file mr-3"></i>
-              Reports
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-          <li>
-            <button class="sidebar-main-btn" data-section="datasync">
-              <i class="fas fa-rotate mr-3"></i>
-              Data Sync
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-          <li>
-            <button class="sidebar-main-btn" data-section="settings">
-              <i class="fas fa-cog mr-3"></i>
-              Settings
-
-              <!-- red dot -->
-              <div class="absolute right-2 top-2 hidden">
-                <div class="relative h-2 w-2">
-                  <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                  <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
-                </div>
-              </div>
-            </button>
-          </li>
-        </ul>
-      </nav>
-
-      <!-- footer -->
-      <footer class="flex-shrink-0 border-t border-gray-700 bg-gray-800 p-2 2xl:h-[80px] 2xl:p-4">
-        <button
-          id="logout"
-          class="flex w-full items-center rounded-lg px-4 py-3 text-gray-300 duration-300 hover:bg-gray-700 hover:text-white"
-        >
-          <i class="fas fa-sign-out-alt mr-3"></i>
-          Logout
-        </button>
-      </footer>
-    </aside>
-
     <!-- 🔥 dynamic modal 🔥 -->
     <div id="admin_modal"></div>
-    <script>
-      async function loadModal() {
-        const response = await fetch('admin_modal.html');
-        const html = await response.text();
-        document.getElementById('admin_modal').innerHTML = html;
-      }
-      loadModal();
-    </script>
 
     <!-- main js -->
+    <script src="/src/js/admin_dynamic_modules.js"></script>
     <script type="module" src="/src/js/admin_main.js"></script>
     <script type="module" src="/src/js/admin_stats.js"></script>
     <script type="module" src="/src/js/admin_content.js"></script>
