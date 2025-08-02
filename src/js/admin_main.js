@@ -135,7 +135,7 @@ async function loadSectionSilently(sectionName) {
 
       if (name.includes('header') && containsCustomHeaderContent) {
         try {
-          const response = await fetch(`admin_${sectionName}_header.html`);
+          const response = await fetch(`/src/html/custom/${sectionName}_header.html`);
           if (response.ok) {
             const html = await response.text();
             element.children[0].children[1].innerHTML += html;
@@ -208,7 +208,7 @@ async function loadSectionSilently(sectionName) {
         const sectionTwo = document.getElementById(`${sectionName}SectionContent`).children[1];
         setupSectionOne();
         setupSectionTwo();
-        if (containsCustomContents) await loadCustomContents(`admin_${sectionName}_content.html`);
+        if (containsCustomContents) await loadCustomContents(`/src/html/custom/${sectionName}_content.html`);
 
         function setupSectionOne() {
           Array.from(sectionOne.children).forEach((el, i) => {

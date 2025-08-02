@@ -1,4 +1,4 @@
-import main from './admin_main.js';
+import main from '../admin_main.js';
 
 // default codes:
 let mainBtn, subBtn;
@@ -8,7 +8,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-//   subBtn.classList.remove('hidden');
+  //   subBtn.classList.remove('hidden');
   subBtn.addEventListener('click', subBtnFunction);
 });
 

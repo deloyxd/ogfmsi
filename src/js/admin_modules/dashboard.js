@@ -1,5 +1,5 @@
-import main from './admin_main.js';
-import datasync from './admin_datasync.js';
+import main from '../admin_main.js';
+import datasync from './datasync.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
@@ -10,7 +10,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
   // this button is hidden initially, using this code will show it
-  // subBtn.classList.remove('hidden'); 
+  // subBtn.classList.remove('hidden');
   subBtn.addEventListener('click', subBtnFunction);
   // this button is disabled in this module, using this code will enable it
   // sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);

@@ -1,5 +1,5 @@
-import main from './admin_main.js';
-import datasync from './admin_datasync.js';
+import main from '../admin_main.js';
+import datasync from './datasync.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
@@ -160,7 +160,9 @@ function completeTransaction(id, result) {
   for (let i = +columnCount + 1; i < items.length; i += columnCount) {
     if (items[i].dataset.id == result.payment.user.id) {
       items[i].dataset.time = time;
+      const btns = items[i + 2].children[0].cloneNode(true);
       items[i + 2].textContent = time;
+      items[i + 2].appendChild(btns);
       i = 9999;
     }
   }
