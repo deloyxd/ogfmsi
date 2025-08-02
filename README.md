@@ -43,3 +43,9 @@ OGFMSI (Online Gym Facility Management with Sales and Inventory) is a comprehens
 - `git pull origin main`
 - `git checkout [your-branch-name]`
 - `git merge main`
+
+**Reset from last pull:**
+
+- `git checkout [your-branch-name]`
+- `git reset --hard ORIG_HEAD`
+- `git clean -fd`
