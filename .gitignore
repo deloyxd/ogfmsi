@@ -1,1 +1,14 @@
 node_modules/
+.vscode/
+/src/css/output.css
+.env
+.env.local
+*.env*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+.DS_Store
+Thumbs.db
+.cache/
+.eslintcache
