@@ -1,4 +1,4 @@
-import main from './admin_main.js';
+import main from '../admin_main.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;

@@ -1,6 +1,6 @@
-import main from './admin_main.js';
-import billing from './admin_billing.js';
-import datasync from './admin_datasync.js';
+import main from '../admin_main.js';
+import billing from './billing.js';
+import datasync from './datasync.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
