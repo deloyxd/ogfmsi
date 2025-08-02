@@ -21,16 +21,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
       activeTimeout = null;
     }
 
-    main.sharedState.tabIndex = tabIndex;
+    main.sharedState.activeTab = tabIndex;
 
     const searchInput = document.getElementById(`${main.sharedState.sectionName}SectionOneSearch`);
     searchInput.value = '';
     searchInput.dataset.tabindex = tabIndex;
-    const emptyListParent = document.getElementById(`${main.sharedState.sectionName}SectionOneListEmpty${tabIndex}`);
-    if (emptyListParent) {
-      searchInput.dataset.columncount =
-        emptyListParent.parentElement.parentElement.parentElement.children[0].children[0].children.length;
-    }
     searchInput.dispatchEvent(new Event('input'));
 
     const inactiveTabs = [];
@@ -46,14 +41,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
       if (tabIndex == i) {
         makeActive(newTab);
-        newTab.children[0].classList.remove('text-gray-300');
-        newTab.children[1].children[0].classList.remove('hidden');
-        newTab.children[1].children[1].classList.add('hidden');
       } else {
         makeInactive(newTab);
-        newTab.children[0].classList.add('text-gray-300');
-        newTab.children[1].children[0].classList.add('hidden');
-        newTab.children[1].children[1].classList.remove('hidden');
         inactiveTabs.push(newTab);
       }
     }
@@ -80,10 +69,17 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   function makeActive(tab) {
     tab.classList.remove('bg-transparent');
     tab.classList.remove('hover:bg-gray-200');
+    tab.children[0].classList.remove('text-gray-300');
+    tab.children[1].children[0].classList.remove('hidden');
+    tab.children[1].children[1].classList.add('hidden');
+    tab.lastElementChild.classList.add('hidden');
   }
 
   function makeInactive(tab) {
     tab.classList.add('bg-transparent');
     tab.classList.add('hover:bg-gray-200');
+    tab.children[0].classList.add('text-gray-300');
+    tab.children[1].children[0].classList.add('hidden');
+    tab.children[1].children[1].classList.remove('hidden');
   }
 });

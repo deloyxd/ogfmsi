@@ -1,7 +1,7 @@
 import main from './admin_main.js';
 
 // default codes:
-let mainBtn, subBtn;
+let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // change to right sectionName
   if (main.sharedState.sectionName != 'datasync') return;
@@ -10,14 +10,32 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
   subBtn.classList.remove('hidden');
   subBtn.addEventListener('click', subBtnFunction);
+  sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
+  sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
 
   // not default code: sample of custom content setup
+  setupHeader();
   setupDataQueue();
 });
 
 function mainBtnFunction() {}
 
 function subBtnFunction() {}
+
+function sectionTwoMainBtnFunction() {}
+
+function setupHeader() {
+  // new MutationObserver(function (mutations) {
+  //   mutations.forEach(function (mutation) {
+  //     if (mutation.attributeName === 'data-status') {
+  //       dataSyncHeaderContent.innerHTML = dataSyncHeaderContent.getAttribute(
+  //         dataSyncHeaderContent.getAttribute(mutation.attributeName)
+  //       );
+  //     }
+  //   });
+  // }).observe(dataSyncHeaderContent, { attributes: true });
+  // dataSyncHeaderContent.setAttribute('data-status', 'data-auto-awake');
+}
 
 function setupDataQueue() {}
 

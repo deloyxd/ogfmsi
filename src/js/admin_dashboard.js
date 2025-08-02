@@ -2,119 +2,24 @@ import main from './admin_main.js';
 import datasync from './admin_datasync.js';
 
 // default codes:
-let mainBtn, subBtn;
+let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // change to right sectionName
   if (main.sharedState.sectionName != 'dashboard') return;
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-  // subBtn.classList.remove('hidden'); // this button is hidden initially, using this code will show it
+  // this button is hidden initially, using this code will show it
+  // subBtn.classList.remove('hidden'); 
   subBtn.addEventListener('click', subBtnFunction);
+  // this button is disabled in this module, using this code will enable it
+  // sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
+  // sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
 
   // not default code: sample of custom content setup
   setupChartOne();
   setupChartTwo();
 });
-
-function setupChartOne() {
-  const chart = document.getElementById('dashboardChart1');
-  const context = chart.getContext('2d');
-
-  if (Chart.getChart('dashboardChart1')) {
-    Chart.getChart('dashboardChart1')?.destroy();
-  }
-
-  setTimeout(() => {
-    new Chart(context, {
-      type: 'line',
-      data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [
-          {
-            label: 'Active Monthly Pass (Click to toggle)',
-            data: [120, 190, 170, 220, 260, 300, 350, 400, 380, 420, 450, 500],
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#f97316',
-            pointRadius: 5,
-            pointHoverRadius: 8,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.05)',
-            },
-          },
-          x: {
-            grid: {
-              display: false,
-            },
-          },
-        },
-      },
-    });
-  }, 50);
-}
-
-function setupChartTwo() {
-  const chart = document.getElementById('dashboardChart2');
-  const context = chart.getContext('2d');
-
-  if (Chart.getChart('dashboardChart2')) {
-    Chart.getChart('dashboardChart2')?.destroy();
-  }
-
-  setTimeout(() => {
-    new Chart(context, {
-      type: 'pie',
-      data: {
-        labels: ['Ages 16-19', 'Ages 20-25', 'Ages 26-30', 'Ages 30-35', 'Ages 35+'],
-        datasets: [
-          {
-            label: 'User Count',
-            data: [120, 190, 170, 220, 260],
-            backgroundColor: [
-              'rgb(254, 215, 170)',
-              'rgb(253, 186, 116)',
-              'rgb(251, 146, 60)',
-              'rgb(249, 115, 22)',
-              'rgb(194, 65, 12)',
-            ],
-            borderWidth: 0,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-          },
-        },
-      },
-    });
-  }, 50);
-}
 
 const maxAnnouncementCount = 3;
 let announcementCount = 0;
@@ -263,3 +168,102 @@ function mainBtnFunction() {
 }
 
 function subBtnFunction() {}
+
+function setupChartOne() {
+  const chart = document.getElementById('dashboardChart1');
+  const context = chart.getContext('2d');
+
+  if (Chart.getChart('dashboardChart1')) {
+    Chart.getChart('dashboardChart1')?.destroy();
+  }
+
+  setTimeout(() => {
+    new Chart(context, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [
+          {
+            label: 'Active Monthly Pass (Click to toggle)',
+            data: [120, 190, 170, 220, 260, 300, 350, 400, 380, 420, 450, 500],
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#f97316',
+            pointRadius: 5,
+            pointHoverRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+            },
+          },
+          x: {
+            grid: {
+              display: false,
+            },
+          },
+        },
+      },
+    });
+  }, 50);
+}
+
+function setupChartTwo() {
+  const chart = document.getElementById('dashboardChart2');
+  const context = chart.getContext('2d');
+
+  if (Chart.getChart('dashboardChart2')) {
+    Chart.getChart('dashboardChart2')?.destroy();
+  }
+
+  setTimeout(() => {
+    new Chart(context, {
+      type: 'pie',
+      data: {
+        labels: ['Ages 16-19', 'Ages 20-25', 'Ages 26-30', 'Ages 30-35', 'Ages 35+'],
+        datasets: [
+          {
+            label: 'User Count',
+            data: [120, 190, 170, 220, 260],
+            backgroundColor: [
+              'rgb(254, 215, 170)',
+              'rgb(253, 186, 116)',
+              'rgb(251, 146, 60)',
+              'rgb(249, 115, 22)',
+              'rgb(194, 65, 12)',
+            ],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+        },
+      },
+    });
+  }, 50);
+}

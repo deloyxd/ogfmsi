@@ -102,7 +102,6 @@ async function loadSectionSilently(sectionName) {
   let containsCustomHeaderContent = false;
   let containsCustomContents = false;
 
-  // Load all components for this section
   for (const { name, fields } of components) {
     const element = document.getElementById(`${sectionName}-section-${name}`);
     if (element) {
@@ -227,9 +226,9 @@ async function loadSectionSilently(sectionName) {
               sectionOne.parentElement.children[1].children[0].children[0].addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase().trim();
                 const tabIndex = e.target.dataset.tabindex;
-                const columnCount = e.target.dataset.columncount;
                 const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
                 if (emptyText) {
+                  const columnCount = document.getElementById(`${sectionName}_tab${tabIndex}`).dataset.columncount;
                   const items = emptyText.parentElement.children;
                   const searchedItems = [];
                   for (let i = +columnCount + 1; i < items.length; i += columnCount) {
@@ -259,6 +258,7 @@ async function loadSectionSilently(sectionName) {
               const thead = document.createElement('thead');
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
+              clone.dataset.columncount = titleTexts.length;
               titleTexts.forEach((titleText, index) => {
                 const th = document.createElement('th');
                 th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
@@ -408,8 +408,6 @@ async function loadSectionSilently(sectionName) {
               sectionTwoMainBtn.textContent = dataset['sectiontwobtntext'];
 
               sectionTwoContent.appendChild(sectionTwoMainBtn);
-
-              // TODO
             }
 
             sectionTwoListContainer.classList.add(`h-[${totalSectionTwoListContainerHeight}px]`);
@@ -481,7 +479,6 @@ async function loadSectionSilently(sectionName) {
     }
   }
 
-  // Keep section hidden after loading
   targetSection.classList.add('hidden');
 }
 
@@ -500,6 +497,7 @@ function showSection(sectionName) {
   }
 
   sharedState.sectionName = sectionName;
+  sharedState.activeTab = 1;
 
   const sections = document.querySelectorAll('.section');
   sections.forEach((section) => {
@@ -717,7 +715,7 @@ function setupModalBase(defaultData, inputs, callback) {
     imageContainer.src = inputs.image.src;
 
     const imageBlurContainer = imageContainerParent.children[0].children[1].children[1];
-    if (inputs.image.type === 'live') imageBlurContainer.classList.remove('hidden');
+    if (inputs.image.type === 'normal') imageBlurContainer.classList.add('hidden');
     const imageUploadInput = imageContainerParent.children[0].children[2];
     const imageUploadBtn = imageContainerParent.children[0].children[3];
     imageUploadBtn.onclick = () => imageUploadInput.click();
@@ -745,7 +743,7 @@ function setupModalBase(defaultData, inputs, callback) {
         input.value = clone.children[1].value;
       });
 
-      renderInput(clone, 'short', input, index + 1);
+      renderInput(clone, 'short', input, index);
       imageContainerInputsContainer.appendChild(clone);
     });
 
@@ -753,7 +751,7 @@ function setupModalBase(defaultData, inputs, callback) {
     originalContainer.insertAdjacentElement('afterend', imageContainerParent);
   }
 
-  setupRenderInput('short', inputs.short, 4);
+  setupRenderInput('short', inputs.short, 3);
   setupRenderInput('large', inputs.large, 1);
 
   if (inputs.radio) {
@@ -788,7 +786,8 @@ function setupModalBase(defaultData, inputs, callback) {
 
   function setupRenderInput(type, render, offset) {
     if (render) {
-      const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
+      const inputId = type === 'short' ? `#input-${type}-${offset}` : `#input-${type}`;
+      const originalContainer = tempModalContainer.querySelector(inputId).parentElement;
 
       render.forEach((input, index) => {
         const clone = originalContainer.cloneNode(true);
@@ -808,7 +807,7 @@ function setupModalBase(defaultData, inputs, callback) {
   function renderInput(clone, type, data, index) {
     const label = clone.children[0];
     const input = clone.children[1];
-    const id = `input-${type}-${index}`;
+    const id = `input-${type}-${index + 1}`;
 
     label.for = id;
     label.textContent = data.placeholder;
@@ -854,14 +853,16 @@ export function toast(message, type) {
 export function checkIfEmpty(inputs) {
   let hasEmpty = false;
 
+  if (typeof inputs == 'string' && inputs.trim() === '') hasEmpty = true;
+  if (inputs.image) inputs.image.short.forEach((item) => check(item));
+  if (inputs.short) inputs.short.forEach((item) => check(item));
+  if (inputs.large) inputs.large.forEach((item) => check(item));
+
   function check(item) {
     if (item.required && item.value.trim() === '' && !hasEmpty) {
       hasEmpty = true;
     }
   }
-  if (inputs.image) inputs.image.short.forEach((item) => check(item));
-  if (inputs.short) inputs.short.forEach((item) => check(item));
-  if (inputs.large) inputs.large.forEach((item) => check(item));
 
   if (hasEmpty) toast('Fill required fields first!', 'error');
   return hasEmpty;

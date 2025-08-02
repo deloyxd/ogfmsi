@@ -1,9 +1,9 @@
 import main from './admin_main.js';
-// import billing from './admin_billing.js';
+import billing from './admin_billing.js';
 import datasync from './admin_datasync.js';
 
 // default codes:
-let mainBtn, subBtn;
+let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // change to right sectionName
   if (main.sharedState.sectionName != 'checkin-daily') return;
@@ -12,6 +12,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
   subBtn.classList.remove('hidden');
   subBtn.addEventListener('click', subBtnFunction);
+  sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
+  sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
 });
 
 function mainBtnFunction() {
@@ -41,6 +43,43 @@ function mainBtnFunction() {
 }
 
 function subBtnFunction() {}
+
+function sectionTwoMainBtnFunction() {
+  const searchInput = document.getElementById('checkin-dailySectionTwoSearch');
+  if (main.checkIfEmpty(searchInput.value)) return;
+
+  let user = null;
+  let columnCount = document.getElementById(`checkin-daily_tab1`).dataset.columncount;
+  let emptyText = document.getElementById(`checkin-dailySectionOneListEmpty1`);
+  let items = emptyText.parentElement.children;
+  for (let i = +columnCount + 1; i < items.length; i += columnCount) {
+    if (items[i].dataset.id.includes(searchInput.value)) {
+      if (!user) user = items[i];
+    }
+  }
+
+  if (!user) {
+    main.toast("There's no user with that ID!", 'error');
+    return;
+  }
+
+  columnCount = document.getElementById(`checkin-daily_tab2`).dataset.columncount;
+  emptyText = document.getElementById(`checkin-dailySectionOneListEmpty2`);
+  items = emptyText.parentElement.children;
+  for (let i = +columnCount + 1; i < items.length; i += columnCount) {
+    if (items[i].dataset.id == user.dataset.id) {
+      main.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
+        processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact);
+        searchInput.value = '';
+        main.closeConfirmationModal();
+      });
+      return;
+    }
+  }
+
+  processCheckinUser(user);
+  searchInput.value = '';
+}
 
 function registerNewUser(image, firstName, lastName, emailContact) {
   const emptyText = document.getElementById('checkin-dailySectionOneListEmpty1');
@@ -101,11 +140,15 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     };
     datasync.enqueue(action, data);
 
+    if (main.sharedState.activeTab == 2)
+      document.getElementById(`checkin-daily_tab1`).lastElementChild.classList.remove('hidden');
+
     main.toast(cloneUserId.dataset.name + ', successfully registered!', 'success');
     main.closeModal();
   }
 
-  for (let i = 4; i < emptyText.parentElement.children.length; i += 4) {
+  const columnCount = document.getElementById(`checkin-daily_tab1`).dataset.columncount;
+  for (let i = +columnCount + 1; i < emptyText.parentElement.children.length; i += columnCount) {
     const user = emptyText.parentElement.children[i];
     if (user.dataset.name.toLowerCase().trim() == cloneUserId.dataset.name.toLowerCase().trim()) {
       main.openConfirmationModal(
@@ -119,22 +162,42 @@ function registerNewUser(image, firstName, lastName, emailContact) {
   continueRegisterNewUser();
 }
 
-function processCheckinUser(id, username, emailContact) {
+function processCheckinUser(user) {
   const emptyText = document.getElementById(`checkin-dailySectionOneListEmpty2`);
-  const clone = emptyText.nextElementSibling.cloneNode(true);
 
-  clone.children[0].textContent = id;
-  clone.children[1].children[1].textContent = username;
-  clone.children[2].textContent = 'Pending';
+  const cloneUserId = emptyText.nextElementSibling.cloneNode(true);
+  const cloneUser = emptyText.nextElementSibling.nextElementSibling.cloneNode(true);
+  const cloneUserData = document.createElement('div');
+  cloneUserData.className = 'items-center font-medium text-gray-900';
+  cloneUserData.innerHTML = `
+      <div class="flex items-center gap-3">
+        <img src="/src/images/client_logo.jpg" class="h-10 w-10 rounded-full object-cover" />
+        <p></p>
+      </div>
+  `;
+  cloneUser.appendChild(cloneUserData);
+  const cloneDateRegistered = emptyText.nextElementSibling.nextElementSibling.nextElementSibling.cloneNode(true);
 
-  clone.dataset.id = id;
-  clone.dataset.name = username;
-  clone.dataset.time = clone.children[2].textContent;
-  clone.dataset.contact = emailContact;
+  cloneUserId.textContent = user.dataset.id;
+  cloneUserData.children[0].children[0].src = user.dataset.image;
+  cloneUserData.children[0].children[1].textContent = user.dataset.name;
+  cloneDateRegistered.innerHTML += 'Pending';
 
-  clone.classList.remove('hidden');
+  cloneUserId.classList.remove('hidden');
+  cloneUser.classList.remove('hidden');
+  cloneDateRegistered.classList.remove('hidden');
+
+  cloneUserId.dataset.id = user.dataset.id;
+  cloneUserId.dataset.image = user.dataset.image;
+  cloneUserId.dataset.name = user.dataset.name;
+  cloneUserId.dataset.contact = user.dataset.contact;
+  cloneUserId.dataset.time = 'Pending';
+
   emptyText.classList.add('hidden');
-  emptyText.nextElementSibling.insertAdjacentElement('afterend', clone);
+  const insertAfterElement = emptyText.nextElementSibling.nextElementSibling.nextElementSibling;
+  insertAfterElement.insertAdjacentElement('afterend', cloneDateRegistered);
+  insertAfterElement.insertAdjacentElement('afterend', cloneUser);
+  insertAfterElement.insertAdjacentElement('afterend', cloneUserId);
 
   const action = {
     module: 'Check-in',
@@ -142,15 +205,17 @@ function processCheckinUser(id, username, emailContact) {
     description: 'Process check-in user',
   };
   const data = {
-    id: clone.dataset.id,
-    name: clone.dataset.name,
-    contact: clone.dataset.contact,
-    image: clone.children[1].children[0].src,
+    id: cloneUserId.dataset.id,
+    image: cloneUserId.dataset.image,
+    name: cloneUserId.dataset.name,
+    contact: cloneUserId.dataset.contact,
+    time: cloneUserId.dataset.time,
   };
   datasync.enqueue(action, data);
-  // billing.processPayment(data);
+  billing.processPayment(data);
 
-  if (currentActiveTab == 1) checkin_daily_tab2.lastElementChild.classList.remove('hidden');
+  if (main.sharedState.activeTab == 1)
+    document.getElementById(`checkin-daily_tab2`).lastElementChild.classList.remove('hidden');
 
-  main.toast(username + ', is now ready for check-in payment!', 'success');
+  main.toast(user.dataset.name + ', is now ready for check-in payment!', 'success');
 }
