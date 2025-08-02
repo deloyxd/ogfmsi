@@ -151,7 +151,7 @@ function showTab(tabIndex) {
     for (let i = 3; i < recentContainer.children.length; i++) {
       if (recentContainer.children[i].dataset.id == user.dataset.id) {
         modal.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
-          processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact,);
+        processCheckinUser(user.dataset.id, user.dataset.productName, user.dataset.productType, user.dataset.quantity, user.dataset.price);
           inputField.value = '';
           modal.closeConfirmationModal();
         });
@@ -159,14 +159,14 @@ function showTab(tabIndex) {
       }
     }
 
-    processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact,);
+    processCheckinUser(user.dataset.id,user.dataset.image, user.dataset.productName,user.dataset.productType, user.dataset.quantity ,user.dataset.price);
     inputField.value = '';
   };
 }
 
-export function registerNewUser(image, productName, productType, quantity) {
+export function registerNewUser(image,productName, productType, quantity, price) {
   const templateRow = document.createElement('div');
-  templateRow.className = 'grid grid-cols-5 p-3 border-b hover:bg-gray-50';
+  templateRow.className = 'grid grid-cols-6 p-3 border-b hover:bg-gray-50';
 
   templateRow.innerHTML = `
   <p class="font-mono text-lg text-bold whitespace-nowrap truncate"></p> <!-- ID -->
@@ -177,13 +177,14 @@ export function registerNewUser(image, productName, productType, quantity) {
   <p class="text-lg text-gray-900  text-bold pl-4 whitespace-nowrap truncate"></p> <!-- Type of Product -->
   <p class="text-lg text-gray-900 text-bold pl-4 whitespace-nowrap truncate"></p> <!-- Date -->
   <p class="text-lg text-gray-900s text-bold pl-4 whitespace-nowrap truncate"></p> <!-- Quantity -->
+   <p class="text-lg text-gray-900s text-bold pl-4 whitespace-nowrap truncate"></p> <!-- Price -->
 `;
 
 
   const clone = templateRow.cloneNode(true);
 
-  const randomId = 'U' + Math.floor(100000 + Math.random() * 900000) + '' + Math.floor(100000 + Math.random() * 900000);
-  const fullName = `${productName} ${productType}`;
+  const randomId = 'P' + Math.floor(100000 + Math.random() * 900000) + '' + Math.floor(100000 + Math.random() * 900000);
+
 
   clone.children[0].textContent = randomId;
   clone.children[1].children[0].src = image;
@@ -193,13 +194,14 @@ export function registerNewUser(image, productName, productType, quantity) {
     year: 'numeric', month: 'long', day: 'numeric'
   });
   clone.children[4].textContent = quantity;
+ clone.children[5].textContent = `₱${Number(price).toLocaleString()}`;
 
   clone.dataset.id = randomId;
-  clone.dataset.name = fullName;
   clone.dataset.productName = productName;
   clone.dataset.productType = productType;
   clone.dataset.date = clone.children[3].textContent;
   clone.dataset.quantity = quantity;
+  clone.dataset.price = price;
 
   function continueRegisterNewUser() {
     const salesAllEmpty = document.getElementById('salesAllEmpty');
@@ -214,6 +216,7 @@ export function registerNewUser(image, productName, productType, quantity) {
       id: clone.dataset.id,
       name: clone.dataset.name,
       quantity: clone.dataset.quantity,
+       price: clone.dataset.price,
       image: clone.children[1].children[0].src,
       date: clone.dataset.date,
     });
@@ -241,9 +244,9 @@ export function registerNewUser(image, productName, productType, quantity) {
 
 
 
-export function processCheckinUser(id, product, quantity) {
+export function processCheckinUser(id, image, productName, productType, quantity, price) {
   const templateRow = document.createElement('div');
-  templateRow.className = 'grid grid-cols-4 p-3 border-b hover:bg-gray-50';
+  templateRow.className = 'grid grid-cols-6 p-3 border-b hover:bg-gray-50';
 
   templateRow.innerHTML = `
     <p class="font-mono text-sm"></p> <!-- ID -->
@@ -252,29 +255,29 @@ export function processCheckinUser(id, product, quantity) {
       <span class="text-sm text-gray-900"></span> <!-- Product Name -->
     </div>
     <p class="text-sm text-gray-900 pl-4"></p> <!-- Type of Product -->
-    <p class="text-sm text-gray-600 pl-4"></p> <!-- Status -->
+    <p class="text-sm text-gray-600 pl-4">Pending</p> <!-- Status -->
     <p class="text-sm text-gray-600 pl-4"></p> <!-- Quantity -->
+    <p class="text-sm text-gray-600 pl-4"></p> <!-- Price -->
   `;
-
-  const [productName, ...rest] = product.trim().split(' ');
-  const productType = rest.join(' ') || '(unspecified)';
-  const fullName = `${productName} ${productType}`;
 
   const clone = templateRow.cloneNode(true);
 
   clone.children[0].textContent = id;
-  clone.children[1].children[0].src = 'https://placehold.co/48x48';
+  clone.children[1].children[0].src = image;
   clone.children[1].children[1].textContent = productName;
   clone.children[2].textContent = productType;
   clone.children[3].textContent = 'Pending';
   clone.children[4].textContent = quantity;
 
+  const parsedPrice = Number(price);
+  clone.children[5].textContent = isNaN(parsedPrice) ? '₱0.00' : `₱${parsedPrice.toLocaleString()}`;
+
   clone.dataset.id = id;
-  clone.dataset.name = fullName;
   clone.dataset.productName = productName;
   clone.dataset.productType = productType;
   clone.dataset.time = 'Pending';
   clone.dataset.quantity = quantity;
+  clone.dataset.price = price;
 
   const checkinDailyRecentEmpty = document.getElementById('salesRecentEmpty');
   checkinDailyRecentEmpty.classList.add('hidden');
@@ -282,9 +285,10 @@ export function processCheckinUser(id, product, quantity) {
 
   const data = {
     id: clone.dataset.id,
-    name: clone.dataset.name,
+    name: clone.dataset.productName,
     quantity: clone.dataset.quantity,
-    image: clone.children[1].children[0].src,
+    price: clone.dataset.price,
+    image: image,
   };
 
   dataSync.enqueue({
@@ -300,8 +304,9 @@ export function processCheckinUser(id, product, quantity) {
     tab2?.lastElementChild?.classList.remove('hidden');
   }
 
-  modal.toast(`${clone.dataset.name}, is now ready for check-in payment!`, 'success');
+  modal.toast(`${clone.dataset.productName}, is now ready for check-in payment!`, 'success');
 }
+
 
 
 export default { registerNewUser, checkInUser: processCheckinUser };

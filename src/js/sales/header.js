@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
           { placeholder: 'Product Name', value: '', required: true },
           { placeholder: 'Type of Product', value: '', required: true },
           { placeholder: 'Quantity', value: '' },
+           { placeholder: 'Price', value: '' },
         ],
       },
     };
@@ -22,7 +23,8 @@ document.addEventListener('DOMContentLoaded', function () {
         result.image.src,
         result.image.short[0].value,
         result.image.short[1].value,
-        result.image.short[2].value
+        result.image.short[2].value,
+       result.image.short[3].value
       );
     });
   });
