@@ -200,6 +200,7 @@
           data-startingtexts="::::Avg::Avg::Avg"
           data-highlighttexts="Today's::Today's::Daily::Weekly::Monthly"
           data-endingtexts="Cash Sales::Cashless Sales::Sales::Sales::Sales"
+          data-types="cash sales today::cashless sales today::average daily sales::average weekly sales::average monthly sales"
         ></div>
         <div
           id="section-content"
@@ -231,10 +232,11 @@
         ></div>
         <div
           id="section-stats"
-          data-toggles="0::0::0::0::0"
+          data-toggles="0::0::0::1::0"
           data-startingtexts="::::::Total::Total"
           data-highlighttexts="Monthly::Regular::Student::Supplement::Reservations"
           data-endingtexts="Users::Users::Users::Sales::"
+          data-types="::::::total supplement sales::"
         ></div>
         <div
           id="section-content"
@@ -313,6 +315,34 @@
         <div id="section-stats"></div>
         <div id="section-content"></div>
       </section>
+
+      <!-- 🔥 jest 🔥 -->
+      <section id="jest-section" data-icons="fa-file" data-color="violet-fuchsia-red" class="section">
+        <div
+          id="section-header"
+          data-title="Test"
+          data-subtitle="Data Overview"
+          data-mainbtntext="Export to PDF 📄"
+        ></div>
+        <div
+          id="section-stats"
+        ></div>
+        <div
+          id="section-content"
+          data-sectioncount="2"
+          data-tabtitles="Active Monthly Pass Growth::Upcoming Monthly Pass Renewals"
+          data-subtitles="Monthly pass growth tracker::Users due for monthly pass renewals"
+          data-sectiononesearchtext="Search keyword..."
+          data-sectiononesettings="1"
+          data-listemptytexts="::<p>No upcoming monthly pass renewals yet</p><p class='text-sm'>Range: Two weeks notice</p>"
+          data-listtitletexts="[]::[User ID//User//Expires After]"
+          data-listitembtnids="[]::[renewBtn]"
+          data-listitembtntexts="[]::[Renew 🎫]"
+          data-listitembtncolors="[]::[sky]"
+          data-sectiontwotitletexts="User Statistic Analysis::Below the chart, you can click legends to toggle"
+          data-sectiontwosettings="1"
+        ></div>
+      </section>
     </div>
 
     <!-- 🔥 dynamic modal 🔥 -->
@@ -329,6 +359,7 @@
     <script type="module" src="/src/js/admin_modules/reports.js"></script>
     <script type="module" src="/src/js/admin_modules/datasync.js"></script>
     <script type="module" src="/src/js/admin_modules/settings.js"></script>
+    <script type="module" src="/src/js/admin_modules/jest.js"></script>
     <!-- add new js here 👆 -->
 
     <!-- imported js -->
