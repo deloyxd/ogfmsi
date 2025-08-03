@@ -369,7 +369,6 @@ async function loadSectionSilently(sectionName) {
               searchInput.className = `section-content-search-sub border-${mainColor}-500 focus:ring-${mainColor}-500`;
               searchInput.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase().trim();
-                if (searchTerm == '') return;
                 const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
                 if (emptyText) {
                   const items = emptyText.parentElement.children;
@@ -998,7 +997,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     for (let i = 1; i < emptyText.parentElement.parentElement.children.length; i++) {
       const user = emptyText.parentElement.parentElement.children[i];
       if (user.dataset.name.toLowerCase().trim() == findValue.toLowerCase().trim()) {
-        main.openConfirmationModal(
+        openConfirmationModal(
           `Data duplication: User with same details (ID: ${user.dataset.id}, Name: ${user.dataset.name})`,
           success
         );

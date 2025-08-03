@@ -69,6 +69,7 @@ function sectionTwoMainBtnFunction() {
       main.openConfirmationModal('Complete transaction: ' + transaction.dataset.id, () => {
         completeTransaction(transaction.dataset.id, result);
         searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
       });
     });
   });
