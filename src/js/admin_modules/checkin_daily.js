@@ -17,10 +17,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 });
 
 function mainBtnFunction() {
-  mainBtn.dataset.title = 'Register New User 💪';
-  mainBtn.dataset.subtitle = 'New user form';
-
   const inputs = {
+    header: {
+      title: 'Register New User 💪',
+      subtitle: 'New user form',
+    },
     image: {
       src: '/src/images/client_logo.jpg',
       type: 'normal',
@@ -46,176 +47,87 @@ function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('checkin-dailySectionTwoSearch');
-  if (main.checkIfEmpty(searchInput.value)) return;
+  main.findAtSectionOne('checkin-daily', searchInput.value, 'search', 1, (result) => {
+    const user = result;
 
-  let user = null;
-  let columnCount = document.getElementById(`checkin-daily_tab1`).dataset.columncount;
-  let emptyText = document.getElementById(`checkin-dailySectionOneListEmpty1`);
-  let items = emptyText.parentElement.children;
-  for (let i = +columnCount + 1; i < items.length; i += columnCount) {
-    if (items[i].dataset.id.includes(searchInput.value)) {
-      if (!user) user = items[i];
-    }
-  }
-
-  if (!user) {
-    main.toast("There's no user with that ID!", 'error');
-    return;
-  }
-
-  columnCount = document.getElementById(`checkin-daily_tab2`).dataset.columncount;
-  emptyText = document.getElementById(`checkin-dailySectionOneListEmpty2`);
-  items = emptyText.parentElement.children;
-  for (let i = +columnCount + 1; i < items.length; i += columnCount) {
-    if (items[i].dataset.id == user.dataset.id) {
-      main.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
-        processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact);
-        searchInput.value = '';
-        main.closeConfirmationModal();
-      });
+    if (!user) {
+      main.toast("There's no user with that ID!", 'error');
       return;
     }
-  }
 
-  processCheckinUser(user);
-  searchInput.value = '';
+    main.findAtSectionOne('checkin-daily', user.dataset.id, 'equal', 2, (result) => {
+      if (result) {
+        main.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
+          processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact);
+          searchInput.value = '';
+          main.closeConfirmationModal();
+        });
+        return;
+      }
+
+      processCheckinUser(user);
+      searchInput.value = '';
+    });
+  });
 }
 
 function registerNewUser(image, firstName, lastName, emailContact) {
-  const emptyText = document.getElementById('checkin-dailySectionOneListEmpty1');
-
-  const cloneUserId = emptyText.nextElementSibling.cloneNode(true);
-  const cloneUser = emptyText.nextElementSibling.nextElementSibling.cloneNode(true);
-  const cloneUserData = document.createElement('div');
-  cloneUserData.className = 'items-center font-medium text-gray-900';
-  cloneUserData.innerHTML = `
-      <div class="flex items-center gap-3">
-        <img src="/src/images/client_logo.jpg" class="h-10 w-10 rounded-full object-cover" />
-        <p></p>
-      </div>
-  `;
-  cloneUser.appendChild(cloneUserData);
-  const cloneDateRegistered = emptyText.nextElementSibling.nextElementSibling.nextElementSibling.cloneNode(true);
-
-  const randomId_A = Math.floor(100000 + Math.random() * 900000);
-  const randomId_B = Math.floor(100000 + Math.random() * 900000);
-  cloneUserId.textContent = 'U' + randomId_A + '' + randomId_B;
-  cloneUserData.children[0].children[0].src = image;
-  cloneUserData.children[0].children[1].textContent = `${firstName} ${lastName}`;
-  const dateToday = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  cloneDateRegistered.innerHTML += dateToday;
-
-  cloneUserId.classList.remove('hidden');
-  cloneUser.classList.remove('hidden');
-  cloneDateRegistered.classList.remove('hidden');
-
-  cloneUserId.dataset.id = cloneUserId.textContent;
-  cloneUserId.dataset.image = cloneUserData.children[0].children[0].src;
-  cloneUserId.dataset.name = cloneUserData.children[0].children[1].textContent;
-  cloneUserId.dataset.contact = emailContact;
-  cloneUserId.dataset.date = dateToday;
-
-  function continueRegisterNewUser() {
-    emptyText.classList.add('hidden');
-    const insertAfterElement = emptyText.nextElementSibling.nextElementSibling.nextElementSibling;
-    insertAfterElement.insertAdjacentElement('afterend', cloneDateRegistered);
-    insertAfterElement.insertAdjacentElement('afterend', cloneUser);
-    insertAfterElement.insertAdjacentElement('afterend', cloneUserId);
-
+  const name = firstName + ' ' + lastName;
+  const columnsData = [
+    'id_random',
+    {
+      type: 'user',
+      data: [image, name, emailContact],
+    },
+    'date_today',
+  ];
+  main.createAtSectionOne('checkin-daily', columnsData, 1, name, (generated) => {
     const action = {
       module: 'Check-in',
       submodule: 'Daily Pass',
       description: 'Register user',
     };
     const data = {
-      id: cloneUserId.dataset.id,
-      image: cloneUserId.dataset.image,
-      name: cloneUserId.dataset.name,
-      contact: cloneUserId.dataset.contact,
-      date: cloneUserId.dataset.date,
+      id: generated.id,
+      image: image,
+      name: name,
+      contact: emailContact,
+      date: generated.date,
     };
     datasync.enqueue(action, data);
 
-    if (main.sharedState.activeTab == 2)
-      document.getElementById(`checkin-daily_tab1`).lastElementChild.classList.remove('hidden');
-
-    main.toast(cloneUserId.dataset.name + ', successfully registered!', 'success');
+    main.createRedDot('checkin-daily', 1);
+    main.toast(name + ', successfully registered!', 'success');
     main.closeModal();
-  }
-
-  const columnCount = document.getElementById(`checkin-daily_tab1`).dataset.columncount;
-  for (let i = +columnCount + 1; i < emptyText.parentElement.children.length; i += columnCount) {
-    const user = emptyText.parentElement.children[i];
-    if (user.dataset.name.toLowerCase().trim() == cloneUserId.dataset.name.toLowerCase().trim()) {
-      main.openConfirmationModal(
-        `Data duplication: User with same details (ID: ${user.dataset.id})`,
-        continueRegisterNewUser
-      );
-      return;
-    }
-  }
-
-  continueRegisterNewUser();
+  });
 }
 
 function processCheckinUser(user) {
-  const emptyText = document.getElementById(`checkin-dailySectionOneListEmpty2`);
+  const columnsData = [
+    'id_' + user.dataset.id,
+    {
+      type: 'user',
+      data: [user.dataset.image, user.dataset.name, user.dataset.contact],
+    },
+    'time_Pending',
+  ];
+  main.createAtSectionOne('checkin-daily', columnsData, 2, '', () => {
+    const action = {
+      module: 'Check-in',
+      submodule: 'Daily Pass',
+      description: 'Process check-in user',
+    };
+    const data = {
+      id: user.dataset.id,
+      image: user.dataset.image,
+      name: user.dataset.name,
+      contact: user.dataset.contact,
+      time: 'Pending',
+    };
+    datasync.enqueue(action, data);
+    billing.processPayment(data);
 
-  const cloneUserId = emptyText.nextElementSibling.cloneNode(true);
-  const cloneUser = emptyText.nextElementSibling.nextElementSibling.cloneNode(true);
-  const cloneUserData = document.createElement('div');
-  cloneUserData.className = 'items-center font-medium text-gray-900';
-  cloneUserData.innerHTML = `
-      <div class="flex items-center gap-3">
-        <img src="/src/images/client_logo.jpg" class="h-10 w-10 rounded-full object-cover" />
-        <p></p>
-      </div>
-  `;
-  cloneUser.appendChild(cloneUserData);
-  const cloneDateRegistered = emptyText.nextElementSibling.nextElementSibling.nextElementSibling.cloneNode(true);
-
-  cloneUserId.textContent = user.dataset.id;
-  cloneUserData.children[0].children[0].src = user.dataset.image;
-  cloneUserData.children[0].children[1].textContent = user.dataset.name;
-  cloneDateRegistered.innerHTML += 'Pending';
-
-  cloneUserId.classList.remove('hidden');
-  cloneUser.classList.remove('hidden');
-  cloneDateRegistered.classList.remove('hidden');
-
-  cloneUserId.dataset.id = user.dataset.id;
-  cloneUserId.dataset.image = user.dataset.image;
-  cloneUserId.dataset.name = user.dataset.name;
-  cloneUserId.dataset.contact = user.dataset.contact;
-  cloneUserId.dataset.time = 'Pending';
-
-  emptyText.classList.add('hidden');
-  const insertAfterElement = emptyText.nextElementSibling.nextElementSibling.nextElementSibling;
-  insertAfterElement.insertAdjacentElement('afterend', cloneDateRegistered);
-  insertAfterElement.insertAdjacentElement('afterend', cloneUser);
-  insertAfterElement.insertAdjacentElement('afterend', cloneUserId);
-
-  const action = {
-    module: 'Check-in',
-    submodule: 'Daily Pass',
-    description: 'Process check-in user',
-  };
-  const data = {
-    id: cloneUserId.dataset.id,
-    image: cloneUserId.dataset.image,
-    name: cloneUserId.dataset.name,
-    contact: cloneUserId.dataset.contact,
-    time: cloneUserId.dataset.time,
-  };
-  datasync.enqueue(action, data);
-  billing.processPayment(data);
-
-  if (main.sharedState.activeTab == 1)
-    document.getElementById(`checkin-daily_tab2`).lastElementChild.classList.remove('hidden');
-
-  main.toast(user.dataset.name + ', is now ready for check-in payment!', 'success');
+    main.createRedDot('checkin-daily', 2);
+    main.toast(user.dataset.name + ', is now ready for check-in payment!', 'success');
+  });
 }

@@ -63,7 +63,7 @@
       </footer>
     </aside>
 
-    <!-- main -->
+    <!-- main workspace -->
     <div class="ml-48 min-h-screen p-4 xl:ml-64 2xl:p-8">
       <!--
 
@@ -112,8 +112,6 @@
           data-subtitle="Announcements"
           data-middletext="There's no news yet. Create one! 👉"
           data-mainbtntext="Announce 📢"
-          data-mainformtitle="Create Announcement 📢"
-          data-mainformsubtitle="Announcement form"
           data-subbtntext="Check 👁‍🗨"
           data-customcontent="1"
         ></div>
@@ -200,6 +198,7 @@
           data-startingtexts="::::Avg::Avg::Avg"
           data-highlighttexts="Today's::Today's::Daily::Weekly::Monthly"
           data-endingtexts="Cash Sales::Cashless Sales::Sales::Sales::Sales"
+          data-types="cash sales today::cashless sales today::average daily sales::average weekly sales::average monthly sales"
         ></div>
         <div
           id="section-content"
@@ -231,10 +230,11 @@
         ></div>
         <div
           id="section-stats"
-          data-toggles="0::0::0::0::0"
+          data-toggles="0::0::0::1::0"
           data-startingtexts="::::::Total::Total"
           data-highlighttexts="Monthly::Regular::Student::Supplement::Reservations"
           data-endingtexts="Users::Users::Users::Sales::"
+          data-types="::::::total supplement sales::"
         ></div>
         <div
           id="section-content"
@@ -313,7 +313,41 @@
         <div id="section-stats"></div>
         <div id="section-content"></div>
       </section>
+
+      <!-- 🔥 sample 🔥 -->
+      <!-- <section id="sample-section" data-icons="fa-fire-flame-simple" data-color="violet-fuchsia-red" class="section">
+        <div id="section-header" data-title="Sample module"></div>
+        <div id="section-stats"></div>
+        <div
+          id="section-content"
+          data-sectioncount="1"
+          data-tabtitles="Sample tab"
+          data-subtitles="Sample tab description"
+        ></div>
+      </section> -->
+
+      <!-- 🔥 sampleparent-samplechild 🔥 -->
+      <!-- <section
+        id="sampleparent-samplechild-section"
+        data-icons="fa-vials::fa-vial"
+        data-sectiontexts="Sample Parent::Sample Child"
+        data-color="teal-sky-red"
+        class="section"
+      >
+        <div id="section-header" data-title="Sample module"></div>
+        <div id="section-stats"></div>
+        <div
+          id="section-content"
+          data-sectioncount="1"
+          data-tabtitles="Sample tab"
+          data-subtitles="Sample tab description"
+        ></div>
+      </section> -->
     </div>
+
+    <!-- 🔥 resources 🔥 -->
+    <!-- icons: https://fontawesome.com/search -->
+    <!-- colors: https://tailwindcss.com/docs/colors -->
 
     <!-- 🔥 dynamic modal 🔥 -->
     <div id="admin_modal"></div>

@@ -30,10 +30,11 @@ function mainBtnFunction() {
     return;
   }
 
-  mainBtn.dataset.title = 'Create Announcement 📢';
-  mainBtn.dataset.subtitle = 'Announcement form';
-
   const inputs = {
+    header: {
+      title: 'Create Announcement 📢',
+      subtitle: 'Announcement form',
+    },
     image: {
       src: '/src/images/carousel_image_2.jpg',
       type: 'live',
@@ -109,10 +110,10 @@ function mainBtnFunction() {
         }
       });
     });
-    element.dataset.title = 'Update Announcement 📌';
-    element.dataset.subtitle = 'Announcement form';
-    element.dataset.main = 'Update 📌';
-    element.dataset.sub = 'Delete 💀';
+    result.header.title = 'Update Announcement 📌';
+    result.header.subtitle = 'Announcement form';
+    result.footer.main = 'Update 📌';
+    result.footer.sub = 'Delete 💀';
     element.dataset.description = result.large[0].value;
 
     element.addEventListener('mouseenter', () => {

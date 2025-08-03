@@ -1,16 +1,19 @@
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   document.querySelectorAll('.section-stats').forEach((sectionStats) => {
-    sectionStats.addEventListener('click', (e) => {
-      if (e.target.title.toLowerCase().includes('see')) {
-        if (e.target.title.toLowerCase().includes('breakdown')) {
-          // breakdown, todo
-        } else {
-          // list, todo
+    if (!sectionStats.dataset.activated) {
+      sectionStats.dataset.activated = '1';
+      sectionStats.addEventListener('click', function (e) {
+        if (e.target.title.toLowerCase().includes('see')) {
+          if (e.target.title.toLowerCase().includes('breakdown')) {
+            // breakdown, todo
+          } else {
+            // list, todo
+          }
+          return;
         }
-        return;
-      }
-      sectionStats.lastChild.previousSibling.classList.toggle('hidden');
-      sectionStats.lastChild.parentElement.children[2].classList.toggle('hidden');
-    });
+        sectionStats.children[2].classList.toggle('hidden');
+        sectionStats.children[3].classList.toggle('hidden');
+      });
+    }
   });
 });
