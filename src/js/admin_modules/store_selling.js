@@ -91,16 +91,20 @@ function registerNewUser(image, productName, productType, quantity, price) {
     return;
   }
 
+  const status = parseInt(quantity) <= 50 ? 'Low Stock' : 'High Stock';
+  
+  const formattedPrice = `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const columnsData = [
-    'id_random', // Product ID
+    'id_random',
     {
-      type: 'user', // Product Name with logo
+      type: 'user',
       data: [image, productName],
     },
     productType,
     quantity,
-    `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}`,
-
+    formattedPrice,
+    status,
     'date_today',
   ];
 
@@ -116,7 +120,7 @@ function registerNewUser(image, productName, productType, quantity, price) {
       productName,
       productType,
       quantity,
-      price: `₱${parseFloat(price).toFixed(2)}`,
+      price: formattedPrice,
       date: generated.date,
     };
     datasync.enqueue(action, data);
@@ -129,18 +133,26 @@ function registerNewUser(image, productName, productType, quantity, price) {
 
 
 
+
 function processCheckinUser(product) {
-  const columnsData = [
-    'id_' + product.dataset.id,
-    {
-      type: 'user',
-      data: [product.dataset.image, product.dataset.productName],
-    },
-    product.dataset.productType,
-    product.dataset.quantity,
-    product.dataset.price,
-    'time_Pending',
-  ];
+ const status = parseInt(product.dataset.quantity) <= 50 ? 'Low Stock' : 'High Stock';
+const statusColumn = {
+    text: status,
+};
+
+const columnsData = [
+  'id_' + product.dataset.id,
+  {
+    type: 'user',
+    data: [product.dataset.image, product.dataset.productName],
+  },
+  product.dataset.productType,
+  product.dataset.quantity,
+  product.dataset.price,
+  statusColumn,
+  'time_Pending',
+];
+
 
   main.createAtSectionOne('store-selling', columnsData, 5, '', () => {
     const action = {
