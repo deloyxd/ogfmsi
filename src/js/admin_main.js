@@ -749,7 +749,7 @@ function setupModalBase(defaultData, inputs, callback) {
     originalContainer.insertAdjacentElement('afterend', imageContainerParent);
   }
 
-  setupRenderInput('short', inputs.short, 3);
+  setupRenderInput('short', inputs.short, 4);
   setupRenderInput('large', inputs.large, 1);
 
   if (inputs.radio) {
@@ -757,7 +757,8 @@ function setupModalBase(defaultData, inputs, callback) {
     const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
     const radioContainer = originalContainer.cloneNode(true);
     const label = radioContainer.children[0];
-    label.textContent = inputs.radio_label;
+    label.textContent = inputs.radio[0];
+    inputs.radio.shift();
 
     const container = radioContainer.children[1];
     container.id = `input-${type}-1`;
@@ -786,6 +787,7 @@ function setupModalBase(defaultData, inputs, callback) {
     if (render) {
       const inputId = type === 'short' ? `#input-${type}-${offset}` : `#input-${type}`;
       const originalContainer = tempModalContainer.querySelector(inputId).parentElement;
+      const nextContainer = originalContainer.nextElementSibling;
 
       render.forEach((input, index) => {
         const clone = originalContainer.cloneNode(true);
@@ -797,7 +799,7 @@ function setupModalBase(defaultData, inputs, callback) {
         renderInput(clone, type, input, index + offset);
 
         clone.classList.remove('hidden');
-        originalContainer.insertAdjacentElement('afterend', clone);
+        nextContainer.insertAdjacentElement('beforebegin',clone);
       });
     }
   }
@@ -970,7 +972,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
       if (!cell.querySelector('.flex.items-center.gap-3')) {
         cell.innerHTML = `
           <div class="flex items-center gap-3">
-            <img src="${userData[0]}" class="h-10 w-10 rounded-full object-cover" />
+            <img src="${userData[0] ? userData[0] : '/src/images/client_logo.jpg'}" class="h-10 w-10 rounded-full object-cover" />
             <p>${userData[1]}</p>
           </div>
         `;

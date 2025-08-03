@@ -35,8 +35,8 @@ function sectionTwoMainBtnFunction() {
         subtitle: 'Pending payment processing form',
       },
       short: [{ placeholder: 'Amount', value: '', required: true }],
-      radio_label: 'Payment',
       radio: [
+        'Payment',
         {
           icon: '💵',
           title: 'Cash',
