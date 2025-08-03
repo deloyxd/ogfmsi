@@ -58,7 +58,7 @@ function sectionTwoMainBtnFunction() {
     main.findAtSectionOne('checkin-daily', user.dataset.id, 'equal', 2, (result) => {
       if (result) {
         main.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
-          processCheckinUser(user.dataset.id, user.dataset.name, user.dataset.contact);
+          processCheckinUser(user);
           searchInput.value = '';
           main.closeConfirmationModal();
         });
