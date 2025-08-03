@@ -25,7 +25,7 @@ function sectionTwoMainBtnFunction() {
     const transaction = result;
 
     if (!transaction) {
-      main.toast("There's no transaction with that ID!", 'error');
+      main.toast("There's no pending transaction with that ID!", 'error');
       return;
     }
 
@@ -34,9 +34,23 @@ function sectionTwoMainBtnFunction() {
         title: 'Process Pending Transaction 🔏',
         subtitle: 'Pending payment processing form',
       },
-      short: [{ placeholder: 'Amount', value: '', required: true }],
+      short: [
+        { placeholder: 'Amount', value: '', required: true },
+        { placeholder: 'Reference number', value: 'N/A', required: true },
+      ],
+      spinner: [
+        {
+          label: 'Rate',
+          placeholder: 'Select payment rate',
+          selected: 1,
+          options: [
+            { value: 'regular', label: 'Regular' },
+            { value: 'student', label: 'Student Discount' },
+          ],
+        },
+      ],
       radio: [
-        'Payment',
+        { label: 'Payment', selected: 1 },
         {
           icon: '💵',
           title: 'Cash',
@@ -55,10 +69,9 @@ function sectionTwoMainBtnFunction() {
         },
         user: {
           id: transaction.dataset.userid,
-          data: transaction.children[2].lastElementChild.innerHTML.split('<br>').map((item) => item.trim()),
+          data: transaction.children[3].lastElementChild.innerHTML.split('<br>').map((item) => item.trim()),
         },
-        type: 'cash',
-        purpose: transaction.children[0].textContent.trim(),
+        purpose: transaction.children[2].textContent.trim(),
       },
       footer: {
         main: 'Proceed 🔏',
@@ -66,11 +79,14 @@ function sectionTwoMainBtnFunction() {
     };
 
     main.openModal('green', inputs, (result) => {
-      main.openConfirmationModal('Complete transaction: ' + transaction.dataset.id, () => {
-        completeTransaction(transaction.dataset.id, result);
-        searchInput.value = '';
-        searchInput.dispatchEvent(new Event('input'));
-      });
+      main.openConfirmationModal(
+        `Complete transaction: ${result.payment.user.data[1]} (${transaction.dataset.id})`,
+        () => {
+          completeTransaction(transaction.dataset.id, result);
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input'));
+        }
+      );
     });
   });
 }
@@ -98,9 +114,14 @@ function completeTransaction(id, result) {
       const editedResult = {
         id: id,
         user_id: result.payment.user.id,
-        type: result.payment.type,
+        type: result.radio[result.radio[0].selected].title.toLowerCase(),
         amount: result.short[0].value,
-        purpose: result.payment.purpose,
+        refnum: result.short[1].value,
+        rate: result.spinner[0].options[result.spinner[0].selected - 1].value,
+        purpose: result.payment.purpose
+          .replace(/^T\d+\s+/gm, '')
+          .replace(/\s+/g, ' ')
+          .trim(),
         datetime: generated.datetime,
       };
       datasync.enqueue(action, editedResult);
