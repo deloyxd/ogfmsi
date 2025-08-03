@@ -304,7 +304,7 @@ async function loadSectionSilently(sectionName) {
                     const btn = document.createElement('button');
                     btn.id = itemBtnIds[k];
                     btn.textContent = itemBtnTexts[k];
-                    btn.className = `rounded-lg bg-${itemBtnColors[k]}-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-${itemBtnColors[k]}-600 hover:shadow-lg hover:shadow-${itemBtnColors[k]}-400 active:scale-95 active:shadow-none`;
+                    btn.className = `rounded-lg bg-${itemBtnColors[k]}-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-${itemBtnColors[k]}-600 hover:shadow-lg hover:shadow-${itemBtnColors[k]}-400 active:scale-95 active:shadow-none active:translate-y-0`;
                     itemBtns.appendChild(btn);
                   }
                   td.appendChild(itemBtns);
@@ -350,7 +350,7 @@ async function loadSectionSilently(sectionName) {
               sectionTwoListContainer.appendChild(sectionTwoListEmpty);
 
               const sectionTwoListItem = document.createElement('p');
-              sectionTwoListItem.className = 'section-content-list-item hidden';
+              sectionTwoListItem.className = 'section-content-list-item hidden relative';
               sectionTwoListContainer.appendChild(sectionTwoListItem);
             } else {
               containsCustomContents = true;
@@ -563,6 +563,8 @@ export function openConfirmationModal(action, callback) {
   const originalModalContainer = document.querySelector('#modalContainer');
   tempModalConfirmationContainer = originalModalContainer.cloneNode(true);
   originalModalContainer.insertAdjacentElement('afterend', tempModalConfirmationContainer);
+  tempModalConfirmationContainer.children[0].classList.add('max-w-md');
+  tempModalConfirmationContainer.children[0].classList.add('2xl:max-w-xl');
 
   setupModalTheme('red', tempModalConfirmationContainer);
 
@@ -752,19 +754,63 @@ function setupModalBase(defaultData, inputs, callback) {
   setupRenderInput('short', inputs.short, 4);
   setupRenderInput('large', inputs.large, 1);
 
+  if (inputs.spinner) {
+    const type = 'spinner';
+    inputs.spinner.forEach((spinnerGroup, index) => {
+      const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement.parentElement;
+      const spinnerContainer = originalContainer.cloneNode(true);
+      const label = spinnerContainer.children[0];
+      label.textContent = spinnerGroup.label;
+
+      const selectElement = spinnerContainer.querySelector('select');
+      selectElement.id = `input-${type}-${index + 1}`;
+
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.textContent = spinnerGroup.placeholder || 'Select an option';
+      placeholderOption.disabled = true;
+      placeholderOption.selected = true;
+      selectElement.appendChild(placeholderOption);
+
+      spinnerGroup.options.forEach((optionData, index) => {
+        const option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.label;
+        option.classList.add('font-medium');
+
+        if (index === spinnerGroup.selected - 1) {
+          option.selected = true;
+          placeholderOption.selected = false;
+        }
+
+        selectElement.appendChild(option);
+      });
+
+      selectElement.addEventListener('change', function () {
+        spinnerGroup.selected = this.selectedIndex;
+      });
+
+      spinnerContainer.classList.remove('hidden');
+      originalContainer.insertAdjacentElement('afterend', spinnerContainer);
+    });
+  }
+
   if (inputs.radio) {
     const type = 'radio';
     const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
     const radioContainer = originalContainer.cloneNode(true);
     const label = radioContainer.children[0];
-    label.textContent = inputs.radio[0];
-    inputs.radio.shift();
+    label.textContent = inputs.radio[0].label;
 
     const container = radioContainer.children[1];
     container.id = `input-${type}-1`;
-    container.classList.add(`grid-cols-${inputs.radio.length}`);
+    container.classList.add(`grid-cols-${inputs.radio.length - 1}`);
 
-    inputs.radio.forEach((input) => {
+    const radioClones = [];
+    inputs.radio.forEach((input, index) => {
+      if (index == 0) {
+        return;
+      }
       const clone = container.children[0].cloneNode(true);
 
       const icon = clone.children[0];
@@ -776,7 +822,22 @@ function setupModalBase(defaultData, inputs, callback) {
       subtitle.textContent = input.subtitle;
 
       clone.classList.remove('hidden');
+      clone.dataset.color = clone.classList[clone.classList.length - 1].split(':')[1];
+      radioClones.push(clone);
       container.appendChild(clone);
+      if (index == inputs.radio[0].selected) {
+        clone.classList.add(clone.dataset.color);
+      }
+      clone.addEventListener('click', function () {
+        inputs.radio[0].selected = index;
+        radioClones.forEach((radioClone) => {
+          if (radioClone == clone) {
+            radioClone.classList.add(radioClone.dataset.color);
+          } else {
+            radioClone.classList.remove(radioClone.dataset.color);
+          }
+        });
+      });
     });
 
     radioContainer.classList.remove('hidden');
@@ -799,7 +860,7 @@ function setupModalBase(defaultData, inputs, callback) {
         renderInput(clone, type, input, index + offset);
 
         clone.classList.remove('hidden');
-        nextContainer.insertAdjacentElement('beforebegin',clone);
+        nextContainer.insertAdjacentElement('beforebegin', clone);
       });
     }
   }
@@ -810,7 +871,7 @@ function setupModalBase(defaultData, inputs, callback) {
     const id = `input-${type}-${index + 1}`;
 
     label.for = id;
-    label.textContent = data.placeholder;
+    label.textContent = data.placeholder + (data.required ? ' *' : '');
 
     input.id = id;
     input.placeholder = data.placeholder;
@@ -878,6 +939,14 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
       return;
     }
     if (findType == 'equal' && items[i].dataset.id == findValue) {
+      callback(items[i]);
+      return;
+    }
+    if (
+      findType == 'pending' &&
+      items[i].dataset.id == findValue &&
+      items[i].dataset.time.toLowerCase().includes('pending')
+    ) {
       callback(items[i]);
       return;
     }
@@ -957,7 +1026,12 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
         const value = columnData.split('_')[1];
         setCellContent(cell, value, isLastElement);
-        newRow.dataset.date = value;
+        if (lowerColumn.includes('datetime')) {
+          newRow.dataset.datetime = value;
+          return;
+        }
+        if (lowerColumn.includes('date')) newRow.dataset.date = value;
+        if (lowerColumn.includes('time')) newRow.dataset.time = value;
         return;
       }
 
@@ -1061,6 +1135,12 @@ export function createAtSectionTwo(sectionName, data, callback) {
   result.dataset.description = data.action.description;
 
   result.innerHTML = `
+    <div class="absolute left-2 top-2">
+      <div class="relative h-2 w-2">
+        <div class="h-full w-full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+        <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+      </div>
+    </div>
     <div class="overflow-hidden text-ellipsis">
       ${result.dataset.actorid}<br>
       <small>
@@ -1069,6 +1149,11 @@ export function createAtSectionTwo(sectionName, data, callback) {
       </small>
     </div>
   `;
+
+  createRedDot(sectionName, 'main');
+  result.addEventListener('mouseover', function () {
+    result.children[0].classList.add('hidden');
+  });
 
   return callback(result);
 }
@@ -1097,8 +1182,6 @@ export function createRedDot(sectionName, type) {
   if (typeof type === 'number') {
     document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.remove('hidden');
     return;
-  }
-  if (type === 'sectionTwo') {
   }
 }
 

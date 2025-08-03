@@ -3,7 +3,10 @@ import billing from './billing.js';
 import datasync from './datasync.js';
 
 // default codes:
-let mainBtn, subBtn, sectionTwoMainBtn;
+let mainBtn,
+  subBtn,
+  sectionTwoMainBtn,
+  liveActivated = false;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // change to right sectionName
   if (main.sharedState.sectionName != 'checkin-daily') return;
@@ -14,6 +17,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   subBtn.addEventListener('click', subBtnFunction);
   sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
   sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
+
+  if (!liveActivated) {
+    liveActivated = true;
+    updateDateAndTime();
+  }
 });
 
 function mainBtnFunction() {
@@ -55,7 +63,7 @@ function sectionTwoMainBtnFunction() {
       return;
     }
 
-    main.findAtSectionOne('checkin-daily', user.dataset.id, 'equal', 2, (result) => {
+    main.findAtSectionOne('checkin-daily', user.dataset.id, 'pending', 2, (result) => {
       if (result) {
         main.openConfirmationModal('Multiple pending transaction: User with multiple pending transactions', () => {
           processCheckinUser(user);
@@ -69,6 +77,14 @@ function sectionTwoMainBtnFunction() {
       searchInput.value = '';
     });
   });
+}
+
+function updateDateAndTime() {
+  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  document.getElementById('checkin-daily-section-header').children[0].children[1].children[0].children[0].textContent =
+    `📆 ${date} ⌚ ${time}`;
+  setInterval(updateDateAndTime, 1000);
 }
 
 function registerNewUser(image, firstName, lastName, emailContact) {
