@@ -1,7 +1,6 @@
 import main from './admin_main.js';
 
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  console.log(`${main.sharedState.sectionName}_tab`)
   const tabCount = document.getElementById(`${main.sharedState.sectionName}_tab`).parentElement.children.length - 1;
 
   let lastTabSwitchTime = 0;

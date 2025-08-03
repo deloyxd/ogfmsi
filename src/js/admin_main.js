@@ -133,15 +133,22 @@ async function loadSectionSilently(sectionName) {
 
       await loadComponent(name, element, dataset);
 
-      if (name.includes('header') && containsCustomHeaderContent) {
-        try {
-          const response = await fetch(`/src/html/custom/${sectionName}_header.html`);
-          if (response.ok) {
-            const html = await response.text();
-            element.children[0].children[1].innerHTML += html;
+      if (name.includes('header')) {
+        fields.forEach((field) => {
+          if (field == 'mainbtntext' && !dataset[field]) {
+            document.querySelector(`.section-main-btn[data-section="${sectionName}"]`).classList.add('hidden');
           }
-        } catch (error) {
-          console.warn(`Could not load custom header for ${sectionName}:`, error);
+        });
+        if (containsCustomHeaderContent) {
+          try {
+            const response = await fetch(`/src/html/custom/${sectionName}_header.html`);
+            if (response.ok) {
+              const html = await response.text();
+              element.children[0].children[1].innerHTML += html;
+            }
+          } catch (error) {
+            console.warn(`Could not load custom header for ${sectionName}:`, error);
+          }
         }
       }
 
@@ -218,7 +225,7 @@ async function loadSectionSilently(sectionName) {
           for (let i = 0; i < dataset['tabtitles'].length; i++) {
             const clone = sectionOne.children[0].cloneNode(true);
             clone.id = `${sectionName}_tab${i + 1}`;
-            
+
             clone.children[0].textContent = dataset['tabtitles'][i];
             clone.children[1].children[0].textContent = dataset['subtitles'][i];
             if (dataset['sectiononesearchtext'] && i == 0) {
@@ -251,7 +258,7 @@ async function loadSectionSilently(sectionName) {
             }
             if (dataset['sectiononesettings'] == 1)
               sectionOne.parentElement.children[1].children[1].classList.remove('hidden');
-            if (dataset['listtitletexts'][i] != '[]') {
+            if (dataset['listtitletexts'] && dataset['listtitletexts'][i] != '[]') {
               const tableParent = document.createElement('div');
               tableParent.dataset.sectionindex = 1;
               tableParent.dataset.tabindex = i + 1;
@@ -666,27 +673,17 @@ function setupModalTheme(base, container) {
 }
 
 function setupModalBase(defaultData, inputs, callback) {
-  let data;
-  if (typeof defaultData === 'string') {
-    const splitData = defaultData.split('//');
-    data = {
-      title: splitData[1],
-      subtitle: splitData[2],
-      button: {
-        main: splitData[3],
-        sub: splitData.length > 4 ? splitData[4] : '',
-      },
-    };
-  } else {
-    data = {
-      title: defaultData.dataset.title.trim(),
-      subtitle: defaultData.dataset.subtitle?.trim() || '',
-      button: {
-        main: defaultData.dataset.main?.trim() || defaultData.textContent.trim(),
-        sub: defaultData.dataset.sub?.trim() || '',
-      },
-    };
-  }
+  // CLIENT 🔑
+  const data = {
+    title: inputs.header ? inputs.header.title?.trim() || '' : 'Fitworx Gym Form',
+    subtitle: inputs.header ? inputs.header.subtitle?.trim() || '' : 'Please fill up empty fields',
+    button: {
+      main: inputs.footer
+        ? inputs.footer.main?.trim() || defaultData.textContent.trim()
+        : defaultData.textContent.trim(),
+      sub: inputs.footer ? inputs.footer.sub?.trim() || '' : '',
+    },
+  };
 
   const modalTitle = tempModalContainer.querySelector('#modalTitle');
   const modalSubtitle = tempModalContainer.querySelector('#modalSubtitle');
@@ -870,6 +867,221 @@ export function checkIfEmpty(inputs) {
   return hasEmpty;
 }
 
+export function findAtSectionOne(sectionName, findValue, findType, tabIndex, callback) {
+  if (checkIfEmpty(findValue)) return;
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  const items = emptyText.parentElement.parentElement.children;
+  for (let i = 1; i < items.length; i++) {
+    if (findType == 'search' && items[i].dataset.id.includes(findValue)) {
+      callback(items[i]);
+      return;
+    }
+    if (findType == 'equal' && items[i].dataset.id == findValue) {
+      callback(items[i]);
+      return;
+    }
+  }
+  callback(null);
+}
+
+export function findAtSectionTwo(sectionName, findValue, callback) {
+  if (checkIfEmpty(findValue)) return;
+  const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
+  const items = emptyText.parentElement.children;
+  for (let i = 2; i < items.length; i++) {
+    if (items[i].dataset.id == findValue) {
+      callback(items[i]);
+      return;
+    }
+  }
+  callback(null);
+}
+
+export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+
+  const columnClone1 = emptyText.nextElementSibling.cloneNode(true);
+  const columnClone2Parent = emptyText.nextElementSibling.nextElementSibling.cloneNode(true);
+  const columnClone2 = document.createElement('div');
+  columnClone2.className = 'items-center font-medium text-gray-900';
+  columnClone2.innerHTML = `
+        <div class="flex items-center gap-3">
+          <img src="/src/images/client_logo.jpg" class="h-10 w-10 rounded-full object-cover" />
+          <p></p>
+        </div>
+    `;
+  columnClone2Parent.appendChild(columnClone2);
+  const columnClone3 = emptyText.nextElementSibling.nextElementSibling.nextElementSibling.cloneNode(true);
+  const columnCloneParent = document.createElement('tr');
+
+  columnClone1.classList.remove('hidden');
+  columnClone2Parent.classList.remove('hidden');
+  columnClone3.classList.remove('hidden');
+
+  columnCloneParent.appendChild(columnClone1);
+  columnCloneParent.appendChild(columnClone2Parent);
+  columnCloneParent.appendChild(columnClone3);
+
+  let generatedData = {};
+  columnsData.forEach((columnData) => {
+    if (typeof columnData === 'string' && columnData.toLowerCase().split('_')[0] == 'id') {
+      if (columnData.toLowerCase().includes('random')) {
+        const randomId_A = Math.floor(100000 + Math.random() * 900000);
+        const randomId_B = Math.floor(100000 + Math.random() * 900000);
+        columnClone1.textContent = 'U' + randomId_A + '' + randomId_B;
+        columnCloneParent.dataset.id = columnClone1.textContent;
+        generatedData.id = columnClone1.textContent;
+        return;
+      }
+      const value = columnData.split('_')[1];
+      columnClone1.textContent = value;
+      columnCloneParent.dataset.id = value;
+      return;
+    }
+    if (columnData.type && columnData.type.toLowerCase().includes('user')) {
+      columnClone2.children[0].children[0].src = columnData.data[0];
+      columnClone2.children[0].children[1].textContent = columnData.data[1];
+      if (columnData.type.toLowerCase().includes('id')) {
+        columnCloneParent.dataset.image = columnData.data[0];
+        columnCloneParent.dataset.userid = columnData.data[1];
+        columnCloneParent.dataset.name = columnData.data[2];
+        columnCloneParent.dataset.contact = columnData.data[3];
+      } else {
+        columnClone2.children[0].children[1].textContent = columnData.data[1];
+        columnCloneParent.dataset.image = columnData.data[0];
+        columnCloneParent.dataset.name = columnData.data[1];
+        columnCloneParent.dataset.contact = columnData.data[2];
+      }
+      return;
+    }
+    if (
+      typeof columnData === 'string' &&
+      (columnData.toLowerCase().includes('date') || columnData.toLowerCase().includes('time'))
+    ) {
+      if (columnData.toLowerCase().includes('today')) {
+        const type = columnData.toLowerCase().split('_')[0];
+        if (['date', 'time', 'datetime'].includes(type)) {
+          const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+          const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+
+          let value = '';
+          if (type === 'date' || type === 'datetime') {
+            value = new Date().toLocaleDateString('en-US', dateOptions);
+          }
+          if (type === 'time' || type === 'datetime') {
+            const time = new Date().toLocaleTimeString('en-US', timeOptions);
+            value = type === 'datetime' ? `${value} - ${time}` : time;
+          }
+
+          columnClone3.innerHTML += value;
+          columnCloneParent.dataset.date = value;
+          if (type === 'date') {
+            generatedData.date = value;
+          }
+          if (type === 'time') {
+            generatedData.time = value;
+          }
+          if (type === 'datetime') {
+            generatedData.datetime = value;
+          }
+          return;
+        }
+      }
+      const value = columnData.split('_')[1];
+      columnClone3.innerHTML += value;
+      columnCloneParent.dataset.date = value;
+      return;
+    }
+  });
+
+  if (findValue != '') {
+    for (let i = 1; i < emptyText.parentElement.parentElement.children.length; i++) {
+      const user = emptyText.parentElement.parentElement.children[i];
+      if (user.dataset.name.toLowerCase().trim() == findValue.toLowerCase().trim()) {
+        main.openConfirmationModal(
+          `Data duplication: User with same details (ID: ${user.dataset.id}, Name: ${user.dataset.name})`,
+          success
+        );
+        return;
+      }
+    }
+  }
+
+  success();
+
+  function success() {
+    emptyText.classList.add('hidden');
+    emptyText.parentElement.parentElement.children[0].insertAdjacentElement('afterend', columnCloneParent);
+    callback(generatedData);
+  }
+}
+
+export function createAtSectionTwo(sectionName, data, callback) {
+  const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
+  const result = emptyText.nextElementSibling.cloneNode(true);
+  result.classList.remove('hidden');
+  emptyText.classList.add('hidden');
+  emptyText.nextElementSibling.insertAdjacentElement('afterend', result);
+
+  if (data.id) {
+    if (data.id.includes('random')) {
+      const randomId_A = Math.floor(100000 + Math.random() * 900000);
+      const randomId_B = Math.floor(100000 + Math.random() * 900000);
+      const id = 'T' + randomId_A + '' + randomId_B;
+      result.dataset.id = id;
+    } else {
+      result.dataset.id = data.id;
+    }
+  }
+
+  result.dataset.actorid = 'U288343611137';
+  result.dataset.actorname = 'Jestley';
+  result.dataset.actorrole = 'Admin';
+  result.dataset.module = data.action.module;
+  result.dataset.description = data.action.description;
+
+  result.innerHTML = `
+    <div class="overflow-hidden text-ellipsis">
+      ${result.dataset.actorid}<br>
+      <small>
+        ${result.dataset.actorname}<br>
+        ${result.dataset.actorrole}
+      </small>
+    </div>
+  `;
+
+  return callback(result);
+}
+
+export function deleteAtSectionOne() {}
+
+export function deleteAtSectionTwo(sectionName, id) {
+  const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
+  const items = emptyText.parentElement.children;
+  for (let i = 2; i < items.length; i++) {
+    if (items[i].dataset.id == id) {
+      items[i].remove();
+      if (items.length == 2) emptyText.classList.remove('hidden');
+      return;
+    }
+  }
+}
+
+export function createRedDot(sectionName, type) {
+  if (typeof type === 'string' && !type.includes('section')) {
+    document
+      .querySelector(`.sidebar-${type}-btn[data-section="${sectionName}"]`)
+      .lastElementChild.classList.remove('hidden');
+    return;
+  }
+  if (typeof type === 'number') {
+    document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.remove('hidden');
+    return;
+  }
+  if (type === 'sectionTwo') {
+  }
+}
+
 export default {
   sharedState,
   mainColor,
@@ -881,6 +1093,13 @@ export default {
   closeConfirmationModal,
   toast,
   checkIfEmpty,
+  findAtSectionOne,
+  findAtSectionTwo,
+  createAtSectionOne,
+  createAtSectionTwo,
+  deleteAtSectionOne,
+  deleteAtSectionTwo,
+  createRedDot,
 };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -890,7 +1109,9 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 async function showLoadingAndPreloadSections() {
-  const sectionsToLoad = ['dashboard', 'checkin-daily', 'billing', 'reports', 'datasync', 'settings'];
+  const sectionNames = Array.from(document.querySelectorAll('.section')).map(
+    (section) => section.id.split('-section')[0]
+  );
   const loadingOverlay = createLoadingOverlay();
   document.body.appendChild(loadingOverlay);
 
@@ -898,7 +1119,7 @@ async function showLoadingAndPreloadSections() {
   allSections.forEach((section) => section.classList.add('hidden'));
 
   let loadedCount = 0;
-  const totalSections = sectionsToLoad.length;
+  const totalSections = sectionNames.length;
 
   function updateProgress(sectionName) {
     loadedCount++;
@@ -914,7 +1135,7 @@ async function showLoadingAndPreloadSections() {
   }
 
   try {
-    const loadPromises = sectionsToLoad.map(async (sectionName) => {
+    const loadPromises = sectionNames.map(async (sectionName) => {
       await loadSectionSilently(sectionName);
       updateProgress(sectionName);
     });

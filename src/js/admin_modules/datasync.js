@@ -40,23 +40,14 @@ function setupHeader() {
 function setupDataQueue() {}
 
 export function enqueue(action, data) {
-  const emptyText = document.getElementById('datasyncSectionTwoListEmpty');
-  const dataSyncItem = emptyText.nextElementSibling.cloneNode(true);
-
-  const actor = {
-    name: 'Jestley',
-    role: 'Admin',
-    id: 'U288343611137',
+  const editedData = {
+    action: {
+      module: action.module,
+      description: action.description,
+    },
   };
-
-  dataSyncItem.innerHTML = `
-    <div class="overflow-hidden text-ellipsis">
-      ${actor.id}<br>
-      <small>
-        ${actor.name}<br>
-        ${actor.role}
-      </small>
-    </div>
+  main.createAtSectionTwo('datasync', editedData, (result) => {
+    result.innerHTML += `
     <div class="overflow-hidden text-ellipsis">
       ${action.module}<br>
       <small>
@@ -78,10 +69,7 @@ export function enqueue(action, data) {
       </small>
     </div>
   `;
-
-  dataSyncItem.classList.remove('hidden');
-  emptyText.classList.add('hidden');
-  emptyText.nextElementSibling.insertAdjacentElement('afterend', dataSyncItem);
+  });
 }
 
 export default { enqueue };
