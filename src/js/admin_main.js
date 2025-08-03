@@ -898,107 +898,117 @@ export function findAtSectionTwo(sectionName, findValue, callback) {
 
 export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  const tableRow = emptyText.parentElement;
+  const referenceCells = Array.from(tableRow.children);
+  referenceCells.shift();
 
-  const columnClone1 = emptyText.nextElementSibling.cloneNode(true);
-  const columnClone2Parent = emptyText.nextElementSibling.nextElementSibling.cloneNode(true);
-  const columnClone2 = document.createElement('div');
-  columnClone2.className = 'items-center font-medium text-gray-900';
-  columnClone2.innerHTML = `
-        <div class="flex items-center gap-3">
-          <img src="/src/images/client_logo.jpg" class="h-10 w-10 rounded-full object-cover" />
-          <p></p>
-        </div>
-    `;
-  columnClone2Parent.appendChild(columnClone2);
-  const columnClone3 = emptyText.nextElementSibling.nextElementSibling.nextElementSibling.cloneNode(true);
-  const columnCloneParent = document.createElement('tr');
+  const newRow = document.createElement('tr');
 
-  columnClone1.classList.remove('hidden');
-  columnClone2Parent.classList.remove('hidden');
-  columnClone3.classList.remove('hidden');
+  const generatedData = {};
+  columnsData.forEach((columnData, index) => {
+    const isLastElement = index == columnsData.length - 1;
+    const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
+    cell.classList.remove('hidden');
+    newRow.appendChild(cell);
 
-  columnCloneParent.appendChild(columnClone1);
-  columnCloneParent.appendChild(columnClone2Parent);
-  columnCloneParent.appendChild(columnClone3);
+    if (typeof columnData === 'string') {
+      const lowerColumn = columnData.toLowerCase();
 
-  let generatedData = {};
-  columnsData.forEach((columnData) => {
-    if (typeof columnData === 'string' && columnData.toLowerCase().split('_')[0] == 'id') {
-      if (columnData.toLowerCase().includes('random')) {
-        const randomId_A = Math.floor(100000 + Math.random() * 900000);
-        const randomId_B = Math.floor(100000 + Math.random() * 900000);
-        columnClone1.textContent = 'U' + randomId_A + '' + randomId_B;
-        columnCloneParent.dataset.id = columnClone1.textContent;
-        generatedData.id = columnClone1.textContent;
+      if (lowerColumn.split('_')[0] === 'id') {
+        let idValue;
+        if (lowerColumn.includes('random')) {
+          const randomId_A = Math.floor(100000 + Math.random() * 900000);
+          const randomId_B = Math.floor(100000 + Math.random() * 900000);
+          idValue = 'U' + randomId_A + '' + randomId_B;
+        } else {
+          idValue = columnData.split('_')[1];
+        }
+
+        setCellContent(cell, idValue, isLastElement);
+        newRow.dataset.id = idValue;
+        generatedData.id = idValue;
         return;
       }
-      const value = columnData.split('_')[1];
-      columnClone1.textContent = value;
-      columnCloneParent.dataset.id = value;
-      return;
-    }
-    if (columnData.type && columnData.type.toLowerCase().includes('user')) {
-      columnClone2.children[0].children[0].src = columnData.data[0];
-      columnClone2.children[0].children[1].textContent = columnData.data[1];
-      if (columnData.type.toLowerCase().includes('id')) {
-        columnCloneParent.dataset.image = columnData.data[0];
-        columnCloneParent.dataset.userid = columnData.data[1];
-        columnCloneParent.dataset.name = columnData.data[2];
-        columnCloneParent.dataset.contact = columnData.data[3];
-      } else {
-        columnClone2.children[0].children[1].textContent = columnData.data[1];
-        columnCloneParent.dataset.image = columnData.data[0];
-        columnCloneParent.dataset.name = columnData.data[1];
-        columnCloneParent.dataset.contact = columnData.data[2];
-      }
-      return;
-    }
-    if (
-      typeof columnData === 'string' &&
-      (columnData.toLowerCase().includes('date') || columnData.toLowerCase().includes('time'))
-    ) {
-      if (columnData.toLowerCase().includes('today')) {
-        const type = columnData.toLowerCase().split('_')[0];
-        if (['date', 'time', 'datetime'].includes(type)) {
-          const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-          const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
 
-          let value = '';
-          if (type === 'date' || type === 'datetime') {
-            value = new Date().toLocaleDateString('en-US', dateOptions);
-          }
-          if (type === 'time' || type === 'datetime') {
-            const time = new Date().toLocaleTimeString('en-US', timeOptions);
-            value = type === 'datetime' ? `${value} - ${time}` : time;
-          }
+      if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
+        if (lowerColumn.includes('today')) {
+          const type = lowerColumn.split('_')[0];
+          if (['date', 'time', 'datetime'].includes(type)) {
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
 
-          columnClone3.innerHTML += value;
-          columnCloneParent.dataset.date = value;
-          if (type === 'date') {
-            generatedData.date = value;
+            let value = '';
+            if (type === 'date' || type === 'datetime') {
+              value = new Date().toLocaleDateString('en-US', dateOptions);
+            }
+            if (type === 'time' || type === 'datetime') {
+              const time = new Date().toLocaleTimeString('en-US', timeOptions);
+              value = type === 'datetime' ? `${value} - ${time}` : time;
+            }
+
+            setCellContent(cell, value, isLastElement);
+            newRow.dataset.date = value;
+            generatedData[type] = value;
+            return;
           }
-          if (type === 'time') {
-            generatedData.time = value;
-          }
-          if (type === 'datetime') {
-            generatedData.datetime = value;
-          }
-          return;
         }
+
+        const value = columnData.split('_')[1];
+        setCellContent(cell, value, isLastElement);
+        newRow.dataset.date = value;
+        return;
       }
-      const value = columnData.split('_')[1];
-      columnClone3.innerHTML += value;
-      columnCloneParent.dataset.date = value;
+
+      setCellContent(cell, columnData, isLastElement);
       return;
     }
+
+    if (columnData.type && columnData.type.toLowerCase().includes('user')) {
+      const isUserIdType = columnData.type.toLowerCase().includes('id');
+      const userData = columnData.data;
+
+      if (!cell.querySelector('.flex.items-center.gap-3')) {
+        cell.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${userData[0]}" class="h-10 w-10 rounded-full object-cover" />
+            <p>${userData[1]}</p>
+          </div>
+        `;
+      } else {
+        const img = cell.querySelector('img');
+        const text = cell.querySelector('p');
+        img.src = userData[0];
+        text.textContent = userData[1];
+      }
+
+      newRow.dataset.image = userData[0];
+      if (isUserIdType) {
+        newRow.dataset.userid = userData[1];
+        newRow.dataset.name = userData[2];
+        newRow.dataset.contact = userData[3];
+      } else {
+        newRow.dataset.name = userData[1];
+        newRow.dataset.contact = userData[2];
+      }
+      return;
+    }
+
+    if (typeof columnData === 'object') {
+      setCellContent(cell, JSON.stringify(columnData), isLastElement);
+      return;
+    }
+
+    setCellContent(cell, columnData, isLastElement);
   });
 
-  if (findValue != '') {
-    for (let i = 1; i < emptyText.parentElement.parentElement.children.length; i++) {
-      const user = emptyText.parentElement.parentElement.children[i];
-      if (user.dataset.name.toLowerCase().trim() == findValue.toLowerCase().trim()) {
+  if (findValue) {
+    const tableBody = emptyText.closest('tbody');
+    const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
+
+    for (const row of existingRows) {
+      if (row.dataset.name && row.dataset.name.toLowerCase().trim() === findValue.toLowerCase().trim()) {
         openConfirmationModal(
-          `Data duplication: User with same details (ID: ${user.dataset.id}, Name: ${user.dataset.name})`,
+          `Data duplication: User with same details (ID: ${row.dataset.id}, Name: ${row.dataset.name})`,
           success
         );
         return;
@@ -1010,8 +1020,17 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
   function success() {
     emptyText.classList.add('hidden');
-    emptyText.parentElement.parentElement.children[0].insertAdjacentElement('afterend', columnCloneParent);
+    tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
     callback(generatedData);
+    closeConfirmationModal();
+  }
+
+  function setCellContent(cell, content, isLastElement) {
+    if (isLastElement) {
+      cell.innerHTML += content;
+    } else {
+      cell.textContent = content;
+    }
   }
 }
 
