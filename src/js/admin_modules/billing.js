@@ -110,7 +110,7 @@ function completeTransaction(id, result) {
       // updating "Pending" value
       const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement.children;
       for (let i = 1; i < items.length; i++) {
-        if (items[i].dataset.id == result.payment.user.id) {
+        if (items[i].dataset.tid == id) {
           const time = generated.datetime.split('-')[1].trim();
           items[i].dataset.time = time;
           const btns = items[i].children[2].children[0].cloneNode(true);
@@ -142,6 +142,15 @@ export function processPayment(user) {
     },
   };
   main.createAtSectionTwo('billing', data, (result) => {
+    // updating transaction id of pending user
+    const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement.children;
+    for (let i = 1; i < items.length; i++) {
+      if (items[i].dataset.id == user.id) {
+        items[i].dataset.tid = result.dataset.id;
+        break;
+      }
+    }
+
     result.dataset.userid = user.id;
     result.innerHTML += `
     <div class="overflow-hidden text-ellipsis">
