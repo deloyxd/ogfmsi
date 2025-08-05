@@ -29,25 +29,35 @@ function mainBtnFunction() {
       type: 'normal',
       short: [
         { placeholder: 'Product Name', value: '', required: true },
-        { placeholder: 'Product Type', value: '', required: true },
         { placeholder: 'Quantity', value: '', required: true },
         { placeholder: 'Price', value: '', required: true },
       ],
     },
+    spinner: [
+      {
+        label: 'Product Type',
+        placeholder: 'Select product type',
+        selected: 1,
+        options: [
+          { value: 'supplement', label: 'Supplement' },
+          { value: 'food', label: 'Food' },
+          { value: 'merchandise', label: 'Merchandise' },
+          { value: 'beverages', label: 'Beverages' },
+        ],
+      },
+    ],
   };
 
   main.openModal(mainBtn, inputs, (result) => {
     registerNewUser(
       result.image.src,
       result.image.short[0].value,
+      result.spinner[0].options[result.spinner[0].selected].value,
       result.image.short[1].value,
       result.image.short[2].value,
-      result.image.short[3].value
     );
   });
 }
-
-
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('store-sellingSectionTwoSearch');
@@ -91,16 +101,20 @@ function registerNewUser(image, productName, productType, quantity, price) {
     return;
   }
 
+  const status = parseInt(quantity) <= 50 ? 'Low Stock' : '<p class="text-red-500 font-bold">High Stock</p>';
+
+  const formattedPrice = `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const columnsData = [
-    'id_random', // Product ID
+    'id_random',
     {
-      type: 'user', // Product Name with logo
+      type: 'user',
       data: [image, productName],
     },
     productType,
     quantity,
-    `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}`,
-
+    formattedPrice,
+    status,
     'date_today',
   ];
 
@@ -116,7 +130,7 @@ function registerNewUser(image, productName, productType, quantity, price) {
       productName,
       productType,
       quantity,
-      price: `₱${parseFloat(price).toFixed(2)}`,
+      price: formattedPrice,
       date: generated.date,
     };
     datasync.enqueue(action, data);
@@ -127,9 +141,12 @@ function registerNewUser(image, productName, productType, quantity, price) {
   });
 }
 
-
-
 function processCheckinUser(product) {
+  const status = parseInt(product.dataset.quantity) <= 50 ? 'Low Stock' : 'High Stock';
+  const statusColumn = {
+    text: status,
+  };
+
   const columnsData = [
     'id_' + product.dataset.id,
     {
@@ -139,6 +156,7 @@ function processCheckinUser(product) {
     product.dataset.productType,
     product.dataset.quantity,
     product.dataset.price,
+    statusColumn,
     'time_Pending',
   ];
 

@@ -1012,7 +1012,6 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
   const newRow = document.createElement('tr');
 
   columnsData.forEach((columnData, index) => {
-    const isLastElement = index == columnsData.length - 1;
     const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
     cell.classList.remove('hidden');
     newRow.appendChild(cell);
@@ -1030,7 +1029,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
           idValue = columnData.split('_')[1];
         }
 
-        setCellContent(cell, idValue, isLastElement);
+        setCellContent(cell, idValue);
         newRow.dataset.id = idValue;
         return;
       }
@@ -1051,13 +1050,13 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
               value = type === 'datetime' ? `${value} - ${time}` : time;
             }
 
-            setDateTimeContent(cell, value, isLastElement);
+            setDateTimeContent(cell, value);
             return;
           }
         }
 
-        function setDateTimeContent(cell, value, isLastElement) {
-          setCellContent(cell, value, isLastElement);
+        function setDateTimeContent(cell, value) {
+          setCellContent(cell, value);
           switch (type) {
             case 'date':
               newRow.dataset.date = value;
@@ -1071,11 +1070,11 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
           }
         }
 
-        setDateTimeContent(cell, columnData.split('_')[1], isLastElement);
+        setDateTimeContent(cell, columnData.split('_')[1]);
         return;
       }
 
-      setCellContent(cell, columnData, isLastElement);
+      setCellContent(cell, columnData);
       return;
     }
 
@@ -1110,11 +1109,11 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     }
 
     if (typeof columnData === 'object') {
-      setCellContent(cell, JSON.stringify(columnData), isLastElement);
+      setCellContent(cell, JSON.stringify(columnData));
       return;
     }
 
-    setCellContent(cell, columnData, isLastElement);
+    setCellContent(cell, columnData);
   });
 
   if (findValue) {
@@ -1133,12 +1132,8 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
   callback(newRow, 'success');
 
-  function setCellContent(cell, content, isLastElement) {
-    if (isLastElement) {
-      cell.innerHTML += content;
-    } else {
-      cell.textContent = content;
-    }
+  function setCellContent(cell, content) {
+    cell.innerHTML += content;
   }
 }
 
