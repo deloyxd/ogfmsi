@@ -29,25 +29,35 @@ function mainBtnFunction() {
       type: 'normal',
       short: [
         { placeholder: 'Product Name', value: '', required: true },
-        { placeholder: 'Product Type', value: '', required: true },
         { placeholder: 'Quantity', value: '', required: true },
         { placeholder: 'Price', value: '', required: true },
       ],
     },
+    spinner: [
+      {
+        label: 'Product Type',
+        placeholder: 'Select product type',
+        selected: 1,
+        options: [
+          { value: 'supplement', label: 'Supplement' },
+          { value: 'food', label: 'Food' },
+          { value: 'merchandise', label: 'Merchandise' },
+          { value: 'beverages', label: 'Beverages' },
+        ],
+      },
+    ],
   };
 
   main.openModal(mainBtn, inputs, (result) => {
     registerNewUser(
       result.image.src,
       result.image.short[0].value,
+      result.spinner[0].options[result.spinner[0].selected].value,
       result.image.short[1].value,
       result.image.short[2].value,
-      result.image.short[3].value
     );
   });
 }
-
-
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('store-sellingSectionTwoSearch');
@@ -91,8 +101,8 @@ function registerNewUser(image, productName, productType, quantity, price) {
     return;
   }
 
-  const status = parseInt(quantity) <= 50 ? 'Low Stock' : 'High Stock';
-  
+  const status = parseInt(quantity) <= 50 ? 'Low Stock' : '<p class="text-red-500 font-bold">High Stock</p>';
+
   const formattedPrice = `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const columnsData = [
@@ -131,28 +141,24 @@ function registerNewUser(image, productName, productType, quantity, price) {
   });
 }
 
-
-
-
 function processCheckinUser(product) {
- const status = parseInt(product.dataset.quantity) <= 50 ? 'Low Stock' : 'High Stock';
-const statusColumn = {
+  const status = parseInt(product.dataset.quantity) <= 50 ? 'Low Stock' : 'High Stock';
+  const statusColumn = {
     text: status,
-};
+  };
 
-const columnsData = [
-  'id_' + product.dataset.id,
-  {
-    type: 'user',
-    data: [product.dataset.image, product.dataset.productName],
-  },
-  product.dataset.productType,
-  product.dataset.quantity,
-  product.dataset.price,
-  statusColumn,
-  'time_Pending',
-];
-
+  const columnsData = [
+    'id_' + product.dataset.id,
+    {
+      type: 'user',
+      data: [product.dataset.image, product.dataset.productName],
+    },
+    product.dataset.productType,
+    product.dataset.quantity,
+    product.dataset.price,
+    statusColumn,
+    'time_Pending',
+  ];
 
   main.createAtSectionOne('store-selling', columnsData, 5, '', () => {
     const action = {
