@@ -101,6 +101,7 @@ async function loadSectionSilently(sectionName) {
 
   let containsCustomHeaderContent = false;
   let containsCustomContents = false;
+  let statsDisabled = false;
 
   for (const { name, fields } of components) {
     const mainParent = document.getElementById(`${sectionName}-section`);
@@ -108,15 +109,15 @@ async function loadSectionSilently(sectionName) {
     element.id = `${sectionName}-section-${name}`;
     if (element) {
       const dataset = { ...baseDataset };
-      let statsCloneCount = 0;
+      let cloneCount = 0;
 
       fields.forEach((field) => {
-        if (name.includes('content') && field.includes('sectioncount')) statsCloneCount = element.dataset[field];
+        if (name.includes('content') && field.includes('sectioncount')) cloneCount = element.dataset[field];
         const fieldValues = element.dataset[field];
         if (fieldValues) {
           dataset[field] = [];
           if (name != 'header' && fieldValues.includes('::')) {
-            if (name == 'stats') statsCloneCount = fieldValues.split('::').length;
+            if (name == 'stats') cloneCount = fieldValues.split('::').length;
             fieldValues.split('::').forEach((datasetField) => {
               dataset[field].push(datasetField);
             });
@@ -161,16 +162,17 @@ async function loadSectionSilently(sectionName) {
       }
 
       function loadStats() {
-        if (statsCloneCount == 0) {
+        if (cloneCount == 0) {
           document.getElementById(`${sectionName}-section-stats`).classList.add('hidden');
+          statsDisabled = true;
           return;
         }
         const original = document.getElementById(`${sectionName}SectionStats`);
         Array.from(original.parentElement.children).forEach((el, i) => {
           if (i > 0) el.remove();
         });
-        original.parentElement.classList.add(`lg:grid-cols-${statsCloneCount}`);
-        for (let i = 0; i < statsCloneCount; i++) {
+        original.parentElement.classList.add(`lg:grid-cols-${cloneCount}`);
+        for (let i = 0; i < cloneCount; i++) {
           const clone = original.cloneNode(true);
 
           const statsTexts = clone.children[1];
@@ -233,25 +235,26 @@ async function loadSectionSilently(sectionName) {
               sectionOne.parentElement.children[1].children[0].children[0].placeholder =
                 dataset['sectiononesearchtext'];
               sectionOne.parentElement.children[1].children[0].children[0].addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase().trim();
+                const searchTerm = e.target.value.trim();
                 const tabIndex = e.target.dataset.tabindex;
                 const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
                 if (emptyText) {
-                  const columnCount = document.getElementById(`${sectionName}_tab${tabIndex}`).dataset.columncount;
-                  const items = emptyText.parentElement.children;
-                  const searchedItems = [];
-                  for (let i = +columnCount + 1; i < items.length; i += columnCount) {
-                    for (let j = 0; j < columnCount; j++) {
-                      items[i + j].classList.add('hidden');
-                      if (items[i + j].textContent.toLowerCase().includes(searchTerm)) {
-                        if (!searchedItems.includes(i)) searchedItems.push(i);
+                  const items = Array.from(emptyText.parentElement.parentElement.children);
+                  if (searchTerm == '') {
+                    items.forEach((item, i) => {
+                      if (i > 0) {
+                        item.classList.remove('hidden');
                       }
-                    }
+                    });
+                    return;
                   }
-                  searchedItems.forEach((i) => {
-                    items[i].classList.remove('hidden');
-                    items[i + 1].classList.remove('hidden');
-                    items[i + 2].classList.remove('hidden');
+                  items.forEach((item, i) => {
+                    if (i > 0) {
+                      item.classList.add('hidden');
+                    }
+                  });
+                  findAtSectionOne(sectionName, searchTerm, 'search', tabIndex, (searchResult) => {
+                    if (searchResult) searchResult.classList.remove('hidden');
                   });
                 }
               });
@@ -288,7 +291,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.classList.add('relative');
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[325px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled && cloneCount == 1 ? 325 + 140 : 325}px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length; j++) {
@@ -304,7 +307,7 @@ async function loadSectionSilently(sectionName) {
                     const btn = document.createElement('button');
                     btn.id = itemBtnIds[k];
                     btn.textContent = itemBtnTexts[k];
-                    btn.className = `rounded-lg bg-${itemBtnColors[k]}-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-${itemBtnColors[k]}-600 hover:shadow-lg hover:shadow-${itemBtnColors[k]}-400 active:scale-95 active:shadow-none`;
+                    btn.className = `rounded-lg bg-${itemBtnColors[k]}-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-${itemBtnColors[k]}-600 hover:shadow-lg hover:shadow-${itemBtnColors[k]}-400 active:scale-95 active:shadow-none active:translate-y-0`;
                     itemBtns.appendChild(btn);
                   }
                   td.appendChild(itemBtns);
@@ -327,7 +330,7 @@ async function loadSectionSilently(sectionName) {
         }
 
         function setupSectionTwo() {
-          if (statsCloneCount == 2) {
+          if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].textContent = dataset['sectiontwotitletexts'][0];
             sectionTwoTitles.children[1].textContent = dataset['sectiontwotitletexts'][1];
@@ -350,7 +353,7 @@ async function loadSectionSilently(sectionName) {
               sectionTwoListContainer.appendChild(sectionTwoListEmpty);
 
               const sectionTwoListItem = document.createElement('p');
-              sectionTwoListItem.className = 'section-content-list-item hidden';
+              sectionTwoListItem.className = 'section-content-list-item hidden relative';
               sectionTwoListContainer.appendChild(sectionTwoListItem);
             } else {
               containsCustomContents = true;
@@ -421,6 +424,11 @@ async function loadSectionSilently(sectionName) {
             sectionTwoListContainer.classList.add(`h-[${totalSectionTwoListContainerHeight}px]`);
             sectionTwo.classList.remove('hidden');
           } else {
+            if (statsDisabled) {
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${425 + 140}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${425 + 140}px]`);
+            }
+            document.getElementById(`${sectionName}SectionContent`).children[0].classList.remove('2xl:col-span-8');
             document.getElementById(`${sectionName}SectionContent`).children[0].classList.add('2xl:col-span-12');
           }
         }
@@ -542,6 +550,7 @@ export function openModal(btn, inputs, ...callback) {
   const originalModalContainer = document.querySelector('#modalContainer');
   tempModalContainer = originalModalContainer.cloneNode(true);
   originalModalContainer.insertAdjacentElement('afterend', tempModalContainer);
+  tempModalContainer.classList.add('z-20');
 
   setupModalTheme(btn, tempModalContainer);
   setupModalBase(btn, inputs, callback);
@@ -563,6 +572,9 @@ export function openConfirmationModal(action, callback) {
   const originalModalContainer = document.querySelector('#modalContainer');
   tempModalConfirmationContainer = originalModalContainer.cloneNode(true);
   originalModalContainer.insertAdjacentElement('afterend', tempModalConfirmationContainer);
+  tempModalConfirmationContainer.classList.add('z-30');
+  tempModalConfirmationContainer.children[0].classList.add('max-w-md');
+  tempModalConfirmationContainer.children[0].classList.add('2xl:max-w-xl');
 
   setupModalTheme('red', tempModalConfirmationContainer);
 
@@ -749,21 +761,66 @@ function setupModalBase(defaultData, inputs, callback) {
     originalContainer.insertAdjacentElement('afterend', imageContainerParent);
   }
 
-  setupRenderInput('short', inputs.short, 3);
+  setupRenderInput('short', inputs.short, 4);
   setupRenderInput('large', inputs.large, 1);
+
+  if (inputs.spinner) {
+    const type = 'spinner';
+    inputs.spinner.forEach((spinnerGroup, index) => {
+      const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement.parentElement;
+      const spinnerContainer = originalContainer.cloneNode(true);
+      const label = spinnerContainer.children[0];
+      label.textContent = spinnerGroup.label;
+
+      const selectElement = spinnerContainer.querySelector('select');
+      selectElement.id = `input-${type}-${index + 1}`;
+
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.textContent = spinnerGroup.placeholder || 'Select an option';
+      placeholderOption.disabled = true;
+      placeholderOption.selected = true;
+      selectElement.appendChild(placeholderOption);
+
+      spinnerGroup.options.forEach((optionData, index) => {
+        const option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.label;
+        option.classList.add('font-medium');
+
+        if (index === spinnerGroup.selected - 1) {
+          option.selected = true;
+          placeholderOption.selected = false;
+        }
+
+        selectElement.appendChild(option);
+      });
+
+      selectElement.addEventListener('change', function () {
+        spinnerGroup.selected = this.selectedIndex;
+      });
+
+      spinnerContainer.classList.remove('hidden');
+      originalContainer.insertAdjacentElement('afterend', spinnerContainer);
+    });
+  }
 
   if (inputs.radio) {
     const type = 'radio';
     const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
     const radioContainer = originalContainer.cloneNode(true);
     const label = radioContainer.children[0];
-    label.textContent = inputs.radio_label;
+    label.textContent = inputs.radio[0].label;
 
     const container = radioContainer.children[1];
     container.id = `input-${type}-1`;
-    container.classList.add(`grid-cols-${inputs.radio.length}`);
+    container.classList.add(`grid-cols-${inputs.radio.length - 1}`);
 
-    inputs.radio.forEach((input) => {
+    const radioClones = [];
+    inputs.radio.forEach((input, index) => {
+      if (index == 0) {
+        return;
+      }
       const clone = container.children[0].cloneNode(true);
 
       const icon = clone.children[0];
@@ -775,7 +832,22 @@ function setupModalBase(defaultData, inputs, callback) {
       subtitle.textContent = input.subtitle;
 
       clone.classList.remove('hidden');
+      clone.dataset.color = clone.classList[clone.classList.length - 1].split(':')[1];
+      radioClones.push(clone);
       container.appendChild(clone);
+      if (index == inputs.radio[0].selected) {
+        clone.classList.add(clone.dataset.color);
+      }
+      clone.addEventListener('click', function () {
+        inputs.radio[0].selected = index;
+        radioClones.forEach((radioClone) => {
+          if (radioClone == clone) {
+            radioClone.classList.add(radioClone.dataset.color);
+          } else {
+            radioClone.classList.remove(radioClone.dataset.color);
+          }
+        });
+      });
     });
 
     radioContainer.classList.remove('hidden');
@@ -786,6 +858,7 @@ function setupModalBase(defaultData, inputs, callback) {
     if (render) {
       const inputId = type === 'short' ? `#input-${type}-${offset}` : `#input-${type}`;
       const originalContainer = tempModalContainer.querySelector(inputId).parentElement;
+      const nextContainer = originalContainer.nextElementSibling;
 
       render.forEach((input, index) => {
         const clone = originalContainer.cloneNode(true);
@@ -797,7 +870,7 @@ function setupModalBase(defaultData, inputs, callback) {
         renderInput(clone, type, input, index + offset);
 
         clone.classList.remove('hidden');
-        originalContainer.insertAdjacentElement('afterend', clone);
+        nextContainer.insertAdjacentElement('beforebegin', clone);
       });
     }
   }
@@ -808,7 +881,7 @@ function setupModalBase(defaultData, inputs, callback) {
     const id = `input-${type}-${index + 1}`;
 
     label.for = id;
-    label.textContent = data.placeholder;
+    label.textContent = data.placeholder + (data.required ? ' *' : '');
 
     input.id = id;
     input.placeholder = data.placeholder;
@@ -838,7 +911,7 @@ export function toast(message, type) {
     gravity: 'top',
     position: 'right',
     backgroundColor: colorSchemes[type].bg,
-    stopOnFocus: true,
+    stopOnFocus: false,
     style: {
       color: colorSchemes[type].text,
       borderRadius: '8px',
@@ -871,11 +944,40 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const items = emptyText.parentElement.parentElement.children;
   for (let i = 1; i < items.length; i++) {
-    if (findType == 'search' && items[i].dataset.id.includes(findValue)) {
+    if (findType == 'search') {
+      if (items[i].dataset.id.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+      if (
+        items[i].dataset.name &&
+        items[i].dataset.name.toLowerCase().includes(findValue.replace(/\s+/g, ':://').toLowerCase())
+      ) {
+        callback(items[i]);
+        return;
+      }
+      if (items[i].dataset.datetime && items[i].dataset.datetime.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+      if (items[i].dataset.date && items[i].dataset.date.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+      if (items[i].dataset.time && items[i].dataset.time.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+    }
+    if (findType == 'equal' && items[i].dataset.id == findValue) {
       callback(items[i]);
       return;
     }
-    if (findType == 'equal' && items[i].dataset.id == findValue) {
+    if (
+      findType == 'pending' &&
+      items[i].dataset.id == findValue &&
+      items[i].dataset.time.toLowerCase().includes(findType)
+    ) {
       callback(items[i]);
       return;
     }
@@ -897,6 +999,11 @@ export function findAtSectionTwo(sectionName, findValue, callback) {
 }
 
 export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
+  const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+  }
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const tableRow = emptyText.parentElement;
   const referenceCells = Array.from(tableRow.children);
@@ -904,7 +1011,6 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
   const newRow = document.createElement('tr');
 
-  const generatedData = {};
   columnsData.forEach((columnData, index) => {
     const isLastElement = index == columnsData.length - 1;
     const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
@@ -926,13 +1032,12 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
         setCellContent(cell, idValue, isLastElement);
         newRow.dataset.id = idValue;
-        generatedData.id = idValue;
         return;
       }
 
       if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
+        const type = lowerColumn.split('_')[0];
         if (lowerColumn.includes('today')) {
-          const type = lowerColumn.split('_')[0];
           if (['date', 'time', 'datetime'].includes(type)) {
             const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
             const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
@@ -946,16 +1051,27 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
               value = type === 'datetime' ? `${value} - ${time}` : time;
             }
 
-            setCellContent(cell, value, isLastElement);
-            newRow.dataset.date = value;
-            generatedData[type] = value;
+            setDateTimeContent(cell, value, isLastElement);
             return;
           }
         }
 
-        const value = columnData.split('_')[1];
-        setCellContent(cell, value, isLastElement);
-        newRow.dataset.date = value;
+        function setDateTimeContent(cell, value, isLastElement) {
+          setCellContent(cell, value, isLastElement);
+          switch (type) {
+            case 'date':
+              newRow.dataset.date = value;
+              break;
+            case 'time':
+              newRow.dataset.time = value;
+              break;
+            case 'datetime':
+              newRow.dataset.datetime = value;
+              break;
+          }
+        }
+
+        setDateTimeContent(cell, columnData.split('_')[1], isLastElement);
         return;
       }
 
@@ -970,8 +1086,8 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
       if (!cell.querySelector('.flex.items-center.gap-3')) {
         cell.innerHTML = `
           <div class="flex items-center gap-3">
-            <img src="${userData[0]}" class="h-10 w-10 rounded-full object-cover" />
-            <p>${userData[1]}</p>
+            <img src="${userData[0] ? userData[0] : '/src/images/client_logo.jpg'}" class="h-10 w-10 rounded-full object-cover" />
+            <p>${isUserIdType ? userData[1] : userData[1].split(':://')[0] + ' ' + userData[1].split(':://')[1]}</p>
           </div>
         `;
       } else {
@@ -1007,23 +1123,15 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
     for (const row of existingRows) {
       if (row.dataset.name && row.dataset.name.toLowerCase().trim() === findValue.toLowerCase().trim()) {
-        openConfirmationModal(
-          `Data duplication: User with same details (ID: ${row.dataset.id}, Name: ${row.dataset.name})`,
-          success
-        );
+        callback(row, 'fail');
         return;
       }
     }
   }
 
-  success();
-
-  function success() {
-    emptyText.classList.add('hidden');
-    tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
-    callback(generatedData);
-    closeConfirmationModal();
-  }
+  emptyText.classList.add('hidden');
+  tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
+  callback(newRow, 'success');
 
   function setCellContent(cell, content, isLastElement) {
     if (isLastElement) {
@@ -1035,6 +1143,11 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 }
 
 export function createAtSectionTwo(sectionName, data, callback) {
+  const searchInput = document.getElementById(`${sectionName}SectionTwoSearch`);
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+  }
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
   const result = emptyText.nextElementSibling.cloneNode(true);
   result.classList.remove('hidden');
@@ -1059,6 +1172,12 @@ export function createAtSectionTwo(sectionName, data, callback) {
   result.dataset.description = data.action.description;
 
   result.innerHTML = `
+    <div class="absolute left-2 top-2">
+      <div class="relative h-2 w-2">
+        <div class="h-full w-full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
+        <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+      </div>
+    </div>
     <div class="overflow-hidden text-ellipsis">
       ${result.dataset.actorid}<br>
       <small>
@@ -1068,10 +1187,25 @@ export function createAtSectionTwo(sectionName, data, callback) {
     </div>
   `;
 
+  createRedDot(sectionName, 'main');
+  result.addEventListener('mouseover', function () {
+    result.children[0].classList.add('hidden');
+  });
+
   return callback(result);
 }
 
-export function deleteAtSectionOne() {}
+export function deleteAtSectionOne(sectionName, tabIndex, id) {
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  const items = emptyText.parentElement.parentElement.children;
+  for (let i = 1; i < items.length; i++) {
+    if (items[i].dataset.id == id) {
+      items[i].remove();
+      if (items.length == 1) emptyText.classList.remove('hidden');
+      return;
+    }
+  }
+}
 
 export function deleteAtSectionTwo(sectionName, id) {
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
@@ -1093,10 +1227,10 @@ export function createRedDot(sectionName, type) {
     return;
   }
   if (typeof type === 'number') {
-    document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.remove('hidden');
+    if (sectionName != sharedState.sectionName || type != sharedState.activeTab) {
+      document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.remove('hidden');
+    }
     return;
-  }
-  if (type === 'sectionTwo') {
   }
 }
 

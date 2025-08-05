@@ -152,7 +152,7 @@
           id="section-header"
           data-title="Daily Check-In"
           data-subtitle="Track User Attendance"
-          data-middletext='<p class="skew-x-12 text-white">📆 July 25, 2025 ⌚ 7:30AM</p>'
+          data-middletext='<p class="skew-x-12 text-white">📆 Live date ⌚ Live time</p>'
           data-mainbtntext="Register New User 💪"
           data-subbtntext="Logs 📜"
         ></div>
@@ -166,14 +166,14 @@
         <div
           id="section-content"
           data-sectioncount="2"
-          data-tabtitles="Registered Daily Users::Recent Daily Check-Ins"
-          data-subtitles="Daily users monitoring::Today's user daily check-ins"
+          data-tabtitles="Registered Daily Users::Daily Check-Ins Logbook"
+          data-subtitles="Manage daily users::All daily user check-ins"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="1"
-          data-listemptytexts="No registered users yet::No check-ins today"
-          data-listtitletexts="[User ID//User//Date Registered]::[User ID//User//Check-in Time]"
-          data-listitembtnids="[userDetailsBtn]::[renewBtn//userVoidBtn]"
-          data-listitembtntexts="[Details ⚙]::[Details ⚙//Void 📕]"
+          data-listemptytexts="No registered users yet::No check-ins yet"
+          data-listtitletexts="[User ID//User//User Date Registered]::[User ID//User//User Check-in Date and Time]"
+          data-listitembtnids="[userEditDetailsBtn]::[userViewDetailsBtn//userVoidBtn]"
+          data-listitembtntexts="[Edit Details ⚙]::[View Details ⚙//Void 📕]"
           data-listitembtncolors="[orange]::[orange//red]"
           data-sectiontwotitletexts="Quick Check-In::Upload user QR code or enter ID manually"
           data-sectiontwosettings="1"
@@ -227,7 +227,7 @@
       </section>
 
       <!-- 🔥 maintenance 🔥 -->
-      <section id="maintenance-section" data-icons="fa-dumbbell" data-color="sky-red-violet" class="section">
+      <section id="maintenance-section" data-icons="fa-dumbbell" data-color="cyan-blue-sky" class="section">
         <div
           id="section-header"
           data-title="Equipment Maintenance"
@@ -235,29 +235,21 @@
           data-middletext="Monitor and log maintenance for all gym equipment"
           data-mainbtntext="Log Maintenance 🛠️"
         ></div>
+        <div id="section-stats"></div>
         <div
-          id="section-stats"
-          data-toggles="0"
-          data-startingtexts=""
-          data-highlighttexts=""
-          data-endingtexts=""
+          id="section-content"
+          data-sectioncount="1"
+          data-tabtitles="Equipment Maintenance Records::View system activities and events"
+          data-subtitles="Upcoming and past equipment maintenance::System Logs"
+          data-sectiononesearchtext="Search equipment..."
+          data-sectiontwosearchtext="Search logs..."
+          data-sectiononesettings="1"
+          data-listemptytexts="No equipment maintenance records::No logs available"
+          data-listtitletexts="[Equipment Name//Last Maintenance//Status]::[Timestamp//Type//Message]"
+          data-listitembtnids="[maintenanceDetailsBtn]::[viewLogDetails]"
+          data-listitembtntexts="[Details 🛠️]::[Details 🔍]"
+          data-listitembtncolors="[orange]::[blue]"
         ></div>
-        <div
-        id="section-content"
-        data-sectioncount="2"
-        data-tabtitles="Equipment Maintenance Records,System Logs"
-        data-subtitles="Upcoming and past equipment maintenance,View system activities and events"
-        data-sectiononesearchtext="Search equipment..."
-        data-sectiontwosearchtext="Search logs..."
-        data-sectiononesettings="1"
-        data-sectiontwosettings="1"
-        data-listemptytexts="No equipment maintenance records,No logs available"
-        data-listtitletexts="Equipment Name//Last Maintenance//Status,Timestamp//Type//Message"
-        data-listitembtnids="maintenanceDetailsBtn,viewLogDetails"
-        data-listitembtntexts="Details 🛠️,Details 🔍"
-        data-listitembtncolors="orange,blue"
-        data-sectiontwotitletexts="System Activity Logs::Below are all recent system activities and events"
-      ></div>
       </section>
 
       <!-- 🔥 billing 🔥 -->
@@ -285,7 +277,7 @@
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="1"
           data-listemptytexts="No complete transactions today::No complete transactions yet"
-          data-listtitletexts="[Transaction ID//User ID//Date & Time]::[Transaction ID//User ID//Date & Time]"
+          data-listtitletexts="[Transaction ID//User ID//Transaction Date and Time]::[Transaction ID//User ID//Transaction Date and Time]"
           data-listitembtnids="[billingDetailsBtn//billingVoidBtn]::[billingDetailsBtn//billingVoidBtn]"
           data-listitembtntexts="[Details 📒//Void 📕]::[Details 📒//Void 📕]"
           data-listitembtncolors="[yellow//red]::[yellow//red]"
@@ -305,19 +297,12 @@
           data-subtitle="Data Overview"
           data-mainbtntext="Export to PDF 📄"
         ></div>
-        <div
-          id="section-stats"
-          data-toggles="0::0::0::1::0"
-          data-startingtexts="::::::Total::Total"
-          data-highlighttexts="Monthly::Regular::Student::Supplement::Reservations"
-          data-endingtexts="Users::Users::Users::Sales::"
-          data-types="::::::total supplement sales::"
-        ></div>
+        <div id="section-stats"></div>
         <div
           id="section-content"
           data-sectioncount="1"
           data-tabtitles="Monthly Pass Users::Regular / Daily Users::Students::Supplements::Reservations"
-          data-subtitles="::::::::"
+          data-subtitles="Monthly Pass Users::Regular / Daily Users::Students::Supplements::Reservations"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="1"
           data-listemptytexts="No monthly members found::No regular users found::No student users found::No supplement sales found::No reservations found"
