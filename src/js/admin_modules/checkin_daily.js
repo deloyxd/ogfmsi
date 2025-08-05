@@ -21,6 +21,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (!liveActivated) {
     liveActivated = true;
     updateDateAndTime();
+    setInterval(updateDateAndTime, 10000);
   }
 });
 
@@ -80,11 +81,13 @@ function sectionTwoMainBtnFunction() {
 }
 
 function updateDateAndTime() {
-  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  document.getElementById('checkin-daily-section-header').children[0].children[1].children[0].children[0].textContent =
-    `📆 ${date} ⌚ ${time}`;
-  setInterval(updateDateAndTime, 1000);
+  if (main.sharedState.sectionName === 'checkin-daily') {
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    document.getElementById(
+      'checkin-daily-section-header'
+    ).children[0].children[1].children[0].children[0].textContent = `📆 ${date} ⌚ ${time}`;
+  }
 }
 
 function registerNewUser(image, firstName, lastName, emailContact) {
@@ -97,7 +100,25 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     },
     'date_today',
   ];
-  main.createAtSectionOne('checkin-daily', columnsData, 1, name, (generated) => {
+  main.createAtSectionOne('checkin-daily', columnsData, 1, name, (generated, status) => {
+    if (status == 'success') {
+      success(generated);
+    } else {
+      openConfirmationModal(
+        `Data duplication: User with same details (ID: ${generated.dataset.id}, Name: ${generated.dataset.name})`,
+        () => {
+          main.createAtSectionOne('checkin-daily', columnsData, 1, '', (generated, status) => {
+            if (status == 'success') {
+              success(generated);
+              main.closeConfirmationModal();
+            }
+          });
+        }
+      );
+    }
+  });
+
+  function success(generated) {
     const action = {
       module: 'Check-in',
       submodule: 'Daily Pass',
@@ -115,7 +136,7 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     main.createRedDot('checkin-daily', 1);
     main.toast(name + ', successfully registered!', 'success');
     main.closeModal();
-  });
+  }
 }
 
 function processCheckinUser(user) {

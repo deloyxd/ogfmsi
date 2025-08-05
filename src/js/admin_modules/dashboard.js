@@ -17,6 +17,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
 
   // not default code: sample of custom content setup
+  // fetchAnnouncements();
   setupChartOne();
   setupChartTwo();
 });
@@ -170,6 +171,19 @@ function mainBtnFunction() {
 }
 
 function subBtnFunction() {}
+
+async function fetchAnnouncements() {
+  try {
+    const response = await fetch(`${global.API_BASE_URL}/announcements`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Data from backend:', data);
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+  }
+}
 
 function setupChartOne() {
   const chart = document.getElementById('dashboardChart1');

@@ -101,6 +101,7 @@ async function loadSectionSilently(sectionName) {
 
   let containsCustomHeaderContent = false;
   let containsCustomContents = false;
+  let statsDisabled = false;
 
   for (const { name, fields } of components) {
     const mainParent = document.getElementById(`${sectionName}-section`);
@@ -108,15 +109,15 @@ async function loadSectionSilently(sectionName) {
     element.id = `${sectionName}-section-${name}`;
     if (element) {
       const dataset = { ...baseDataset };
-      let statsCloneCount = 0;
+      let cloneCount = 0;
 
       fields.forEach((field) => {
-        if (name.includes('content') && field.includes('sectioncount')) statsCloneCount = element.dataset[field];
+        if (name.includes('content') && field.includes('sectioncount')) cloneCount = element.dataset[field];
         const fieldValues = element.dataset[field];
         if (fieldValues) {
           dataset[field] = [];
           if (name != 'header' && fieldValues.includes('::')) {
-            if (name == 'stats') statsCloneCount = fieldValues.split('::').length;
+            if (name == 'stats') cloneCount = fieldValues.split('::').length;
             fieldValues.split('::').forEach((datasetField) => {
               dataset[field].push(datasetField);
             });
@@ -161,16 +162,17 @@ async function loadSectionSilently(sectionName) {
       }
 
       function loadStats() {
-        if (statsCloneCount == 0) {
+        if (cloneCount == 0) {
           document.getElementById(`${sectionName}-section-stats`).classList.add('hidden');
+          statsDisabled = true;
           return;
         }
         const original = document.getElementById(`${sectionName}SectionStats`);
         Array.from(original.parentElement.children).forEach((el, i) => {
           if (i > 0) el.remove();
         });
-        original.parentElement.classList.add(`lg:grid-cols-${statsCloneCount}`);
-        for (let i = 0; i < statsCloneCount; i++) {
+        original.parentElement.classList.add(`lg:grid-cols-${cloneCount}`);
+        for (let i = 0; i < cloneCount; i++) {
           const clone = original.cloneNode(true);
 
           const statsTexts = clone.children[1];
@@ -288,7 +290,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.classList.add('relative');
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[325px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled && cloneCount == 1 ? 325 + 140 : 325}px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length; j++) {
@@ -327,7 +329,7 @@ async function loadSectionSilently(sectionName) {
         }
 
         function setupSectionTwo() {
-          if (statsCloneCount == 2) {
+          if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].textContent = dataset['sectiontwotitletexts'][0];
             sectionTwoTitles.children[1].textContent = dataset['sectiontwotitletexts'][1];
@@ -421,6 +423,11 @@ async function loadSectionSilently(sectionName) {
             sectionTwoListContainer.classList.add(`h-[${totalSectionTwoListContainerHeight}px]`);
             sectionTwo.classList.remove('hidden');
           } else {
+            if (statsDisabled) {
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${425 + 140}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${425 + 140}px]`);
+            }
+            document.getElementById(`${sectionName}SectionContent`).children[0].classList.remove('2xl:col-span-8');
             document.getElementById(`${sectionName}SectionContent`).children[0].classList.add('2xl:col-span-12');
           }
         }
@@ -901,7 +908,7 @@ export function toast(message, type) {
     gravity: 'top',
     position: 'right',
     backgroundColor: colorSchemes[type].bg,
-    stopOnFocus: true,
+    stopOnFocus: false,
     style: {
       color: colorSchemes[type].text,
       borderRadius: '8px',
@@ -1083,23 +1090,15 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
     for (const row of existingRows) {
       if (row.dataset.name && row.dataset.name.toLowerCase().trim() === findValue.toLowerCase().trim()) {
-        openConfirmationModal(
-          `Data duplication: User with same details (ID: ${row.dataset.id}, Name: ${row.dataset.name})`,
-          success
-        );
+        callback(row, 'fail');
         return;
       }
     }
   }
 
-  success();
-
-  function success() {
-    emptyText.classList.add('hidden');
-    tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
-    callback(generatedData);
-    closeConfirmationModal();
-  }
+  emptyText.classList.add('hidden');
+  tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
+  callback(generatedData, 'success');
 
   function setCellContent(cell, content, isLastElement) {
     if (isLastElement) {
