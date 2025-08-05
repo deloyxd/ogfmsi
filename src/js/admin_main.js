@@ -235,25 +235,26 @@ async function loadSectionSilently(sectionName) {
               sectionOne.parentElement.children[1].children[0].children[0].placeholder =
                 dataset['sectiononesearchtext'];
               sectionOne.parentElement.children[1].children[0].children[0].addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase().trim();
+                const searchTerm = e.target.value.trim();
                 const tabIndex = e.target.dataset.tabindex;
                 const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
                 if (emptyText) {
-                  const columnCount = document.getElementById(`${sectionName}_tab${tabIndex}`).dataset.columncount;
-                  const items = emptyText.parentElement.children;
-                  const searchedItems = [];
-                  for (let i = +columnCount + 1; i < items.length; i += columnCount) {
-                    for (let j = 0; j < columnCount; j++) {
-                      items[i + j].classList.add('hidden');
-                      if (items[i + j].textContent.toLowerCase().includes(searchTerm)) {
-                        if (!searchedItems.includes(i)) searchedItems.push(i);
+                  const items = Array.from(emptyText.parentElement.parentElement.children);
+                  if (searchTerm == '') {
+                    items.forEach((item, i) => {
+                      if (i > 0) {
+                        item.classList.remove('hidden');
                       }
-                    }
+                    });
+                    return;
                   }
-                  searchedItems.forEach((i) => {
-                    items[i].classList.remove('hidden');
-                    items[i + 1].classList.remove('hidden');
-                    items[i + 2].classList.remove('hidden');
+                  items.forEach((item, i) => {
+                    if (i > 0) {
+                      item.classList.add('hidden');
+                    }
+                  });
+                  findAtSectionOne(sectionName, searchTerm, 'search', tabIndex, (searchResult) => {
+                    if (searchResult) searchResult.classList.remove('hidden');
                   });
                 }
               });
@@ -549,6 +550,7 @@ export function openModal(btn, inputs, ...callback) {
   const originalModalContainer = document.querySelector('#modalContainer');
   tempModalContainer = originalModalContainer.cloneNode(true);
   originalModalContainer.insertAdjacentElement('afterend', tempModalContainer);
+  tempModalContainer.classList.add('z-20');
 
   setupModalTheme(btn, tempModalContainer);
   setupModalBase(btn, inputs, callback);
@@ -570,6 +572,7 @@ export function openConfirmationModal(action, callback) {
   const originalModalContainer = document.querySelector('#modalContainer');
   tempModalConfirmationContainer = originalModalContainer.cloneNode(true);
   originalModalContainer.insertAdjacentElement('afterend', tempModalConfirmationContainer);
+  tempModalConfirmationContainer.classList.add('z-30');
   tempModalConfirmationContainer.children[0].classList.add('max-w-md');
   tempModalConfirmationContainer.children[0].classList.add('2xl:max-w-xl');
 
@@ -941,9 +944,30 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const items = emptyText.parentElement.parentElement.children;
   for (let i = 1; i < items.length; i++) {
-    if (findType == 'search' && items[i].dataset.id.includes(findValue)) {
-      callback(items[i]);
-      return;
+    if (findType == 'search') {
+      if (items[i].dataset.id.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+      if (
+        items[i].dataset.name &&
+        items[i].dataset.name.toLowerCase().includes(findValue.replace(/\s+/g, ':://').toLowerCase())
+      ) {
+        callback(items[i]);
+        return;
+      }
+      if (items[i].dataset.datetime && items[i].dataset.datetime.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+      if (items[i].dataset.date && items[i].dataset.date.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
+      if (items[i].dataset.time && items[i].dataset.time.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(items[i]);
+        return;
+      }
     }
     if (findType == 'equal' && items[i].dataset.id == findValue) {
       callback(items[i]);
@@ -952,7 +976,7 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
     if (
       findType == 'pending' &&
       items[i].dataset.id == findValue &&
-      items[i].dataset.time.toLowerCase().includes('pending')
+      items[i].dataset.time.toLowerCase().includes(findType)
     ) {
       callback(items[i]);
       return;
@@ -975,6 +999,11 @@ export function findAtSectionTwo(sectionName, findValue, callback) {
 }
 
 export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
+  const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+  }
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const tableRow = emptyText.parentElement;
   const referenceCells = Array.from(tableRow.children);
@@ -982,7 +1011,6 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
   const newRow = document.createElement('tr');
 
-  const generatedData = {};
   columnsData.forEach((columnData, index) => {
     const isLastElement = index == columnsData.length - 1;
     const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
@@ -1004,13 +1032,12 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
         setCellContent(cell, idValue, isLastElement);
         newRow.dataset.id = idValue;
-        generatedData.id = idValue;
         return;
       }
 
       if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
+        const type = lowerColumn.split('_')[0];
         if (lowerColumn.includes('today')) {
-          const type = lowerColumn.split('_')[0];
           if (['date', 'time', 'datetime'].includes(type)) {
             const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
             const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
@@ -1024,21 +1051,27 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
               value = type === 'datetime' ? `${value} - ${time}` : time;
             }
 
-            setCellContent(cell, value, isLastElement);
-            newRow.dataset.date = value;
-            generatedData[type] = value;
+            setDateTimeContent(cell, value, isLastElement);
             return;
           }
         }
 
-        const value = columnData.split('_')[1];
-        setCellContent(cell, value, isLastElement);
-        if (lowerColumn.includes('datetime')) {
-          newRow.dataset.datetime = value;
-          return;
+        function setDateTimeContent(cell, value, isLastElement) {
+          setCellContent(cell, value, isLastElement);
+          switch (type) {
+            case 'date':
+              newRow.dataset.date = value;
+              break;
+            case 'time':
+              newRow.dataset.time = value;
+              break;
+            case 'datetime':
+              newRow.dataset.datetime = value;
+              break;
+          }
         }
-        if (lowerColumn.includes('date')) newRow.dataset.date = value;
-        if (lowerColumn.includes('time')) newRow.dataset.time = value;
+
+        setDateTimeContent(cell, columnData.split('_')[1], isLastElement);
         return;
       }
 
@@ -1054,7 +1087,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         cell.innerHTML = `
           <div class="flex items-center gap-3">
             <img src="${userData[0] ? userData[0] : '/src/images/client_logo.jpg'}" class="h-10 w-10 rounded-full object-cover" />
-            <p>${userData[1]}</p>
+            <p>${isUserIdType ? userData[1] : userData[1].split(':://')[0] + ' ' + userData[1].split(':://')[1]}</p>
           </div>
         `;
       } else {
@@ -1098,7 +1131,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
   emptyText.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
-  callback(generatedData, 'success');
+  callback(newRow, 'success');
 
   function setCellContent(cell, content, isLastElement) {
     if (isLastElement) {
@@ -1110,6 +1143,11 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 }
 
 export function createAtSectionTwo(sectionName, data, callback) {
+  const searchInput = document.getElementById(`${sectionName}SectionTwoSearch`);
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+  }
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
   const result = emptyText.nextElementSibling.cloneNode(true);
   result.classList.remove('hidden');
@@ -1157,7 +1195,17 @@ export function createAtSectionTwo(sectionName, data, callback) {
   return callback(result);
 }
 
-export function deleteAtSectionOne() {}
+export function deleteAtSectionOne(sectionName, tabIndex, id) {
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  const items = emptyText.parentElement.parentElement.children;
+  for (let i = 1; i < items.length; i++) {
+    if (items[i].dataset.id == id) {
+      items[i].remove();
+      if (items.length == 1) emptyText.classList.remove('hidden');
+      return;
+    }
+  }
+}
 
 export function deleteAtSectionTwo(sectionName, id) {
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
@@ -1179,7 +1227,9 @@ export function createRedDot(sectionName, type) {
     return;
   }
   if (typeof type === 'number') {
-    document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.remove('hidden');
+    if (sectionName != sharedState.sectionName || type != sharedState.activeTab) {
+      document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.remove('hidden');
+    }
     return;
   }
 }
