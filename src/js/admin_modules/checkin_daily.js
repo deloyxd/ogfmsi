@@ -56,7 +56,7 @@ function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('checkin-dailySectionTwoSearch');
-  main.findAtSectionOne('checkin-daily', searchInput.value, 'search', 1, (result) => {
+  main.findAtSectionOne('checkin-daily', searchInput.value, 'equal', 1, (result) => {
     const user = result;
 
     if (!user) {
@@ -91,7 +91,7 @@ function updateDateAndTime() {
 }
 
 function registerNewUser(image, firstName, lastName, emailContact) {
-  const name = firstName + ' ' + lastName;
+  const name = firstName + ':://' + lastName;
   const columnsData = [
     'id_random',
     {
@@ -100,16 +100,18 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     },
     'date_today',
   ];
-  main.createAtSectionOne('checkin-daily', columnsData, 1, name, (generated, status) => {
+  main.createAtSectionOne('checkin-daily', columnsData, 1, name, (result, status) => {
     if (status == 'success') {
-      success(generated);
+      success(result);
     } else {
+      const resultUserFirstName = result.dataset.name.split(':://')[0];
+      const resultUserLastName = result.dataset.name.split(':://')[1];
       openConfirmationModal(
-        `Data duplication: User with same details (ID: ${generated.dataset.id}, Name: ${generated.dataset.name})`,
+        `Data duplication: User with same details (ID: ${result.dataset.id}, Name: ${resultUserFirstName + ' ' + resultUserLastName})`,
         () => {
-          main.createAtSectionOne('checkin-daily', columnsData, 1, '', (generated, status) => {
+          main.createAtSectionOne('checkin-daily', columnsData, 1, '', (result, status) => {
             if (status == 'success') {
-              success(generated);
+              success(result);
               main.closeConfirmationModal();
             }
           });
@@ -118,26 +120,177 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     }
   });
 
-  function success(generated) {
+  function success(result) {
+    const dataBtns = result.children[result.children.length - 1].children[0];
+    const userEditDetailsBtn = dataBtns.querySelector('#userEditDetailsBtn');
+    userEditDetailsBtn.addEventListener('click', () => userDetailsBtnFunction(result, false));
+
     const action = {
       module: 'Check-in',
       submodule: 'Daily Pass',
       description: 'Register user',
     };
     const data = {
-      id: generated.id,
+      id: result.dataset.id,
       image: image,
       name: name,
       contact: emailContact,
-      date: generated.date,
+      date: result.dataset.date,
     };
     datasync.enqueue(action, data);
 
     main.createRedDot('checkin-daily', 1);
-    main.toast(name + ', successfully registered!', 'success');
+    main.toast(result.dataset.name.split(':://')[0] + ', successfully registered!', 'success');
     main.closeModal();
   }
 }
+
+export function userDetailsBtnFunction(user, isViewMode) {
+  const userFirstName = user.dataset.name.split(':://')[0];
+  const userLastName = user.dataset.name.split(':://')[1];
+  if (isViewMode) {
+    const inputs = {
+      header: {
+        title: 'Read User Details 📙',
+        subtitle: 'Mode: Read only',
+      },
+      image: {
+        src: user.dataset.image,
+        type: 'normal',
+        short: [
+          { placeholder: 'First name', value: userFirstName, required: true },
+          { placeholder: 'Last name', value: userLastName, required: true },
+          { placeholder: 'Email / contact', value: user.dataset.contact },
+        ],
+      },
+      footer: {
+        main: 'Read only 📙',
+      },
+    };
+    main.openModal('orange', inputs, main.closeModal);
+  } else {
+    const userProperName = userFirstName + ' ' + userLastName;
+    const inputs = {
+      header: {
+        title: 'Update User Details 📌',
+        subtitle: 'User details form',
+      },
+      image: {
+        src: user.dataset.image,
+        type: 'normal',
+        short: [
+          { placeholder: 'First name', value: userFirstName, required: true },
+          { placeholder: 'Last name', value: userLastName, required: true },
+          { placeholder: 'Email / contact', value: user.dataset.contact },
+        ],
+      },
+      footer: {
+        main: 'Update 📌',
+        sub: 'Delete 💀',
+      },
+    };
+    main.openModal(
+      'orange',
+      inputs,
+      (result) => {
+        main.openConfirmationModal('Update user: ' + userProperName, () => {
+          const resultUserFirstName = result.image.short[0].value;
+          const resultUserLastName = result.image.short[1].value;
+
+          user.dataset.image = result.image.src;
+          user.dataset.name = resultUserFirstName + ':://' + resultUserLastName;
+          user.dataset.contact = result.image.short[2].value;
+
+          user.children[1].children[0].children[0].src = result.image.src;
+          user.children[1].children[0].children[1].textContent = resultUserFirstName + ' ' + resultUserLastName;
+
+          const action = {
+            module: 'Check-in',
+            submodule: 'Daily Pass',
+            description: 'Update user details',
+          };
+          const data = {
+            id: result.dataset.id,
+            image: result.dataset.image,
+            name: result.dataset.name,
+            contact: result.dataset.contact,
+          };
+          datasync.enqueue(action, data);
+
+          main.toast('Successfully updated user details!', 'info');
+          main.closeConfirmationModal();
+          main.closeModal();
+        });
+      },
+      () => {
+        main.openConfirmationModal('Delete user: ' + userProperName, () => {
+          if (user.parentElement.children.length == 2) {
+            user.parentElement.children[0].children[0].classList.remove('hidden');
+          }
+
+          const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          const action = {
+            module: 'Check-in',
+            submodule: 'Daily Pass',
+            description: 'Delete user record',
+          };
+          const data = {
+            id: user.dataset.id,
+            name: user.dataset.name,
+            datetime: date + ' - ' + time,
+          };
+          datasync.enqueue(action, data);
+
+          user.remove();
+
+          main.toast('Successfully deleted user record!', 'error');
+          main.closeConfirmationModal();
+          main.closeModal();
+        });
+      }
+    );
+  }
+}
+
+export function userVoidBtnFunction(user) {
+  const userFirstName = user.dataset.name.split(':://')[0];
+  const userLastName = user.dataset.name.split(':://')[1];
+  const userProperName = userFirstName + ' ' + userLastName;
+  main.openConfirmationModal('Void user log: ' + userProperName, () => {
+    if (user.parentElement.children.length == 2) {
+      user.parentElement.children[0].children[0].classList.remove('hidden');
+    }
+
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const action = {
+      module: 'Check-in',
+      submodule: 'Daily Pass',
+      description: 'Void user check-in log',
+    };
+    const data = {
+      id: user.dataset.id,
+      name: user.dataset.name,
+      amount: user.dataset.amount,
+      datetime: date + ' - ' + time,
+    };
+    datasync.enqueue(action, data);
+    if (user.dataset.amount) {
+      main.deleteAtSectionOne('billing', 1, user.dataset.tid);
+      main.deleteAtSectionOne('billing', 2, user.dataset.tid);
+    } else {
+      main.deleteAtSectionTwo('billing', user.dataset.tid);
+    }
+
+    user.remove();
+
+    main.toast('Successfully voided user log!', 'error');
+    main.closeConfirmationModal();
+  });
+}
+
+export default { userDetailsBtnFunction, userVoidBtnFunction };
 
 function processCheckinUser(user) {
   const columnsData = [
@@ -148,23 +301,30 @@ function processCheckinUser(user) {
     },
     'time_Pending',
   ];
-  main.createAtSectionOne('checkin-daily', columnsData, 2, '', () => {
-    const action = {
-      module: 'Check-in',
-      submodule: 'Daily Pass',
-      description: 'Process check-in user',
-    };
-    const data = {
-      id: user.dataset.id,
-      image: user.dataset.image,
-      name: user.dataset.name,
-      contact: user.dataset.contact,
-      time: 'Pending',
-    };
-    datasync.enqueue(action, data);
-    billing.processPayment(data);
+  main.createAtSectionOne('checkin-daily', columnsData, 2, '', (result, status) => {
+    if (status == 'success') {
+      const dataBtns = result.children[result.children.length - 1].children[0];
+      const userViewDetailsBtn = dataBtns.querySelector('#userViewDetailsBtn');
+      const userVoidBtn = dataBtns.querySelector('#userVoidBtn');
+      userViewDetailsBtn.addEventListener('click', () => userDetailsBtnFunction(result, true));
+      userVoidBtn.addEventListener('click', () => userVoidBtnFunction(result));
+      const action = {
+        module: 'Check-in',
+        submodule: 'Daily Pass',
+        description: 'Process check-in user',
+      };
+      const data = {
+        id: result.dataset.id,
+        image: result.dataset.image,
+        name: result.dataset.name,
+        contact: result.dataset.contact,
+        datetime: 'Pending',
+      };
+      datasync.enqueue(action, data);
+      billing.processPayment(data);
 
-    main.createRedDot('checkin-daily', 2);
-    main.toast(user.dataset.name + ', is now ready for check-in payment!', 'success');
+      main.createRedDot('checkin-daily', 2);
+      main.toast(result.dataset.name.split(':://')[0] + ', is now ready for check-in payment!', 'success');
+    }
   });
 }

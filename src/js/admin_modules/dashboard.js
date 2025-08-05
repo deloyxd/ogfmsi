@@ -83,6 +83,7 @@ function mainBtnFunction() {
     injectDataToAnnouncementItem(element, result);
 
     main.toast('Successfully updated announcement!', 'info');
+    main.closeConfirmationModal();
     main.closeModal();
   }
 
@@ -128,9 +129,11 @@ function mainBtnFunction() {
       main.openModal(
         element,
         result,
-        (result) => {
-          updateAnnouncement(element, result);
-          enqueueAnnouncement('Update');
+        (updatedResult) => {
+          main.openConfirmationModal('Update announcement: ' + title, () => {
+            updateAnnouncement(element, updatedResult);
+            enqueueAnnouncement('Update');
+          });
         },
         () =>
           main.openConfirmationModal('Delete announcement: ' + title, () => {

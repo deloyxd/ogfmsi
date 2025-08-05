@@ -1,4 +1,5 @@
 import main from '../admin_main.js';
+import checkinDaily from './checkin_daily.js';
 import datasync from './datasync.js';
 
 // default codes:
@@ -31,7 +32,6 @@ function sectionTwoMainBtnFunction() {
 
     const inputs = {
       header: {
-        title: 'Process Pending Transaction 🔏',
         subtitle: 'Pending payment processing form',
       },
       short: [
@@ -74,21 +74,41 @@ function sectionTwoMainBtnFunction() {
         purpose: transaction.children[2].textContent.trim(),
       },
       footer: {
-        main: 'Proceed 🔏',
+        main: 'Complete payment transaction 🔏',
       },
     };
+    const userProperName =
+      inputs.payment.user.data[1].split(':://')[0] + ' ' + inputs.payment.user.data[1].split(':://')[1];
+    inputs.header.title = `${userProperName} 🔏`;
 
     main.openModal('green', inputs, (result) => {
-      main.openConfirmationModal(
-        `Complete transaction: ${result.payment.user.data[1]} (${transaction.dataset.id})`,
-        () => {
-          completeTransaction(transaction.dataset.id, result);
-          searchInput.value = '';
-          searchInput.dispatchEvent(new Event('input'));
-        }
-      );
+      if (!isValidPaymentAmount(+result.short[0].value)) {
+        main.toast(`Invalid amount: ${result.short[0].value}`, 'error');
+        return;
+      }
+      main.openConfirmationModal(`Complete transaction: ${userProperName} (${transaction.dataset.id})`, () => {
+        completeTransaction(transaction.dataset.id, result);
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+      });
     });
   });
+}
+
+function isValidPaymentAmount(amount) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    return false;
+  }
+
+  if (amount <= 0) {
+    return false;
+  }
+
+  if (Math.round(amount * 100) !== amount * 100) {
+    return false;
+  }
+
+  return true;
 }
 
 function completeTransaction(id, result) {
@@ -105,52 +125,64 @@ function completeTransaction(id, result) {
     },
     'datetime_today',
   ];
-  main.createAtSectionOne('billing', columnsData, 1, '', () => {
-    main.createAtSectionOne('billing', columnsData, 2, '', (generated) => {
-      const action = {
-        module: 'Billing',
-        description: 'Transaction complete',
-      };
-      const editedResult = {
-        id: id,
-        user_id: result.payment.user.id,
-        type: result.radio[result.radio[0].selected].title.toLowerCase(),
-        amount: result.short[0].value,
-        refnum: result.short[1].value,
-        rate: result.spinner[0].options[result.spinner[0].selected - 1].value,
-        purpose: result.payment.purpose
-          .replace(/^T\d+\s+/gm, '')
-          .replace(/\s+/g, ' ')
-          .trim(),
-        datetime: generated.datetime,
-      };
-      datasync.enqueue(action, editedResult);
+  main.createAtSectionOne('billing', columnsData, 1, '', (_, status1) => {
+    if (status1 == 'success') {
+      main.createAtSectionOne('billing', columnsData, 2, '', (editedResult, status2) => {
+        if (status2 == 'success') {
+          const action = {
+            module: 'Billing',
+            description: 'Transaction complete',
+          };
+          const data = {
+            id: id,
+            user_id: result.payment.user.id,
+            type: result.radio[result.radio[0].selected].title.toLowerCase(),
+            amount: result.short[0].value,
+            refnum: result.short[1].value,
+            rate: result.spinner[0].options[result.spinner[0].selected - 1].value,
+            purpose: result.payment.purpose
+              .replace(/^T\d+\s+/gm, '')
+              .replace(/\s+/g, ' ')
+              .trim(),
+            datetime: editedResult.dataset.datetime,
+          };
+          datasync.enqueue(action, data);
 
-      main.deleteAtSectionTwo('billing', id);
+          main.deleteAtSectionTwo('billing', id);
 
-      // updating "Pending" value
-      const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement.children;
-      for (let i = 1; i < items.length; i++) {
-        if (items[i].dataset.tid == id) {
-          const time = generated.datetime.split('-')[1].trim();
-          items[i].dataset.time = time;
-          const btns = items[i].children[2].children[0].cloneNode(true);
-          items[i].children[2].innerHTML = '';
-          items[i].children[2].appendChild(btns);
-          items[i].children[2].innerHTML += time;
-          break;
+          // updating "Pending" value
+          const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement
+            .children;
+          for (let i = 1; i < items.length; i++) {
+            if (items[i].dataset.tid == id) {
+              items[i].dataset.amount = data.amount;
+              items[i].dataset.datetime = editedResult.dataset.datetime;
+              const btns = items[i].children[2].children[0].cloneNode(true);
+              items[i].children[2].innerHTML = '';
+              items[i].children[2].appendChild(btns);
+              items[i].children[2].innerHTML += editedResult.dataset.datetime;
+
+              const dataBtns = items[i].children[items[i].children.length - 1].children[0];
+              const userViewDetailsBtn = dataBtns.querySelector('#userViewDetailsBtn');
+              const userVoidBtn = dataBtns.querySelector('#userVoidBtn');
+              userViewDetailsBtn.addEventListener('click', () => checkinDaily.userDetailsBtnFunction(items[i], true));
+              userVoidBtn.addEventListener('click', () => checkinDaily.userVoidBtnFunction(items[i]));
+              break;
+            }
+          }
+
+          main.createRedDot('billing', 1);
+          main.createRedDot('billing', 2);
+          main.createRedDot('checkin', 'main');
+          main.createRedDot('checkin-daily', 'sub');
+          main.createRedDot('checkin-daily', 2);
+
+          main.toast('Transaction successfully completed!', 'success');
+          main.closeConfirmationModal();
+          main.closeModal();
         }
-      }
-
-      main.createRedDot('billing', 1);
-      main.createRedDot('billing', 2);
-      main.createRedDot('checkin', 'main');
-      main.createRedDot('checkin-daily', 'sub');
-
-      main.toast('Transaction successfully completed!', 'success');
-      main.closeConfirmationModal();
-      main.closeModal();
-    });
+      });
+    }
   });
 }
 
@@ -193,6 +225,7 @@ export function processPayment(user) {
     </div>
   `;
 
+    data.action.id = result.dataset.id;
     user.type = 'daily pass';
     user.rate = 'regular';
     datasync.enqueue(data.action, user);
