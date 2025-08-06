@@ -43,7 +43,7 @@ function subBtnFunction() {}
 
 async function sectionTwoMainBtnFunction() {
   try {
-    const response = await fetch(`${global.API_BASE_URL}/sales`);
+    const response = await fetch(`${global.API_BASE_URL}/sales/1`);
     const data = await response.json();
 
     if (response.ok) {

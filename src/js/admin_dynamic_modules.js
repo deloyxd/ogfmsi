@@ -6,6 +6,10 @@ async function loadDynamicSidebar() {
   const ul = document.createElement('ul');
   ul.className = 'space-y-2 px-4';
 
+  // Create a map to track created main buttons
+  const mainButtonsMap = new Map();
+  const mainUlContainer = new Map();
+
   sections.forEach((section) => {
     const sectionId = section.id;
     const sectionName = sectionId.split('-section')[0];
@@ -13,20 +17,25 @@ async function loadDynamicSidebar() {
     const nestedSections = sectionName.split('-');
     const nestedSectionTexts = section.dataset.sectiontexts ? (section.dataset.sectiontexts += '::').split('::') : '';
 
-    let currentLi = document.querySelector(`.sidebar-main-btn[data-section="${nestedSections[0]}"]`)?.closest('li');
-    let mainBtn;
+    const mainSectionName = nestedSections[0];
+    let currentLi;
+    let mainBtn = mainButtonsMap.get(mainSectionName);
+    let hasParent = false;
 
-    if (!currentLi) {
+    if (mainBtn) {
+      currentLi = mainBtn.parentElement;
+      hasParent = true;
+    } else {
       currentLi = document.createElement('li');
       mainBtn = document.createElement('button');
       mainBtn.className = 'sidebar-main-btn';
-      mainBtn.dataset.section = nestedSections[0];
+      mainBtn.dataset.section = mainSectionName;
       if (nestedSections.length > 1) mainBtn.dataset.type = 'dropdown';
       mainBtn.innerHTML = `
-        ${nestedSections.length > 1 ? `<div class"flex items-center">` : ``}
+        ${nestedSections.length > 1 ? `<div class="flex items-center">` : ``}
         <i class="fas ${sectionIcons[0]} mr-3"></i>
-        ${nestedSectionTexts != '' ? nestedSectionTexts[0] : nestedSections[0].charAt(0).toUpperCase() + nestedSections[0].slice(1)}
-        ${nestedSections.length > 1 ? `</div><i class="fas fa-chevron-down duration-300" id="${nestedSections[0]}-arrow"></i>` : ``}
+        ${nestedSectionTexts != '' ? nestedSectionTexts[0] : mainSectionName.charAt(0).toUpperCase() + mainSectionName.slice(1)}
+        ${nestedSections.length > 1 ? `</div><i class="fas fa-chevron-down duration-300" id="${mainSectionName}-arrow"></i>` : ``}
         <div class="absolute right-2 top-2 hidden">
             <div class="relative h-2 w-2">
                 <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
@@ -36,18 +45,23 @@ async function loadDynamicSidebar() {
       `;
       currentLi.appendChild(mainBtn);
       ul.appendChild(currentLi);
+      // Store the created li in our map
+      mainButtonsMap.set(mainSectionName, mainBtn);
     }
 
     if (nestedSections.length > 1) {
-      mainBtn.classList.add('justify-between');
-      let currentParentBtn = currentLi.querySelector('.sidebar-main-btn');
-      let currentContainer = currentParentBtn.querySelector('ul');
+      // Get the main button if it already exists
+      const currentParentBtn = currentLi.querySelector('.sidebar-main-btn');
+      currentParentBtn.classList.add('justify-between');
+      
+      let currentContainer = mainUlContainer.get(mainSectionName);
 
       if (!currentContainer) {
         currentContainer = document.createElement('ul');
         currentContainer.className = 'ml-4 mt-2 hidden space-y-1';
-        currentContainer.id = `${nestedSections[0]}-dropdown`;
+        currentContainer.id = `${mainSectionName}-dropdown`;
         currentLi.appendChild(currentContainer);
+        mainUlContainer.set(mainSectionName, currentContainer);
       }
 
       for (let i = 1; i < nestedSections.length; i++) {

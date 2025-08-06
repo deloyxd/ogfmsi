@@ -17,6 +17,18 @@ router.get('/', async (req, res) => {
     res.status(201).json({ message: 'Fetching sales successful', result: result });
   });
 });
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM admin_sales_tbl WHERE id = ?;';
+  mysqlConnection.query(query, [id], (error, result) => {
+    if (error) {
+      console.error('Fetching sales error:', error);
+      res.status(500).json({ error: 'Fetching sales failed' });
+    }
+    res.status(201).json({ message: 'Fetching sales successful', result: result });
+  });
+});
 //API URL: (host):(port)/api/sales METHOD: POST
 router.post('/', async (req, res) => {
     
