@@ -12,7 +12,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
   subBtn.classList.remove('hidden');
-  subBtn.addEventListener('click', subBtnFunction);
+  // subBtn.addEventListener('click', subBtnFunction);
 
   sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
   sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
@@ -37,7 +37,7 @@ function mainBtnFunction() {
       {
         label: 'Product Type',
         placeholder: 'Select product type',
-        selected: 1,
+        selected: 0,
         options: [
           { value: 'supplement', label: 'Supplement' },
           { value: 'food', label: 'Food' },
@@ -52,7 +52,7 @@ function mainBtnFunction() {
     registerNewUser(
       result.image.src,
       result.image.short[0].value,
-      result.spinner[0].options[result.spinner[0].selected].value,
+      result.spinner[0].options[result.spinner[0].selected - 1].value,
       result.image.short[1].value,
       result.image.short[2].value,
     );
@@ -101,14 +101,25 @@ function registerNewUser(image, productName, productType, quantity, price) {
     return;
   }
 
-  const status = parseInt(quantity) <= 50 ? 'Low Stock' : '<p class="text-red-500 font-bold">High Stock</p>';
+ const quantityValue = parseInt(quantity);
+let status = '';
+
+if (quantityValue === 0) {
+  status = '<p class="text-gray-800 font-bold">Out of Stock⚠️</p>';
+} else if (quantityValue <= 10) {
+  status = '<p class="text-red-700 font-bold">Super Low Stock‼️</p>';
+} else if (quantityValue <= 50) {
+  status = '<p class="text-amber-500 font-bold">Low Stock⚠️</p>';
+} else {
+  status = '<p class="text-emerald-600 font-bold">High Stock</p>';
+}
 
   const formattedPrice = `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const columnsData = [
     'id_random',
     {
-      type: 'user',
+      type: 'userid',
       data: [image, productName],
     },
     productType,
