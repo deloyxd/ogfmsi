@@ -266,7 +266,7 @@ async function loadSectionSilently(sectionName) {
               tableParent.dataset.sectionindex = 1;
               tableParent.dataset.tabindex = i + 1;
               const table = document.createElement('table');
-              table.className = 'w-full border-collapse cursor-default';
+              table.className = 'w-full border-collapse cursor-default text-xs xl:text-sm 2xl:text-base';
               const thead = document.createElement('thead');
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
@@ -280,11 +280,6 @@ async function loadSectionSilently(sectionName) {
                   'resizer absolute right-0 top-0 h-full cursor-col-resize bg-black/10 hover:bg-black/30 active:w-1.5 active:bg-black/30 group-hover:w-1.5';
                 th.appendChild(resizer);
                 headerRow.appendChild(th);
-
-                table.style.tableLayout = 'auto';
-                th.style.width = `200px`;
-                table.style.tableLayout = 'fixed';
-                table.style.tableLayout = 'auto';
               });
 
               const th = document.createElement('th');
@@ -305,7 +300,7 @@ async function loadSectionSilently(sectionName) {
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
                 const td = document.createElement('td');
-                td.className = 'relative hidden border border-gray-300 p-2 h-[57px]';
+                td.className = 'relative hidden border border-gray-300 p-2 h-[49px] 2xl:h-[57px]';
                 if (dataset['listitembtnids'] && j == titleTexts.length) {
                   const itemBtns = document.createElement('div');
                   itemBtns.className = 'absolute inset-0 justify-center m-2 flex gap-2';
@@ -386,19 +381,19 @@ async function loadSectionSilently(sectionName) {
                   const items = Array.from(emptyText.parentElement.children);
                   if (searchTerm == '') {
                     items.forEach((item, i) => {
-                      if (i > 0) {
+                      if (i > 1) {
                         item.classList.remove('hidden');
                       }
                     });
                     return;
                   }
                   items.forEach((item, i) => {
-                    if (i > 0) {
+                    if (i > 1) {
                       item.classList.add('hidden');
                     }
                   });
                   findAtSectionTwo(sectionName, searchTerm, 'any', (searchResult) => {
-                    searchResult.classList.remove('hidden');
+                    if (searchResult) searchResult.classList.remove('hidden');
                   });
                 }
               });
@@ -471,16 +466,28 @@ async function loadSectionSilently(sectionName) {
         const resizers = document.querySelectorAll('.resizer');
         let isResizing = false;
         let currentColumn;
+        let nextColumn;
         let startX;
         let startWidth;
+        let nextWidth;
 
         resizers.forEach((resizer) => {
           resizer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             isResizing = true;
             currentColumn = resizer.parentElement;
+            nextColumn = currentColumn.nextElementSibling;
             startX = e.clientX;
             startWidth = currentColumn.offsetWidth;
+            nextWidth = nextColumn ? nextColumn.offsetWidth : 0;
+
+            const allColumns = currentColumn.parentElement.children;
+            Array.from(allColumns).forEach((col) => {
+              if (col.classList.contains('resizer')) return;
+              if (!col.style.width) {
+                col.style.width = `${col.offsetWidth}px`;
+              }
+            });
 
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', stopResize);
@@ -491,19 +498,21 @@ async function loadSectionSilently(sectionName) {
           e.preventDefault();
           if (!isResizing) return;
 
-          const width = startWidth + e.clientX - startX;
+          const deltaX = e.clientX - startX;
+          const newWidth = Math.max(50, startWidth + deltaX);
 
-          currentColumn.style.width = `${width}px`;
-          currentColumn.parentElement.parentElement.style.tableLayout = 'auto';
+          currentColumn.style.width = `${newWidth}px`;
+
+          if (nextColumn) {
+            const newNextWidth = Math.max(50, nextWidth - deltaX);
+            nextColumn.style.width = `${newNextWidth}px`;
+          }
         }
 
         function stopResize(e) {
           e.preventDefault();
-
           isResizing = false;
-          document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('resizing'));
           document.body.style.cursor = '';
-          currentColumn.parentElement.parentElement.style.tableLayout = 'fixed';
 
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', stopResize);
@@ -962,6 +971,7 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
   const items = emptyText.parentElement.parentElement.children;
   for (let i = 1; i < items.length; i++) {
     searchFunction(items[i], findValue, findType, callback);
+    return;
   }
   callback(null);
 }
@@ -972,6 +982,7 @@ export function findAtSectionTwo(sectionName, findValue, findType, callback) {
   const items = emptyText.parentElement.children;
   for (let i = 2; i < items.length; i++) {
     searchFunction(items[i], findValue, findType, callback);
+    return;
   }
   callback(null);
 }
@@ -1016,6 +1027,7 @@ function searchFunction(item, findValue, findType, callback) {
       }
       break;
   }
+  callback(null);
 }
 
 export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
@@ -1049,7 +1061,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
           idValue = columnData.split('_')[1];
         }
 
-        setCellContent(cell, idValue);
+        setCellContent(index, cell, idValue);
         newRow.dataset.id = idValue;
         return;
       }
@@ -1076,7 +1088,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         }
 
         function setDateTimeContent(cell, value) {
-          setCellContent(cell, value);
+          setCellContent(index, cell, value);
           switch (type) {
             case 'date':
               newRow.dataset.date = value;
@@ -1094,49 +1106,42 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         return;
       }
 
-      setCellContent(cell, columnData);
+      setCellContent(index, cell, columnData);
       return;
     }
 
     if (columnData.type && columnData.type.toLowerCase().includes('user')) {
-      const isUserIdType = columnData.type.toLowerCase().includes('id');
       const userData = columnData.data;
 
-      if (!cell.querySelector('.flex.items-center.gap-3')) {
-        cell.innerHTML = `
+      cell.innerHTML = `
           <div class="flex items-center gap-3">
-            <img src="${userData[0] ? userData[0] : '/src/images/client_logo.jpg'}" class="h-10 w-10 rounded-full object-cover" />
-            <p>${isUserIdType ? userData[1] : userData[1].split(':://')[0] + ' ' + userData[1].split(':://')[1]}</p>
+            <img src="${userData[1] ? userData[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
+            <p>${userData[2].includes(':://') ? userData[2].split(':://')[0] + ' ' + userData[2].split(':://')[1] : userData[2]}</p>
           </div>
         `;
-      } else {
-        const img = cell.querySelector('img');
-        const text = cell.querySelector('p');
-        img.src = userData[0];
-        text.textContent = userData[1];
+      if (index < columnsData.length - 1) {
+        cell.classList.add('w-[200px]');
+        cell.classList.add('2xl:w-[250px]');
       }
 
-      newRow.dataset.image = userData[0];
-      if (isUserIdType) {
-        newRow.dataset.userid = userData[1];
-        newRow.dataset.name = userData[2];
-        newRow.dataset.contact = userData[3];
-      } else {
-        newRow.dataset.name = userData[1];
-        newRow.dataset.contact = userData[2];
-      }
+      newRow.dataset.userid = userData[0];
+      newRow.dataset.image = userData[1];
+      newRow.dataset.name = userData[2];
+      newRow.dataset.contact = userData[3];
       return;
     }
 
     if (typeof columnData === 'object') {
-      setCellContent(cell, JSON.stringify(columnData));
+      setCellContent(index, cell, JSON.stringify(columnData));
       return;
     }
 
-    setCellContent(cell, columnData);
+    setCellContent(index, cell, columnData);
   });
   const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
   cell.classList.remove('hidden');
+  cell.classList.add(`w-[${175 * cell.children[0].children.length}px]`);
+  cell.classList.add(`2xl:w-[${215 * cell.children[0].children.length}px]`);
   newRow.appendChild(cell);
 
   if (findValue) {
@@ -1155,8 +1160,11 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
   callback(newRow, 'success');
 
-  function setCellContent(cell, content) {
+  function setCellContent(index, cell, content) {
     cell.innerHTML += content;
+    if (index < columnsData.length - 1) {
+      cell.classList.add('w-1');
+    }
   }
 }
 

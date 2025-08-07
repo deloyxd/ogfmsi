@@ -96,7 +96,7 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     'id_random',
     {
       type: 'user',
-      data: [image, name, emailContact],
+      data: ['', image, name, emailContact],
     },
     'date_today',
   ];
@@ -286,7 +286,7 @@ function processCheckinUser(user) {
     'id_' + user.dataset.id,
     {
       type: 'user',
-      data: [user.dataset.image, user.dataset.name, user.dataset.contact],
+      data: [user.dataset.id, user.dataset.image, user.dataset.name, user.dataset.contact],
     },
     'time_Pending',
   ];

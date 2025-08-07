@@ -1,4 +1,5 @@
 import main from '../admin_main.js';
+import accesscontrol from './accesscontrol.js';
 import datasync from './datasync.js';
 
 // default codes:
@@ -114,10 +115,10 @@ function completeTransaction(id, result) {
   const columnsData = [
     'id_' + id,
     {
-      type: 'userid',
+      type: 'user',
       data: [
-        result.payment.user.data[0],
         result.payment.user.id,
+        result.payment.user.data[0],
         result.payment.user.data[1],
         result.payment.user.data[2],
       ],
@@ -219,6 +220,8 @@ export function processPayment(user) {
     user.type = 'daily pass';
     user.rate = 'regular';
     datasync.enqueue(data.action, user);
+
+    accesscontrol.log(data.action, user);
 
     main.createRedDot('billing', 'main');
   });

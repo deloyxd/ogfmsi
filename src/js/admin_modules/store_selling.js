@@ -119,8 +119,8 @@ if (quantityValue === 0) {
   const columnsData = [
     'id_random',
     {
-      type: 'userid',
-      data: [image, productName],
+      type: 'user',
+      data: ['', image, productName],
     },
     productType,
     quantity,
@@ -162,7 +162,7 @@ function processCheckinUser(product) {
     'id_' + product.dataset.id,
     {
       type: 'user',
-      data: [product.dataset.image, product.dataset.productName],
+      data: [product.dataset.id, product.dataset.image, product.dataset.productName],
     },
     product.dataset.productType,
     product.dataset.quantity,
