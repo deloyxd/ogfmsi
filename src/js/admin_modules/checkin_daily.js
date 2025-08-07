@@ -1,6 +1,6 @@
 import main from '../admin_main.js';
 import billing from './billing.js';
-import datasync from './datasync.js';
+import accesscontrol from './accesscontrol.js';
 
 // default codes:
 let mainBtn,
@@ -56,7 +56,7 @@ function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('checkin-dailySectionTwoSearch');
-  main.findAtSectionOne('checkin-daily', searchInput.value, 'equal', 1, (result) => {
+  main.findAtSectionOne('checkin-daily', searchInput.value.trim(), 'equal', 1, (result) => {
     const user = result;
 
     if (!user) {
@@ -98,7 +98,7 @@ function registerNewUser(image, firstName, lastName, emailContact) {
       type: 'user',
       data: ['', image, name, emailContact],
     },
-    'date_today',
+    'custom_date_today',
   ];
   main.createAtSectionOne('checkin-daily', columnsData, 1, name, (result, status) => {
     if (status == 'success') {
@@ -126,7 +126,7 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     userEditDetailsBtn.addEventListener('click', () => userDetailsBtnFunction(result, false));
 
     const action = {
-      module: 'Check-in',
+      module: 'Check-In',
       submodule: 'Daily Pass',
       description: 'Register user',
     };
@@ -136,8 +136,10 @@ function registerNewUser(image, firstName, lastName, emailContact) {
       name: name,
       contact: emailContact,
       date: result.dataset.date,
+      type: 'user',
     };
-    datasync.enqueue(action, data);
+
+    accesscontrol.log(action, data);
 
     main.createRedDot('checkin-daily', 1);
     main.toast(result.dataset.name.split(':://')[0] + ', successfully registered!', 'success');
@@ -152,17 +154,21 @@ function userDetailsBtnFunction(user, isViewMode) {
     const inputs = {
       header: {
         title: 'View User Details 📙',
-        subtitle: 'Any modified data in this form cannot be saved',
+        subtitle: 'View mode',
       },
       image: {
         src: user.dataset.image,
         type: 'normal',
+        locked: true,
         short: [
-          { placeholder: 'First name', value: userFirstName, required: true },
-          { placeholder: 'Last name', value: userLastName, required: true },
-          { placeholder: 'Email / contact', value: user.dataset.contact },
+          { placeholder: 'First name', value: userFirstName, locked: true },
+          { placeholder: 'Last name', value: userLastName, locked: true },
+          { placeholder: 'Email / contact', value: user.dataset.contact, locked: true },
         ],
       },
+      short: [
+        { placeholder: 'Amount paid', value: user.dataset.amount ? user.dataset.amount : 'Not yet paid', locked: true },
+      ],
       footer: {
         main: 'Exit view',
       },
@@ -205,7 +211,7 @@ function userDetailsBtnFunction(user, isViewMode) {
           user.children[1].children[0].children[1].textContent = resultUserFirstName + ' ' + resultUserLastName;
 
           const action = {
-            module: 'Check-in',
+            module: 'Check-In',
             submodule: 'Daily Pass',
             description: 'Update user details',
           };
@@ -214,8 +220,10 @@ function userDetailsBtnFunction(user, isViewMode) {
             image: user.dataset.image,
             name: user.dataset.name,
             contact: user.dataset.contact,
+            type: 'user',
           };
-          datasync.enqueue(action, data);
+
+          accesscontrol.log(action, data);
 
           main.toast('Successfully updated user details!', 'info');
           main.closeConfirmationModal();
@@ -227,16 +235,19 @@ function userDetailsBtnFunction(user, isViewMode) {
           const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
           const action = {
-            module: 'Check-in',
+            module: 'Check-In',
             submodule: 'Daily Pass',
             description: 'Delete user record',
           };
           const data = {
             id: user.dataset.id,
+            image: user.dataset.image,
             name: user.dataset.name,
+            contact: user.dataset.contact,
             datetime: date + ' - ' + time,
+            type: 'user',
           };
-          datasync.enqueue(action, data);
+          accesscontrol.log(action, data);
 
           main.deleteAtSectionOne('checkin-daily', 1, user.dataset.id);
 
@@ -257,17 +268,21 @@ function userVoidBtnFunction(user) {
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     const action = {
-      module: 'Check-in',
+      module: 'Check-In',
       submodule: 'Daily Pass',
       description: 'Void user check-in log',
     };
     const data = {
       id: user.dataset.id,
+      image: user.dataset.image,
       name: user.dataset.name,
+      contact: user.dataset.contact,
       amount: user.dataset.amount,
       datetime: date + ' - ' + time,
+      type: 'user_transaction',
     };
-    datasync.enqueue(action, data);
+
+    accesscontrol.log(action, data);
     if (user.dataset.amount) {
       main.deleteAtSectionOne('billing', 1, user.dataset.tid);
       main.deleteAtSectionOne('billing', 2, user.dataset.tid);
@@ -288,7 +303,7 @@ function processCheckinUser(user) {
       type: 'user',
       data: [user.dataset.id, user.dataset.image, user.dataset.name, user.dataset.contact],
     },
-    'time_Pending',
+    'custom_time_Pending',
   ];
   main.createAtSectionOne('checkin-daily', columnsData, 2, '', (result, status) => {
     if (status == 'success') {
@@ -298,7 +313,7 @@ function processCheckinUser(user) {
       userViewDetailsBtn.addEventListener('click', () => userDetailsBtnFunction(result, true));
       userVoidBtn.addEventListener('click', () => userVoidBtnFunction(result));
       const action = {
-        module: 'Check-in',
+        module: 'Check-In',
         submodule: 'Daily Pass',
         description: 'Process check-in user',
       };
@@ -308,8 +323,10 @@ function processCheckinUser(user) {
         name: result.dataset.name,
         contact: result.dataset.contact,
         datetime: 'Pending',
+        type: 'user',
       };
-      datasync.enqueue(action, data);
+
+      accesscontrol.log(action, data);
       billing.processPayment(data);
 
       main.createRedDot('checkin-daily', 2);

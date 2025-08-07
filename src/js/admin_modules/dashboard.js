@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import datasync from './datasync.js';
+import accesscontrol from './accesscontrol.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
@@ -158,13 +158,14 @@ function mainBtnFunction() {
           month: 'long',
           day: 'numeric',
         }),
+        type: 'user',
       };
       if (actionType.toLowerCase().includes('create') || actionType.toLowerCase().includes('update')) {
         data.image = element.children[0].src;
         data.title = title;
         data.description = element.dataset.description;
       }
-      datasync.enqueue(action, data);
+      accesscontrol.log(action, data);
     }
 
     element.classList.remove('hidden');

@@ -762,20 +762,22 @@ function setupModalBase(defaultData, inputs, callback) {
     if (inputs.image.type === 'normal') imageBlurContainer.classList.add('hidden');
     const imageUploadInput = imageContainerParent.children[0].children[2];
     const imageUploadBtn = imageContainerParent.children[0].children[3];
-    imageUploadBtn.onclick = () => imageUploadInput.click();
-    imageContainer.parentElement.onclick = () => imageUploadInput.click();
+    if (!inputs.image.locked) {
+      imageUploadBtn.onclick = () => imageUploadInput.click();
+      imageContainer.parentElement.onclick = () => imageUploadInput.click();
 
-    imageUploadInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          imageContainer.src = event.target.result;
-          inputs.image.src = imageContainer.src;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+      imageUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            imageContainer.src = event.target.result;
+            inputs.image.src = imageContainer.src;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
 
     const imageContainerInputsContainer = imageContainerParent.children[1];
 
@@ -913,6 +915,10 @@ function setupModalBase(defaultData, inputs, callback) {
     const label = clone.children[0];
     const input = clone.children[1];
     const id = `input-${type}-${index + 1}`;
+
+    if (data.locked) {
+      input.readOnly = true;
+    }
 
     label.for = id;
     label.textContent = data.placeholder + (data.required ? ' *' : '');
@@ -1074,44 +1080,46 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         return;
       }
 
-      if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
-        const type = lowerColumn.split('_')[0];
-        if (lowerColumn.includes('today')) {
-          if (['date', 'time', 'datetime'].includes(type)) {
-            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-            const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+      if (lowerColumn.split('_')[0] === 'custom') {
+        if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
+          const type = lowerColumn.split('_')[1];
+          if (lowerColumn.includes('today')) {
+            if (['date', 'time', 'datetime'].includes(type)) {
+              const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+              const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
 
-            let value = '';
-            if (type === 'date' || type === 'datetime') {
-              value = new Date().toLocaleDateString('en-US', dateOptions);
+              let value = '';
+              if (type === 'date' || type === 'datetime') {
+                value = new Date().toLocaleDateString('en-US', dateOptions);
+              }
+              if (type === 'time' || type === 'datetime') {
+                const time = new Date().toLocaleTimeString('en-US', timeOptions);
+                value = type === 'datetime' ? `${value} - ${time}` : time;
+              }
+
+              setDateTimeContent(cell, value);
+              return;
             }
-            if (type === 'time' || type === 'datetime') {
-              const time = new Date().toLocaleTimeString('en-US', timeOptions);
-              value = type === 'datetime' ? `${value} - ${time}` : time;
+          }
+
+          function setDateTimeContent(cell, value) {
+            setCellContent(index, cell, value);
+            switch (type) {
+              case 'date':
+                newRow.dataset.date = value;
+                break;
+              case 'time':
+                newRow.dataset.time = value;
+                break;
+              case 'datetime':
+                newRow.dataset.datetime = value;
+                break;
             }
-
-            setDateTimeContent(cell, value);
-            return;
           }
-        }
 
-        function setDateTimeContent(cell, value) {
-          setCellContent(index, cell, value);
-          switch (type) {
-            case 'date':
-              newRow.dataset.date = value;
-              break;
-            case 'time':
-              newRow.dataset.time = value;
-              break;
-            case 'datetime':
-              newRow.dataset.datetime = value;
-              break;
-          }
+          setDateTimeContent(cell, columnData.split('_')[2]);
+          return;
         }
-
-        setDateTimeContent(cell, columnData.split('_')[1]);
-        return;
       }
 
       setCellContent(index, cell, columnData);

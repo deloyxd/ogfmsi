@@ -1,11 +1,11 @@
 import main from '../admin_main.js';
 import billing from './billing.js';
-import datasync from './datasync.js';
+import accesscontrol from './accesscontrol.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  if (main.sharedState.sectionName !== 'store-selling') return;
+  if (main.sharedState.sectionName !== 'store-pos') return;
 
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
@@ -60,10 +60,10 @@ function mainBtnFunction() {
 }
 
 function sectionTwoMainBtnFunction() {
-  const searchInput = document.getElementById('store-sellingSectionTwoSearch');
+  const searchInput = document.getElementById('store-posSectionTwoSearch');
   const searchValue = searchInput.value;
 
-  main.findAtSectionOne('store-selling', searchValue, 'any', 1, (result) => {
+  main.findAtSectionOne('store-pos', searchValue, 'any', 1, (result) => {
     const product = result;
 
     if (!product) {
@@ -71,7 +71,7 @@ function sectionTwoMainBtnFunction() {
       return;
     }
 
-    main.findAtSectionOne('store-selling', product.dataset.id, 'equal', 2, (pendingResult) => {
+    main.findAtSectionOne('store-pos', product.dataset.id, 'equal', 2, (pendingResult) => {
       if (pendingResult) {
         main.openConfirmationModal('Multiple pending transactions for this product.', () => {
           processCheckinUser(product);
@@ -126,10 +126,10 @@ if (quantityValue === 0) {
     quantity,
     formattedPrice,
     status,
-    'date_today',
+    'custom_date_today',
   ];
 
-  main.createAtSectionOne('store-selling', columnsData, 1, productName, (generated) => {
+  main.createAtSectionOne('store-pos', columnsData, 1, productName, (generated) => {
     const action = {
       module: 'Store',
       submodule: 'Selling',
@@ -143,10 +143,11 @@ if (quantityValue === 0) {
       quantity,
       price: formattedPrice,
       date: generated.date,
+      type: 'user',
     };
-    datasync.enqueue(action, data);
+    accesscontrol.log(action, data);
 
-    main.createRedDot('store-selling', 1);
+    main.createRedDot('store-pos', 1);
     main.toast(`${productName}, successfully registered!`, 'success');
     main.closeModal();
   });
@@ -168,10 +169,10 @@ function processCheckinUser(product) {
     product.dataset.quantity,
     product.dataset.price,
     statusColumn,
-    'time_Pending',
+    'custom_time_Pending',
   ];
 
-  main.createAtSectionOne('store-selling', columnsData, 5, '', () => {
+  main.createAtSectionOne('store-pos', columnsData, 5, '', () => {
     const action = {
       module: 'Store',
       submodule: 'Selling',
@@ -185,11 +186,12 @@ function processCheckinUser(product) {
       quantity: product.dataset.quantity,
       price: product.dataset.price,
       time: 'Pending',
+      type: 'user',
     };
-    datasync.enqueue(action, data);
+    accesscontrol.log(action, data);
     billing.processPayment(data);
 
-    main.createRedDot('store-selling', 2);
+    main.createRedDot('store-pos', 2);
     main.toast(`${product.dataset.productName}, is now ready for checkout!`, 'success');
   });
 }
