@@ -116,6 +116,14 @@ async function loadSectionSilently(sectionName) {
         const fieldValues = element.dataset[field];
         if (fieldValues) {
           dataset[field] = [];
+
+          if (name == 'content' && /(?<!:):(?!:)/.test(fieldValues)) {
+            const colonPos = fieldValues.match(/(?<!:):(?!:)/).index;
+            console.warn(
+              `Potential incorrect syntax in dataset "data-${field}" of "${sectionName}-section-content" at "/src/html/_admin_main.html".\n\n"${fieldValues}"\n${' '.repeat(colonPos + 1)}^\nUse "::" as separator instead of ":". If this is intentional, you can ignore this warning.`
+            );
+          }
+
           if (name != 'header' && fieldValues.includes('::')) {
             if (name == 'stats') cloneCount = fieldValues.split('::').length;
             fieldValues.split('::').forEach((datasetField) => {
