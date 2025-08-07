@@ -5,7 +5,7 @@ import accesscontrol from './accesscontrol.js';
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // change to right sectionName
-  if (main.sharedState.sectionName != 'billing') return;
+  if (main.sharedState.sectionName != 'invoicing') return;
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
@@ -20,8 +20,8 @@ function mainBtnFunction() {}
 function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
-  const searchInput = document.getElementById('billingSectionTwoSearch');
-  main.findAtSectionTwo('billing', searchInput.value.trim(), 'equal', (result) => {
+  const searchInput = document.getElementById('invoicingSectionTwoSearch');
+  main.findAtSectionTwo('invoicing', searchInput.value.trim(), 'equal', (result) => {
     const transaction = result;
 
     if (!transaction) {
@@ -124,12 +124,12 @@ function completeTransaction(id, result) {
     },
     'custom_datetime_today',
   ];
-  main.createAtSectionOne('billing', columnsData, 1, '', (_, status1) => {
+  main.createAtSectionOne('invoicing', columnsData, 1, '', (_, status1) => {
     if (status1 == 'success') {
-      main.createAtSectionOne('billing', columnsData, 2, '', (editedResult, status2) => {
+      main.createAtSectionOne('invoicing', columnsData, 2, '', (editedResult, status2) => {
         if (status2 == 'success') {
           const action = {
-            module: 'Billing',
+            module: 'invoicing',
             description: 'Transaction complete',
           };
           const data = {
@@ -148,7 +148,7 @@ function completeTransaction(id, result) {
           };
           accesscontrol.log(action, data);
 
-          main.deleteAtSectionTwo('billing', id);
+          main.deleteAtSectionTwo('invoicing', id);
 
           // updating "Pending" value
           const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement
@@ -162,8 +162,8 @@ function completeTransaction(id, result) {
             }
           }
 
-          main.createRedDot('billing', 1);
-          main.createRedDot('billing', 2);
+          main.createRedDot('invoicing', 1);
+          main.createRedDot('invoicing', 2);
           main.createRedDot('checkin', 'main');
           main.createRedDot('checkin-daily', 'sub');
           main.createRedDot('checkin-daily', 2);
@@ -181,11 +181,11 @@ export function processPayment(user) {
   const data = {
     id: 'random',
     action: {
-      module: 'Billing',
+      module: 'invoicing',
       description: 'Enqueue check-in transaction',
     },
   };
-  main.createAtSectionTwo('billing', data, (result) => {
+  main.createAtSectionTwo('invoicing', data, (result) => {
     // updating transaction id of pending user
     const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement.children;
     for (let i = 1; i < items.length; i++) {
@@ -222,7 +222,7 @@ export function processPayment(user) {
 
     accesscontrol.log(data.action, user);
 
-    main.createRedDot('billing', 'main');
+    main.createRedDot('invoicing', 'main');
   });
 }
 

@@ -4,7 +4,7 @@ import datasync from './datasync.js';
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  if (main.sharedState.sectionName !== 'store-selling') return;
+  if (main.sharedState.sectionName !== 'ecommerce-cart') return;
 
   const sectionName = main.sharedState.sectionName;
   const scrollContainer = document.querySelector(`#${sectionName}SectionContent .scrollbar-light`);
@@ -19,28 +19,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
 function initializeSellingInterface(scrollContainer) {
   scrollContainer.innerHTML = `
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Store Items</h2>
-      <div class="flex gap-4 mb-4">
-        <input 
-          type="text" 
-          id="searchProducts" 
-          placeholder="Search products..." 
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-        <select 
-          id="filterCategory" 
-          class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Categories</option>
-          <option value="supplement">Supplement</option>
-          <option value="food">Food</option>
-          <option value="merchandise">Merchandise</option>
-          <option value="beverages">Beverages</option>
-        </select>
-      </div>
-    </div>
-    
     <div class="products-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     
     <!-- Cart Section -->
@@ -98,7 +76,7 @@ function getInventoryItemsFromSystem() {
   // Method 1: Try to get data from the main system's section data
   try {
     if (main && main.getSectionData) {
-      const inventoryData = main.getSectionData('store-inventory', 1);
+      const inventoryData = main.getSectionData('ecommerce-stock', 1);
       if (inventoryData && inventoryData.length > 0) {
         inventoryData.forEach(item => {
           if (item.quantity && parseInt(item.quantity) > 0) {
@@ -121,7 +99,7 @@ function getInventoryItemsFromSystem() {
   
   // Method 2: Extract from DOM table rows if Method 1 fails
   if (inventoryItems.length === 0) {
-    const inventoryTable = document.querySelector('#store-inventorySectionContent table tbody, #store-inventorySectionContent .table-body');
+    const inventoryTable = document.querySelector('#ecommerce-stockSectionContent table tbody, #ecommerce-stockSectionContent .table-body');
     
     if (inventoryTable) {
       const rows = inventoryTable.querySelectorAll('tr, .table-row');
@@ -453,11 +431,11 @@ function processCheckout() {
 }
 
 function initializeSearchAndFilter() {
-  const searchInput = document.getElementById('searchProducts');
-  const filterSelect = document.getElementById('filterCategory');
+  // const searchInput = document.getElementById('searchProducts');
+  // const filterSelect = document.getElementById('filterCategory');
   
-  searchInput.addEventListener('input', filterProducts);
-  filterSelect.addEventListener('change', filterProducts);
+  // searchInput.addEventListener('input', filterProducts);
+  // filterSelect.addEventListener('change', filterProducts);
   
   function filterProducts() {
     const searchTerm = searchInput.value.toLowerCase();
