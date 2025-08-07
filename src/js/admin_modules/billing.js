@@ -21,7 +21,7 @@ function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('billingSectionTwoSearch');
-  main.findAtSectionTwo('billing', searchInput.value, (result) => {
+  main.findAtSectionTwo('billing', searchInput.value, 'equal', (result) => {
     const transaction = result;
 
     if (!transaction) {

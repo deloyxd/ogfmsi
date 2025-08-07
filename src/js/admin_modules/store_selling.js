@@ -63,7 +63,7 @@ function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('store-sellingSectionTwoSearch');
   const searchValue = searchInput.value;
 
-  main.findAtSectionOne('store-selling', searchValue, 'search', 1, (result) => {
+  main.findAtSectionOne('store-selling', searchValue, 'any', 1, (result) => {
     const product = result;
 
     if (!product) {

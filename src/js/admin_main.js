@@ -380,16 +380,26 @@ async function loadSectionSilently(sectionName) {
               searchInput.placeholder = dataset['sectiontwosearchtext'];
               searchInput.className = `section-content-search-sub border-${mainColor}-500 focus:ring-${mainColor}-500`;
               searchInput.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase().trim();
+                const searchTerm = e.target.value.trim();
                 const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
                 if (emptyText) {
-                  const items = emptyText.parentElement.children;
-                  for (let i = 2; i < items.length; i++) {
-                    items[i].classList.add('hidden');
-                    if (items[i].textContent.toLowerCase().includes(searchTerm)) {
-                      items[i].classList.remove('hidden');
-                    }
+                  const items = Array.from(emptyText.parentElement.children);
+                  if (searchTerm == '') {
+                    items.forEach((item, i) => {
+                      if (i > 0) {
+                        item.classList.remove('hidden');
+                      }
+                    });
+                    return;
                   }
+                  items.forEach((item, i) => {
+                    if (i > 0) {
+                      item.classList.add('hidden');
+                    }
+                  });
+                  findAtSectionTwo(sectionName, searchTerm, 'any', (searchResult) => {
+                    searchResult.classList.remove('hidden');
+                  });
                 }
               });
               sectionTwoSearchParent.appendChild(searchInput);
@@ -951,58 +961,61 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const items = emptyText.parentElement.parentElement.children;
   for (let i = 1; i < items.length; i++) {
-    if (findType == 'search') {
-      if (items[i].dataset.id.toLowerCase().includes(findValue.toLowerCase())) {
-        callback(items[i]);
-        return;
-      }
-      if (
-        items[i].dataset.name &&
-        items[i].dataset.name.toLowerCase().includes(findValue.replace(/\s+/g, ':://').toLowerCase())
-      ) {
-        callback(items[i]);
-        return;
-      }
-      if (items[i].dataset.datetime && items[i].dataset.datetime.toLowerCase().includes(findValue.toLowerCase())) {
-        callback(items[i]);
-        return;
-      }
-      if (items[i].dataset.date && items[i].dataset.date.toLowerCase().includes(findValue.toLowerCase())) {
-        callback(items[i]);
-        return;
-      }
-      if (items[i].dataset.time && items[i].dataset.time.toLowerCase().includes(findValue.toLowerCase())) {
-        callback(items[i]);
-        return;
-      }
-    }
-    if (findType == 'equal' && items[i].dataset.id == findValue) {
-      callback(items[i]);
-      return;
-    }
-    if (
-      findType == 'pending' &&
-      items[i].dataset.id == findValue &&
-      items[i].dataset.time.toLowerCase().includes(findType)
-    ) {
-      callback(items[i]);
-      return;
-    }
+    searchFunction(items[i], findValue, findType, callback);
   }
   callback(null);
 }
 
-export function findAtSectionTwo(sectionName, findValue, callback) {
+export function findAtSectionTwo(sectionName, findValue, findType, callback) {
   if (checkIfEmpty(findValue)) return;
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
   const items = emptyText.parentElement.children;
   for (let i = 2; i < items.length; i++) {
-    if (items[i].dataset.id == findValue) {
-      callback(items[i]);
-      return;
-    }
+    searchFunction(items[i], findValue, findType, callback);
   }
   callback(null);
+}
+
+function searchFunction(item, findValue, findType, callback) {
+  switch (findType) {
+    case 'any':
+      if (item.dataset.id.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(item);
+        return;
+      }
+      if (
+        item.dataset.name &&
+        item.dataset.name.toLowerCase().includes(findValue.replace(/\s+/g, ':://').toLowerCase())
+      ) {
+        callback(item);
+        return;
+      }
+      if (item.dataset.datetime && item.dataset.datetime.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(item);
+        return;
+      }
+      if (item.dataset.date && item.dataset.date.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(item);
+        return;
+      }
+      if (item.dataset.time && item.dataset.time.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(item);
+        return;
+      }
+      break;
+    case 'equal':
+      if (item.dataset.id == findValue) {
+        callback(item);
+        return;
+      }
+      break;
+    case 'pending':
+      if (item.dataset.id == findValue && item.dataset.time.toLowerCase().includes(findType)) {
+        callback(item);
+        return;
+      }
+      break;
+  }
 }
 
 export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
@@ -1123,7 +1136,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     setCellContent(cell, columnData);
   });
   const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
-    cell.classList.remove('hidden');
+  cell.classList.remove('hidden');
   newRow.appendChild(cell);
 
   if (findValue) {
