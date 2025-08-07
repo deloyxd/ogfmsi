@@ -210,10 +210,10 @@ export function userDetailsBtnFunction(user, isViewMode) {
             description: 'Update user details',
           };
           const data = {
-            id: result.dataset.id,
-            image: result.dataset.image,
-            name: result.dataset.name,
-            contact: result.dataset.contact,
+            id: user.dataset.id,
+            image: user.dataset.image,
+            name: user.dataset.name,
+            contact: user.dataset.contact,
           };
           datasync.enqueue(action, data);
 
@@ -224,10 +224,6 @@ export function userDetailsBtnFunction(user, isViewMode) {
       },
       () => {
         main.openConfirmationModal('Delete user: ' + userProperName, () => {
-          if (user.parentElement.children.length == 2) {
-            user.parentElement.children[0].children[0].classList.remove('hidden');
-          }
-
           const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
           const action = {
@@ -242,7 +238,7 @@ export function userDetailsBtnFunction(user, isViewMode) {
           };
           datasync.enqueue(action, data);
 
-          user.remove();
+          main.deleteAtSectionOne('checkin-daily', 1, user.dataset.id);
 
           main.toast('Successfully deleted user record!', 'error');
           main.closeConfirmationModal();
@@ -258,10 +254,6 @@ export function userVoidBtnFunction(user) {
   const userLastName = user.dataset.name.split(':://')[1];
   const userProperName = userFirstName + ' ' + userLastName;
   main.openConfirmationModal('Void user log: ' + userProperName, () => {
-    if (user.parentElement.children.length == 2) {
-      user.parentElement.children[0].children[0].classList.remove('hidden');
-    }
-
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     const action = {
@@ -282,8 +274,7 @@ export function userVoidBtnFunction(user) {
     } else {
       main.deleteAtSectionTwo('billing', user.dataset.tid);
     }
-
-    user.remove();
+    main.deleteAtSectionOne('checkin-daily', 2, user.dataset.id);
 
     main.toast('Successfully voided user log!', 'error');
     main.closeConfirmationModal();

@@ -271,35 +271,44 @@ async function loadSectionSilently(sectionName) {
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
               clone.dataset.columncount = titleTexts.length;
-              titleTexts.forEach((titleText, index) => {
+              titleTexts.forEach((titleText) => {
                 const th = document.createElement('th');
                 th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
                 th.textContent = titleText;
-                if (index < titleTexts.length - 1) {
-                  const resizer = document.createElement('div');
-                  resizer.className =
-                    'resizer absolute right-0 top-0 h-full cursor-col-resize bg-black/10 hover:bg-black/30 active:w-1.5 active:bg-black/30 group-hover:w-1.5';
-                  th.appendChild(resizer);
-                }
+                const resizer = document.createElement('div');
+                resizer.className =
+                  'resizer absolute right-0 top-0 h-full cursor-col-resize bg-black/10 hover:bg-black/30 active:w-1.5 active:bg-black/30 group-hover:w-1.5';
+                th.appendChild(resizer);
                 headerRow.appendChild(th);
+
+                table.style.tableLayout = 'auto';
+                th.style.width = `200px`;
+                table.style.tableLayout = 'fixed';
+                table.style.tableLayout = 'auto';
               });
+
+              const th = document.createElement('th');
+              th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
+              th.innerHTML = '<p class="text-center">Controls</p>';
+              headerRow.appendChild(th);
+
               thead.appendChild(headerRow);
               table.appendChild(thead);
               const tbody = document.createElement('tbody');
               const dataRow = document.createElement('tr');
               const empty = document.createElement('td');
-              dataRow.classList.add('relative');
+              dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
               empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled && cloneCount == 1 ? 325 + 140 : 325}px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
-              for (let j = 0; j < titleTexts.length; j++) {
+              for (let j = 0; j < titleTexts.length + 1; j++) {
                 const td = document.createElement('td');
                 td.className = 'relative hidden border border-gray-300 p-2';
-                if (dataset['listitembtnids'] && j == titleTexts.length - 1) {
+                if (dataset['listitembtnids'] && j == titleTexts.length) {
                   const itemBtns = document.createElement('div');
-                  itemBtns.className = 'absolute top-0 bottom-0 right-0 m-2 flex gap-2';
+                  itemBtns.className = 'absolute inset-0 justify-center m-2 flex gap-2';
                   const itemBtnIds = dataset['listitembtnids'][i].slice(1, -1).split('//');
                   const itemBtnTexts = dataset['listitembtntexts'][i].slice(1, -1).split('//');
                   const itemBtnColors = dataset['listitembtncolors'][i].slice(1, -1).split('//');
@@ -474,10 +483,8 @@ async function loadSectionSilently(sectionName) {
 
           const width = startWidth + e.clientX - startX;
 
-          if (width > 50) {
-            currentColumn.style.width = `${width}px`;
-            currentColumn.parentElement.parentElement.style.tableLayout = 'auto';
-          }
+          currentColumn.style.width = `${width}px`;
+          currentColumn.parentElement.parentElement.style.tableLayout = 'auto';
         }
 
         function stopResize(e) {
@@ -1115,6 +1122,9 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
     setCellContent(cell, columnData);
   });
+  const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
+    cell.classList.remove('hidden');
+  newRow.appendChild(cell);
 
   if (findValue) {
     const tableBody = emptyText.closest('tbody');
@@ -1128,7 +1138,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     }
   }
 
-  emptyText.classList.add('hidden');
+  tableRow.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
   callback(newRow, 'success');
 
@@ -1196,7 +1206,7 @@ export function deleteAtSectionOne(sectionName, tabIndex, id) {
   for (let i = 1; i < items.length; i++) {
     if (items[i].dataset.id == id) {
       items[i].remove();
-      if (items.length == 1) emptyText.classList.remove('hidden');
+      if (items.length == 1) emptyText.parentElement.classList.remove('hidden');
       return;
     }
   }
