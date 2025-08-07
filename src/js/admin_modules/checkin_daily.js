@@ -264,7 +264,7 @@ function userVoidBtnFunction(user) {
   const userFirstName = user.dataset.name.split(':://')[0];
   const userLastName = user.dataset.name.split(':://')[1];
   const userProperName = userFirstName + ' ' + userLastName;
-  main.openConfirmationModal('Void user log: ' + userProperName, () => {
+  main.openConfirmationModal('Void user log: ' + userProperName + '<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Billing module.', () => {
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     const action = {
