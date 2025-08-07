@@ -6,7 +6,6 @@ async function loadDynamicSidebar() {
   const ul = document.createElement('ul');
   ul.className = 'space-y-2 px-4';
 
-  // Create a map to track created main buttons
   const mainButtonsMap = new Map();
   const mainUlContainer = new Map();
 
@@ -45,12 +44,10 @@ async function loadDynamicSidebar() {
       `;
       currentLi.appendChild(mainBtn);
       ul.appendChild(currentLi);
-      // Store the created li in our map
       mainButtonsMap.set(mainSectionName, mainBtn);
     }
 
     if (nestedSections.length > 1) {
-      // Get the main button if it already exists
       const currentParentBtn = currentLi.querySelector('.sidebar-main-btn');
       currentParentBtn.classList.add('justify-between');
       
