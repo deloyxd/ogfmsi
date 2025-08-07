@@ -225,7 +225,7 @@ async function loadSectionSilently(sectionName) {
         const sectionTwo = document.getElementById(`${sectionName}SectionContent`).children[1];
         setupSectionOne();
         setupSectionTwo();
-        if (containsCustomContents) await loadCustomContents(`/src/html/custom/${sectionName}_content.html`);
+        if (containsCustomContents) await loadCustomContents(`/src/html/custom/${sectionName.replace(/-/g, '_')}_content.html`);
 
         function setupSectionOne() {
           Array.from(sectionOne.children).forEach((el, i) => {

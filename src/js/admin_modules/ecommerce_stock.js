@@ -1,11 +1,11 @@
 import main from '../admin_main.js';
-import billing from './billing.js';
+import billing from './invoicing.js';
 import accesscontrol from './accesscontrol.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  if (main.sharedState.sectionName !== 'store-pos') return;
+  if (main.sharedState.sectionName !== 'ecommerce-stock') return;
 
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
@@ -60,10 +60,10 @@ function mainBtnFunction() {
 }
 
 function sectionTwoMainBtnFunction() {
-  const searchInput = document.getElementById('store-posSectionTwoSearch');
+  const searchInput = document.getElementById('ecommerce-stockSectionTwoSearch');
   const searchValue = searchInput.value;
 
-  main.findAtSectionOne('store-pos', searchValue, 'any', 1, (result) => {
+  main.findAtSectionOne('ecommerce-stock', searchValue, 'any', 1, (result) => {
     const product = result;
 
     if (!product) {
@@ -71,7 +71,7 @@ function sectionTwoMainBtnFunction() {
       return;
     }
 
-    main.findAtSectionOne('store-pos', product.dataset.id, 'equal', 2, (pendingResult) => {
+    main.findAtSectionOne('ecommerce-stock', product.dataset.id, 'equal', 2, (pendingResult) => {
       if (pendingResult) {
         main.openConfirmationModal('Multiple pending transactions for this product.', () => {
           processCheckinUser(product);
@@ -129,7 +129,7 @@ if (quantityValue === 0) {
     'custom_date_today',
   ];
 
-  main.createAtSectionOne('store-pos', columnsData, 1, productName, (generated) => {
+  main.createAtSectionOne('ecommerce-stock', columnsData, 1, productName, (generated) => {
     const action = {
       module: 'Store',
       submodule: 'Selling',
@@ -147,7 +147,7 @@ if (quantityValue === 0) {
     };
     accesscontrol.log(action, data);
 
-    main.createRedDot('store-pos', 1);
+    main.createRedDot('ecommerce-stock', 1);
     main.toast(`${productName}, successfully registered!`, 'success');
     main.closeModal();
   });
@@ -172,7 +172,7 @@ function processCheckinUser(product) {
     'custom_time_Pending',
   ];
 
-  main.createAtSectionOne('store-pos', columnsData, 5, '', () => {
+  main.createAtSectionOne('ecommerce-stock', columnsData, 5, '', () => {
     const action = {
       module: 'Store',
       submodule: 'Selling',
@@ -191,7 +191,7 @@ function processCheckinUser(product) {
     accesscontrol.log(action, data);
     billing.processPayment(data);
 
-    main.createRedDot('store-pos', 2);
+    main.createRedDot('ecommerce-stock', 2);
     main.toast(`${product.dataset.productName}, is now ready for checkout!`, 'success');
   });
 }
