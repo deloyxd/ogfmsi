@@ -1,5 +1,4 @@
 import main from '../admin_main.js';
-import checkinDaily from './checkin_daily.js';
 import datasync from './datasync.js';
 
 // default codes:
@@ -157,16 +156,7 @@ function completeTransaction(id, result) {
             if (items[i].dataset.tid == id) {
               items[i].dataset.amount = data.amount;
               items[i].dataset.datetime = editedResult.dataset.datetime;
-              const btns = items[i].children[2].children[0].cloneNode(true);
-              items[i].children[2].innerHTML = '';
-              items[i].children[2].appendChild(btns);
-              items[i].children[2].innerHTML += editedResult.dataset.datetime;
-
-              const dataBtns = items[i].children[items[i].children.length - 1].children[0];
-              const userViewDetailsBtn = dataBtns.querySelector('#userViewDetailsBtn');
-              const userVoidBtn = dataBtns.querySelector('#userVoidBtn');
-              userViewDetailsBtn.addEventListener('click', () => checkinDaily.userDetailsBtnFunction(items[i], true));
-              userVoidBtn.addEventListener('click', () => checkinDaily.userVoidBtnFunction(items[i]));
+              items[i].children[2].innerHTML = editedResult.dataset.datetime;
               break;
             }
           }

@@ -305,7 +305,7 @@ async function loadSectionSilently(sectionName) {
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
                 const td = document.createElement('td');
-                td.className = 'relative hidden border border-gray-300 p-2';
+                td.className = 'relative hidden border border-gray-300 p-2 h-[57px]';
                 if (dataset['listitembtnids'] && j == titleTexts.length) {
                   const itemBtns = document.createElement('div');
                   itemBtns.className = 'absolute inset-0 justify-center m-2 flex gap-2';
