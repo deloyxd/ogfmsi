@@ -1,6 +1,5 @@
 import main from '../admin_main.js';
 import accesscontrol from './accesscontrol.js';
-import datasync from './datasync.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
@@ -22,7 +21,7 @@ function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById('billingSectionTwoSearch');
-  main.findAtSectionTwo('billing', searchInput.value, 'equal', (result) => {
+  main.findAtSectionTwo('billing', searchInput.value.trim(), 'equal', (result) => {
     const transaction = result;
 
     if (!transaction) {
@@ -123,7 +122,7 @@ function completeTransaction(id, result) {
         result.payment.user.data[2],
       ],
     },
-    'datetime_today',
+    'custom_datetime_today',
   ];
   main.createAtSectionOne('billing', columnsData, 1, '', (_, status1) => {
     if (status1 == 'success') {
@@ -136,17 +135,18 @@ function completeTransaction(id, result) {
           const data = {
             id: id,
             user_id: result.payment.user.id,
-            type: result.radio[result.radio[0].selected].title.toLowerCase(),
-            amount: result.short[0].value,
-            refnum: result.short[1].value,
-            rate: result.spinner[0].options[result.spinner[0].selected - 1].value,
+            payment_type: result.radio[result.radio[0].selected].title.toLowerCase(),
+            payment_amount: result.short[0].value,
+            payment_refnum: result.short[1].value,
+            payment_rate: result.spinner[0].options[result.spinner[0].selected - 1].value,
             purpose: result.payment.purpose
               .replace(/^T\d+\s+/gm, '')
               .replace(/\s+/g, ' ')
               .trim(),
             datetime: editedResult.dataset.datetime,
+            type: 'transaction',
           };
-          datasync.enqueue(action, data);
+          accesscontrol.log(action, data);
 
           main.deleteAtSectionTwo('billing', id);
 
@@ -155,7 +155,7 @@ function completeTransaction(id, result) {
             .children;
           for (let i = 1; i < items.length; i++) {
             if (items[i].dataset.tid == id) {
-              items[i].dataset.amount = data.amount;
+              items[i].dataset.amount = data.payment_amount;
               items[i].dataset.datetime = editedResult.dataset.datetime;
               items[i].children[2].innerHTML = editedResult.dataset.datetime;
               break;
@@ -217,9 +217,8 @@ export function processPayment(user) {
   `;
 
     data.action.id = result.dataset.id;
-    user.type = 'daily pass';
-    user.rate = 'regular';
-    datasync.enqueue(data.action, user);
+    user.usertype = 'daily pass';
+    user.userrate = 'regular';
 
     accesscontrol.log(data.action, user);
 
