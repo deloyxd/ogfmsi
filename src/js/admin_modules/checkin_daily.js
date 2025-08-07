@@ -145,14 +145,14 @@ function registerNewUser(image, firstName, lastName, emailContact) {
   }
 }
 
-export function userDetailsBtnFunction(user, isViewMode) {
+function userDetailsBtnFunction(user, isViewMode) {
   const userFirstName = user.dataset.name.split(':://')[0];
   const userLastName = user.dataset.name.split(':://')[1];
   if (isViewMode) {
     const inputs = {
       header: {
-        title: 'Read User Details 📙',
-        subtitle: 'Mode: Read only',
+        title: 'View User Details 📙',
+        subtitle: 'Any modified data in this form cannot be saved',
       },
       image: {
         src: user.dataset.image,
@@ -164,10 +164,10 @@ export function userDetailsBtnFunction(user, isViewMode) {
         ],
       },
       footer: {
-        main: 'Read only 📙',
+        main: 'Exit view',
       },
     };
-    main.openModal('orange', inputs, main.closeModal);
+    main.openModal('gray', inputs, main.closeModal);
   } else {
     const userProperName = userFirstName + ' ' + userLastName;
     const inputs = {
@@ -249,7 +249,7 @@ export function userDetailsBtnFunction(user, isViewMode) {
   }
 }
 
-export function userVoidBtnFunction(user) {
+function userVoidBtnFunction(user) {
   const userFirstName = user.dataset.name.split(':://')[0];
   const userLastName = user.dataset.name.split(':://')[1];
   const userProperName = userFirstName + ' ' + userLastName;
@@ -280,8 +280,6 @@ export function userVoidBtnFunction(user) {
     main.closeConfirmationModal();
   });
 }
-
-export default { userDetailsBtnFunction, userVoidBtnFunction };
 
 function processCheckinUser(user) {
   const columnsData = [
