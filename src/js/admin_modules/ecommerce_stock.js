@@ -10,12 +10,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
 
-  subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-  subBtn.classList.remove('hidden');
+  // subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
+  // subBtn.classList.remove('hidden');
   // subBtn.addEventListener('click', subBtnFunction);
 
-  sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
-  sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
+  // sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
+  // sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
 });
 
 function mainBtnFunction() {
@@ -87,7 +87,7 @@ function sectionTwoMainBtnFunction() {
   });
 }
 
-function registerNewUser(image, productName, productType, quantity, price) {
+function registerNewUser(image, productName, productCategory, quantity, price) {
   // Validate quantity and price (must be numeric only)
   const isNumeric = (val) => /^\d+(\.\d+)?$/.test(val); // Accepts whole and decimal numbers
 
@@ -122,7 +122,7 @@ if (quantityValue === 0) {
       type: 'user',
       data: ['', image, productName],
     },
-    productType,
+    productCategory,
     quantity,
     formattedPrice,
     status,
@@ -137,11 +137,11 @@ if (quantityValue === 0) {
     };
     const data = {
       id: generated.id,
-      image,
-      productName,
-      productType,
-      quantity,
-      price: formattedPrice,
+      image: image,
+      product_name: productName,
+      product_category: productCategory,
+      product_quantity: quantity,
+      product_price: formattedPrice,
       date: generated.date,
       type: 'user',
     };
@@ -182,7 +182,7 @@ function processCheckinUser(product) {
       id: product.dataset.id,
       image: product.dataset.image,
       productName: product.dataset.productName,
-      productType: product.dataset.productType,
+      productCategory: product.dataset.productCategory,
       quantity: product.dataset.quantity,
       price: product.dataset.price,
       time: 'Pending',

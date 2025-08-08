@@ -1,7 +1,57 @@
 <!-- do not remove class="h-[375px]" and class="h-[400px] pt-4" -jest -->
 <div data-sectionindex="1" data-tabindex="1" class="h-[375px]">
-    
-</div>
+  <div
+    id="ecommerceCartTab1Empty"
+    class="h-full content-center text-center text-sm font-bold text-gray-400 2xl:text-base"
+  >
+    No items here yet
+  </div>
+  <div id="ecommerceCartTab1" class="grid grid-cols-4 gap-2 2xl:gap-6"></div>
 
-<div data-sectionindex="2" class="hidden h-[400px] pt-4">
+  <!-- 👇 product to clone (use id: ecommerceCartProduct) 👇 -->
+  <div
+    id="ecommerceCartProduct"
+    class="group hidden w-full max-w-xs self-start overflow-hidden rounded-xl bg-white shadow-lg transition-all hover:scale-[1.02]"
+  >
+    <img src="/src/images/client_logo.jpg" class="h-40 w-full rounded-t-xl object-cover" />
+    <div class="p-4">
+      <h2 class="text-lg font-bold text-gray-800 group-hover:text-blue-600">${productName}</h2>
+      <p class="mt-1 text-sm capitalize text-gray-500">${productCategory}</p>
+      <p class="${statusColor} text-xs font-semibold">${stockText}</p>
+      <div class="mt-4 flex items-center justify-between">
+        <span class="text-xl font-semibold text-green-600">₱${productPrice}</span>
+        <div class="flex items-center gap-2">
+          <button class="decrease-btn h-8 w-8 rounded-full bg-gray-200 text-xl font-bold hover:bg-gray-300">–</button>
+          <span class="quantity-display w-6 text-center">0</span>
+          <button class="increase-btn h-8 w-8 rounded-full bg-blue-500 text-xl font-bold text-white hover:bg-blue-600">
+            +
+          </button>
+        </div>
+      </div>
+      <button
+        class="add-to-cart-btn opacity-50 cursor-not-allowed mt-3 w-full rounded-lg bg-green-500 py-2 font-semibold text-white transition-all hover:bg-green-600"
+      >
+        Add to Cart 🛒
+      </button>
+    </div>
+  </div>
+  <!-- 👆 product to clone (use id: ecommerceCartProduct) 👆 -->
+</div>
+<div data-sectionindex="1" data-tabindex="2" class="h-[375px]">
+  <div
+    id="ecommerceCartTab2Empty"
+    class="h-full content-center text-center text-sm font-bold text-gray-400 2xl:text-base"
+  >
+    No items here yet
+  </div>
+  <div id="ecommerceCartTab2" class="grid grid-cols-4 gap-2 2xl:gap-6"></div>
+</div>
+<div data-sectionindex="1" data-tabindex="3" class="h-[375px]">
+  <div
+    id="ecommerceCartTab3Empty"
+    class="h-full content-center text-center text-sm font-bold text-gray-400 2xl:text-base"
+  >
+    No items here yet
+  </div>
+  <div id="ecommerceCartTab3" class="grid grid-cols-4 gap-2 2xl:gap-6"></div>
 </div>
