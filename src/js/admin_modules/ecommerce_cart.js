@@ -1,53 +1,59 @@
 import main from '../admin_main.js';
+import accesscontrol from './accesscontrol.js';
 import datasync from './datasync.js';
 
 // default codes:
-let mainBtn, subBtn, sectionTwoMainBtn, activated;
+let mainBtn,
+  subBtn,
+  sectionTwoMainBtn,
+  cart = [],
+  liveActivated = false;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== 'ecommerce-cart') return;
 
   getInventoryItemsFromSystem();
+
+  if (!liveActivated) {
+    liveActivated = true;
+    updateDateAndTime();
+    setInterval(updateDateAndTime, 10000);
+  }
 });
+
+function updateDateAndTime() {
+  if (main.sharedState.sectionName === 'ecommerce-cart') {
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    document.getElementById(
+      'ecommerce-cart-section-header'
+    ).children[0].children[1].children[0].children[0].textContent = `📆 ${date} ⌚ ${time}`;
+  }
+}
 
 function getInventoryItemsFromSystem() {
   const inventoryItems = [];
 
   main.getAllSectionOne('ecommerce-stock', 1, (result) => {
-    Array.from(result).forEach((inventoryItem) => {
-      const cells = inventoryItem.querySelectorAll('td');
-      const productId = cells[0]?.textContent?.trim();
-      const productNameCell = cells[1];
-      const productCategory = cells[2]?.textContent?.trim();
-      const quantity = cells[3]?.textContent?.trim();
-      const price = cells[4]?.textContent?.trim();
+    result.forEach((inventoryItem) => {
+      const id = inventoryItem.dataset.id;
+      const image = inventoryItem.dataset.image;
+      const name = inventoryItem.dataset.name;
+      const price = inventoryItem.dataset.custom2.replace('₱', '');
+      const quantity = inventoryItem.dataset.custom3;
+      const measurement = inventoryItem.dataset.custom5;
+      const measurementUnit = inventoryItem.dataset.custom6;
+      const category = inventoryItem.dataset.custom7;
 
-      let productName = 'Unknown Product';
-      let productImage = '/src/images/background_image_1.jpg';
-
-      if (productNameCell) {
-        const nameElement = productNameCell.querySelector('[data-product-name], .product-name') || productNameCell;
-        productName = nameElement.textContent?.trim() || productName;
-
-        const imgElement = productNameCell.querySelector('img');
-        if (imgElement && imgElement.src) {
-          productImage = imgElement.src;
-        }
-      }
-
-      const quantityNum = parseInt(quantity) || 0;
-      const priceNum = parseFloat(price?.replace('₱', '').replace(',', '') || '0');
-
-      if (productId && productName !== 'Unknown Product' && quantityNum > 0) {
-        inventoryItems.push({
-          id: productId,
-          name: productName,
-          category: productCategory?.trim || 'general',
-          quantity: quantityNum,
-          price: priceNum,
-          image: productImage,
-          status: quantityNum <= 10 ? 'low' : 'available',
-        });
-      }
+      inventoryItems.push({
+        id: id,
+        image: image,
+        name: name,
+        price: +price,
+        quantity: +quantity,
+        measurement: measurement?.trim() || '',
+        measurementUnit: measurementUnit?.trim() || '',
+        category: category,
+      });
     });
 
     displayProducts(inventoryItems);
@@ -70,14 +76,32 @@ function displayProducts(products) {
   Array.from(products).forEach((product) => {
     const productCard = document.getElementById('ecommerceCartProduct').cloneNode(true);
     productCard.id = product.id;
-    productCard.dataset.category = product.product_category;
+    productCard.dataset.category = product.category;
 
-    const [productName, productCategory, statusColor, stockText, productPrice, productQuantity] =
-      `${product.name}:://${product.category}:://${product.status === 'low' ? 'text-orange-500' : 'text-green-600'}:://${(product.quantity <= 10 ? 'Low Stock: ' : 'Stock: ') + product.quantity}:://${product.price}:://${product.quantity}`.split(
-        ':://'
-      );
-    const data = { productName, productCategory, statusColor, stockText, productPrice, productQuantity };
-    const dataset = { ...data };
+    productCard.querySelector('img').src = product.image;
+
+    const categories = {
+      supplementsnutrition: 'Supplements & Nutrition',
+      foodmeals: 'Food & Meals',
+      beverages: 'Beverages',
+      fitnessequipment: 'Fitness Equipment',
+      apparel: 'Apparel',
+      merchandise: 'Merchandise',
+      other: 'Other',
+    };
+
+    const dataset = {
+      productName: product.name.replace(/\:\:\/\//g, ' '),
+      productCategory: categories[product.category.replace(/\-/g, '')],
+      statusColor: product.quantity <= 10 ? 'text-orange-500' : 'text-green-600',
+      stockText: 'Stk: ' + product.quantity,
+      productPrice: product.price,
+      productQuantity: product.quantity,
+      productMeasurementStatus:
+        product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
+      productMeasurement: product.measurement,
+      productMeasurementUnit: product.measurementUnit,
+    };
 
     productCard.innerHTML = productCard.innerHTML.replace(/\$\{(\w+)\}/g, (match, varName) =>
       dataset[varName] !== undefined ? dataset[varName] : match
@@ -112,7 +136,7 @@ function displayProducts(products) {
           addToCart(product, quantity);
           quantity = 0;
           updateAddToCartButton();
-          main.toast(`Added ${product.name} to cart!`, 'success');
+          main.toast(`Added ${product.name.replace(/\:\:\/\//g, ' ')} to cart!`, 'success');
         }
       });
     } else {
@@ -133,40 +157,6 @@ function displayProducts(products) {
   });
 }
 
-// Cart functionality
-let cart = [];
-
-function initializeCart() {
-  const cartToggle = document.getElementById('cartToggle');
-  const cartModal = document.getElementById('cartModal');
-  const cartPanel = document.getElementById('cartPanel');
-  const closeCart = document.getElementById('closeCart');
-  const checkoutBtn = document.getElementById('checkoutBtn');
-
-  cartToggle.addEventListener('click', () => {
-    cartModal.classList.remove('hidden');
-    setTimeout(() => {
-      cartPanel.classList.remove('translate-x-full');
-    }, 10);
-  });
-
-  closeCart.addEventListener('click', closeCartModal);
-  cartModal.addEventListener('click', (e) => {
-    if (e.target === cartModal) {
-      closeCartModal();
-    }
-  });
-
-  checkoutBtn.addEventListener('click', processCheckout);
-
-  function closeCartModal() {
-    cartPanel.classList.add('translate-x-full');
-    setTimeout(() => {
-      cartModal.classList.add('hidden');
-    }, 300);
-  }
-}
-
 function addToCart(product, quantity) {
   const existingItem = cart.find((item) => item.id === product.id);
 
@@ -175,10 +165,11 @@ function addToCart(product, quantity) {
   } else {
     cart.push({
       id: product.id,
+      image: product.image,
       name: product.name,
       price: product.price,
       quantity: quantity,
-      image: product.image,
+      category: product.category,
     });
   }
 
@@ -186,51 +177,41 @@ function addToCart(product, quantity) {
 }
 
 function updateCartDisplay() {
-  const cartCount = document.getElementById('cartCount');
-  const cartItems = document.getElementById('cartItems');
-  const cartTotal = document.getElementById('cartTotal');
+  main.deleteAllAtSectionTwo('ecommerce-cart');
+  cart.forEach((item) => {
+    const data = {
+      id: item.id,
+      action: {
+        module: 'E-Commerce',
+        submodule: 'Cart',
+        description: 'Add to cart',
+      },
+    };
+    main.createAtSectionTwo('ecommerce-cart', data, (result) => {
+      result.dataset.itemid = item.id;
+      result.innerHTML += `
+        <div class="overflow-hidden text-ellipsis">
+          ${result.dataset.module}<br>
+          <small>
+            ${result.dataset.submodule}<br>
+            ${result.dataset.description}
+          </small>
+        </div>
+        <div class="overflow-hidden text-ellipsis">
+          ${item.id}<br>
+          <small>
+            ${Object.entries(item)
+              .filter(([key]) => !['id'].includes(key))
+              .map(([_, value]) => (value ? `${value}` : 'N/A'))
+              .filter(Boolean)
+              .join('<br>')}
+          </small>
+        </div>
+      `;
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  if (totalItems > 0) {
-    cartCount.textContent = totalItems;
-    cartCount.classList.remove('hidden');
-  } else {
-    cartCount.classList.add('hidden');
-  }
-
-  cartItems.innerHTML = cart
-    .map(
-      (item) => `
-    <div class="flex items-center gap-3 p-3 border-b">
-      <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded">
-      <div class="flex-1">
-        <h4 class="font-semibold text-sm">${item.name}</h4>
-        <p class="text-gray-600 text-xs">₱${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="updateCartItemQuantity('${item.id}', -1)" class="w-6 h-6 rounded-full bg-gray-200 text-sm">-</button>
-        <span class="text-sm w-8 text-center">${item.quantity}</span>
-        <button onclick="updateCartItemQuantity('${item.id}', 1)" class="w-6 h-6 rounded-full bg-gray-200 text-sm">+</button>
-      </div>
-    </div>
-  `
-    )
-    .join('');
-
-  cartTotal.textContent = `₱${totalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
-}
-
-function updateCartItemQuantity(productId, change) {
-  const item = cart.find((item) => item.id === productId);
-  if (item) {
-    item.quantity += change;
-    if (item.quantity <= 0) {
-      cart = cart.filter((cartItem) => cartItem.id !== productId);
-    }
-    updateCartDisplay();
-  }
+      accesscontrol.log(data.action, item);
+    });
+  });
 }
 
 function processCheckout() {
@@ -283,34 +264,3 @@ function processCheckout() {
     loadInventoryItems();
   }, 1000);
 }
-
-function initializeSearchAndFilter() {
-  // const searchInput = document.getElementById('searchProducts');
-  // const filterSelect = document.getElementById('filterCategory');
-
-  // searchInput.addEventListener('input', filterProducts);
-  // filterSelect.addEventListener('change', filterProducts);
-
-  function filterProducts() {
-    const searchTerm = searchInput.value.toLowerCase();
-    const selectedCategory = filterSelect.value;
-    const productCards = document.querySelectorAll('.products-grid > div');
-
-    productCards.forEach((card) => {
-      const productName = card.querySelector('h2').textContent.toLowerCase();
-      const productCategory = card.dataset.category;
-
-      const matchesSearch = productName.includes(searchTerm);
-      const matchesCategory = !selectedCategory || productCategory === selectedCategory;
-
-      if (matchesSearch && matchesCategory) {
-        card.style.display = 'block';
-      } else {
-        card.style.display = 'none';
-      }
-    });
-  }
-}
-
-// Make updateCartItemQuantity globally accessible
-window.updateCartItemQuantity = updateCartItemQuantity;

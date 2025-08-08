@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import billing from './billing.js';
+import invoicing from './invoicing.js';
 import accesscontrol from './accesscontrol.js';
 
 // default codes:
@@ -93,7 +93,7 @@ function updateDateAndTime() {
 function registerNewUser(image, firstName, lastName, emailContact) {
   const name = firstName + ':://' + lastName;
   const columnsData = [
-    'id_random',
+    'id_U_random',
     {
       type: 'user',
       data: ['', image, name, emailContact],
@@ -284,10 +284,10 @@ function userVoidBtnFunction(user) {
 
     accesscontrol.log(action, data);
     if (user.dataset.amount) {
-      main.deleteAtSectionOne('billing', 1, user.dataset.tid);
-      main.deleteAtSectionOne('billing', 2, user.dataset.tid);
+      main.deleteAtSectionOne('invoicing', 1, user.dataset.tid);
+      main.deleteAtSectionOne('invoicing', 2, user.dataset.tid);
     } else {
-      main.deleteAtSectionTwo('billing', user.dataset.tid);
+      main.deleteAtSectionTwo('invoicing', user.dataset.tid);
     }
     main.deleteAtSectionOne('checkin-daily', 2, user.dataset.id);
 
@@ -327,7 +327,7 @@ function processCheckinUser(user) {
       };
 
       accesscontrol.log(action, data);
-      billing.processPayment(data);
+      invoicing.processPayment(data);
 
       main.createRedDot('checkin-daily', 2);
       main.toast(result.dataset.name.split(':://')[0] + ', is now ready for check-in payment!', 'success');

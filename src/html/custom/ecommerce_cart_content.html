@@ -4,34 +4,72 @@
     id="ecommerceCartTab1Empty"
     class="h-full content-center text-center text-sm font-bold text-gray-400 2xl:text-base"
   >
-    No items here yet
+    No available products yet
   </div>
-  <div id="ecommerceCartTab1" class="grid grid-cols-4 gap-2 2xl:gap-6"></div>
+  <div id="ecommerceCartTab1" class="grid grid-cols-4 gap-2 2xl:grid-cols-3 2xl:gap-6"></div>
 
   <!-- 👇 product to clone (use id: ecommerceCartProduct) 👇 -->
   <div
     id="ecommerceCartProduct"
-    class="group hidden w-full max-w-xs self-start overflow-hidden rounded-xl bg-white shadow-lg transition-all hover:scale-[1.02]"
+    class="group relative mx-auto hidden w-full max-w-sm overflow-hidden rounded-2xl border border-yellow-200 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-yellow-200/50"
   >
-    <img src="/src/images/client_logo.jpg" class="h-40 w-full rounded-t-xl object-cover" />
-    <div class="p-4">
-      <h2 class="text-lg font-bold text-gray-800 group-hover:text-blue-600">${productName}</h2>
-      <p class="mt-1 text-sm capitalize text-gray-500">${productCategory}</p>
-      <p class="${statusColor} text-xs font-semibold">${stockText}</p>
-      <div class="mt-4 flex items-center justify-between">
-        <span class="text-xl font-semibold text-green-600">₱${productPrice}</span>
-        <div class="flex items-center gap-2">
-          <button class="decrease-btn h-8 w-8 rounded-full bg-gray-200 text-xl font-bold hover:bg-gray-300">–</button>
-          <span class="quantity-display w-6 text-center">0</span>
-          <button class="increase-btn h-8 w-8 rounded-full bg-blue-500 text-xl font-bold text-white hover:bg-blue-600">
+    <div class="relative overflow-hidden rounded-t-2xl">
+      <div
+        class="${productMeasurementStatus} absolute left-0 top-0 z-10 m-2 rounded-lg border border-white/20 bg-black/80 px-2 shadow-lg backdrop-blur-md"
+      >
+        <span
+          class="bg-gradient-to-r from-yellow-300 to-amber-300 bg-clip-text text-xs font-semibold uppercase tracking-wide text-transparent 2xl:text-sm 2xl:font-bold"
+        >
+          ${productMeasurement} ${productMeasurementUnit}
+        </span>
+      </div>
+      <img
+        src="/src/images/client_logo.jpg"
+        class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <div
+        class="absolute bottom-3 right-3 rounded-lg border border-white/20 bg-black/80 px-3 py-2 shadow-lg backdrop-blur-md"
+      >
+        <span class="bg-gradient-to-r from-yellow-300 to-amber-300 bg-clip-text text-xl font-bold text-transparent">
+          ₱${productPrice}
+        </span>
+      </div>
+    </div>
+
+    <div class="space-y-4 p-4">
+      <div class="space-y-1">
+        <h2 class="truncate text-lg font-bold leading-tight text-gray-900">${productName}</h2>
+        <p class="text-sm font-medium capitalize text-gray-600">${productCategory}</p>
+      </div>
+
+      <div
+        class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm"
+      >
+        <p class="${statusColor} text-xs font-semibold uppercase tracking-wide 2xl:text-sm 2xl:font-bold">
+          ${stockText}
+        </p>
+        <div class="flex items-center justify-between gap-2">
+          <button
+            class="decrease-btn flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-r from-red-400 to-red-500 text-sm font-bold text-white transition-colors duration-200 hover:from-red-500 hover:to-red-600"
+          >
+            –
+          </button>
+          <span class="quantity-display min-w-6 px-1 text-center text-sm font-bold text-gray-800">0</span>
+          <button
+            class="increase-btn flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-r from-yellow-400 to-amber-500 text-sm font-bold text-white transition-colors duration-200 hover:from-yellow-500 hover:to-amber-600"
+          >
             +
           </button>
         </div>
       </div>
+
       <button
-        class="add-to-cart-btn opacity-50 cursor-not-allowed mt-3 w-full rounded-lg bg-green-500 py-2 font-semibold text-white transition-all hover:bg-green-600"
+        class="add-to-cart-btn relative w-full cursor-not-allowed overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 py-3 text-base font-bold text-white opacity-50 transition-all duration-500 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-600 hover:shadow-lg hover:shadow-yellow-200/50"
       >
-        Add to Cart 🛒
+        <span class="relative z-10">Add to Cart 🛒</span>
+        <div
+          class="absolute inset-0 translate-x-full skew-x-12 bg-gradient-to-r from-white/30 via-white/10 to-white/30 transition-transform duration-700 group-hover:translate-x-0"
+        ></div>
       </button>
     </div>
   </div>
@@ -42,16 +80,16 @@
     id="ecommerceCartTab2Empty"
     class="h-full content-center text-center text-sm font-bold text-gray-400 2xl:text-base"
   >
-    No items here yet
+    No best selling products yet
   </div>
-  <div id="ecommerceCartTab2" class="grid grid-cols-4 gap-2 2xl:gap-6"></div>
+  <div id="ecommerceCartTab2" class="grid grid-cols-4 gap-2 2xl:grid-cols-3 2xl:gap-6"></div>
 </div>
 <div data-sectionindex="1" data-tabindex="3" class="h-[375px]">
   <div
     id="ecommerceCartTab3Empty"
     class="h-full content-center text-center text-sm font-bold text-gray-400 2xl:text-base"
   >
-    No items here yet
+    No least selling products yet
   </div>
-  <div id="ecommerceCartTab3" class="grid grid-cols-4 gap-2 2xl:gap-6"></div>
+  <div id="ecommerceCartTab3" class="grid grid-cols-4 gap-2 2xl:grid-cols-3 2xl:gap-6"></div>
 </div>

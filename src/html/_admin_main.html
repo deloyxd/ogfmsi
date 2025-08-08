@@ -197,17 +197,15 @@
           data-subtitle="Sales Draft Management"
           data-middletext='<p class="skew-x-12 text-white">📆 Live date ⌚ Live time</p>'
         ></div>
-        <div
-          id="section-stats"
-        ></div>
+        <div id="section-stats"></div>
         <div
           id="section-content"
           data-sectioncount="2"
-          data-tabtitles="All Available Items::Best Selling Items::Least Selling Items"
-          data-subtitles="No filter::Fast moving items::Slow moving items"
+          data-tabtitles="All Available Products::Best Selling Products::Least Selling Products"
+          data-subtitles="Products with stocks::Fast moving products::Slow moving products"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="1"
-          data-sectiontwotitletexts="Cart::Items added to cart"
+          data-sectiontwotitletexts="Cart::List of items added to cart"
           data-sectiontwosettings="1"
           data-sectiontwoemptylist="No items yet"
           data-sectiontwobtntext="Checkout"
@@ -219,36 +217,34 @@
         id="ecommerce-stock-section"
         data-icons="fa-store::fa-warehouse"
         data-sectiontexts="E-Commerce::Stock"
-        data-color="yellow-orange-rose"
+        data-color="yellow-orange-cyan"
         class="section"
       >
         <div
           id="section-header"
           data-title="Stock"
           data-subtitle="Product Catalog"
-          data-middletext='<p class="skew-x-12 text-white">📆 Live date ⌚ Live time</p>'
-          data-mainbtntext="Add New Product 🛒"
+          data-mainbtntext="Register Product 🧊"
           data-subbtntext="Logs 📜"
         ></div>
         <div
           id="section-stats"
-          data-toggles="0::0::0::0"
-          data-startingtexts="::Avg::Avg::Avg"
-          data-highlighttexts="Total::Morning::Afternoon::Evening"
-          data-endingtexts="Sales::Sales::Sales::Sales"
+          data-toggles="0::0::0::0::0::0"
+          data-startingtexts="::::::::::"
+          data-highlighttexts="Unique::Low Stock::Out of Stock::Best Selling::Slow Moving"
+          data-endingtexts="Products::Products::Products::Products::Products"
         ></div>
         <div
           id="section-content"
           data-sectioncount="1"
-          data-tabtitles="All Stocks"
-          data-subtitles="No filter"
+          data-tabtitles="Unique Products::Low Stock Products::Out of Stock Products::Best Selling Products::Least Selling Products"
+          data-subtitles="All stocks::About to be out of stock::Dead stocks::Fast moving stocks::Slow moving stocks"
           data-sectiononesearchtext="Search keyword..."
-          data-sectiononesettings="1"
-          data-listemptytexts="No items yet"
-          data-listtitletexts="[Product ID//Product Name//Product Type//Quantity//Price//Status//Date Registered]"
-          data-listitembtnids="[itemDetailsBtn]"
-          data-listitembtntexts="[Details ⚙]"
-          data-listitembtncolors="[orange]"
+          data-listemptytexts="No unique products yet::No low stock products yet::No out of stock products yet::No fast moving stocks yet::No slow moving stocks yet"
+          data-listtitletexts="[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]"
+          data-listitembtnids="[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]"
+          data-listitembtntexts="[Details ⚙]::[Details ⚙]::[Details ⚙]::[Details ⚙]::[Details ⚙]"
+          data-listitembtncolors="[yellow]::[yellow]::[yellow]::[yellow]::[yellow]"
         ></div>
       </section>
 
@@ -321,7 +317,12 @@
         data-color="violet-fuchsia-red"
         class="section"
       >
-        <div id="section-header" data-title="Access Control" data-subtitle="System Access Management" data-mainbtntext="Manage 🔧"></div>
+        <div
+          id="section-header"
+          data-title="Access Control"
+          data-subtitle="System Access Management"
+          data-mainbtntext="Manage 🔧"
+        ></div>
         <div id="section-stats"></div>
         <div
           id="section-content"

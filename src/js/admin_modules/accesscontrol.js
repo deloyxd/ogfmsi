@@ -92,6 +92,30 @@ function actionDetailsBtnFunction(actionData) {
         },
       };
       break;
+    case 'product':
+      inputs = {
+        header: {
+          title: 'View Action Details 🔧',
+          subtitle: 'Product ID: ' + actionData.id,
+        },
+        image: {
+          src: actionData.image,
+          type: 'normal',
+          locked: true,
+          short: [
+            { placeholder: 'Product name', value: actionData.name, locked: true },
+            { placeholder: 'Price', value: actionData.price, locked: true },
+            { placeholder: 'Initial quantity', value: actionData.quantity, locked: true },
+          ],
+        },
+          short: [
+            { placeholder: 'Product category ID', value: actionData.category, locked: true },
+          ],
+        footer: {
+          main: 'Exit view',
+        },
+      };
+      break;
   }
   main.openModal('gray', inputs, main.closeModal);
 }
