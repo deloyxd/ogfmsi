@@ -225,7 +225,8 @@ async function loadSectionSilently(sectionName) {
         const sectionTwo = document.getElementById(`${sectionName}SectionContent`).children[1];
         setupSectionOne();
         setupSectionTwo();
-        if (containsCustomContents) await loadCustomContents(`/src/html/custom/${sectionName.replace(/-/g, '_')}_content.html`);
+        if (containsCustomContents)
+          await loadCustomContents(`/src/html/custom/${sectionName.replace(/-/g, '_')}_content.html`);
 
         function setupSectionOne() {
           Array.from(sectionOne.children).forEach((el, i) => {
@@ -303,7 +304,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled && cloneCount == 1 ? 325 + 140 : 325}px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? 373 + 140 : 373}px] 2xl:h-[${statsDisabled ? 325 + 140 : 325}px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
@@ -338,10 +339,16 @@ async function loadSectionSilently(sectionName) {
 
             clone.classList.remove('hidden');
             sectionOne.appendChild(clone);
+
+            if (statsDisabled) {
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${425 + 140}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${425 + 140}px]`);
+            }
           }
         }
 
         function setupSectionTwo() {
+          let totalSectionTwoListContainerHeight = 401;
           if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].textContent = dataset['sectiontwotitletexts'][0];
@@ -355,7 +362,6 @@ async function loadSectionSilently(sectionName) {
             const sectionTwoContent = sectionTwo.children[0].children[1];
             const sectionTwoListContainer = document.createElement('div');
             sectionTwoListContainer.className = 'section-content-list-empty w-full rounded-lg bg-gray-200';
-            let totalSectionTwoListContainerHeight = 401;
             if (dataset['sectiontwoemptylist']) {
               const sectionTwoListEmpty = document.createElement('div');
               sectionTwoListEmpty.id = `${sectionName}SectionTwoListEmpty`;
@@ -446,12 +452,14 @@ async function loadSectionSilently(sectionName) {
             sectionTwoListContainer.classList.add(`h-[${totalSectionTwoListContainerHeight}px]`);
             sectionTwo.classList.remove('hidden');
           } else {
-            if (statsDisabled) {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${425 + 140}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${425 + 140}px]`);
-            }
             document.getElementById(`${sectionName}SectionContent`).children[0].classList.remove('2xl:col-span-8');
             document.getElementById(`${sectionName}SectionContent`).children[0].classList.add('2xl:col-span-12');
+          }
+
+          if (statsDisabled && sectionTwo.children[0].children[1].children[0]) {
+            sectionTwo.children[0].children[1].children[0].classList.add(
+              `h-[${totalSectionTwoListContainerHeight + 140}px]`
+            );
           }
         }
 
@@ -460,11 +468,33 @@ async function loadSectionSilently(sectionName) {
             const response = await fetch(fetchCustomHtmlFile);
             if (response.ok) {
               const html = await response.text();
-              const contentParent = sectionOne.parentElement.parentElement.children[1];
-              contentParent.innerHTML += html;
-              const sectionTwoContent = contentParent.lastElementChild.cloneNode(true);
-              contentParent.lastElementChild.remove();
-              sectionTwo.children[0].children[1].children[0].appendChild(sectionTwoContent);
+              const tempCustomContent = document.createElement('div');
+              tempCustomContent.innerHTML = html;
+              const customContentSectionTwo = tempCustomContent.querySelector('[data-sectionindex="2"]');
+              if (customContentSectionTwo) {
+                const sectionTwoContent = customContentSectionTwo.cloneNode(true);
+                customContentSectionTwo.remove();
+                sectionTwo.children[0].children[1].children[0].appendChild(sectionTwoContent);
+                if (statsDisabled) {
+                  sectionTwoContent.classList.add(`h-[${400 + 140}px]`);
+                }
+              }
+              const customContentSectionOne = tempCustomContent.querySelector('[data-sectionindex="1"]');
+              if (customContentSectionOne) {
+                const customTabs = tempCustomContent.querySelectorAll('[data-sectionindex="1"]');
+                const sectionOneContent = sectionOne.parentElement.parentElement.children[1];
+                for (let i = 1; i <= customTabs.length; i++) {
+                  const customContent = tempCustomContent.querySelector(`[data-tabindex="${i}"]`).cloneNode(true);
+                  sectionOneContent.appendChild(customContent);
+                  if (statsDisabled) {
+                    customContent.classList.add(`h-[${375 + 140}px]`);
+                  }
+                }
+                const removeSectionTwo = sectionOneContent.querySelector('[data-sectionindex="2"]');
+                if (removeSectionTwo) {
+                  removeSectionTwo.remove();
+                }
+              }
             }
           } catch (error) {
             console.warn(`Could not load custom content for ${sectionName}:`, error);
@@ -979,6 +1009,14 @@ export function checkIfEmpty(inputs) {
   return hasEmpty;
 }
 
+export function getAllSectionOne(sectionName, tabIndex, callback) {
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  const items = emptyText.parentElement.parentElement.children;
+  callback(items);
+}
+
+export function getAllSectionTwo(sectionName, callback) {}
+
 export function findAtSectionOne(sectionName, findValue, findType, tabIndex, callback) {
   if (checkIfEmpty(findValue)) return;
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
@@ -1287,6 +1325,8 @@ export default {
   closeConfirmationModal,
   toast,
   checkIfEmpty,
+  getAllSectionOne,
+  getAllSectionTwo,
   findAtSectionOne,
   findAtSectionTwo,
   createAtSectionOne,
