@@ -836,7 +836,7 @@ function setupModalBase(defaultData, inputs, callback) {
       const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement.parentElement;
       const spinnerContainer = originalContainer.cloneNode(true);
       const label = spinnerContainer.children[0];
-      label.textContent = spinnerGroup.label;
+      label.textContent = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
 
       const selectElement = spinnerContainer.querySelector('select');
       selectElement.id = `input-${type}-${index + 1}`;
@@ -991,6 +991,22 @@ export function toast(message, type) {
   }).showToast();
 }
 
+export function isValidPaymentAmount(amount) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    return false;
+  }
+
+  if (amount <= 0) {
+    return false;
+  }
+
+  if (Math.round(amount * 100) !== amount * 100) {
+    return false;
+  }
+
+  return true;
+}
+
 export function checkIfEmpty(inputs) {
   let hasEmpty = false;
 
@@ -998,10 +1014,13 @@ export function checkIfEmpty(inputs) {
   if (inputs.image) inputs.image.short.forEach((item) => check(item));
   if (inputs.short) inputs.short.forEach((item) => check(item));
   if (inputs.large) inputs.large.forEach((item) => check(item));
+  if (inputs.spinner) inputs.spinner.forEach((item) => check(item));
 
   function check(item) {
-    if (item.required && item.value.trim() === '' && !hasEmpty) {
-      hasEmpty = true;
+    if (item.required && !hasEmpty) {
+      if ((item.selected && item.selected == 0) || (item.value && item.value.trim() === '')) {
+        hasEmpty = true;
+      }
     }
   }
 
@@ -1012,7 +1031,9 @@ export function checkIfEmpty(inputs) {
 export function getAllSectionOne(sectionName, tabIndex, callback) {
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const items = emptyText.parentElement.parentElement.children;
-  callback(items);
+  const result = Array.from(items);
+  result.shift();
+  callback(result);
 }
 
 export function getAllSectionTwo(sectionName, callback) {}
@@ -1108,9 +1129,9 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         if (lowerColumn.includes('random')) {
           const randomId_A = Math.floor(100000 + Math.random() * 900000);
           const randomId_B = Math.floor(100000 + Math.random() * 900000);
-          idValue = 'U' + randomId_A + '' + randomId_B;
+          idValue = columnData.split('_')[1] + randomId_A + '' + randomId_B;
         } else {
-          idValue = columnData.split('_')[1];
+          idValue = columnData.split('_')[2];
         }
 
         setCellContent(index, cell, idValue);
@@ -1160,6 +1181,8 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         }
       }
 
+      newRow.dataset['custom' + index] = columnData;
+
       setCellContent(index, cell, columnData);
       return;
     }
@@ -1170,7 +1193,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
       cell.innerHTML = `
           <div class="flex items-center gap-3">
             <img src="${userData[1] ? userData[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
-            <p>${userData[2].includes(':://') ? userData[2].split(':://')[0] + ' ' + userData[2].split(':://')[1] : userData[2]}</p>
+            <p>${userData[2].includes(':://') ? userData[2].replace(/\:\:\/\//g,' ') : userData[2]}</p>
           </div>
         `;
       if (index < columnsData.length - 1) {
@@ -1178,15 +1201,28 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
         cell.classList.add('2xl:w-[250px]');
       }
 
-      newRow.dataset.userid = userData[0];
       newRow.dataset.image = userData[1];
       newRow.dataset.name = userData[2];
       newRow.dataset.contact = userData[3];
       return;
     }
 
-    if (typeof columnData === 'object') {
-      setCellContent(index, cell, JSON.stringify(columnData));
+    if (columnData.type && columnData.type.toLowerCase().includes('product')) {
+      const productData = columnData.data;
+
+      cell.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${productData[1] ? productData[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
+            <p>${productData[2].includes(':://') ? productData[2].replace(/\:\:\/\//g,' ') : productData[2]}</p>
+          </div>
+        `;
+      if (index < columnsData.length - 1) {
+        cell.classList.add('w-[200px]');
+        cell.classList.add('2xl:w-[250px]');
+      }
+
+      newRow.dataset.image = productData[1];
+      newRow.dataset.name = productData[2];
       return;
     }
 
@@ -1238,10 +1274,10 @@ export function createAtSectionTwo(sectionName, data, callback) {
     if (data.id.includes('random')) {
       const randomId_A = Math.floor(100000 + Math.random() * 900000);
       const randomId_B = Math.floor(100000 + Math.random() * 900000);
-      const id = 'T' + randomId_A + '' + randomId_B;
+      const id = data.id.split('-')[0] + randomId_A + '' + randomId_B;
       result.dataset.id = id;
     } else {
-      result.dataset.id = data.id;
+      result.dataset.id = data.id.split('-')[1];
     }
   }
 
@@ -1249,6 +1285,7 @@ export function createAtSectionTwo(sectionName, data, callback) {
   result.dataset.actorname = 'Jestley';
   result.dataset.actorrole = 'Admin';
   result.dataset.module = data.action.module;
+  if (data.action.submodule) result.dataset.submodule = data.action.submodule;
   result.dataset.description = data.action.description;
 
   result.innerHTML = `
@@ -1267,7 +1304,6 @@ export function createAtSectionTwo(sectionName, data, callback) {
     </div>
   `;
 
-  createRedDot(sectionName, 'main');
   result.addEventListener('mouseover', function () {
     result.children[0].classList.add('hidden');
   });
@@ -1299,6 +1335,14 @@ export function deleteAtSectionTwo(sectionName, id) {
   }
 }
 
+export function deleteAllAtSectionTwo(sectionName) {
+  const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
+  const items = emptyText.parentElement.children;
+  for (let i = 2; i < items.length; i++) {
+    items[i].remove();
+  }
+}
+
 export function createRedDot(sectionName, type) {
   if (typeof type === 'string' && !type.includes('section')) {
     document
@@ -1324,6 +1368,7 @@ export default {
   closeModal,
   closeConfirmationModal,
   toast,
+  isValidPaymentAmount,
   checkIfEmpty,
   getAllSectionOne,
   getAllSectionTwo,
@@ -1333,6 +1378,7 @@ export default {
   createAtSectionTwo,
   deleteAtSectionOne,
   deleteAtSectionTwo,
+  deleteAllAtSectionTwo,
   createRedDot,
 };
 

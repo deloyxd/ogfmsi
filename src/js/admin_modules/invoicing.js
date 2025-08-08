@@ -81,7 +81,7 @@ function sectionTwoMainBtnFunction() {
     inputs.header.title = `${userProperName} 🔏`;
 
     main.openModal('green', inputs, (result) => {
-      if (!isValidPaymentAmount(+result.short[0].value)) {
+      if (!main.isValidPaymentAmount(+result.short[0].value)) {
         main.toast(`Invalid amount: ${result.short[0].value}`, 'error');
         return;
       }
@@ -94,25 +94,9 @@ function sectionTwoMainBtnFunction() {
   });
 }
 
-function isValidPaymentAmount(amount) {
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
-    return false;
-  }
-
-  if (amount <= 0) {
-    return false;
-  }
-
-  if (Math.round(amount * 100) !== amount * 100) {
-    return false;
-  }
-
-  return true;
-}
-
 function completeTransaction(id, result) {
   const columnsData = [
-    'id_' + id,
+    'id_T_' + id,
     {
       type: 'user',
       data: [
@@ -129,7 +113,7 @@ function completeTransaction(id, result) {
       main.createAtSectionOne('invoicing', columnsData, 2, '', (editedResult, status2) => {
         if (status2 == 'success') {
           const action = {
-            module: 'invoicing',
+            module: 'Invoicing',
             description: 'Transaction complete',
           };
           const data = {
@@ -179,9 +163,9 @@ function completeTransaction(id, result) {
 
 export function processPayment(user) {
   const data = {
-    id: 'random',
+    id: 'T_random',
     action: {
-      module: 'invoicing',
+      module: 'Invoicing',
       description: 'Enqueue check-in transaction',
     },
   };
@@ -197,24 +181,24 @@ export function processPayment(user) {
 
     result.dataset.userid = user.id;
     result.innerHTML += `
-    <div class="overflow-hidden text-ellipsis">
-      ${result.dataset.id}<br>
-      <small>
-        ${result.dataset.module}<br>
-        ${result.dataset.description}
-      </small>
-    </div>
-    <div class="overflow-hidden text-ellipsis">
-      ${user.id}<br>
-      <small>
-        ${Object.entries(user)
-          .filter(([key]) => !['id'].includes(key))
-          .map(([_, value]) => (value ? `${value}` : 'N/A'))
-          .filter(Boolean)
-          .join('<br>')}
-      </small>
-    </div>
-  `;
+      <div class="overflow-hidden text-ellipsis">
+        ${result.dataset.id}<br>
+        <small>
+          ${result.dataset.module}<br>
+          ${result.dataset.description}
+        </small>
+      </div>
+      <div class="overflow-hidden text-ellipsis">
+        ${user.id}<br>
+        <small>
+          ${Object.entries(user)
+            .filter(([key]) => !['id'].includes(key))
+            .map(([_, value]) => (value ? `${value}` : 'N/A'))
+            .filter(Boolean)
+            .join('<br>')}
+        </small>
+      </div>
+    `;
 
     data.action.id = result.dataset.id;
     user.usertype = 'daily pass';

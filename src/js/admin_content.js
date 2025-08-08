@@ -22,6 +22,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     }
 
     main.sharedState.activeTab = tabIndex;
+    document.dispatchEvent(new Event('newTab'));
 
     const searchInput = document.getElementById(`${main.sharedState.sectionName}SectionOneSearch`);
     searchInput.value = '';

@@ -1,197 +1,182 @@
 import main from '../admin_main.js';
-import billing from './invoicing.js';
 import accesscontrol from './accesscontrol.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== 'ecommerce-stock') return;
-
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
-
-  // subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-  // subBtn.classList.remove('hidden');
-  // subBtn.addEventListener('click', subBtnFunction);
-
-  // sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
-  // sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
 });
 
 function mainBtnFunction() {
   const inputs = {
     header: {
-      title: 'Register New Product 🛒',
-      subtitle: 'New product form',
+      title: 'Register Product 🧊',
+      subtitle: 'Unique product form',
     },
     image: {
       src: '/src/images/client_logo.jpg',
       type: 'normal',
       short: [
-        { placeholder: 'Product Name', value: '', required: true },
-        { placeholder: 'Quantity', value: '', required: true },
+        { placeholder: 'Product name', value: '', required: true },
         { placeholder: 'Price', value: '', required: true },
+        { placeholder: 'Initial quantity', value: '', required: true },
       ],
     },
+    short: [{ placeholder: 'Product measurement value', value: '' }],
     spinner: [
       {
-        label: 'Product Type',
-        placeholder: 'Select product type',
+        label: 'Product category',
+        placeholder: 'Select product category',
+        selected: 0,
+        required: true,
+        options: [
+          { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
+          { value: 'food-meals', label: 'Food & Meals' },
+          { value: 'beverages', label: 'Beverages' },
+          { value: 'fitness-equipment', label: 'Fitness Equipment' },
+          { value: 'apparel', label: 'Apparel' },
+          { value: 'merchandise', label: 'Merchandise' },
+          { value: 'other', label: 'Other' },
+        ],
+      },
+      {
+        label: 'Product measurement unit',
+        placeholder: 'Select product measurement unit',
         selected: 0,
         options: [
-          { value: 'supplement', label: 'Supplement' },
-          { value: 'food', label: 'Food' },
-          { value: 'merchandise', label: 'Merchandise' },
-          { value: 'beverages', label: 'Beverages' },
+          // Weight
+          { value: 'mg', label: 'Weight: mg' },
+          { value: 'g', label: 'Weight: g' },
+          { value: 'kg', label: 'Weight: kg' },
+          { value: 'oz', label: 'Weight: oz' },
+          { value: 'lb', label: 'Weight: lb' },
+
+          // Volume
+          { value: 'ml', label: 'Volume: ml' },
+          { value: 'l', label: 'Volume: l' },
+
+          // Countable units
+          { value: 'unit', label: 'Count: unit(s)' },
+          { value: 'piece', label: 'Count: piece(s)' },
+          { value: 'set', label: 'Count: set(s)' },
+          { value: 'pair', label: 'Count: pair(s)' },
+          { value: 'item', label: 'Count: item(s)' },
+          { value: 'pack', label: 'Count: pack(s)' },
+          { value: 'box', label: 'Count: box(es)' },
+          { value: 'bar', label: 'Count: bar(s)' },
+          { value: 'packet', label: 'Count: packet(s)' },
+          { value: 'capsule', label: 'Count: capsule(s)' },
+          { value: 'tablet', label: 'Count: tablet(s)' },
+          { value: 'softgel', label: 'Count: softgel(s)' },
+          { value: 'scoop', label: 'Count: scoop(s)' },
+          { value: 'serving', label: 'Count: serving(s)' },
+          { value: 'portion', label: 'Count: portion(s)' },
+          { value: 'slice', label: 'Count: slice(s)' },
+          { value: 'meal', label: 'Count: meal(s)' },
+          { value: 'combo', label: 'Count: combo(s)' },
+          { value: 'bowl', label: 'Count: bowl(s)' },
+          { value: 'plate', label: 'Count: plate(s)' },
+          { value: 'cup', label: 'Count: cup(s)' },
+          { value: 'bottle', label: 'Count: bottle(s)' },
+          { value: 'can', label: 'Count: can(s)' },
+          { value: 'glass', label: 'Count: glass(es)' },
+          { value: 'jug', label: 'Count: jug(s)' },
+          { value: 'shot', label: 'Count: shot(s)' },
+
+          // Size / Dimension
+          { value: 'inch', label: 'Size: inch(es)' },
+          { value: 'cm', label: 'Size: cm' },
+          { value: 'mm', label: 'Size: mm' },
+          { value: 'size', label: 'Size: size(s)' },
+          { value: 'level', label: 'Size: level(s)' },
         ],
       },
     ],
   };
 
   main.openModal(mainBtn, inputs, (result) => {
-    registerNewUser(
+    if (!main.isValidPaymentAmount(+result.image.short[1].value)) {
+      main.toast(`Invalid price: ${result.image.short[1].value}`, 'error');
+      return;
+    }
+    if (!main.isValidPaymentAmount(+result.image.short[2].value)) {
+      main.toast(`Invalid quantity: ${result.image.short[2].value}`, 'error');
+      return;
+    }
+    if (result.spinner[0].selected < 1) {
+      main.toast(`Invalid category`, 'error');
+      return;
+    }
+    registerNewProduct(
       result.image.src,
       result.image.short[0].value,
+      +result.image.short[1].value,
+      +result.image.short[2].value,
+      result.short[0].value?.trim() || '',
       result.spinner[0].options[result.spinner[0].selected - 1].value,
-      result.image.short[1].value,
-      result.image.short[2].value,
+      result.spinner[1].selected > 0 ? result.spinner[1].options[result.spinner[1].selected - 1].value : ''
     );
   });
 }
 
-function sectionTwoMainBtnFunction() {
-  const searchInput = document.getElementById('ecommerce-stockSectionTwoSearch');
-  const searchValue = searchInput.value;
-
-  main.findAtSectionOne('ecommerce-stock', searchValue, 'any', 1, (result) => {
-    const product = result;
-
-    if (!product) {
-      main.toast("There's no product with that ID!", 'error');
-      return;
-    }
-
-    main.findAtSectionOne('ecommerce-stock', product.dataset.id, 'equal', 2, (pendingResult) => {
-      if (pendingResult) {
-        main.openConfirmationModal('Multiple pending transactions for this product.', () => {
-          processCheckinUser(product);
-          searchInput.value = '';
-          main.closeConfirmationModal();
-        });
-        return;
-      }
-
-      processCheckinUser(product);
-      searchInput.value = '';
-    });
-  });
-}
-
-function registerNewUser(image, productName, productCategory, quantity, price) {
-  // Validate quantity and price (must be numeric only)
-  const isNumeric = (val) => /^\d+(\.\d+)?$/.test(val); // Accepts whole and decimal numbers
-
-  if (!isNumeric(quantity)) {
-    main.toast('Quantity must be a valid number (no letters)', 'error');
-    return;
-  }
-
-  if (!isNumeric(price)) {
-    main.toast('Price must be a valid number (no letters)', 'error');
-    return;
-  }
-
- const quantityValue = parseInt(quantity);
-let status = '';
-
-if (quantityValue === 0) {
-  status = '<p class="text-gray-800 font-bold">Out of Stock⚠️</p>';
-} else if (quantityValue <= 10) {
-  status = '<p class="text-red-700 font-bold">Super Low Stock‼️</p>';
-} else if (quantityValue <= 50) {
-  status = '<p class="text-amber-500 font-bold">Low Stock⚠️</p>';
-} else {
-  status = '<p class="text-emerald-600 font-bold">High Stock</p>';
-}
-
-  const formattedPrice = `₱${parseFloat(price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
+function registerNewProduct(image, name, price, quantity, measurement, category, measurementUnit) {
   const columnsData = [
-    'id_random',
+    'id_P_random',
     {
-      type: 'user',
-      data: ['', image, productName],
+      type: 'product',
+      data: ['', image, name.replace(/\s+/g, ':://')],
     },
-    productCategory,
-    quantity,
-    formattedPrice,
-    status,
+    '₱' + price,
+    quantity + '',
+    getStatus(quantity),
+    measurement,
+    measurementUnit,
+    category,
     'custom_date_today',
   ];
 
-  main.createAtSectionOne('ecommerce-stock', columnsData, 1, productName, (generated) => {
-    const action = {
-      module: 'Store',
-      submodule: 'Selling',
-      description: 'Add product',
-    };
-    const data = {
-      id: generated.id,
-      image: image,
-      product_name: productName,
-      product_category: productCategory,
-      product_quantity: quantity,
-      product_price: formattedPrice,
-      date: generated.date,
-      type: 'user',
-    };
-    accesscontrol.log(action, data);
+  main.createAtSectionOne('ecommerce-stock', columnsData, 1, name, (result, status) => {
+    if (status == 'success') {
+      const action = {
+        module: 'E-Commerce',
+        submodule: 'Stock',
+        description: 'Register product',
+      };
+      const data = {
+        id: result.dataset.id,
+        image: image,
+        name: name,
+        price: price,
+        quantity: quantity,
+        measurement: measurement,
+        measurementUnit: measurementUnit,
+        category: category,
+        date: result.dataset.date,
+        type: 'product',
+      };
+      accesscontrol.log(action, data);
 
-    main.createRedDot('ecommerce-stock', 1);
-    main.toast(`${productName}, successfully registered!`, 'success');
-    main.closeModal();
+      main.createRedDot('ecommerce-stock', 1);
+      main.toast(`${name}, successfully registered!`, 'success');
+      main.closeModal();
+    } else {
+      main.toast('Error: Product duplication detected: ' + result.dataset.id, 'error');
+    }
   });
 }
 
-function processCheckinUser(product) {
-  const status = parseInt(product.dataset.quantity) <= 50 ? 'Low Stock' : 'High Stock';
-  const statusColumn = {
-    text: status,
-  };
-
-  const columnsData = [
-    'id_' + product.dataset.id,
-    {
-      type: 'user',
-      data: [product.dataset.id, product.dataset.image, product.dataset.productName],
-    },
-    product.dataset.productType,
-    product.dataset.quantity,
-    product.dataset.price,
-    statusColumn,
-    'custom_time_Pending',
-  ];
-
-  main.createAtSectionOne('ecommerce-stock', columnsData, 5, '', () => {
-    const action = {
-      module: 'Store',
-      submodule: 'Selling',
-      description: 'Process selling transaction',
-    };
-    const data = {
-      id: product.dataset.id,
-      image: product.dataset.image,
-      productName: product.dataset.productName,
-      productCategory: product.dataset.productCategory,
-      quantity: product.dataset.quantity,
-      price: product.dataset.price,
-      time: 'Pending',
-      type: 'user',
-    };
-    accesscontrol.log(action, data);
-    billing.processPayment(data);
-
-    main.createRedDot('ecommerce-stock', 2);
-    main.toast(`${product.dataset.productName}, is now ready for checkout!`, 'success');
-  });
+function getStatus(quantity) {
+  if (quantity == 0) {
+    return '<p class="text-gray-800 font-bold">Out of Stock ⚠️</p>';
+  } else if (quantity <= 10) {
+    return '<p class="text-red-700 font-bold">Super Low Stock ‼️</p>';
+  } else if (quantity <= 50) {
+    return '<p class="text-amber-500 font-bold">Low Stock ⚠️</p>';
+  } else {
+    return '<p class="text-emerald-600 font-bold">High Stock ✅</p>';
+  }
 }
+
+function refreshAllTabs() {}

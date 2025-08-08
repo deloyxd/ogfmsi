@@ -22,6 +22,15 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   setupChartTwo();
 });
 
+document.addEventListener('newTab', function () {
+  if (main.sharedState.sectionName != 'dashboard') return;
+  if (main.sharedState.activeTab == 2) {
+    document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.remove('hidden');
+  } else {
+    document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.add('hidden');
+  }
+});
+
 const maxAnnouncementCount = 3;
 let announcementCount = 0;
 
