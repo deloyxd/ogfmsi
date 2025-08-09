@@ -182,6 +182,13 @@ export function processPayment(user) {
     result.dataset.userid = user.id;
     result.innerHTML += `
       <div class="overflow-hidden text-ellipsis">
+        ${result.dataset.actorid}<br>
+        <small>
+          ${result.dataset.actorname}<br>
+          ${result.dataset.actorrole}
+        </small>
+      </div>
+      <div class="overflow-hidden text-ellipsis">
         ${result.dataset.id}<br>
         <small>
           ${result.dataset.module}<br>

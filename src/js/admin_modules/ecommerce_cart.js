@@ -48,7 +48,7 @@ function getInventoryItemsFromSystem() {
         id: id,
         image: image,
         name: name,
-        price: +price,
+        price: +(price.replace(/\,/g, '')),
         quantity: +quantity,
         measurement: measurement?.trim() || '',
         measurementUnit: measurementUnit?.trim() || '',
@@ -95,7 +95,7 @@ function displayProducts(products) {
       productCategory: categories[product.category.replace(/\-/g, '')],
       statusColor: product.quantity <= 10 ? 'text-orange-500' : 'text-green-600',
       stockText: 'Stk: ' + product.quantity,
-      productPrice: product.price,
+      productPrice: ('₱' + product.price.toFixed(2)).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
       productQuantity: product.quantity,
       productMeasurementStatus:
         product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
@@ -190,22 +190,34 @@ function updateCartDisplay() {
     main.createAtSectionTwo('ecommerce-cart', data, (result) => {
       result.dataset.itemid = item.id;
       result.innerHTML += `
-        <div class="overflow-hidden text-ellipsis">
-          ${result.dataset.module}<br>
-          <small>
-            ${result.dataset.submodule}<br>
-            ${result.dataset.description}
-          </small>
+        <!-- Column 1: Image -->
+        <div class="w-24 h-24 flex-shrink-0">
+            <img src="${item.image}" class="w-full h-full object-cover rounded-lg">
         </div>
-        <div class="overflow-hidden text-ellipsis">
-          ${item.id}<br>
-          <small>
-            ${Object.entries(item)
-              .filter(([key]) => !['id'].includes(key))
-              .map(([_, value]) => (value ? `${value}` : 'N/A'))
-              .filter(Boolean)
-              .join('<br>')}
-          </small>
+
+        <!-- Column 2: Name and Category -->
+        <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-wrap text-lg">${item.name.replace(/\:\:\/\//g, ' ')}</h3>
+            <p class="text-sm text-gray-500">${item.category}</p>
+        </div>
+
+        <!-- Column 3: Price, Quantity, Total, and Remove -->
+        <div class="flex w-32 flex-shrink-0 flex-col items-end justify-between">
+          <div class="items-end">
+            <div class="text-end font-medium">₱${item.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
+
+            <div class="my-2 flex items-center">
+              <button class="quantity-btn rounded-l border px-2 py-1" onclick="decreaseQuantity('${item.id}')">-</button>
+              <span class="border-b border-t px-3 py-1">${item.quantity}</span>
+              <button class="quantity-btn rounded-r border px-2 py-1" onclick="increaseQuantity('${item.id}')">+</button>
+            </div>
+
+            <div class="text-end my-1 font-bold">₱${(item.price * item.quantity).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
+          </div>
+
+          <div class="items-end">
+            <button class="items-end text-sm text-red-500 hover:underline" onclick="removeItem('${item.id}')">Remove</button>
+          </div>
         </div>
       `;
 
