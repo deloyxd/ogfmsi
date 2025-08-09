@@ -34,7 +34,7 @@ async function loadDynamicSidebar() {
         ${nestedSections.length > 1 ? `<div class="flex items-center">` : ``}
         <i class="fas ${sectionIcons[0]} mr-3"></i>
         ${nestedSectionTexts != '' ? nestedSectionTexts[0] : mainSectionName.charAt(0).toUpperCase() + mainSectionName.slice(1)}
-        ${nestedSections.length > 1 ? `</div><i class="fas fa-chevron-down duration-300" id="${mainSectionName}-arrow"></i>` : ``}
+        ${nestedSections.length > 1 ? `</div><i class="fas fa-chevron-down duration-300 text-xs" id="${mainSectionName}-arrow"></i>` : ``}
         <div class="absolute right-2 top-2 hidden">
             <div class="relative h-2 w-2">
                 <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>

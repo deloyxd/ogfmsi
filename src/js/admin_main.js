@@ -275,7 +275,7 @@ async function loadSectionSilently(sectionName) {
               tableParent.dataset.sectionindex = 1;
               tableParent.dataset.tabindex = i + 1;
               const table = document.createElement('table');
-              table.className = 'w-full border-collapse cursor-default text-xs xl:text-sm 2xl:text-base';
+              table.className = 'w-full border-collapse cursor-default text-xs';
               const thead = document.createElement('thead');
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
@@ -366,7 +366,7 @@ async function loadSectionSilently(sectionName) {
               const sectionTwoListEmpty = document.createElement('div');
               sectionTwoListEmpty.id = `${sectionName}SectionTwoListEmpty`;
               sectionTwoListEmpty.className = 'flex h-full justify-center';
-              sectionTwoListEmpty.innerHTML = `<p class="self-center text-center font-bold text-gray-400"></p>`;
+              sectionTwoListEmpty.innerHTML = `<p class="self-center text-center font-bold text-sm text-gray-400"></p>`;
               sectionTwoListEmpty.children[0].innerHTML = dataset['sectiontwoemptylist'];
               sectionTwoListContainer.appendChild(sectionTwoListEmpty);
 

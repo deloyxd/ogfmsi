@@ -5,7 +5,7 @@
 @layer components {
   /* Base button component */
   .sidebar-btn-base {
-    @apply relative flex w-full items-center rounded-lg text-gray-300 duration-300;
+    @apply relative flex w-full items-center rounded-md text-gray-300 duration-300;
   }
 
   .sidebar-btn-base:hover {
@@ -13,7 +13,7 @@
   }
 
   .btn-main {
-    @apply rounded-lg bg-white px-3 py-3 text-sm font-bold uppercase duration-300;
+    @apply rounded-md bg-white px-3 py-3 text-sm font-bold uppercase duration-300;
   }
 
   .btn-main:hover {
@@ -29,20 +29,20 @@
   }
 
   .section-stats-base {
-    @apply relative rounded-xl border-2 bg-gradient-to-br from-white to-gray-200 font-bold text-gray-500 shadow-lg;
+    @apply relative rounded-md border-2 bg-gradient-to-br from-white to-gray-200 font-bold text-gray-500 shadow-lg;
   }
 
   .section-content-base {
-    @apply overflow-hidden rounded-xl border-2 bg-gradient-to-br from-white to-gray-200;
+    @apply overflow-hidden rounded-md border-2 bg-gradient-to-br from-white to-gray-200;
   }
 
   /* Button variants */
   .sidebar-main-btn {
-    @apply sidebar-btn-base px-4 py-3 text-sm;
+    @apply sidebar-btn-base px-3 py-2 text-sm;
   }
 
   .sidebar-sub-btn {
-    @apply sidebar-btn-base px-3 py-2 text-xs;
+    @apply sidebar-btn-base p-2 text-xs;
   }
 
   .section-main-btn {
@@ -55,11 +55,11 @@
 
   /* Unique components */
   .section {
-    @apply flexbox gap-2;
+    @apply flexbox gap-1;
   }
 
   .section-h {
-    @apply relative flex items-center justify-between rounded-lg bg-gradient-to-r;
+    @apply relative flex items-center justify-between rounded-md bg-gradient-to-r;
   }
 
   .section-h2 {
@@ -67,11 +67,11 @@
   }
 
   .section-h2-h {
-    @apply rounded-lg bg-white/20 p-2 backdrop-blur-sm;
+    @apply rounded-md bg-white/20 p-2 backdrop-blur-sm;
   }
 
   .section-h2-h img {
-    @apply h-8 w-8 rounded-lg object-cover;
+    @apply h-8 w-8 rounded-md object-cover;
   }
 
   .section-h-c {
@@ -115,7 +115,7 @@
   }
 
   .section-content-search-main {
-    @apply rounded-full border-2 border-gray-300 py-2 pl-9 pr-4 duration-300;
+    @apply rounded-md border-2 border-gray-300 py-2 pl-9 pr-4 duration-300;
   }
 
   .section-content-search-main:focus {
@@ -123,7 +123,7 @@
   }
 
   .section-content-search-sub {
-    @apply w-full rounded-lg border-2 p-3 pl-9 duration-300 focus:outline-none focus:ring-2;
+    @apply w-full rounded-md border-2 p-3 pl-9 duration-300 focus:outline-none focus:ring-2;
   }
 
   .section-content-searchicon {
@@ -135,7 +135,7 @@
   }
 
   .section-content-settings {
-    @apply scale-95 rounded-full bg-gray-300 text-2xl shadow-lg duration-300;
+    @apply scale-95 rounded-md bg-gray-300 text-2xl shadow-lg duration-300;
   }
 
   .section-content-settings:hover {
@@ -151,7 +151,7 @@
   }
 
   .section-content-list-item {
-    @apply grid grid-cols-3 gap-2 whitespace-nowrap rounded-lg border-b-2 border-gray-400 bg-gray-300 px-6 py-4 text-sm font-medium text-gray-600 duration-300;
+    @apply grid grid-cols-3 gap-2 whitespace-nowrap rounded-md border-b-2 border-gray-400 bg-gray-300 px-6 py-4 text-sm font-medium text-gray-600 duration-300;
   }
 
   .section-content-list-item:hover {
@@ -159,7 +159,7 @@
   }
 
   .section-content-submit {
-    @apply w-full rounded-lg p-3 text-center font-bold text-white duration-300;
+    @apply w-full rounded-md p-3 text-center font-bold text-white duration-300;
   }
 
   .section-content-submit:hover {
@@ -169,14 +169,6 @@
   /* Responsive */
   /* xl */
   @media (width >= 80rem) {
-    .sidebar-main-btn {
-      @apply text-base;
-    }
-
-    .sidebar-sub-btn {
-      @apply text-sm;
-    }
-
     .section-h2-h img {
       @apply h-10 w-10;
     }
@@ -186,10 +178,6 @@
   @media (width >= 96rem) {
     .btn-main {
       @apply px-6 text-base;
-    }
-
-    .section {
-      @apply gap-8;
     }
 
     .section-h-c {
