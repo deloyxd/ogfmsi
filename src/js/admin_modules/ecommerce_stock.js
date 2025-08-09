@@ -139,6 +139,100 @@ function registerNewProduct(image, name, price, quantity, measurement, category,
 
   main.createAtSectionOne('ecommerce-stock', columnsData, 1, name, (result, status) => {
     if (status == 'success') {
+      result.addEventListener('click', () => {
+        const inputs = {
+          header: {
+            title: 'Update Product 🧊',
+            subtitle: 'Unique product form',
+          },
+          image: {
+            src: image,
+            type: 'normal',
+            short: [
+              { placeholder: 'Product name', value: name, required: true },
+              { placeholder: 'Price', value: price + '', required: true },
+              { placeholder: 'Initial quantity', value: quantity + '', required: true },
+            ],
+          },
+          short: [{ placeholder: 'Product measurement value', value: measurement + '' }],
+          spinner: [
+            {
+              label: 'Product category',
+              placeholder: 'Select product category',
+              selected: 0,
+              required: true,
+              options: [
+                { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
+                { value: 'food-meals', label: 'Food & Meals' },
+                { value: 'beverages', label: 'Beverages' },
+                { value: 'fitness-equipment', label: 'Fitness Equipment' },
+                { value: 'apparel', label: 'Apparel' },
+                { value: 'merchandise', label: 'Merchandise' },
+                { value: 'other', label: 'Other' },
+              ],
+            },
+            {
+              label: 'Product measurement unit',
+              placeholder: 'Select product measurement unit',
+              selected: 0,
+              options: [
+                // Weight
+                { value: 'mg', label: 'Weight: mg' },
+                { value: 'g', label: 'Weight: g' },
+                { value: 'kg', label: 'Weight: kg' },
+                { value: 'oz', label: 'Weight: oz' },
+                { value: 'lb', label: 'Weight: lb' },
+
+                // Volume
+                { value: 'ml', label: 'Volume: ml' },
+                { value: 'l', label: 'Volume: l' },
+
+                // Countable units
+                { value: 'unit', label: 'Count: unit(s)' },
+                { value: 'piece', label: 'Count: piece(s)' },
+                { value: 'set', label: 'Count: set(s)' },
+                { value: 'pair', label: 'Count: pair(s)' },
+                { value: 'item', label: 'Count: item(s)' },
+                { value: 'pack', label: 'Count: pack(s)' },
+                { value: 'box', label: 'Count: box(es)' },
+                { value: 'bar', label: 'Count: bar(s)' },
+                { value: 'packet', label: 'Count: packet(s)' },
+                { value: 'capsule', label: 'Count: capsule(s)' },
+                { value: 'tablet', label: 'Count: tablet(s)' },
+                { value: 'softgel', label: 'Count: softgel(s)' },
+                { value: 'scoop', label: 'Count: scoop(s)' },
+                { value: 'serving', label: 'Count: serving(s)' },
+                { value: 'portion', label: 'Count: portion(s)' },
+                { value: 'slice', label: 'Count: slice(s)' },
+                { value: 'meal', label: 'Count: meal(s)' },
+                { value: 'combo', label: 'Count: combo(s)' },
+                { value: 'bowl', label: 'Count: bowl(s)' },
+                { value: 'plate', label: 'Count: plate(s)' },
+                { value: 'cup', label: 'Count: cup(s)' },
+                { value: 'bottle', label: 'Count: bottle(s)' },
+                { value: 'can', label: 'Count: can(s)' },
+                { value: 'glass', label: 'Count: glass(es)' },
+                { value: 'jug', label: 'Count: jug(s)' },
+                { value: 'shot', label: 'Count: shot(s)' },
+
+                // Size / Dimension
+                { value: 'inch', label: 'Size: inch(es)' },
+                { value: 'cm', label: 'Size: cm' },
+                { value: 'mm', label: 'Size: mm' },
+                { value: 'size', label: 'Size: size(s)' },
+                { value: 'level', label: 'Size: level(s)' },
+              ],
+            },
+          ],
+          footer: {
+            main: 'Update Product 🧊',
+            sub: 'Delete 💀'
+          }
+        };
+        main.openModal('cyan', inputs, (newResult) => {
+          main.closeModal();
+        });
+      });
       const action = {
         module: 'E-Commerce',
         submodule: 'Stock',
