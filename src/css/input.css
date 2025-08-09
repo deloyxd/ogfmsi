@@ -55,7 +55,7 @@
 
   /* Unique components */
   .section {
-    @apply flexbox gap-4;
+    @apply flexbox gap-2;
   }
 
   .section-h {
