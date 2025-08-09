@@ -82,6 +82,13 @@ export function enqueue(action, data) {
   main.createAtSectionTwo('datasync', editedData, (result) => {
     result.innerHTML += `
     <div class="overflow-hidden text-ellipsis">
+      ${result.dataset.actorid}<br>
+      <small>
+        ${result.dataset.actorname}<br>
+        ${result.dataset.actorrole}
+      </small>
+    </div>
+    <div class="overflow-hidden text-ellipsis">
       ${action.module}<br>
       <small>
         ${Object.entries(action)

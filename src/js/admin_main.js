@@ -1239,7 +1239,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
 
     for (const row of existingRows) {
-      if (row.dataset.name && row.dataset.name.toLowerCase().trim() === findValue.toLowerCase().trim()) {
+      if (row.dataset.name && row.dataset.name.toLowerCase().trim() === findValue.replace(/\s+/g,':://').toLowerCase().trim()) {
         callback(row, 'fail');
         return;
       }
@@ -1295,13 +1295,6 @@ export function createAtSectionTwo(sectionName, data, callback) {
         <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
       </div>
     </div>
-    <div class="overflow-hidden text-ellipsis">
-      ${result.dataset.actorid}<br>
-      <small>
-        ${result.dataset.actorname}<br>
-        ${result.dataset.actorrole}
-      </small>
-    </div>
   `;
 
   result.addEventListener('mouseover', function () {
@@ -1337,10 +1330,8 @@ export function deleteAtSectionTwo(sectionName, id) {
 
 export function deleteAllAtSectionTwo(sectionName) {
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
-  const items = emptyText.parentElement.children;
-  for (let i = 2; i < items.length; i++) {
-    items[i].remove();
-  }
+  const items = emptyText.parentElement.querySelectorAll('.section-content-list-item:not(.hidden)');
+  items.forEach((item) => item.remove());
 }
 
 export function createRedDot(sectionName, type) {
