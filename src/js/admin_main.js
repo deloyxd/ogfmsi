@@ -259,11 +259,12 @@ async function loadSectionSilently(sectionName) {
                   }
                   items.forEach((item, i) => {
                     if (i > 0) {
-                      item.classList.add('hidden');
+                      if (item.textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        item.classList.remove('hidden');
+                      } else {
+                        item.classList.add('hidden');
+                      }
                     }
-                  });
-                  findAtSectionOne(sectionName, searchTerm, 'search', tabIndex, (searchResult) => {
-                    if (searchResult) searchResult.classList.remove('hidden');
                   });
                 }
               });
@@ -405,11 +406,12 @@ async function loadSectionSilently(sectionName) {
                   }
                   items.forEach((item, i) => {
                     if (i > 1) {
-                      item.classList.add('hidden');
+                      if (item.textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        item.classList.remove('hidden');
+                      } else {
+                        item.classList.add('hidden');
+                      }
                     }
-                  });
-                  findAtSectionTwo(sectionName, searchTerm, 'any', (searchResult) => {
-                    if (searchResult) searchResult.classList.remove('hidden');
                   });
                 }
               });
@@ -1096,6 +1098,10 @@ function searchFunction(item, findValue, findType, callback) {
         return true;
       }
       if (item.dataset.time && item.dataset.time.toLowerCase().includes(findValue.toLowerCase())) {
+        callback(item);
+        return true;
+      }
+      if (item.textContent.toLowerCase().includes(findValue.toLowerCase())) {
         callback(item);
         return true;
       }
