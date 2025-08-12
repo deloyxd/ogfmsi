@@ -304,7 +304,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? 373 + 140 : 373}px] 2xl:h-[${statsDisabled ? 325 + 140 : 325}px] font-bold text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? 500 + 132 : 500}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
@@ -341,14 +341,14 @@ async function loadSectionSilently(sectionName) {
             sectionOne.appendChild(clone);
 
             if (statsDisabled) {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${425 + 140}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${425 + 140}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${530 + 132}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${530 + 132}px]`);
             }
           }
         }
 
         function setupSectionTwo() {
-          let totalSectionTwoListContainerHeight = 401;
+          let totalSectionTwoListContainerHeight = 534;
           if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].textContent = dataset['sectiontwotitletexts'][0];
@@ -366,7 +366,7 @@ async function loadSectionSilently(sectionName) {
               const sectionTwoListEmpty = document.createElement('div');
               sectionTwoListEmpty.id = `${sectionName}SectionTwoListEmpty`;
               sectionTwoListEmpty.className = 'flex h-full justify-center';
-              sectionTwoListEmpty.innerHTML = `<p class="self-center text-center font-bold text-sm text-gray-400"></p>`;
+              sectionTwoListEmpty.innerHTML = `<p class="self-center text-center font-bold text-xs text-gray-400"></p>`;
               sectionTwoListEmpty.children[0].innerHTML = dataset['sectiontwoemptylist'];
               sectionTwoListContainer.appendChild(sectionTwoListEmpty);
 
@@ -379,7 +379,7 @@ async function loadSectionSilently(sectionName) {
             sectionTwoContent.appendChild(sectionTwoListContainer);
 
             if (dataset['sectiontwosearchtext']) {
-              totalSectionTwoListContainerHeight -= 76;
+              totalSectionTwoListContainerHeight -= 68;
               const sectionTwoSearchParent = document.createElement('div');
               sectionTwoSearchParent.className = 'relative w-full';
 
@@ -439,7 +439,7 @@ async function loadSectionSilently(sectionName) {
             }
 
             if (dataset['sectiontwobtntext']) {
-              totalSectionTwoListContainerHeight -= 72;
+              totalSectionTwoListContainerHeight -= 64;
               const sectionTwoMainBtn = document.createElement('div');
 
               sectionTwoMainBtn.id = `${sectionName}SectionTwoMainBtn`;
@@ -458,7 +458,7 @@ async function loadSectionSilently(sectionName) {
 
           if (statsDisabled && sectionTwo.children[0].children[1].children[0]) {
             sectionTwo.children[0].children[1].children[0].classList.add(
-              `h-[${totalSectionTwoListContainerHeight + 140}px]`
+              `h-[${totalSectionTwoListContainerHeight + 112}px]`
             );
           }
         }
@@ -476,7 +476,7 @@ async function loadSectionSilently(sectionName) {
                 customContentSectionTwo.remove();
                 sectionTwo.children[0].children[1].children[0].appendChild(sectionTwoContent);
                 if (statsDisabled) {
-                  sectionTwoContent.classList.add(`h-[${400 + 140}px]`);
+                  sectionTwoContent.classList.add(`h-[${500 + 132}px]`);
                 }
               }
               const customContentSectionOne = tempCustomContent.querySelector('[data-sectionindex="1"]');
@@ -487,7 +487,7 @@ async function loadSectionSilently(sectionName) {
                   const customContent = tempCustomContent.querySelector(`[data-tabindex="${i}"]`).cloneNode(true);
                   sectionOneContent.appendChild(customContent);
                   if (statsDisabled) {
-                    customContent.classList.add(`h-[${375 + 140}px]`);
+                    customContent.classList.add(`h-[${475 + 132}px]`);
                   }
                 }
                 const removeSectionTwo = sectionOneContent.querySelector('[data-sectionindex="2"]');
