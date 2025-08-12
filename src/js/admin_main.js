@@ -1134,7 +1134,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
           idValue = columnData.split('_')[2];
         }
 
-        setCellContent(index, cell, idValue);
+        setCellContent(cell, idValue);
         newRow.dataset.id = idValue;
         return;
       }
@@ -1162,7 +1162,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
           }
 
           function setDateTimeContent(cell, value) {
-            setCellContent(index, cell, value);
+            setCellContent(cell, value);
             switch (type) {
               case 'date':
                 newRow.dataset.date = value;
@@ -1183,50 +1183,33 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
       newRow.dataset['custom' + index] = columnData;
 
-      setCellContent(index, cell, columnData);
+      setCellContent(cell, columnData);
       return;
     }
 
-    if (columnData.type && columnData.type.toLowerCase().includes('user')) {
-      const userData = columnData.data;
+    if (columnData.type) {
+      const columnDataTypes = ['user', 'product'];
+      const columnDataLower = columnData.type.toLowerCase();
+      if (columnDataTypes.includes(columnDataLower)) {
+        newRow.dataset.image = columnData.data[1];
+        newRow.dataset.name = columnData.data[2];
+        if (columnDataLower.includes('user')) {
+          newRow.dataset.contact = columnData.data[3];
+        }
 
-      cell.innerHTML = `
+        const cellContent = `
           <div class="flex items-center gap-3">
-            <img src="${userData[1] ? userData[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
-            <p>${userData[2].includes(':://') ? userData[2].replace(/\:\:\/\//g,' ') : userData[2]}</p>
+            <img src="${columnData.data[1] ? columnData.data[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
+            <p>${columnData.data[2].includes(':://') ? columnData.data[2].replace(/\:\:\/\//g, ' ') : columnData.data[2]}</p>
           </div>
         `;
-      if (index < columnsData.length - 1) {
-        cell.classList.add('w-[200px]');
-        cell.classList.add('2xl:w-[250px]');
-      }
 
-      newRow.dataset.image = userData[1];
-      newRow.dataset.name = userData[2];
-      newRow.dataset.contact = userData[3];
-      return;
+        setCellContent(cell, cellContent);
+        return;
+      }
     }
 
-    if (columnData.type && columnData.type.toLowerCase().includes('product')) {
-      const productData = columnData.data;
-
-      cell.innerHTML = `
-          <div class="flex items-center gap-3">
-            <img src="${productData[1] ? productData[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
-            <p>${productData[2].includes(':://') ? productData[2].replace(/\:\:\/\//g,' ') : productData[2]}</p>
-          </div>
-        `;
-      if (index < columnsData.length - 1) {
-        cell.classList.add('w-[200px]');
-        cell.classList.add('2xl:w-[250px]');
-      }
-
-      newRow.dataset.image = productData[1];
-      newRow.dataset.name = productData[2];
-      return;
-    }
-
-    setCellContent(index, cell, columnData);
+    setCellContent(cell, columnData);
   });
   const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
   cell.classList.remove('hidden');
@@ -1239,7 +1222,10 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
 
     for (const row of existingRows) {
-      if (row.dataset.name && row.dataset.name.toLowerCase().trim() === findValue.replace(/\s+/g,':://').toLowerCase().trim()) {
+      if (
+        row.dataset.name &&
+        row.dataset.name.toLowerCase().trim() === findValue.replace(/\s+/g, ':://').toLowerCase().trim()
+      ) {
         callback(row, 'fail');
         return;
       }
@@ -1250,11 +1236,8 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
   callback(newRow, 'success');
 
-  function setCellContent(index, cell, content) {
-    cell.innerHTML += content;
-    if (index < columnsData.length - 1) {
-      cell.classList.add('w-1');
-    }
+  function setCellContent(cell, content) {
+    cell.innerHTML = content;
   }
 }
 
