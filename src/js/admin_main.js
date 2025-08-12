@@ -1021,7 +1021,7 @@ export function isValidPaymentAmount(amount) {
 export function checkIfEmpty(inputs) {
   let hasEmpty = false;
 
-  if (typeof inputs == 'string' && inputs.trim() === '') hasEmpty = true;
+  if (inputs == '') hasEmpty = true;
   if (inputs.image) inputs.image.short.forEach((item) => check(item));
   if (inputs.short) inputs.short.forEach((item) => check(item));
   if (inputs.large) inputs.large.forEach((item) => check(item));
@@ -1054,8 +1054,7 @@ export function findAtSectionOne(sectionName, findValue, findType, tabIndex, cal
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const items = emptyText.parentElement.parentElement.children;
   for (let i = 1; i < items.length; i++) {
-    searchFunction(items[i], findValue, findType, callback);
-    return;
+    if (searchFunction(items[i], findValue, findType, callback)) return;
   }
   callback(null);
 }
@@ -1065,53 +1064,50 @@ export function findAtSectionTwo(sectionName, findValue, findType, callback) {
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
   const items = emptyText.parentElement.children;
   for (let i = 2; i < items.length; i++) {
-    searchFunction(items[i], findValue, findType, callback);
-    return;
+    if (searchFunction(items[i], findValue, findType, callback)) return;
   }
   callback(null);
 }
 
 function searchFunction(item, findValue, findType, callback) {
+  if (findType.includes('equal')) {
+    if (item.dataset[findType.split('_')[1]] == findValue) {
+      callback(item);
+      return true;
+    }
+    return false;
+  }
   switch (findType) {
     case 'any':
       if (item.dataset.id.toLowerCase().includes(findValue.toLowerCase())) {
         callback(item);
-        return;
+        return true;
       }
-      if (
-        item.dataset.name &&
-        item.dataset.name.toLowerCase().includes(findValue.replace(/\s+/g, ':://').toLowerCase())
-      ) {
+      if (item.dataset.text.toLowerCase().includes(findValue.toLowerCase())) {
         callback(item);
-        return;
+        return true;
       }
       if (item.dataset.datetime && item.dataset.datetime.toLowerCase().includes(findValue.toLowerCase())) {
         callback(item);
-        return;
+        return true;
       }
       if (item.dataset.date && item.dataset.date.toLowerCase().includes(findValue.toLowerCase())) {
         callback(item);
-        return;
+        return true;
       }
       if (item.dataset.time && item.dataset.time.toLowerCase().includes(findValue.toLowerCase())) {
         callback(item);
-        return;
-      }
-      break;
-    case 'equal':
-      if (item.dataset.id == findValue) {
-        callback(item);
-        return;
+        return true;
       }
       break;
     case 'pending':
       if (item.dataset.id == findValue && item.dataset.time.toLowerCase().includes(findType)) {
         callback(item);
-        return;
+        return true;
       }
       break;
   }
-  callback(null);
+  return false;
 }
 
 export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
@@ -1148,10 +1144,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
 
     for (const row of existingRows) {
-      if (
-        row.dataset.name &&
-        row.dataset.name.toLowerCase().trim() === findValue.replace(/\s+/g, ':://').toLowerCase().trim()
-      ) {
+      if (row.dataset.text && row.dataset.text.toLowerCase().trim() === findValue.toLowerCase().trim()) {
         callback(row, 'fail');
         return;
       }

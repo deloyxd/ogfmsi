@@ -2,6 +2,8 @@ import main from '../admin_main.js';
 import accesscontrol from './accesscontrol.js';
 
 const SECTION_NAME = 'ecommerce-stock';
+const MODULE_NAME = 'E-Commerce';
+const SUBMODULE_NAME = 'Stock';
 const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
   { value: 'food-meals', label: 'Food & Meals' },
@@ -61,7 +63,7 @@ let mainBtn;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
-  
+
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
   mainBtn?.addEventListener('click', showAddProductModal);
 });
@@ -100,27 +102,29 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     src: productData.image || '/src/images/client_logo.jpg',
     type: 'normal',
     short: [
-      { 
-        placeholder: 'Product name', 
-        value: productData.name || '', 
-        required: true 
+      {
+        placeholder: 'Product name',
+        value: productData.name || '',
+        required: true,
       },
-      { 
-        placeholder: 'Price', 
-        value: productData.price || '', 
-        required: true 
+      {
+        placeholder: 'Price',
+        value: productData.price || '',
+        required: true,
       },
-      { 
-        placeholder: 'Initial quantity', 
-        value: productData.quantity || '', 
-        required: true 
+      {
+        placeholder: 'Initial quantity',
+        value: productData.quantity || '',
+        required: true,
       },
     ],
   },
-  short: [{ 
-    placeholder: 'Product measurement value', 
-    value: productData.measurement || '' 
-  }],
+  short: [
+    {
+      placeholder: 'Product measurement value',
+      value: productData.measurement || '',
+    },
+  ],
   spinner: [
     {
       label: 'Product category',
@@ -140,36 +144,38 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     footer: {
       main: 'Update Product 🧊',
       sub: 'Delete 💀',
-    }
-  })
+    },
+  }),
 });
 
 const logAction = (action, data) => {
-  accesscontrol.log({
-    module: 'E-Commerce',
-    submodule: 'Stock',
-    description: action,
-  }, { ...data, type: 'product' });
+  accesscontrol.log(
+    {
+      module: MODULE_NAME,
+      submodule: SUBMODULE_NAME,
+      description: action,
+    },
+    { ...data, type: 'product' }
+  );
 };
 
 function showAddProductModal() {
   const inputs = createModalInputs();
-  
+
   main.openModal(mainBtn, inputs, (result) => {
-    const [name, price, quantity] = result.image.short.map(item => item.value);
+    const [name, price, quantity] = result.image.short.map((item) => item.value);
     const measurement = result.short[0].value?.trim() || '';
-    
+
     if (!validateInputs(price, quantity, measurement)) return;
-    
+
     registerProduct(result, name, +price, +quantity, measurement);
   });
 }
 
 function registerProduct(result, name, price, quantity, measurement) {
   const category = result.spinner[0].options[result.spinner[0].selected - 1].value;
-  const measurementUnit = result.spinner[1].selected > 0 
-    ? result.spinner[1].options[result.spinner[1].selected - 1].value 
-    : '';
+  const measurementUnit =
+    result.spinner[1].selected > 0 ? result.spinner[1].options[result.spinner[1].selected - 1].value : '';
 
   const columnsData = [
     'id_P_random',
@@ -189,7 +195,7 @@ function registerProduct(result, name, price, quantity, measurement) {
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, name, (result, status) => {
     if (status === 'success') {
       setupProductDetailsButton(result, name);
-      
+
       logAction('Register product', {
         id: result.dataset.id,
         image: result.dataset.image,
@@ -213,7 +219,7 @@ function registerProduct(result, name, price, quantity, measurement) {
 
 function setupProductDetailsButton(result, name) {
   const productDetailsBtn = result.querySelector('#productDetailsBtn');
-  
+
   productDetailsBtn.addEventListener('click', () => {
     const productData = {
       image: result.dataset.image,
@@ -224,10 +230,12 @@ function setupProductDetailsButton(result, name) {
       categoryIndex: result.dataset.custom7,
       unitIndex: result.dataset.custom6,
     };
-    
+
     const inputs = createModalInputs(true, productData);
-    
-    main.openModal('cyan', inputs, 
+
+    main.openModal(
+      'cyan',
+      inputs,
       (newResult) => updateProduct(result, newResult, name),
       () => deleteProduct(result, name)
     );
@@ -235,48 +243,54 @@ function setupProductDetailsButton(result, name) {
 }
 
 function updateProduct(result, newResult, name) {
-  const [newName, newPrice, newQuantity] = newResult.image.short.map(item => item.value);
+  const [newName, newPrice, newQuantity] = newResult.image.short.map((item) => item.value);
   const newMeasurement = newResult.short[0].value?.trim() || '';
-  
+
   if (!validateInputs(newPrice, newQuantity, newMeasurement)) return;
-  
-  main.openConfirmationModal(`Update item stock: ${name}`, () => {
-    const category = newResult.spinner[0].options[newResult.spinner[0].selected - 1].value;
-    const measurementUnit = newResult.spinner[1].selected > 0
-      ? newResult.spinner[1].options[newResult.spinner[1].selected - 1].value
-      : '';
 
-    const columnsData = [
-      `id_${result.dataset.id}`,
-      {
-        type: 'object',
-        data: [newResult.image.src, newName.replace(/\s+/g, ':://')],
-      },
-      formatPrice(+newPrice),
-      +newQuantity,
-      getStockStatus(+newQuantity),
-      newMeasurement,
-      measurementUnit,
-      category,
-      `custom_date_${result.dataset.date}`,
-    ];
+  main.findAtSectionOne(SECTION_NAME, newResult.image.short[0].value.replace(/\s+/g, ':://'), 'equal_text', 1, (findResult) => {
+    if (findResult && findResult != result) {
+      main.toast('That name already exist!', 'error');
+      return;
+    }
 
-    main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
-      logAction('Update item stock details', {
-        id: updatedResult.dataset.id,
-        image: updatedResult.dataset.image,
-        name: updatedResult.dataset.text,
-        price: updatedResult.dataset.price,
-        quantity: updatedResult.dataset.quantity,
-        measurement: updatedResult.dataset.measurement,
-        measurementUnit: updatedResult.dataset.measurementUnit,
-        category: updatedResult.dataset.category,
-        date: updatedResult.dataset.date,
+    main.openConfirmationModal(`Update item stock: ${name}`, () => {
+      const category = newResult.spinner[0].options[newResult.spinner[0].selected - 1].value;
+      const measurementUnit =
+        newResult.spinner[1].selected > 0 ? newResult.spinner[1].options[newResult.spinner[1].selected - 1].value : '';
+
+      const columnsData = [
+        `id_${result.dataset.id}`,
+        {
+          type: 'object',
+          data: [newResult.image.src, newName.replace(/\s+/g, ':://')],
+        },
+        formatPrice(+newPrice),
+        +newQuantity,
+        getStockStatus(+newQuantity),
+        newMeasurement,
+        measurementUnit,
+        category,
+        `custom_date_${result.dataset.date}`,
+      ];
+
+      main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
+        logAction('Update item stock details', {
+          id: updatedResult.dataset.id,
+          image: updatedResult.dataset.image,
+          name: updatedResult.dataset.text,
+          price: updatedResult.dataset.price,
+          quantity: updatedResult.dataset.quantity,
+          measurement: updatedResult.dataset.measurement,
+          measurementUnit: updatedResult.dataset.measurementUnit,
+          category: updatedResult.dataset.category,
+          date: updatedResult.dataset.date,
+        });
+
+        main.toast('Successfully updated item stock details!', 'info');
+        main.closeConfirmationModal();
+        main.closeModal();
       });
-
-      main.toast('Successfully updated item stock details!', 'info');
-      main.closeConfirmationModal();
-      main.closeModal();
     });
   });
 }
@@ -286,7 +300,7 @@ function deleteProduct(result, name) {
     const now = new Date();
     const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    
+
     logAction('Delete item stock', {
       id: result.dataset.id,
       image: result.dataset.image,
@@ -305,5 +319,4 @@ function deleteProduct(result, name) {
   });
 }
 
-function refreshAllTabs() {
-}
+function refreshAllTabs() {}
