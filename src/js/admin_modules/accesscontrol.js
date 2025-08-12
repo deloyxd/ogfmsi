@@ -15,10 +15,10 @@ function mainBtnFunction() {}
 export function log(action, data) {
   datasync.enqueue(action, data);
   const columnsData = [
-    'U288343611137',
+    'id_U288343611137',
     {
-      type: 'user',
-      data: ['U288343611137', '', 'Jestley', 'Admin'],
+      type: 'object_role',
+      data: ['', 'Jestley', 'Admin'],
     },
     action.module + (action.submodule ? ': ' + action.submodule : ''),
     action.description,

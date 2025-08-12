@@ -95,8 +95,8 @@ function registerNewUser(image, firstName, lastName, emailContact) {
   const columnsData = [
     'id_U_random',
     {
-      type: 'user',
-      data: ['', image, name, emailContact],
+      type: 'object_contact',
+      data: [image, name, emailContact],
     },
     'custom_date_today',
   ];
@@ -104,8 +104,8 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     if (status == 'success') {
       success(result);
     } else {
-      const resultUserFirstName = result.dataset.name.split(':://')[0];
-      const resultUserLastName = result.dataset.name.split(':://')[1];
+      const resultUserFirstName = result.dataset.text.split(':://')[0];
+      const resultUserLastName = result.dataset.text.split(':://')[1];
       openConfirmationModal(
         `Data duplication: User with same details (ID: ${result.dataset.id}, Name: ${resultUserFirstName + ' ' + resultUserLastName})`,
         () => {
@@ -142,19 +142,19 @@ function registerNewUser(image, firstName, lastName, emailContact) {
     accesscontrol.log(action, data);
 
     main.createRedDot('checkin-daily', 1);
-    main.toast(result.dataset.name.split(':://')[0] + ', successfully registered!', 'success');
+    main.toast(result.dataset.text.split(':://')[0] + ', successfully registered!', 'success');
     main.closeModal();
   }
 }
 
 function userDetailsBtnFunction(user, isViewMode) {
-  const userFirstName = user.dataset.name.split(':://')[0];
-  const userLastName = user.dataset.name.split(':://')[1];
+  const userFirstName = user.dataset.text.split(':://')[0];
+  const userLastName = user.dataset.text.split(':://')[1];
   if (isViewMode) {
     const inputs = {
       header: {
         title: 'View User Details 📙',
-        subtitle: 'View mode',
+        subtitle: 'View mode: ' + user.dataset.id,
       },
       image: {
         src: user.dataset.image,
@@ -179,7 +179,7 @@ function userDetailsBtnFunction(user, isViewMode) {
     const inputs = {
       header: {
         title: 'Update User Details 📌',
-        subtitle: 'User details form',
+        subtitle: 'User details form: ' + user.dataset.id,
       },
       image: {
         src: user.dataset.image,
@@ -202,32 +202,38 @@ function userDetailsBtnFunction(user, isViewMode) {
         main.openConfirmationModal('Update user: ' + userProperName, () => {
           const resultUserFirstName = result.image.short[0].value;
           const resultUserLastName = result.image.short[1].value;
+          const columnsData = [
+            'id_' + user.dataset.id,
+            {
+              type: 'object_contact',
+              data: [
+                result.image.src,
+                resultUserFirstName + ':://' + resultUserLastName,
+                result.image.short[2].value,
+              ],
+            },
+            'custom_date_' + user.dataset.date,
+          ];
+          main.updateAtSectionOne('checkin-daily', columnsData, 1, user.dataset.id, (updatedResult) => {
+            const action = {
+              module: 'Check-In',
+              submodule: 'Daily Pass',
+              description: 'Update user details',
+            };
+            const data = {
+              id: updatedResult.dataset.id,
+              image: updatedResult.dataset.image,
+              name: updatedResult.dataset.text,
+              contact: updatedResult.dataset.contact,
+              type: 'user',
+            };
 
-          user.dataset.image = result.image.src;
-          user.dataset.name = resultUserFirstName + ':://' + resultUserLastName;
-          user.dataset.contact = result.image.short[2].value;
+            accesscontrol.log(action, data);
 
-          user.children[1].children[0].children[0].src = result.image.src;
-          user.children[1].children[0].children[1].textContent = resultUserFirstName + ' ' + resultUserLastName;
-
-          const action = {
-            module: 'Check-In',
-            submodule: 'Daily Pass',
-            description: 'Update user details',
-          };
-          const data = {
-            id: user.dataset.id,
-            image: user.dataset.image,
-            name: user.dataset.name,
-            contact: user.dataset.contact,
-            type: 'user',
-          };
-
-          accesscontrol.log(action, data);
-
-          main.toast('Successfully updated user details!', 'info');
-          main.closeConfirmationModal();
-          main.closeModal();
+            main.toast('Successfully updated user details!', 'info');
+            main.closeConfirmationModal();
+            main.closeModal();
+          });
         });
       },
       () => {
@@ -242,7 +248,7 @@ function userDetailsBtnFunction(user, isViewMode) {
           const data = {
             id: user.dataset.id,
             image: user.dataset.image,
-            name: user.dataset.name,
+            name: user.dataset.text,
             contact: user.dataset.contact,
             datetime: date + ' - ' + time,
             type: 'user',
@@ -261,47 +267,52 @@ function userDetailsBtnFunction(user, isViewMode) {
 }
 
 function userVoidBtnFunction(user) {
-  const userFirstName = user.dataset.name.split(':://')[0];
-  const userLastName = user.dataset.name.split(':://')[1];
+  const userFirstName = user.dataset.text.split(':://')[0];
+  const userLastName = user.dataset.text.split(':://')[1];
   const userProperName = userFirstName + ' ' + userLastName;
-  main.openConfirmationModal('Void user log: ' + userProperName + '<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Billing module.', () => {
-    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    const action = {
-      module: 'Check-In',
-      submodule: 'Daily Pass',
-      description: 'Void user check-in log',
-    };
-    const data = {
-      id: user.dataset.id,
-      image: user.dataset.image,
-      name: user.dataset.name,
-      contact: user.dataset.contact,
-      amount: user.dataset.amount,
-      datetime: date + ' - ' + time,
-      type: 'user_transaction',
-    };
+  main.openConfirmationModal(
+    'Void user log: ' +
+      userProperName +
+      '<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Invoicing module.',
+    () => {
+      const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const action = {
+        module: 'Check-In',
+        submodule: 'Daily Pass',
+        description: 'Void user check-in log',
+      };
+      const data = {
+        id: user.dataset.id,
+        image: user.dataset.image,
+        name: user.dataset.text,
+        contact: user.dataset.contact,
+        amount: user.dataset.amount,
+        datetime: date + ' - ' + time,
+        type: 'user_transaction',
+      };
 
-    accesscontrol.log(action, data);
-    if (user.dataset.amount) {
-      main.deleteAtSectionOne('invoicing', 1, user.dataset.tid);
-      main.deleteAtSectionOne('invoicing', 2, user.dataset.tid);
-    } else {
-      main.deleteAtSectionTwo('invoicing', user.dataset.tid);
+      accesscontrol.log(action, data);
+      if (user.dataset.amount) {
+        main.deleteAtSectionOne('invoicing', 1, user.dataset.tid);
+        main.deleteAtSectionOne('invoicing', 2, user.dataset.tid);
+      } else {
+        main.deleteAtSectionTwo('invoicing', user.dataset.tid);
+      }
+      main.deleteAtSectionOne('checkin-daily', 2, user.dataset.id);
+
+      main.toast('Successfully voided user log!', 'error');
+      main.closeConfirmationModal();
     }
-    main.deleteAtSectionOne('checkin-daily', 2, user.dataset.id);
-
-    main.toast('Successfully voided user log!', 'error');
-    main.closeConfirmationModal();
-  });
+  );
 }
 
 function processCheckinUser(user) {
   const columnsData = [
     'id_' + user.dataset.id,
     {
-      type: 'user',
-      data: [user.dataset.id, user.dataset.image, user.dataset.name, user.dataset.contact],
+      type: 'object_contact',
+      data: [user.dataset.image, user.dataset.text, user.dataset.contact],
     },
     'custom_time_Pending',
   ];
@@ -320,7 +331,7 @@ function processCheckinUser(user) {
       const data = {
         id: result.dataset.id,
         image: result.dataset.image,
-        name: result.dataset.name,
+        name: result.dataset.text,
         contact: result.dataset.contact,
         datetime: 'Pending',
         type: 'user',
@@ -330,7 +341,7 @@ function processCheckinUser(user) {
       invoicing.processPayment(data);
 
       main.createRedDot('checkin-daily', 2);
-      main.toast(result.dataset.name.split(':://')[0] + ', is now ready for check-in payment!', 'success');
+      main.toast(result.dataset.text.split(':://')[0] + ', is now ready for check-in payment!', 'success');
     }
   });
 }

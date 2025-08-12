@@ -85,6 +85,13 @@ function sectionTwoMainBtnFunction() {
         main.toast(`Invalid amount: ${result.short[0].value}`, 'error');
         return;
       }
+      if (result.radio[0].selected == 2 && ((result.short[1].value != 'N/A' && /[^0-9]/.test(result.short[1].value)) || result.short[1].value == 'N/A' || result.short[1].value == '')) {
+        main.toast(`Invalid reference: ${result.short[1].value}`, 'error');
+        return;
+      }
+      if (result.radio[0].selected == 1) {
+        result.short[1].value = 'N/A';
+      }
       main.openConfirmationModal(`Complete transaction: ${userProperName} (${transaction.dataset.id})`, () => {
         completeTransaction(transaction.dataset.id, result);
         searchInput.value = '';
@@ -96,15 +103,10 @@ function sectionTwoMainBtnFunction() {
 
 function completeTransaction(id, result) {
   const columnsData = [
-    'id_T_' + id,
+    'id_' + id,
     {
-      type: 'user',
-      data: [
-        result.payment.user.id,
-        result.payment.user.data[0],
-        result.payment.user.data[1],
-        result.payment.user.data[2],
-      ],
+      type: 'object_refnum',
+      data: [result.payment.user.data[0], result.payment.user.id, result.short[1].value],
     },
     'custom_datetime_today',
   ];

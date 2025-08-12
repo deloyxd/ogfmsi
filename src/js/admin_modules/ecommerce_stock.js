@@ -105,23 +105,40 @@ function mainBtnFunction() {
       main.toast(`Invalid quantity: ${result.image.short[2].value}`, 'error');
       return;
     }
+    if (result.short[0].value != '' && !main.isValidPaymentAmount(+result.short[0].value)) {
+      main.toast(`Invalid measurement`, 'error');
+      return;
+    }
     if (result.spinner[0].selected < 1) {
       main.toast(`Invalid category`, 'error');
       return;
     }
     registerNewProduct(
+      result,
       result.image.src,
       result.image.short[0].value,
       +result.image.short[1].value,
       +result.image.short[2].value,
       result.short[0].value?.trim() || '',
-      result.spinner[0].options[result.spinner[0].selected - 1].value,
-      result.spinner[1].selected > 0 ? result.spinner[1].options[result.spinner[1].selected - 1].value : ''
+      result.spinner[0].selected,
+      result.spinner[1].selected
     );
   });
 }
 
-function registerNewProduct(image, name, price, quantity, measurement, category, measurementUnit) {
+function registerNewProduct(
+  result,
+  image,
+  name,
+  price,
+  quantity,
+  measurement,
+  selectedCategory,
+  selectedMeasurementUnit
+) {
+  const category = result.spinner[0].options[selectedCategory - 1].value;
+  const measurementUnit =
+    selectedMeasurementUnit > 0 ? result.spinner[1].options[selectedMeasurementUnit - 1].value : '';
   const columnsData = [
     'id_P_random',
     {
@@ -139,7 +156,9 @@ function registerNewProduct(image, name, price, quantity, measurement, category,
 
   main.createAtSectionOne('ecommerce-stock', columnsData, 1, name, (result, status) => {
     if (status == 'success') {
-      result.addEventListener('click', () => {
+      const resultBtns = result.children[result.children.length - 1];
+      const productDetailsBtn = resultBtns.querySelector('#productDetailsBtn');
+      productDetailsBtn.addEventListener('click', () => {
         const inputs = {
           header: {
             title: 'Update Product 🧊',
@@ -159,7 +178,7 @@ function registerNewProduct(image, name, price, quantity, measurement, category,
             {
               label: 'Product category',
               placeholder: 'Select product category',
-              selected: 0,
+              selected: selectedCategory,
               required: true,
               options: [
                 { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
@@ -174,7 +193,7 @@ function registerNewProduct(image, name, price, quantity, measurement, category,
             {
               label: 'Product measurement unit',
               placeholder: 'Select product measurement unit',
-              selected: 0,
+              selected: selectedMeasurementUnit,
               options: [
                 // Weight
                 { value: 'mg', label: 'Weight: mg' },
@@ -226,12 +245,85 @@ function registerNewProduct(image, name, price, quantity, measurement, category,
           ],
           footer: {
             main: 'Update Product 🧊',
-            sub: 'Delete 💀'
-          }
+            sub: 'Delete 💀',
+          },
         };
-        main.openModal('cyan', inputs, (newResult) => {
-          main.closeModal();
-        });
+        main.openModal(
+          'cyan',
+          inputs,
+          (newResult) => {
+            main.openConfirmationModal('Update item stock: ' + name, () => {
+              const columnsData = [
+                
+                {
+                  type: 'product',
+                  data: ['', newResult.image.src, newResult.image.short[0].replace(/\s+/g, ':://')],
+                },
+                ('₱' + newResult.dataset.price.toFixed(2)).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+                newResult.dataset.quantity + '',
+                getStatus(newResult.dataset.quantity),
+                newResult.dataset.measurement,
+                newResult.dataset.measurementUnit,
+                newResult.dataset.category,
+                'custom_date_' + newResult.dataset.date,
+              ];
+              main.updateAtSectionOne('ecommerce-stock', columnsData, 1, newResult.dataset.id, (updatedResult) => {
+                const action = {
+                  module: 'E-Commerce',
+                  submodule: 'Stock',
+                  description: 'Update item stock details',
+                };
+                const data = {
+                  id: updatedResult.dataset.id,
+                  image: updatedResult.dataset.image,
+                  name: updatedResult.dataset.text,
+                  price: updatedResult.dataset.price,
+                  quantity: updatedResult.dataset.quantity,
+                  measurement: updatedResult.dataset.measurement,
+                  measurementUnit: updatedResult.dataset.measurementUnit,
+                  category: updatedResult.dataset.category,
+                  date: updatedResult.dataset.date,
+                  type: 'product',
+                };
+
+                accesscontrol.log(action, data);
+
+                main.toast('Successfully updated item stock details!', 'info');
+                main.closeConfirmationModal();
+                main.closeModal();
+              });
+            });
+          },
+          () => {
+            main.openConfirmationModal('Delete item stock: ' + name, () => {
+              const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+              const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+              const action = {
+                module: 'E-Commerce',
+                submodule: 'Stock',
+                description: 'Delete item stock',
+              };
+              const data = {
+                id: result.dataset.id,
+                image: result.dataset.image,
+                name: result.dataset.text,
+                price: result.dataset.price,
+                measurement: result.dataset.measurement,
+                measurementUnit: result.dataset.measurementUnit,
+                category: result.dataset.category,
+                datetime: date + ' - ' + time,
+                type: 'product',
+              };
+              accesscontrol.log(action, data);
+
+              main.deleteAtSectionOne('ecommerce-stock', 1, result.dataset.id);
+
+              main.toast('Successfully deleted item stock!', 'error');
+              main.closeConfirmationModal();
+              main.closeModal();
+            });
+          }
+        );
       });
       const action = {
         module: 'E-Commerce',

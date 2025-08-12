@@ -37,7 +37,7 @@ function getInventoryItemsFromSystem() {
     result.forEach((inventoryItem) => {
       const id = inventoryItem.dataset.id;
       const image = inventoryItem.dataset.image;
-      const name = inventoryItem.dataset.name;
+      const name = inventoryItem.dataset.text;
       const price = inventoryItem.dataset.custom2.replace('₱', '');
       const quantity = inventoryItem.dataset.custom3;
       const measurement = inventoryItem.dataset.custom5;

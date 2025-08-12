@@ -280,14 +280,16 @@ async function loadSectionSilently(sectionName) {
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
               clone.dataset.columncount = titleTexts.length;
-              titleTexts.forEach((titleText) => {
+              titleTexts.forEach((titleText, index) => {
                 const th = document.createElement('th');
                 th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
                 th.textContent = titleText;
-                const resizer = document.createElement('div');
-                resizer.className =
-                  'resizer absolute right-0 top-0 h-full cursor-col-resize bg-black/10 hover:bg-black/30 active:w-1.5 active:bg-black/30 group-hover:w-1.5';
-                th.appendChild(resizer);
+                if (index < titleTexts.length - 1) {
+                  const resizer = document.createElement('div');
+                  resizer.className =
+                    'resizer absolute right-0 top-0 h-full cursor-col-resize bg-black/10 hover:bg-black/30 active:w-1.5 active:bg-black/30 group-hover:w-1.5';
+                  th.appendChild(resizer);
+                }
                 headerRow.appendChild(th);
               });
 
@@ -1120,101 +1122,16 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
     cell.classList.remove('hidden');
     newRow.appendChild(cell);
-
-    if (typeof columnData === 'string') {
-      const lowerColumn = columnData.toLowerCase();
-
-      if (lowerColumn.split('_')[0] === 'id') {
-        let idValue;
-        if (lowerColumn.includes('random')) {
-          const randomId_A = Math.floor(100000 + Math.random() * 900000);
-          const randomId_B = Math.floor(100000 + Math.random() * 900000);
-          idValue = columnData.split('_')[1] + randomId_A + '' + randomId_B;
-        } else {
-          idValue = columnData.split('_')[2];
-        }
-
-        setCellContent(cell, idValue);
-        newRow.dataset.id = idValue;
-        return;
-      }
-
-      if (lowerColumn.split('_')[0] === 'custom') {
-        if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
-          const type = lowerColumn.split('_')[1];
-          if (lowerColumn.includes('today')) {
-            if (['date', 'time', 'datetime'].includes(type)) {
-              const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-              const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
-
-              let value = '';
-              if (type === 'date' || type === 'datetime') {
-                value = new Date().toLocaleDateString('en-US', dateOptions);
-              }
-              if (type === 'time' || type === 'datetime') {
-                const time = new Date().toLocaleTimeString('en-US', timeOptions);
-                value = type === 'datetime' ? `${value} - ${time}` : time;
-              }
-
-              setDateTimeContent(cell, value);
-              return;
-            }
-          }
-
-          function setDateTimeContent(cell, value) {
-            setCellContent(cell, value);
-            switch (type) {
-              case 'date':
-                newRow.dataset.date = value;
-                break;
-              case 'time':
-                newRow.dataset.time = value;
-                break;
-              case 'datetime':
-                newRow.dataset.datetime = value;
-                break;
-            }
-          }
-
-          setDateTimeContent(cell, columnData.split('_')[2]);
-          return;
-        }
-      }
-
-      newRow.dataset['custom' + index] = columnData;
-
-      setCellContent(cell, columnData);
-      return;
-    }
-
-    if (columnData.type) {
-      const columnDataTypes = ['user', 'product'];
-      const columnDataLower = columnData.type.toLowerCase();
-      if (columnDataTypes.includes(columnDataLower)) {
-        newRow.dataset.image = columnData.data[1];
-        newRow.dataset.name = columnData.data[2];
-        if (columnDataLower.includes('user')) {
-          newRow.dataset.contact = columnData.data[3];
-        }
-
-        const cellContent = `
-          <div class="flex items-center gap-3">
-            <img src="${columnData.data[1] ? columnData.data[1] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
-            <p>${columnData.data[2].includes(':://') ? columnData.data[2].replace(/\:\:\/\//g, ' ') : columnData.data[2]}</p>
-          </div>
-        `;
-
-        setCellContent(cell, cellContent);
-        return;
-      }
-    }
-
-    setCellContent(cell, columnData);
+    fillUpCell(newRow, index, cell, columnData);
   });
   const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
   cell.classList.remove('hidden');
-  cell.classList.add(`w-[${175 * cell.children[0].children.length}px]`);
-  cell.classList.add(`2xl:w-[${215 * cell.children[0].children.length}px]`);
+  const totalBtnsCellWidth = 180 * cell.children[0].children.length;
+  cell.classList.add(`w-[${totalBtnsCellWidth}px]`);
+  const btnsCellHeader = document.querySelector(
+    `#${sectionName}-section-content [data-tabindex="${tabIndex}"] th:nth-child(${columnsData.length + 1})`
+  );
+  btnsCellHeader.style.width = `${totalBtnsCellWidth}px`;
   newRow.appendChild(cell);
 
   if (findValue) {
@@ -1235,10 +1152,95 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
   tableRow.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
   callback(newRow, 'success');
+}
 
-  function setCellContent(cell, content) {
-    cell.innerHTML = content;
+function fillUpCell(row, index, cell, data) {
+  if (typeof data === 'string') {
+    const lowerColumn = data.toLowerCase();
+
+    if (lowerColumn.split('_')[0] === 'id') {
+      let idValue;
+      if (lowerColumn.includes('random')) {
+        const randomId_A = Math.floor(100000 + Math.random() * 900000);
+        const randomId_B = Math.floor(100000 + Math.random() * 900000);
+        idValue = data.split('_')[1] + randomId_A + '' + randomId_B;
+      } else {
+        idValue = data.split('_')[1];
+      }
+
+      cell.innerHTML = idValue;
+      row.dataset.id = idValue;
+      return;
+    }
+
+    if (lowerColumn.split('_')[0] === 'custom') {
+      if (lowerColumn.includes('date') || lowerColumn.includes('time')) {
+        const type = lowerColumn.split('_')[1];
+        if (lowerColumn.includes('today')) {
+          if (['date', 'time', 'datetime'].includes(type)) {
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+
+            let value = '';
+            if (type === 'date' || type === 'datetime') {
+              value = new Date().toLocaleDateString('en-US', dateOptions);
+            }
+            if (type === 'time' || type === 'datetime') {
+              const time = new Date().toLocaleTimeString('en-US', timeOptions);
+              value = type === 'datetime' ? `${value} - ${time}` : time;
+            }
+
+            setDateTimeContent(cell, value);
+            return;
+          }
+        }
+
+        function setDateTimeContent(cell, value) {
+          cell.innerHTML = value;
+          switch (type) {
+            case 'date':
+              row.dataset.date = value;
+              break;
+            case 'time':
+              row.dataset.time = value;
+              break;
+            case 'datetime':
+              row.dataset.datetime = value;
+              break;
+          }
+        }
+
+        setDateTimeContent(cell, data.split('_')[2]);
+        return;
+      }
+    }
+
+    row.dataset['custom' + index] = data;
+    cell.innerHTML = data;
+    return;
   }
+
+  if (data.type && data.type.toLowerCase().includes('object')) {
+    row.dataset.image = data.data[0];
+    row.dataset.text = data.data[1];
+    if (data.type.split('_').length > 0) {
+      for (let i = 1; i < data.type.split('_').length; i++) {
+        row.dataset[data.type.split('_')[i]] = data.data[i + 1];
+      }
+    }
+
+    const cellContent = `
+      <div class="flex items-center gap-3">
+        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
+        <p>${data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]}</p>
+      </div>
+    `;
+
+    cell.innerHTML = cellContent;
+    return;
+  }
+
+  cell.innerHTML = data;
 }
 
 export function createAtSectionTwo(sectionName, data, callback) {
@@ -1257,10 +1259,10 @@ export function createAtSectionTwo(sectionName, data, callback) {
     if (data.id.includes('random')) {
       const randomId_A = Math.floor(100000 + Math.random() * 900000);
       const randomId_B = Math.floor(100000 + Math.random() * 900000);
-      const id = data.id.split('-')[0] + randomId_A + '' + randomId_B;
+      const id = data.id.split('_')[0] + randomId_A + '' + randomId_B;
       result.dataset.id = id;
     } else {
-      result.dataset.id = data.id.split('-')[1];
+      result.dataset.id = data.id;
     }
   }
 
@@ -1285,6 +1287,21 @@ export function createAtSectionTwo(sectionName, data, callback) {
   });
 
   return callback(result);
+}
+
+export function updateAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
+  const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+  }
+
+  findAtSectionOne(sectionName, findValue, 'equal', tabIndex, (result) => {
+    for (let i = 0; i < columnsData.length; i++) {
+      fillUpCell(result, i, result.children[i], columnsData[i]);
+    }
+    callback(result);
+  });
 }
 
 export function deleteAtSectionOne(sectionName, tabIndex, id) {
@@ -1350,6 +1367,7 @@ export default {
   findAtSectionTwo,
   createAtSectionOne,
   createAtSectionTwo,
+  updateAtSectionOne,
   deleteAtSectionOne,
   deleteAtSectionTwo,
   deleteAllAtSectionTwo,
