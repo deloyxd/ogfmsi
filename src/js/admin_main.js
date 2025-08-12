@@ -839,6 +839,7 @@ function setupModalBase(defaultData, inputs, callback) {
       const spinnerContainer = originalContainer.cloneNode(true);
       const label = spinnerContainer.children[0];
       label.textContent = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
+      if (spinnerGroup.locked) spinnerContainer.children[1].children[0].disabled = true;
 
       const selectElement = spinnerContainer.querySelector('select');
       selectElement.id = `input-${type}-${index + 1}`;
@@ -846,7 +847,7 @@ function setupModalBase(defaultData, inputs, callback) {
       const placeholderOption = document.createElement('option');
       placeholderOption.value = '';
       placeholderOption.textContent = spinnerGroup.placeholder || 'Select an option';
-      placeholderOption.disabled = true;
+      placeholderOption.disabled = typeof spinnerGroup.selected == 'number' && spinnerGroup.selected == 0;
       placeholderOption.selected = true;
       selectElement.appendChild(placeholderOption);
 
@@ -856,9 +857,17 @@ function setupModalBase(defaultData, inputs, callback) {
         option.textContent = optionData.label;
         option.classList.add('font-medium');
 
-        if (index === spinnerGroup.selected - 1) {
-          option.selected = true;
-          placeholderOption.selected = false;
+        if (typeof spinnerGroup.selected == 'number') {
+          if (index === spinnerGroup.selected - 1) {
+            option.selected = true;
+            placeholderOption.selected = false;
+          }
+        } else {
+          if (option.value === spinnerGroup.selected) {
+            spinnerGroup.selected = index + 1;
+            option.selected = true;
+            placeholderOption.selected = false;
+          }
         }
 
         selectElement.appendChild(option);
@@ -1020,7 +1029,7 @@ export function checkIfEmpty(inputs) {
 
   function check(item) {
     if (item.required && !hasEmpty) {
-      if ((item.selected && item.selected == 0) || (item.value && item.value.trim() === '')) {
+      if (item.value == '' || item.selected == 0) {
         hasEmpty = true;
       }
     }

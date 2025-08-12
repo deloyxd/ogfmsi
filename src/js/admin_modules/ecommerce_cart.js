@@ -48,7 +48,7 @@ function getInventoryItemsFromSystem() {
         id: id,
         image: image,
         name: name,
-        price: +(price.replace(/\,/g, '')),
+        price: +(price.replace(/[^\d.-]/g, '')),
         quantity: +quantity,
         measurement: measurement?.trim() || '',
         measurementUnit: measurementUnit?.trim() || '',
