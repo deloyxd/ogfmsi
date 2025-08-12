@@ -39,10 +39,12 @@ OGFMSI (Online Gym Facility Management with Sales and Inventory) is a comprehens
 
 **If the main branch gets updated while you're working, you can sync your branch:**
 
+- `git stash`
 - `git checkout main`
 - `git pull origin main`
 - `git checkout [your-branch-name]`
 - `git merge main`
+- `git stash pop`
 
 **Reset from last pull:**
 
