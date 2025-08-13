@@ -491,7 +491,7 @@ async function loadSectionSilently(sectionName) {
                   const customContent = tempCustomContent.querySelector(`[data-tabindex="${i}"]`).cloneNode(true);
                   sectionOneContent.appendChild(customContent);
                   if (statsDisabled) {
-                    customContent.classList.add(`h-[${475 + 132}px]`);
+                    customContent.className = `h-[${514 + 132}px]`;
                   }
                 }
                 const removeSectionTwo = sectionOneContent.querySelector('[data-sectionindex="2"]');

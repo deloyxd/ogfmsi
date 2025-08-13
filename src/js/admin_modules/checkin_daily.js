@@ -24,7 +24,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (!liveActivated) {
     liveActivated = true;
     main.updateDateAndTime(SECTION_NAME);
-    setInterval(updateDateAndTime, 10000);
+    setInterval(main.updateDateAndTime, 10000);
   }
 });
 

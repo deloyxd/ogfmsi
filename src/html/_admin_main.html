@@ -118,7 +118,7 @@
           data-toggles="1::1::1::0::0"
           data-startingtexts="Avg::Avg::Avg::Active::Active"
           data-highlighttexts="Daily::Weekly::Monthly::Monthly Passes::Reservations"
-          data-endingtexts="Earning::Earning::Earning::::"
+          data-endingtexts="Earnings::Earnings::Earnings::::"
           data-types="average daily earning::average weekly earning::average monthly earning::active monthly passes::active reservations"
         ></div>
         <div
@@ -178,6 +178,37 @@
           data-sectiontwoemptylist='<p class="text-sm">Status - No connection</p><p>No uploaded QR yet</p>'
           data-sectiontwosearchtext="Enter user ID..."
           data-sectiontwobtntext="Submit Check-In"
+        ></div>
+      </section>
+
+      <!-- 🔥 reservation 🔥 -->
+      <section id="reservation-section" data-icons="fa-calendar-days" data-color="teal-stone-orange" class="section">
+        <div
+          id="section-header"
+          data-title="Reservation"
+          data-subtitle="Live Calendar Module"
+          data-mainbtntext="Manual Reserve Facility 🛕"
+        ></div>
+        <div
+          id="section-stats"
+          data-toggles="0::0"
+          data-startingtexts="::::"
+          data-highlighttexts="Active::Total"
+          data-endingtexts="Reservations::Reservations"
+        ></div>
+        <div
+          id="section-content"
+          data-sectioncount="2"
+          data-tabtitles="Live Calendar::Live Schedules List::Past Schedules List"
+          data-subtitles="Auto updating tab::Upcoming reservations::Old reservations"
+          data-sectiononesearchtext="Search keyword..."
+          data-listemptytexts="::No schedules yet::No past schedules yet"
+          data-listtitletexts="[]::[Reservation ID//User//Facility//Schedule//Date & Time Registered]::[Reservation ID//User//Facility//Schedule//Date & Time Registered]"
+          data-listitembtnids="[]::[reservationViewDetailsBtn//reservationVoidBtn]::[reservationViewDetailsBtn//reservationVoidBtn]"
+          data-listitembtntexts="[]::[View Details ⚙//Void 📕]::[View Details ⚙//Void 📕]"
+          data-listitembtncolors="[]::[yellow//red]::[yellow//red]"
+          data-sectiontwotitletexts="Quick Reservation::👈 Click a date in the live calendar tab"
+          data-sectiontwobtntext="Process Reservation Date"
         ></div>
       </section>
 
