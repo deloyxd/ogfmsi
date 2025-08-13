@@ -609,8 +609,6 @@ function updateActiveSidebar(sectionName) {
   }
 }
 
-export let mainColor, subColor, btnColor;
-
 let tempModalContainer = null;
 let tempModalConfirmationContainer = null;
 
@@ -1357,11 +1355,53 @@ export function createRedDot(sectionName, type) {
   }
 }
 
+export function encodePrice(price) {
+  if (typeof price != 'number') price = +price;
+  return `₱${price.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+export function decodePrice(price) {
+  return price.replace(/[^\d.-]/g, '');
+}
+
+export function getStockStatus(quantity) {
+  if (typeof quantity != 'number') quantity = +quantity;
+  if (quantity === 0) return '<p class="text-gray-800 font-bold">Out of Stock ⚠️</p>';
+  if (quantity <= 10) return '<p class="text-red-700 font-bold">Super Low Stock ‼️</p>';
+  if (quantity <= 50) return '<p class="text-amber-500 font-bold">Low Stock ⚠️</p>';
+  return '<p class="text-emerald-600 font-bold">High Stock ✅</p>';
+}
+
+export function validateStockInputs(price, quantity, measurement) {
+  if (!isValidPaymentAmount(+price)) {
+    toast(`Invalid price: ${price}`, 'error');
+    return false;
+  }
+  if (!isValidPaymentAmount(+quantity)) {
+    toast(`Invalid quantity: ${quantity}`, 'error');
+    return false;
+  }
+  if (measurement && !isValidPaymentAmount(+measurement)) {
+    toast('Invalid measurement', 'error');
+    return false;
+  }
+  return true;
+}
+
+export function encodeText(text) {
+  return text.replace(/\s+/g, ':://');
+}
+
+export function decodeText(text) {
+  return text.replace(/\:\:\/\//g, ' ');
+}
+
+export function getSelectedSpinner(spinner) {
+  return spinner.selected > 0 ? spinner.options[spinner.selected - 1].value : '';
+}
+
 export default {
   sharedState,
-  mainColor,
-  subColor,
-  btnColor,
   openModal,
   openConfirmationModal,
   closeModal,
@@ -1380,6 +1420,15 @@ export default {
   deleteAtSectionTwo,
   deleteAllAtSectionTwo,
   createRedDot,
+
+  // ecommerce-stock
+  encodePrice,
+  decodePrice,
+  getStockStatus,
+  validateStockInputs,
+  encodeText,
+  decodeText,
+  getSelectedSpinner,
 };
 
 document.addEventListener('DOMContentLoaded', function () {

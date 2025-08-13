@@ -66,33 +66,183 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
-  mainBtn?.addEventListener('click', showAddProductModal);
+  mainBtn?.addEventListener('click', mainBtnFunction);
 });
 
-const formatPrice = (price) => `₱${price.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function mainBtnFunction() {
+  const inputs = createModalInputs();
 
-const getStockStatus = (quantity) => {
-  if (quantity === 0) return '<p class="text-gray-800 font-bold">Out of Stock ⚠️</p>';
-  if (quantity <= 10) return '<p class="text-red-700 font-bold">Super Low Stock ‼️</p>';
-  if (quantity <= 50) return '<p class="text-amber-500 font-bold">Low Stock ⚠️</p>';
-  return '<p class="text-emerald-600 font-bold">High Stock ✅</p>';
-};
+  main.openModal(mainBtn, inputs, (result) => {
+    const [name, price, quantity] = result.image.short.map((item) => item.value);
+    const measurement = result.short[0].value?.trim() || '';
 
-const validateInputs = (price, quantity, measurement) => {
-  if (!main.isValidPaymentAmount(+price)) {
-    main.toast(`Invalid price: ${price}`, 'error');
-    return false;
-  }
-  if (!main.isValidPaymentAmount(+quantity)) {
-    main.toast(`Invalid quantity: ${quantity}`, 'error');
-    return false;
-  }
-  if (measurement && !main.isValidPaymentAmount(+measurement)) {
-    main.toast('Invalid measurement', 'error');
-    return false;
-  }
-  return true;
-};
+    if (!main.validateStockInputs(price, quantity, measurement)) return;
+
+    registerProduct(result, name, +price, +quantity, measurement);
+  });
+}
+
+function registerProduct(result, name, price, quantity, measurement) {
+  const category = main.getSelectedSpinner(result.spinner[0]);
+  const measurementUnit = main.getSelectedSpinner(result.spinner[1]);
+
+  const columnsData = [
+    'id_P_random',
+    { type: 'object', data: [result.image.src, main.encodeText(name)] },
+    main.encodePrice(price), // dataset.custom2
+    quantity + '', // dataset.custom3
+    main.getStockStatus(quantity), // dataset.custom4
+    measurement, // dataset.custom5
+    measurementUnit, // dataset.custom6
+    category, // dataset.custom7
+    'custom_date_today',
+  ];
+
+  main.createAtSectionOne(SECTION_NAME, columnsData, 1, name, (result, status) => {
+    if (status === 'success') {
+      setupProductDetailsButton(result);
+      logAction(
+        'Register product',
+        {
+          id: result.dataset.id,
+          image: result.dataset.image,
+          name: main.decodeText(result.dataset.text),
+          price: result.dataset.custom2,
+          quantity: result.dataset.custom3,
+          measurement: result.dataset.custom5,
+          measurementUnit: result.dataset.custom6,
+          category: result.dataset.custom7,
+          date: result.dataset.date,
+        },
+        'product_create'
+      );
+
+      main.createRedDot(SECTION_NAME, 1);
+      main.toast(`${name}, successfully registered!`, 'success');
+      main.closeModal();
+    } else {
+      main.toast(`Error: Product duplication detected: ${result.dataset.id}`, 'error');
+    }
+  });
+}
+
+function setupProductDetailsButton(result) {
+  const productDetailsBtn = result.querySelector('#productDetailsBtn');
+
+  productDetailsBtn.addEventListener('click', () => {
+    const productData = {
+      image: result.dataset.image,
+      name: main.decodeText(result.dataset.text),
+      price: main.decodePrice(result.dataset.custom2),
+      quantity: result.dataset.custom3,
+      measurement: result.dataset.custom5,
+      measurementUnit: result.dataset.custom6,
+      category: result.dataset.custom7,
+    };
+
+    const inputs = createModalInputs(true, productData);
+
+    main.openModal(
+      'cyan',
+      inputs,
+      (newResult) => {
+        if (checkIfSameData(newResult, productData)) {
+          main.toast('You must change anything!', 'error');
+          return;
+        }
+        updateProduct(result, newResult, productData.name);
+      },
+      () => deleteProduct(result)
+    );
+  });
+}
+
+function updateProduct(result, newResult, name) {
+  const [newName, newPrice, newQuantity] = newResult.image.short.map((item) => item.value);
+  const newMeasurement = newResult.short[0].value?.trim() || '';
+
+  if (!main.validateStockInputs(newPrice, newQuantity, newMeasurement)) return;
+
+  main.findAtSectionOne(
+    SECTION_NAME,
+    main.encodeText(newResult.image.short[0].value),
+    'equal_text',
+    1,
+    (findResult) => {
+      if (findResult && findResult != result) {
+        main.toast('That name already exist!', 'error');
+        return;
+      }
+
+      main.openConfirmationModal(`Update product: ${name}`, () => {
+        const category = main.getSelectedSpinner(newResult.spinner[0]);
+        const measurementUnit = main.getSelectedSpinner(newResult.spinner[1]);
+
+        const columnsData = [
+          `id_${result.dataset.id}`,
+          { type: 'object', data: [newResult.image.src, main.encodeText(newName)] },
+          main.encodePrice(newPrice),
+          +newQuantity,
+          main.getStockStatus(newQuantity),
+          newMeasurement,
+          measurementUnit,
+          category,
+          `custom_date_${result.dataset.date}`,
+        ];
+
+        main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
+          logAction(
+            'Update product details',
+            {
+              id: updatedResult.dataset.id,
+              image: updatedResult.dataset.image,
+              name: main.decodeText(updatedResult.dataset.text),
+              price: updatedResult.dataset.custom2,
+              quantity: updatedResult.dataset.custom3,
+              measurement: updatedResult.dataset.custom5,
+              measurementUnit: updatedResult.dataset.custom6,
+              category: updatedResult.dataset.custom7,
+              date: updatedResult.dataset.date,
+            },
+            'product_update'
+          );
+
+          main.toast('Successfully updated product details!', 'info');
+          main.closeConfirmationModal();
+          main.closeModal();
+        });
+      });
+    }
+  );
+}
+
+function deleteProduct(result) {
+  main.openConfirmationModal(`Delete product: ${main.decodeText(result.dataset.text)}`, () => {
+    const now = new Date();
+    const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    logAction(
+      'Delete product',
+      {
+        id: result.dataset.id,
+        image: result.dataset.image,
+        name: main.decodeText(result.dataset.text),
+        price: result.dataset.custom2,
+        measurement: result.dataset.custom5,
+        measurementUnit: result.dataset.custom6,
+        category: result.dataset.custom7,
+        datetime: `${date} - ${time}`,
+      },
+      'product_delete'
+    );
+
+    main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
+    main.toast('Successfully deleted product!', 'error');
+    main.closeConfirmationModal();
+    main.closeModal();
+  });
+}
 
 const createModalInputs = (isUpdate = false, productData = {}) => ({
   header: {
@@ -136,95 +286,6 @@ const logAction = (action, data, type) => {
   accesscontrol.log({ module: MODULE_NAME, submodule: SUBMODULE_NAME, description: action }, { ...data, type: type });
 };
 
-function showAddProductModal() {
-  const inputs = createModalInputs();
-
-  main.openModal(mainBtn, inputs, (result) => {
-    const [name, price, quantity] = result.image.short.map((item) => item.value);
-    const measurement = result.short[0].value?.trim() || '';
-
-    if (!validateInputs(price, quantity, measurement)) return;
-
-    registerProduct(result, name, +price, +quantity, measurement);
-  });
-}
-
-function registerProduct(result, name, price, quantity, measurement) {
-  const category = result.spinner[0].options[result.spinner[0].selected - 1].value;
-  const measurementUnit =
-    result.spinner[1].selected > 0 ? result.spinner[1].options[result.spinner[1].selected - 1].value : '';
-
-  const columnsData = [
-    'id_P_random',
-    { type: 'object', data: [result.image.src, name.replace(/\s+/g, ':://')] },
-    formatPrice(price),
-    quantity.toString(),
-    getStockStatus(quantity),
-    measurement,
-    measurementUnit,
-    category,
-    'custom_date_today',
-  ];
-
-  main.createAtSectionOne(SECTION_NAME, columnsData, 1, name, (result, status) => {
-    if (status === 'success') {
-      setupProductDetailsButton(result);
-      logAction(
-        'Register product',
-        {
-          id: result.dataset.id,
-          image: result.dataset.image,
-          name: result.dataset.text.replace(/\:\:\/\//g, ' '),
-          price: result.dataset.custom2,
-          quantity: result.dataset.custom3,
-          measurement: result.dataset.custom5,
-          measurementUnit: result.dataset.custom6,
-          category: result.dataset.custom7,
-          date: result.dataset.date,
-        },
-        'product_create'
-      );
-
-      main.createRedDot(SECTION_NAME, 1);
-      main.toast(`${name}, successfully registered!`, 'success');
-      main.closeModal();
-    } else {
-      main.toast(`Error: Product duplication detected: ${result.dataset.id}`, 'error');
-    }
-  });
-}
-
-function setupProductDetailsButton(result) {
-  const productDetailsBtn = result.querySelector('#productDetailsBtn');
-
-  productDetailsBtn.addEventListener('click', () => {
-    const productData = {
-      image: result.dataset.image,
-      name: result.dataset.text.replace(/\:\:\/\//g, ' '),
-      price: result.dataset.custom2.replace(/[^\d.-]/g, ''),
-      quantity: result.dataset.custom3,
-      measurement: result.dataset.custom5,
-      measurementUnit: result.dataset.custom6,
-      category: result.dataset.custom7,
-    };
-
-    const inputs = createModalInputs(true, productData);
-
-    main.openModal(
-      'cyan',
-      inputs,
-      (newResult) => {
-        if (checkIfSameData(newResult, productData)) {
-          main.toast('You must change anything!', 'error');
-          return;
-        }
-        updateProduct(result, newResult, productData.name);
-      },
-      () => deleteProduct(result)
-    );
-  });
-}
-
 function checkIfSameData(newData, oldData) {
   return (
     newData.image.src == oldData.image &&
@@ -232,99 +293,9 @@ function checkIfSameData(newData, oldData) {
     newData.image.short[1].value == oldData.price &&
     newData.image.short[2].value == oldData.quantity &&
     newData.short[0].value == oldData.measurement &&
-    newData.spinner[1].options[newData.spinner[1].selected - 1].value == oldData.measurementUnit &&
-    newData.spinner[0].options[newData.spinner[0].selected - 1].value == oldData.category
+    main.getSelectedSpinner(newData.spinner[1]) == oldData.measurementUnit &&
+    main.getSelectedSpinner(newData.spinner[0]) == oldData.category
   );
-}
-
-function updateProduct(result, newResult, name) {
-  const [newName, newPrice, newQuantity] = newResult.image.short.map((item) => item.value);
-  const newMeasurement = newResult.short[0].value?.trim() || '';
-
-  if (!validateInputs(newPrice, newQuantity, newMeasurement)) return;
-
-  main.findAtSectionOne(
-    SECTION_NAME,
-    newResult.image.short[0].value.replace(/\s+/g, ':://'),
-    'equal_text',
-    1,
-    (findResult) => {
-      if (findResult && findResult != result) {
-        main.toast('That name already exist!', 'error');
-        return;
-      }
-
-      main.openConfirmationModal(`Update product: ${name}`, () => {
-        const category = newResult.spinner[0].options[newResult.spinner[0].selected - 1].value;
-        const measurementUnit =
-          newResult.spinner[1].selected > 0
-            ? newResult.spinner[1].options[newResult.spinner[1].selected - 1].value
-            : '';
-
-        const columnsData = [
-          `id_${result.dataset.id}`,
-          { type: 'object', data: [newResult.image.src, newName.replace(/\s+/g, ':://')] },
-          formatPrice(+newPrice),
-          +newQuantity,
-          getStockStatus(+newQuantity),
-          newMeasurement,
-          measurementUnit,
-          category,
-          `custom_date_${result.dataset.date}`,
-        ];
-
-        main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
-          logAction(
-            'Update product details',
-            {
-              id: updatedResult.dataset.id,
-              image: updatedResult.dataset.image,
-              name: updatedResult.dataset.text.replace(/\:\:\/\//g, ' '),
-              price: updatedResult.dataset.custom2,
-              quantity: updatedResult.dataset.custom3,
-              measurement: updatedResult.dataset.custom5,
-              measurementUnit: updatedResult.dataset.custom6,
-              category: updatedResult.dataset.custom7,
-              date: updatedResult.dataset.date,
-            },
-            'product_update'
-          );
-
-          main.toast('Successfully updated product details!', 'info');
-          main.closeConfirmationModal();
-          main.closeModal();
-        });
-      });
-    }
-  );
-}
-
-function deleteProduct(result) {
-  main.openConfirmationModal(`Delete product: ${result.dataset.text.replace(/\:\:\/\//g, ' ')}`, () => {
-    const now = new Date();
-    const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-
-    logAction(
-      'Delete product',
-      {
-        id: result.dataset.id,
-        image: result.dataset.image,
-        name: result.dataset.text.replace(/\:\:\/\//g, ' '),
-        price: result.dataset.custom2,
-        measurement: result.dataset.custom5,
-        measurementUnit: result.dataset.custom6,
-        category: result.dataset.custom7,
-        datetime: `${date} - ${time}`,
-      },
-      'product_delete'
-    );
-
-    main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
-    main.toast('Successfully deleted product!', 'error');
-    main.closeConfirmationModal();
-    main.closeModal();
-  });
 }
 
 function refreshAllTabs() {}
