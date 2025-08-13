@@ -1,11 +1,11 @@
 import main from '../admin_main.js';
 import datasync from './datasync.js';
 
-// default codes:
 let mainBtn;
+
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  // change to right sectionName
   if (main.sharedState.sectionName != 'accesscontrol') return;
+
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
 });
@@ -92,7 +92,8 @@ function actionDetailsBtnFunction(actionData) {
         },
       };
       break;
-    case 'product':
+    case 'product_create':
+    case 'product_update':
       inputs = {
         header: {
           title: 'View Action Details 🔧',
@@ -108,9 +109,52 @@ function actionDetailsBtnFunction(actionData) {
             { placeholder: 'Initial quantity', value: actionData.quantity, locked: true },
           ],
         },
+        short: [
+          {
+            placeholder: 'Measurement',
+            value: actionData.measurement != '' ? actionData.measurement : 'N/A',
+            locked: true,
+          },
+          {
+            placeholder: 'Measurement unit',
+            value: actionData.measurementUnit != '' ? actionData.measurementUnit : 'N/A',
+            locked: true,
+          },
+          { placeholder: 'Product category ID', value: actionData.category, locked: true },
+        ],
+        footer: {
+          main: 'Exit view',
+        },
+      };
+      break;
+    case 'product_delete':
+      inputs = {
+        header: {
+          title: 'View Action Details 🔧',
+          subtitle: 'Product ID: ' + actionData.id,
+        },
+        image: {
+          src: actionData.image,
+          type: 'normal',
+          locked: true,
           short: [
-            { placeholder: 'Product category ID', value: actionData.category, locked: true },
+            { placeholder: 'Product name', value: actionData.name, locked: true },
+            { placeholder: 'Price', value: actionData.price, locked: true },
           ],
+        },
+        short: [
+          {
+            placeholder: 'Measurement',
+            value: actionData.measurement != '' ? actionData.measurement : 'N/A',
+            locked: true,
+          },
+          {
+            placeholder: 'Measurement unit',
+            value: actionData.measurementUnit != '' ? actionData.measurementUnit : 'N/A',
+            locked: true,
+          },
+          { placeholder: 'Product category ID', value: actionData.category, locked: true },
+        ],
         footer: {
           main: 'Exit view',
         },

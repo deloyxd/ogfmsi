@@ -1304,7 +1304,7 @@ export function updateAtSectionOne(sectionName, columnsData, tabIndex, findValue
     searchInput.dispatchEvent(new Event('input'));
   }
 
-  findAtSectionOne(sectionName, findValue, 'equal', tabIndex, (result) => {
+  findAtSectionOne(sectionName, findValue, 'equal_id', tabIndex, (result) => {
     for (let i = 0; i < columnsData.length; i++) {
       fillUpCell(result, i, result.children[i], columnsData[i]);
     }

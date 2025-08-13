@@ -4,6 +4,7 @@ import accesscontrol from './accesscontrol.js';
 const SECTION_NAME = 'ecommerce-stock';
 const MODULE_NAME = 'E-Commerce';
 const SUBMODULE_NAME = 'Stock';
+
 const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
   { value: 'food-meals', label: 'Food & Meals' },
@@ -24,7 +25,7 @@ const MEASUREMENT_UNITS = [
   // Volume
   { value: 'ml', label: 'Volume: ml' },
   { value: 'l', label: 'Volume: l' },
-  // Countable units
+  // Count units
   { value: 'unit', label: 'Count: unit(s)' },
   { value: 'piece', label: 'Count: piece(s)' },
   { value: 'set', label: 'Count: set(s)' },
@@ -51,7 +52,7 @@ const MEASUREMENT_UNITS = [
   { value: 'glass', label: 'Count: glass(es)' },
   { value: 'jug', label: 'Count: jug(s)' },
   { value: 'shot', label: 'Count: shot(s)' },
-  // Size/Dimension
+  // Size
   { value: 'inch', label: 'Size: inch(es)' },
   { value: 'cm', label: 'Size: cm' },
   { value: 'mm', label: 'Size: mm' },
@@ -102,41 +103,24 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     src: productData.image || '/src/images/client_logo.jpg',
     type: 'normal',
     short: [
-      {
-        placeholder: 'Product name',
-        value: productData.name || '',
-        required: true,
-      },
-      {
-        placeholder: 'Price',
-        value: productData.price || '',
-        required: true,
-      },
-      {
-        placeholder: 'Initial quantity',
-        value: productData.quantity || '',
-        required: true,
-      },
+      { placeholder: 'Product name', value: productData.name || '', required: true },
+      { placeholder: 'Price', value: productData.price || '', required: true },
+      { placeholder: 'Initial quantity', value: productData.quantity || '', required: true },
     ],
   },
-  short: [
-    {
-      placeholder: 'Product measurement value',
-      value: productData.measurement || '',
-    },
-  ],
+  short: [{ placeholder: 'Product measurement value', value: productData.measurement || '' }],
   spinner: [
     {
       label: 'Product category',
       placeholder: 'Select product category',
-      selected: productData.categoryIndex || 0,
+      selected: productData.category || 0,
       required: true,
       options: CATEGORIES,
     },
     {
       label: 'Product measurement unit',
       placeholder: 'Select product measurement unit',
-      selected: productData.unitIndex || 0,
+      selected: productData.measurementUnit || 0,
       options: MEASUREMENT_UNITS,
     },
   ],
@@ -148,15 +132,8 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
   }),
 });
 
-const logAction = (action, data) => {
-  accesscontrol.log(
-    {
-      module: MODULE_NAME,
-      submodule: SUBMODULE_NAME,
-      description: action,
-    },
-    { ...data, type: 'product' }
-  );
+const logAction = (action, data, type) => {
+  accesscontrol.log({ module: MODULE_NAME, submodule: SUBMODULE_NAME, description: action }, { ...data, type: type });
 };
 
 function showAddProductModal() {
@@ -179,10 +156,7 @@ function registerProduct(result, name, price, quantity, measurement) {
 
   const columnsData = [
     'id_P_random',
-    {
-      type: 'object',
-      data: [result.image.src, name.replace(/\s+/g, ':://')],
-    },
+    { type: 'object', data: [result.image.src, name.replace(/\s+/g, ':://')] },
     formatPrice(price),
     quantity.toString(),
     getStockStatus(quantity),
@@ -194,19 +168,22 @@ function registerProduct(result, name, price, quantity, measurement) {
 
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, name, (result, status) => {
     if (status === 'success') {
-      setupProductDetailsButton(result, name);
-
-      logAction('Register product', {
-        id: result.dataset.id,
-        image: result.dataset.image,
-        name,
-        price,
-        quantity,
-        measurement,
-        measurementUnit,
-        category,
-        date: result.dataset.date,
-      });
+      setupProductDetailsButton(result);
+      logAction(
+        'Register product',
+        {
+          id: result.dataset.id,
+          image: result.dataset.image,
+          name: result.dataset.text.replace(/\:\:\/\//g, ' '),
+          price: result.dataset.custom2,
+          quantity: result.dataset.custom3,
+          measurement: result.dataset.custom5,
+          measurementUnit: result.dataset.custom6,
+          category: result.dataset.custom7,
+          date: result.dataset.date,
+        },
+        'product_create'
+      );
 
       main.createRedDot(SECTION_NAME, 1);
       main.toast(`${name}, successfully registered!`, 'success');
@@ -217,7 +194,7 @@ function registerProduct(result, name, price, quantity, measurement) {
   });
 }
 
-function setupProductDetailsButton(result, name) {
+function setupProductDetailsButton(result) {
   const productDetailsBtn = result.querySelector('#productDetailsBtn');
 
   productDetailsBtn.addEventListener('click', () => {
@@ -227,8 +204,8 @@ function setupProductDetailsButton(result, name) {
       price: result.dataset.custom2.replace(/[^\d.-]/g, ''),
       quantity: result.dataset.custom3,
       measurement: result.dataset.custom5,
-      categoryIndex: result.dataset.custom7,
-      unitIndex: result.dataset.custom6,
+      measurementUnit: result.dataset.custom6,
+      category: result.dataset.custom7,
     };
 
     const inputs = createModalInputs(true, productData);
@@ -236,10 +213,28 @@ function setupProductDetailsButton(result, name) {
     main.openModal(
       'cyan',
       inputs,
-      (newResult) => updateProduct(result, newResult, name),
-      () => deleteProduct(result, name)
+      (newResult) => {
+        if (checkIfSameData(newResult, productData)) {
+          main.toast('You must change anything!', 'error');
+          return;
+        }
+        updateProduct(result, newResult, productData.name);
+      },
+      () => deleteProduct(result)
     );
   });
+}
+
+function checkIfSameData(newData, oldData) {
+  return (
+    newData.image.src == oldData.image &&
+    newData.image.short[0].value == oldData.name &&
+    newData.image.short[1].value == oldData.price &&
+    newData.image.short[2].value == oldData.quantity &&
+    newData.short[0].value == oldData.measurement &&
+    newData.spinner[1].options[newData.spinner[1].selected - 1].value == oldData.measurementUnit &&
+    newData.spinner[0].options[newData.spinner[0].selected - 1].value == oldData.category
+  );
 }
 
 function updateProduct(result, newResult, name) {
@@ -248,72 +243,85 @@ function updateProduct(result, newResult, name) {
 
   if (!validateInputs(newPrice, newQuantity, newMeasurement)) return;
 
-  main.findAtSectionOne(SECTION_NAME, newResult.image.short[0].value.replace(/\s+/g, ':://'), 'equal_text', 1, (findResult) => {
-    if (findResult && findResult != result) {
-      main.toast('That name already exist!', 'error');
-      return;
-    }
+  main.findAtSectionOne(
+    SECTION_NAME,
+    newResult.image.short[0].value.replace(/\s+/g, ':://'),
+    'equal_text',
+    1,
+    (findResult) => {
+      if (findResult && findResult != result) {
+        main.toast('That name already exist!', 'error');
+        return;
+      }
 
-    main.openConfirmationModal(`Update item stock: ${name}`, () => {
-      const category = newResult.spinner[0].options[newResult.spinner[0].selected - 1].value;
-      const measurementUnit =
-        newResult.spinner[1].selected > 0 ? newResult.spinner[1].options[newResult.spinner[1].selected - 1].value : '';
+      main.openConfirmationModal(`Update product: ${name}`, () => {
+        const category = newResult.spinner[0].options[newResult.spinner[0].selected - 1].value;
+        const measurementUnit =
+          newResult.spinner[1].selected > 0
+            ? newResult.spinner[1].options[newResult.spinner[1].selected - 1].value
+            : '';
 
-      const columnsData = [
-        `id_${result.dataset.id}`,
-        {
-          type: 'object',
-          data: [newResult.image.src, newName.replace(/\s+/g, ':://')],
-        },
-        formatPrice(+newPrice),
-        +newQuantity,
-        getStockStatus(+newQuantity),
-        newMeasurement,
-        measurementUnit,
-        category,
-        `custom_date_${result.dataset.date}`,
-      ];
+        const columnsData = [
+          `id_${result.dataset.id}`,
+          { type: 'object', data: [newResult.image.src, newName.replace(/\s+/g, ':://')] },
+          formatPrice(+newPrice),
+          +newQuantity,
+          getStockStatus(+newQuantity),
+          newMeasurement,
+          measurementUnit,
+          category,
+          `custom_date_${result.dataset.date}`,
+        ];
 
-      main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
-        logAction('Update item stock details', {
-          id: updatedResult.dataset.id,
-          image: updatedResult.dataset.image,
-          name: updatedResult.dataset.text,
-          price: updatedResult.dataset.price,
-          quantity: updatedResult.dataset.quantity,
-          measurement: updatedResult.dataset.measurement,
-          measurementUnit: updatedResult.dataset.measurementUnit,
-          category: updatedResult.dataset.category,
-          date: updatedResult.dataset.date,
+        main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
+          logAction(
+            'Update product details',
+            {
+              id: updatedResult.dataset.id,
+              image: updatedResult.dataset.image,
+              name: updatedResult.dataset.text.replace(/\:\:\/\//g, ' '),
+              price: updatedResult.dataset.custom2,
+              quantity: updatedResult.dataset.custom3,
+              measurement: updatedResult.dataset.custom5,
+              measurementUnit: updatedResult.dataset.custom6,
+              category: updatedResult.dataset.custom7,
+              date: updatedResult.dataset.date,
+            },
+            'product_update'
+          );
+
+          main.toast('Successfully updated product details!', 'info');
+          main.closeConfirmationModal();
+          main.closeModal();
         });
-
-        main.toast('Successfully updated item stock details!', 'info');
-        main.closeConfirmationModal();
-        main.closeModal();
       });
-    });
-  });
+    }
+  );
 }
 
-function deleteProduct(result, name) {
-  main.openConfirmationModal(`Delete item stock: ${name}`, () => {
+function deleteProduct(result) {
+  main.openConfirmationModal(`Delete product: ${result.dataset.text.replace(/\:\:\/\//g, ' ')}`, () => {
     const now = new Date();
     const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
-    logAction('Delete item stock', {
-      id: result.dataset.id,
-      image: result.dataset.image,
-      name: result.dataset.text,
-      price: result.dataset.price,
-      measurement: result.dataset.measurement,
-      measurementUnit: result.dataset.measurementUnit,
-      category: result.dataset.category,
-      datetime: `${date} - ${time}`,
-    });
+    logAction(
+      'Delete product',
+      {
+        id: result.dataset.id,
+        image: result.dataset.image,
+        name: result.dataset.text.replace(/\:\:\/\//g, ' '),
+        price: result.dataset.custom2,
+        measurement: result.dataset.custom5,
+        measurementUnit: result.dataset.custom6,
+        category: result.dataset.custom7,
+        datetime: `${date} - ${time}`,
+      },
+      'product_delete'
+    );
 
     main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
-    main.toast('Successfully deleted item stock!', 'error');
+    main.toast('Successfully deleted product!', 'error');
     main.closeConfirmationModal();
     main.closeModal();
   });
