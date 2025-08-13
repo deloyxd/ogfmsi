@@ -1,34 +1,25 @@
 import main from '../admin_main.js';
+import stock from './ecommerce_stock.js';
 import accesscontrol from './accesscontrol.js';
 import datasync from './datasync.js';
 
-// default codes:
-let mainBtn,
-  subBtn,
-  sectionTwoMainBtn,
-  cart = [],
+const SECTION_NAME = 'ecommerce-cart';
+const MODULE_NAME = 'E-Commerce';
+const SUBMODULE_NAME = 'Cart';
+
+let cart = [],
   liveActivated = false;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  if (main.sharedState.sectionName !== 'ecommerce-cart') return;
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
 
   getInventoryItemsFromSystem();
 
   if (!liveActivated) {
     liveActivated = true;
-    updateDateAndTime();
+    main.updateDateAndTime(SECTION_NAME);
     setInterval(updateDateAndTime, 10000);
   }
 });
-
-function updateDateAndTime() {
-  if (main.sharedState.sectionName === 'ecommerce-cart') {
-    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    document.getElementById(
-      'ecommerce-cart-section-header'
-    ).children[0].children[1].children[0].children[0].textContent = `📆 ${date} ⌚ ${time}`;
-  }
-}
 
 function getInventoryItemsFromSystem() {
   const inventoryItems = [];
@@ -38,7 +29,7 @@ function getInventoryItemsFromSystem() {
       const id = inventoryItem.dataset.id;
       const image = inventoryItem.dataset.image;
       const name = inventoryItem.dataset.text;
-      const price = inventoryItem.dataset.custom2.replace('₱', '');
+      const price = main.decodePrice(inventoryItem.dataset.custom2);
       const quantity = inventoryItem.dataset.custom3;
       const measurement = inventoryItem.dataset.custom5;
       const measurementUnit = inventoryItem.dataset.custom6;
@@ -48,7 +39,7 @@ function getInventoryItemsFromSystem() {
         id: id,
         image: image,
         name: name,
-        price: +(price.replace(/[^\d.-]/g, '')),
+        price: +price,
         quantity: +quantity,
         measurement: measurement?.trim() || '',
         measurementUnit: measurementUnit?.trim() || '',
@@ -80,22 +71,12 @@ function displayProducts(products) {
 
     productCard.querySelector('img').src = product.image;
 
-    const categories = {
-      supplementsnutrition: 'Supplements & Nutrition',
-      foodmeals: 'Food & Meals',
-      beverages: 'Beverages',
-      fitnessequipment: 'Fitness Equipment',
-      apparel: 'Apparel',
-      merchandise: 'Merchandise',
-      other: 'Other',
-    };
-
     const dataset = {
-      productName: product.name.replace(/\:\:\/\//g, ' '),
-      productCategory: categories[product.category.replace(/\-/g, '')],
+      productName: main.decodeText(product.name),
+      productCategory: getCategoryLabel(product.category),
       statusColor: product.quantity <= 10 ? 'text-orange-500' : 'text-green-600',
       stockText: 'Stk: ' + product.quantity,
-      productPrice: ('₱' + product.price.toFixed(2)).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+      productPrice: main.encodePrice(product.price),
       productQuantity: product.quantity,
       productMeasurementStatus:
         product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
@@ -136,7 +117,8 @@ function displayProducts(products) {
           addToCart(product, quantity);
           quantity = 0;
           updateAddToCartButton();
-          main.toast(`Added ${product.name.replace(/\:\:\/\//g, ' ')} to cart!`, 'success');
+          const { _, __, fullName } = main.decodeName(product.name);
+          main.toast(`${fullName}, added to cart!`, 'success');
         }
       });
     } else {
@@ -177,17 +159,17 @@ function addToCart(product, quantity) {
 }
 
 function updateCartDisplay() {
-  main.deleteAllAtSectionTwo('ecommerce-cart');
+  main.deleteAllAtSectionTwo(SECTION_NAME);
   cart.forEach((item) => {
     const data = {
       id: item.id,
       action: {
-        module: 'E-Commerce',
-        submodule: 'Cart',
+        module: MODULE_NAME,
+        submodule: SUBMODULE_NAME,
         description: 'Add to cart',
       },
     };
-    main.createAtSectionTwo('ecommerce-cart', data, (result) => {
+    main.createAtSectionTwo(SECTION_NAME, data, (result) => {
       result.dataset.itemid = item.id;
       result.innerHTML += `
         <!-- Column 1: Image -->
@@ -197,14 +179,15 @@ function updateCartDisplay() {
 
         <!-- Column 2: Name and Category -->
         <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-wrap text-lg">${item.name.replace(/\:\:\/\//g, ' ')}</h3>
-            <p class="text-sm text-gray-500">${item.category}</p>
+            <h3 class="font-bold text-wrap text-lg">${main.decodeText(item.name)}</h3>
+            <p class="text-sm text-gray-500">${getMeasurementText(item.measurement, item.measurementUnit)}</p>
+            <p class="text-sm text-gray-500">${getCategoryLabel(item.category)}</p>
         </div>
 
         <!-- Column 3: Price, Quantity, Total, and Remove -->
         <div class="flex w-32 flex-shrink-0 flex-col items-end justify-between">
           <div class="items-end">
-            <div class="text-end font-medium">₱${item.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
+            <div class="text-end font-medium">${main.encodePrice(item.price)}</div>
 
             <div class="my-2 flex items-center">
               <button class="quantity-btn rounded-l border px-2 py-1" onclick="decreaseQuantity('${item.id}')">-</button>
@@ -212,7 +195,7 @@ function updateCartDisplay() {
               <button class="quantity-btn rounded-r border px-2 py-1" onclick="increaseQuantity('${item.id}')">+</button>
             </div>
 
-            <div class="text-end my-1 font-bold">₱${(item.price * item.quantity).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
+            <div class="text-end my-1 font-bold">${main.encodePrice(item.price * item.quantity)}</div>
           </div>
 
           <div class="items-end">
@@ -224,6 +207,15 @@ function updateCartDisplay() {
       accesscontrol.log(data.action, item);
     });
   });
+}
+
+function getCategoryLabel(category) {
+  return stock.CATEGORIES.find((c) => c.value === category)?.label;
+}
+
+function getMeasurementText(measurement, measurementUnit) {
+  const text = `${measurement?.trim() || ''} ${measurementUnit?.trim() || ''}`.trim();
+  return text || 'No measurement';
 }
 
 function processCheckout() {

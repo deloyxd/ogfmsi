@@ -1,11 +1,13 @@
 import main from '../admin_main.js';
 import accesscontrol from './accesscontrol.js';
 
-// default codes:
+const SECTION_NAME = 'invoicing';
+const MODULE_NAME = 'Invoicing';
+
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  // change to right sectionName
-  if (main.sharedState.sectionName != 'invoicing') return;
+  if (main.sharedState.sectionName != SECTION_NAME) return;
+
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
@@ -20,8 +22,8 @@ function mainBtnFunction() {}
 function subBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
-  const searchInput = document.getElementById('invoicingSectionTwoSearch');
-  main.findAtSectionTwo('invoicing', searchInput.value.trim(), 'equal_id', (result) => {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionTwoSearch`);
+  main.findAtSectionTwo(SECTION_NAME, searchInput.value.trim(), 'equal_id', (result) => {
     const transaction = result;
 
     if (!transaction) {
@@ -76,23 +78,27 @@ function sectionTwoMainBtnFunction() {
         main: 'Complete payment transaction 🔏',
       },
     };
-    const userProperName =
-      inputs.payment.user.data[1].split(':://')[0] + ' ' + inputs.payment.user.data[1].split(':://')[1];
-    inputs.header.title = `${userProperName} 🔏`;
+    const { fullName } = main.decodeName(inputs.payment.user.data[1]);
+    inputs.header.title = `${fullName} 🔏`;
 
     main.openModal('green', inputs, (result) => {
       if (!main.isValidPaymentAmount(+result.short[0].value)) {
         main.toast(`Invalid amount: ${result.short[0].value}`, 'error');
         return;
       }
-      if (result.radio[0].selected == 2 && ((result.short[1].value != 'N/A' && /[^0-9]/.test(result.short[1].value)) || result.short[1].value == 'N/A' || result.short[1].value == '')) {
+      if (
+        result.radio[0].selected == 2 &&
+        ((result.short[1].value != 'N/A' && /[^0-9]/.test(result.short[1].value)) ||
+          result.short[1].value == 'N/A' ||
+          result.short[1].value == '')
+      ) {
         main.toast(`Invalid reference: ${result.short[1].value}`, 'error');
         return;
       }
       if (result.radio[0].selected == 1) {
         result.short[1].value = 'N/A';
       }
-      main.openConfirmationModal(`Complete transaction: ${userProperName} (${transaction.dataset.id})`, () => {
+      main.openConfirmationModal(`Complete transaction: ${fullName} (${transaction.dataset.id})`, () => {
         completeTransaction(transaction.dataset.id, result);
         searchInput.value = '';
         searchInput.dispatchEvent(new Event('input'));
@@ -110,12 +116,12 @@ function completeTransaction(id, result) {
     },
     'custom_datetime_today',
   ];
-  main.createAtSectionOne('invoicing', columnsData, 1, '', (_, status1) => {
+  main.createAtSectionOne(SECTION_NAME, columnsData, 1, '', (_, status1) => {
     if (status1 == 'success') {
-      main.createAtSectionOne('invoicing', columnsData, 2, '', (editedResult, status2) => {
+      main.createAtSectionOne(SECTION_NAME, columnsData, 2, '', (editedResult, status2) => {
         if (status2 == 'success') {
           const action = {
-            module: 'Invoicing',
+            module: MODULE_NAME,
             description: 'Transaction complete',
           };
           const data = {
@@ -134,7 +140,7 @@ function completeTransaction(id, result) {
           };
           accesscontrol.log(action, data);
 
-          main.deleteAtSectionTwo('invoicing', id);
+          main.deleteAtSectionTwo(SECTION_NAME, id);
 
           // updating "Pending" value
           const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement
@@ -148,8 +154,8 @@ function completeTransaction(id, result) {
             }
           }
 
-          main.createRedDot('invoicing', 1);
-          main.createRedDot('invoicing', 2);
+          main.createRedDot(SECTION_NAME, 1);
+          main.createRedDot(SECTION_NAME, 2);
           main.createRedDot('checkin', 'main');
           main.createRedDot('checkin-daily', 'sub');
           main.createRedDot('checkin-daily', 2);
@@ -167,11 +173,11 @@ export function processPayment(user) {
   const data = {
     id: 'T_random',
     action: {
-      module: 'Invoicing',
+      module: MODULE_NAME,
       description: 'Enqueue check-in transaction',
     },
   };
-  main.createAtSectionTwo('invoicing', data, (result) => {
+  main.createAtSectionTwo(SECTION_NAME, data, (result) => {
     // updating transaction id of pending user
     const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement.children;
     for (let i = 1; i < items.length; i++) {
@@ -215,7 +221,7 @@ export function processPayment(user) {
 
     accesscontrol.log(data.action, user);
 
-    main.createRedDot('invoicing', 'main');
+    main.createRedDot(SECTION_NAME, 'main');
   });
 }
 

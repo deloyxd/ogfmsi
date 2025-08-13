@@ -811,19 +811,29 @@ function setupModalBase(defaultData, inputs, callback) {
       });
     }
 
-    const imageContainerInputsContainer = imageContainerParent.children[1];
+    if (inputs.image.short) {
+      const imageContainerInputsContainer = imageContainerParent.children[1];
+      inputs.image.short.forEach((input, index) => {
+        const clone = imageContainerInputsContainer.children[0].cloneNode(true);
 
-    inputs.image.short.forEach((input, index) => {
-      const clone = imageContainerInputsContainer.children[0].cloneNode(true);
+        clone.children[1].addEventListener('input', () => {
+          if (inputs.image.type === 'live') imageContainerTexts[index].textContent = clone.children[1].value;
+          input.value = clone.children[1].value;
+        });
 
-      clone.children[1].addEventListener('input', () => {
-        if (inputs.image.type === 'live') imageContainerTexts[index].textContent = clone.children[1].value;
-        input.value = clone.children[1].value;
+        renderInput(clone, 'short', input, index);
+        imageContainerInputsContainer.appendChild(clone);
       });
-
-      renderInput(clone, 'short', input, index);
-      imageContainerInputsContainer.appendChild(clone);
-    });
+    } else {
+      imageContainerParent.classList.remove('gap-3');
+      imageContainerParent.classList.remove('2xl:gap-6');
+      imageContainerParent.children[0].classList.add('col-span-3');
+      imageContainerParent.children[0].classList.add('col-start-2');
+      imageContainerParent.children[0].children[1].classList.add('min-h-[236px]');
+      imageContainerParent.children[0].children[1].classList.add('max-h-[236px]');
+      imageContainerParent.children[0].children[1].classList.add('2xl:min-h-[276px]');
+      imageContainerParent.children[0].children[1].classList.add('2xl:max-h-[276px]');
+    }
 
     imageContainerParent.classList.remove('hidden');
     originalContainer.insertAdjacentElement('afterend', imageContainerParent);
@@ -1375,6 +1385,18 @@ export function getDateOrTimeOrBoth() {
   return { date, time, datetime: `${date} - ${time}` };
 }
 
+export function updateDateAndTime(sectionName) {
+  if (main.sharedState.sectionName === sectionName) {
+    const { date, time } = main.getDateOrTimeOrBoth();
+    const headerElement = document.getElementById(`${sectionName}-section-header`)?.children[0]?.children[1]
+      ?.children[0]?.children[0];
+
+    if (headerElement) {
+      headerElement.textContent = `📆 ${date} ⌚ ${time}`;
+    }
+  }
+}
+
 export function encodePrice(price) {
   if (typeof price != 'number') price = +price;
   return `₱${price.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -1445,6 +1467,7 @@ export default {
   encodeName,
   decodeName,
   getDateOrTimeOrBoth,
+  updateDateAndTime,
 
   // ecommerce-stock
   encodePrice,

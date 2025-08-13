@@ -23,7 +23,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
 
   if (!liveActivated) {
     liveActivated = true;
-    updateDateAndTime();
+    main.updateDateAndTime(SECTION_NAME);
     setInterval(updateDateAndTime, 10000);
   }
 });
@@ -255,9 +255,9 @@ function deleteUser(user, fullName) {
 }
 
 function userVoidBtnFunction(user) {
-  const { fullName } = main.decodeName(user.dataset.text);
+  const { firstName } = main.decodeName(user.dataset.text);
 
-  const confirmationMessage = `Void user log: ${fullName}<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Invoicing module.`;
+  const confirmationMessage = `Void user log: ${firstName}<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Invoicing module.`;
 
   main.openConfirmationModal(confirmationMessage, () => {
     const { datetime } = main.getDateOrTimeOrBoth();
@@ -343,15 +343,3 @@ const createUserColumnsData = (id, image, name, contact, dateTime = 'custom_date
   },
   dateTime,
 ];
-
-function updateDateAndTime() {
-  if (main.sharedState.sectionName === SECTION_NAME) {
-    const { date, time } = main.getDateOrTimeOrBoth();
-    const headerElement = document.getElementById(`${SECTION_NAME}-section-header`)?.children[0]?.children[1]
-      ?.children[0]?.children[0];
-
-    if (headerElement) {
-      headerElement.textContent = `📆 ${date} ⌚ ${time}`;
-    }
-  }
-}

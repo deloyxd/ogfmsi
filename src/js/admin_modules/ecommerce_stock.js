@@ -5,7 +5,7 @@ const SECTION_NAME = 'ecommerce-stock';
 const MODULE_NAME = 'E-Commerce';
 const SUBMODULE_NAME = 'Stock';
 
-const CATEGORIES = [
+export const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
   { value: 'food-meals', label: 'Food & Meals' },
   { value: 'beverages', label: 'Beverages' },
@@ -14,6 +14,8 @@ const CATEGORIES = [
   { value: 'merchandise', label: 'Merchandise' },
   { value: 'other', label: 'Other' },
 ];
+
+export default { CATEGORIES };
 
 const MEASUREMENT_UNITS = [
   // Weight

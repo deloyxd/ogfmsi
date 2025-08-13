@@ -20,41 +20,39 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 });
 
 async function mainBtnFunction() {
-  try {
-    const response = await fetch(`${global.API_BASE_URL}/sales`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ purpose: 'test', amount: 69 }),
-    });
-    const data = await response.json();
-
-    if (response.ok) {
-      main.toast(data.message, 'success');
-      console.log('result', data.result);
-    } else {
-      main.toast(data.error, 'error');
-    }
-  } catch (error) {
-    main.toast("There's no connection to the server!", 'error');
-  }
+  // try {
+  //   const response = await fetch(`${global.API_BASE_URL}/sales`, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ purpose: 'test', amount: 69 }),
+  //   });
+  //   const data = await response.json();
+  //   if (response.ok) {
+  //     main.toast(data.message, 'success');
+  //     console.log('result', data.result);
+  //   } else {
+  //     main.toast(data.error, 'error');
+  //   }
+  // } catch (error) {
+  //   main.toast("There's no connection to the server!", 'error');
+  // }
 }
 
 function subBtnFunction() {}
 
-async function sectionTwoMainBtnFunction() {
-  try {
-    const response = await fetch(`${global.API_BASE_URL}/sales/1`);
-    const data = await response.json();
-
-    if (response.ok) {
-      main.toast(data.message, 'success');
-      console.log('result', data.result);
-    } else {
-      main.toast(data.error, 'error');
-    }
-  } catch (error) {
-    main.toast("There's no connection to the server!", 'error');
-  }
+function sectionTwoMainBtnFunction() {
+  // try {
+  //   const response = await fetch(`${global.API_BASE_URL}/sales/1`);
+  //   const data = await response.json();
+  //   if (response.ok) {
+  //     main.toast(data.message, 'success');
+  //     console.log('result', data.result);
+  //   } else {
+  //     main.toast(data.error, 'error');
+  //   }
+  // } catch (error) {
+  //   main.toast("There's no connection to the server!", 'error');
+  // }
 }
 
 function setupHeader() {
