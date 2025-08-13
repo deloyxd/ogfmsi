@@ -2,6 +2,96 @@ const { Router } = require("express");
 const mysqlConnection = require('../database/mysql');
 const router = Router();
 
+/* 🔥 EQUIPMENT INVENTORY ROUTES 🔥 */
+
+// POST new equipment
+router.post('/equipment', async (req, res) => {
+  const { equipment_name, equipment_type, quantity, image_url, condition_status } = req.body;
+  
+  // Generate unique equipment ID
+  const equipment_id = 'EQ_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  
+  const query = 'INSERT INTO gym_equipment_tbl (equipment_id, equipment_name, equipment_type, quantity, image_url, condition_status) VALUES (?, ?, ?, ?, ?, ?)';
+  
+  mysqlConnection.query(query, [equipment_id, equipment_name, equipment_type, quantity, image_url, condition_status], (error, result) => {
+    if (error) {
+      console.error('Creating equipment error:', error);
+      return res.status(500).json({ error: 'Creating equipment failed' });
+    }
+    res.status(201).json({ 
+      message: 'Equipment created successfully', 
+      result: { equipment_id, equipment_name, equipment_type, quantity }
+    });
+  });
+});
+
+// GET all equipment
+router.get('/equipment', async (req, res) => {
+  const query = 'SELECT * FROM gym_equipment_tbl ORDER BY created_at DESC';
+  mysqlConnection.query(query, (error, result) => {
+    if (error) {
+      console.error('Fetching equipment error:', error);
+      return res.status(500).json({ error: 'Fetching equipment failed' });
+    }
+    res.status(200).json({ message: 'Fetching equipment successful', result: result });
+  });
+});
+
+// GET single equipment
+router.get('/equipment/:id', async (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM gym_equipment_tbl WHERE equipment_id = ?';
+  mysqlConnection.query(query, [id], (error, result) => {
+    if (error) {
+      console.error('Fetching equipment error:', error);
+      return res.status(500).json({ error: 'Fetching equipment failed' });
+    }
+    if (!result || result.length === 0) {
+      return res.status(404).json({ error: 'Equipment not found' });
+    } else {
+      res.status(200).json({ message: 'Fetching equipment successful', result: result[0] });
+    }
+  });
+});
+
+// PUT update equipment
+router.put('/equipment/:id', async (req, res) => {
+  const { id } = req.params;
+  const { equipment_name, equipment_type, quantity, image_url, condition_status, notes } = req.body;
+  
+  const query = 'UPDATE gym_equipment_tbl SET equipment_name = ?, equipment_type = ?, quantity = ?, image_url = ?, condition_status = ?, notes = ? WHERE equipment_id = ?';
+  
+  mysqlConnection.query(query, [equipment_name, equipment_type, quantity, image_url, condition_status, notes, id], (error, result) => {
+    if (error) {
+      console.error('Updating equipment error:', error);
+      return res.status(500).json({ error: 'Updating equipment failed' })
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Equipment not found' }); 
+    } else {
+      res.status(200).json({ message: 'Equipment updated successfully' });
+    }
+  });
+});
+
+// DELETE equipment
+router.delete('/equipment/:id', async (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM gym_equipment_tbl WHERE equipment_id = ?';
+  
+  mysqlConnection.query(query, [id], (error, result) => {
+    if (error) {
+      console.error('Deleting equipment error:', error);
+      return res.status(500).json({ error: 'Deleting equipment failed' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Equipment not found' });
+    } else {
+      res.status(200).json({ message: 'Equipment deleted successfully' });
+    }
+  });
+});
+
 /* 🔥 Equipment Maintenance Routes 🔥 */
 
 // GET all maintenance records

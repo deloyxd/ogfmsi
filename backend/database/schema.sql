@@ -154,6 +154,25 @@ CREATE TABLE IF NOT EXISTS equipment_maintenance_tbl (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Gym Equipment Inventory (Internal Management)
+CREATE TABLE IF NOT EXISTS gym_equipment_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    equipment_id VARCHAR(50) UNIQUE NOT NULL,
+    equipment_name VARCHAR(255) NOT NULL,
+    equipment_type ENUM('machine', 'non-machine') NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    image_url VARCHAR(500),
+    condition_status ENUM('excellent', 'good', 'fair', 'poor', 'needs_replacement') DEFAULT 'good',
+    last_maintenance_date DATE,
+    next_maintenance_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+ALTER TABLE gym_equipment_tbl 
+MODIFY COLUMN image_url LONGTEXT;
+
 -- Admin Dashboard Stats (Internal)
 CREATE TABLE IF NOT EXISTS dashboard_stats_tbl (
     id INT AUTO_INCREMENT PRIMARY KEY,
