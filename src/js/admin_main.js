@@ -1355,6 +1355,26 @@ export function createRedDot(sectionName, type) {
   }
 }
 
+export function encodeName(firstName, lastName) {
+  return firstName + ':://' + lastName;
+}
+
+export function decodeName(name) {
+  const parts = name.split(':://');
+  return {
+    firstName: parts[0],
+    lastName: parts[1],
+    fullName: `${parts[0]} ${parts[1]}`,
+  };
+}
+
+export function getDateOrTimeOrBoth() {
+  const now = new Date();
+  const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return { date, time, datetime: `${date} - ${time}` };
+}
+
 export function encodePrice(price) {
   if (typeof price != 'number') price = +price;
   return `₱${price.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -1420,6 +1440,11 @@ export default {
   deleteAtSectionTwo,
   deleteAllAtSectionTwo,
   createRedDot,
+
+  // checkin-daily
+  encodeName,
+  decodeName,
+  getDateOrTimeOrBoth,
 
   // ecommerce-stock
   encodePrice,

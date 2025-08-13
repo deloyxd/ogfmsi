@@ -12,80 +12,23 @@ let liveActivated = false;
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
-  initializeButtons();
-  initializeLiveUpdates();
-});
-
-const formatDateTime = () => {
-  const now = new Date();
-  const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return { date, time, datetime: `${date} - ${time}` };
-};
-
-const parseUserName = (nameString) => {
-  const parts = nameString.split(':://');
-  return {
-    firstName: parts[0],
-    lastName: parts[1],
-    fullName: `${parts[0]} ${parts[1]}`,
-  };
-};
-
-const combineUserName = (firstName, lastName) => `${firstName}:://${lastName}`;
-
-const logAction = (description, data) => {
-  accesscontrol.log(
-    {
-      module: MODULE_NAME,
-      submodule: SUBMODULE_NAME,
-      description,
-    },
-    { ...data, type: data.type || 'user' }
-  );
-};
-
-const createUserColumnsData = (id, image, name, contact, dateTime = 'custom_date_today') => [
-  id,
-  {
-    type: 'object_contact',
-    data: [image, name, contact],
-  },
-  dateTime,
-];
-
-function initializeButtons() {
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${SECTION_NAME}"]`);
   sectionTwoMainBtn = document.getElementById(`${SECTION_NAME}SectionTwoMainBtn`);
 
-  mainBtn?.addEventListener('click', showRegisterUserModal);
+  mainBtn?.addEventListener('click', mainBtnFunction);
   subBtn?.classList.remove('hidden');
   subBtn?.addEventListener('click', () => {});
-  sectionTwoMainBtn?.addEventListener('click', handleCheckinSearch);
-}
+  sectionTwoMainBtn?.addEventListener('click', sectionTwoMainBtnFunction);
 
-function initializeLiveUpdates() {
   if (!liveActivated) {
     liveActivated = true;
     updateDateAndTime();
     setInterval(updateDateAndTime, 10000);
   }
-}
+});
 
-function updateDateAndTime() {
-  if (main.sharedState.sectionName === SECTION_NAME) {
-    const { date, time } = formatDateTime();
-    const headerElement =
-      document.getElementById('checkin-daily-section-header')?.children[0]?.children[1]?.children[0]?.children[0];
-
-    if (headerElement) {
-      headerElement.textContent = `📆 ${date} ⌚ ${time}`;
-    }
-  }
-}
-
-function showRegisterUserModal() {
+function mainBtnFunction() {
   const inputs = {
     header: {
       title: 'Register New User 💪',
@@ -108,7 +51,7 @@ function showRegisterUserModal() {
   });
 }
 
-function handleCheckinSearch() {
+function sectionTwoMainBtnFunction() {
   const searchInput = document.getElementById(`${SECTION_NAME}SectionTwoSearch`);
   const searchValue = searchInput.value.trim();
 
@@ -148,7 +91,8 @@ function registerNewUser(image, firstName, lastName, contact) {
 }
 
 function handleSuccessfulRegistration(result, image, name, contact) {
-  setupUserEditButton(result);
+  const userEditDetailsBtn = result.querySelector('#userEditDetailsBtn');
+  userEditDetailsBtn?.addEventListener('click', () => userViewDetailsBtnFunction(result, false));
 
   logAction('Register user', {
     id: result.dataset.id,
@@ -180,13 +124,8 @@ function handleDuplicateUser(result, columnsData, image, name, contact) {
   );
 }
 
-function setupUserEditButton(result) {
-  const userEditDetailsBtn = result.querySelector('#userEditDetailsBtn');
-  userEditDetailsBtn?.addEventListener('click', () => showUserDetailsModal(result, false));
-}
-
-function showUserDetailsModal(user, isViewMode) {
-  const { firstName, lastName, fullName } = parseUserName(user.dataset.text);
+function userViewDetailsBtnFunction(user, isViewMode) {
+  const { firstName, lastName, fullName } = main.decodeName(user.dataset.text);
 
   if (isViewMode) {
     showUserViewModal(user, firstName, lastName);
@@ -196,7 +135,6 @@ function showUserDetailsModal(user, isViewMode) {
 }
 
 function showUserViewModal(user, firstName, lastName) {
-  const formatAmount = (amount) => `₱${amount.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const inputs = {
     header: {
       title: 'View User Details 📙',
@@ -215,7 +153,7 @@ function showUserViewModal(user, firstName, lastName) {
     short: [
       {
         placeholder: 'Amount paid',
-        value: user.dataset.amount ? formatAmount(+user.dataset.amount) : 'Not yet paid',
+        value: user.dataset.amount ? main.encodePrice(+user.dataset.amount) : 'Not yet paid',
         locked: true,
       },
     ],
@@ -270,7 +208,7 @@ function updateUser(user, result, originalFullName) {
 
       main.openConfirmationModal(`Update user: ${originalFullName}`, () => {
         const [newFirstName, newLastName, newContact] = result.image.short.map((item) => item.value);
-        const newName = combineUserName(newFirstName, newLastName);
+        const newName = main.encodeName(newFirstName, newLastName);
 
         const columnsData = createUserColumnsData(
           `id_${user.dataset.id}`,
@@ -299,7 +237,7 @@ function updateUser(user, result, originalFullName) {
 
 function deleteUser(user, fullName) {
   main.openConfirmationModal(`Delete user: ${fullName}`, () => {
-    const { datetime } = formatDateTime();
+    const { datetime } = main.getDateOrTimeOrBoth();
 
     logAction('Delete user record', {
       id: user.dataset.id,
@@ -316,13 +254,13 @@ function deleteUser(user, fullName) {
   });
 }
 
-function voidUserLog(user) {
-  const { fullName } = parseUserName(user.dataset.text);
+function userVoidBtnFunction(user) {
+  const { fullName } = main.decodeName(user.dataset.text);
 
   const confirmationMessage = `Void user log: ${fullName}<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Invoicing module.`;
 
   main.openConfirmationModal(confirmationMessage, () => {
-    const { datetime } = formatDateTime();
+    const { datetime } = main.getDateOrTimeOrBoth();
 
     logAction('Void user check-in log', {
       id: user.dataset.id,
@@ -334,7 +272,6 @@ function voidUserLog(user) {
       type: 'user_transaction',
     });
 
-    // Handle invoicing cleanup
     if (user.dataset.amount) {
       main.deleteAtSectionOne('invoicing', 1, user.dataset.tid);
       main.deleteAtSectionOne('invoicing', 2, user.dataset.tid);
@@ -372,7 +309,7 @@ function processCheckinUser(user) {
       logAction('Process check-in user', userData);
       invoicing.processPayment(userData);
 
-      const { firstName } = parseUserName(result.dataset.text);
+      const { firstName } = main.decodeName(result.dataset.text);
       main.createRedDot(SECTION_NAME, 2);
       main.toast(`${firstName}, is now ready for check-in payment!`, 'success');
     }
@@ -383,6 +320,38 @@ function setupCheckinButtons(result) {
   const userViewDetailsBtn = result.querySelector('#userViewDetailsBtn');
   const userVoidBtn = result.querySelector('#userVoidBtn');
 
-  userViewDetailsBtn?.addEventListener('click', () => showUserDetailsModal(result, true));
-  userVoidBtn?.addEventListener('click', () => voidUserLog(result));
+  userViewDetailsBtn?.addEventListener('click', () => userViewDetailsBtnFunction(result, true));
+  userVoidBtn?.addEventListener('click', () => userVoidBtnFunction(result));
+}
+
+const logAction = (description, data) => {
+  accesscontrol.log(
+    {
+      module: MODULE_NAME,
+      submodule: SUBMODULE_NAME,
+      description,
+    },
+    { ...data, type: data.type || 'user' }
+  );
+};
+
+const createUserColumnsData = (id, image, name, contact, dateTime = 'custom_date_today') => [
+  id,
+  {
+    type: 'object_contact',
+    data: [image, name, contact],
+  },
+  dateTime,
+];
+
+function updateDateAndTime() {
+  if (main.sharedState.sectionName === SECTION_NAME) {
+    const { date, time } = main.getDateOrTimeOrBoth();
+    const headerElement = document.getElementById(`${SECTION_NAME}-section-header`)?.children[0]?.children[1]
+      ?.children[0]?.children[0];
+
+    if (headerElement) {
+      headerElement.textContent = `📆 ${date} ⌚ ${time}`;
+    }
+  }
 }
