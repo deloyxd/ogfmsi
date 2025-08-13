@@ -1386,8 +1386,8 @@ export function getDateOrTimeOrBoth() {
 }
 
 export function updateDateAndTime(sectionName) {
-  if (main.sharedState.sectionName === sectionName) {
-    const { date, time } = main.getDateOrTimeOrBoth();
+  if (sharedState.sectionName === sectionName) {
+    const { date, time } = getDateOrTimeOrBoth();
     const headerElement = document.getElementById(`${sectionName}-section-header`)?.children[0]?.children[1]
       ?.children[0]?.children[0];
 
