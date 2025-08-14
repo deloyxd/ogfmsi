@@ -41,6 +41,29 @@ const monthNames = [
 ];
 
 function bindEvents() {
+  if (!document.querySelector('#bookmark-styles')) {
+    const style = document.createElement('style');
+    style.id = 'bookmark-styles';
+    style.textContent = `
+        @keyframes cloth-sway {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            20%, 60% {
+                transform: rotate(-5deg);
+            }
+            40%, 80% {
+                transform: rotate(5deg);
+            }
+        }
+        
+        .bookmark-body {
+            animation: cloth-sway 6s ease-out infinite;
+        }
+    `;
+    document.head.appendChild(style);
+  }
+
   document.getElementById('prevMonth').addEventListener('click', () => {
     currentDate.setMonth(currentDate.getMonth() - 1);
     render();
@@ -115,61 +138,63 @@ function renderCalendar() {
 function createDayElement(day, month, isToday) {
   const isPreviousDay = day + 30 * month < today.getDate() + 30 * today.getMonth();
   // get live reservation count at this date
-  const reservedCount = Math.max(0, Math.round(Math.random() * 11) - 5);
+  const reservedCount = Math.max(0, Math.round(Math.random() * 11) - Math.round(Math.random() * 10));
   const dayElement = document.createElement('div');
   dayElement.className = `
-      relative p-2 text-center cursor-pointer duration-300
-      hover:bg-teal-500/50
-      ${isPreviousDay ? 'text-red-500 bg-red-300/30' : 'text-teal-800'}
-      ${isToday ? 'ring-inset ring-2 ring-teal-500 font-bold bg-teal-300' : ''}
-  `;
+    flex justify-center relative p-2 text-center cursor-pointer duration-300
+    hover:bg-teal-500/50 ring-inset ring-1 ring-gray-100
+    ${isPreviousDay ? 'text-red-500 bg-red-300/30' : 'text-teal-800'}
+    ${isToday ? 'ring-inset ring-2 ring-teal-500 font-bold bg-teal-300' : ''}
+`;
+
+  let bookmarkColor = 'bg-green-500';
+  if (reservedCount > 5) {
+    bookmarkColor = 'bg-red-500';
+  } else if (reservedCount > 3) {
+    bookmarkColor = 'bg-yellow-500';
+  }
 
   dayElement.innerHTML = `
-      <div class="flex flex-col gap-1 justify-center items-center">
-          <p class="text-sm">${day}</p>
-          <div class="duration-300 opacity-0 text-xs font-black bg-gray-200/50 rounded-full px-4 py-1 emoji">${getEmoji('📅', 14)}</div>
-          <div id="dot" class="absolute right-2 top-2 ${reservedCount <= 0 || isPreviousDay ? 'hidden' : ''}">
-            <div class="relative h-2 w-2">
-              <div class="absolute h-full w-full scale-105 animate-ping rounded-full opacity-75"></div>
-              <div class="absolute h-2 w-2 rounded-full"></div>
-            </div>
+      <div class="self-center">
+          <p class="${isPreviousDay ? 'text-xs font-bold opacity-50' : isToday ? 'text-2xl font-black' : 'text-sm font-black'}">${day}</p>
+          <div id="bookmark" class="absolute top-1 right-1 ${isPreviousDay || reservedCount == 0 ? 'opacity-0' : ''} duration-300">
+              <div class="relative">
+                  <div class="bookmark-body ${bookmarkColor} w-6 h-8 rounded-t-sm shadow-md transform origin-top-right z-10">
+                      <div class="absolute inset-0 flex items-center justify-center">
+                          <span class="text-white text-xs font-bold">${reservedCount}</span>
+                      </div>
+                  </div>
+                  <div class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-gray-400 rounded-full shadow-sm z-20"></div>
+              </div>
           </div>
       </div>
   `;
-  if (reservedCount > 5) {
-    dayElement.querySelector(`#dot`).children[0].children[0].classList.add('bg-red-500');
-    dayElement.querySelector(`#dot`).children[0].children[1].classList.add('bg-red-500');
-  } else if (reservedCount > 3) {
-    dayElement.querySelector(`#dot`).children[0].children[0].classList.add('bg-yellow-500');
-    dayElement.querySelector(`#dot`).children[0].children[1].classList.add('bg-yellow-500');
-  } else {
-    dayElement.querySelector(`#dot`).children[0].children[0].classList.add('bg-green-500');
-    dayElement.querySelector(`#dot`).children[0].children[1].classList.add('bg-green-500');
-  }
 
   dayElement.addEventListener('click', () => {
     if (selectedDate) {
       selectedDate.classList.remove('bg-teal-400');
-      selectedDate.children[0].children[1].classList.add('opacity-0');
+      // selectedDate.children[0].children[2].classList.remove('opacity-1');
+      // selectedDate.children[0].children[2].classList.remove('cloth-drop');
     }
 
     if (!isPreviousDay) {
       dayElement.classList.add('bg-teal-400');
       selectedDate = dayElement;
-      selectedDate.children[0].children[1].classList.remove('opacity-0');
+      // selectedDate.children[0].children[2].classList.remove('opacity-0');
+      // selectedDate.children[0].children[2].classList.add('cloth-drop');
     }
   });
 
   dayElement.addEventListener('mouseenter', () => {
-    dayElement.children[0].children[1].classList.remove('opacity-0');
-    dayElement.children[0].children[1].innerHTML = `${getEmoji('📅', 14)}${reservedCount}`;
+    if (isPreviousDay) dayElement.querySelector(`#bookmark`).classList.remove('opacity-0');
+    // dayElement.children[0].children[2].innerHTML = `${getEmoji('📅', 14)}${reservedCount}`;
   });
 
   dayElement.addEventListener('mouseleave', () => {
     if (dayElement == selectedDate) {
       return;
     }
-    dayElement.children[0].children[1].classList.add('opacity-0');
+    if (isPreviousDay) dayElement.querySelector(`#bookmark`).classList.add('opacity-0');
   });
 
   return dayElement;
