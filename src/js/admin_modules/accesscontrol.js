@@ -67,7 +67,7 @@ function getInputs(actionData) {
       inputs.short = [
         {
           placeholder: 'Amount paid',
-          value: actionData.amount ? actionData.amount : "Not yet paid",
+          value: actionData.amount ? actionData.amount : 'Not yet paid',
           locked: true,
         },
       ];
@@ -83,7 +83,7 @@ function getInputs(actionData) {
       short: [
         { placeholder: 'User ID', value: actionData.user_id, locked: true },
         { placeholder: 'Payment type', value: actionData.payment_type, locked: true },
-        { placeholder: 'Payment amount', value: actionData.payment_amount, locked: true },
+        { placeholder: 'Payment amount', value: main.encodePrice(actionData.payment_amount), locked: true },
         { placeholder: 'Payment reference number', value: actionData.payment_refnum, locked: true },
         { placeholder: 'Payment rate', value: actionData.payment_rate, locked: true },
         { placeholder: 'Payment purpose', value: actionData.purpose, locked: true },
