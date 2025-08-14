@@ -848,12 +848,9 @@ function setupModalBase(defaultData, inputs, callback) {
     } else {
       imageContainerParent.classList.remove('gap-3');
       imageContainerParent.classList.remove('2xl:gap-6');
-      imageContainerParent.children[0].classList.add('col-span-3');
-      imageContainerParent.children[0].classList.add('col-start-2');
-      imageContainerParent.children[0].children[1].classList.add('min-h-[236px]');
-      imageContainerParent.children[0].children[1].classList.add('max-h-[236px]');
-      imageContainerParent.children[0].children[1].classList.add('2xl:min-h-[276px]');
-      imageContainerParent.children[0].children[1].classList.add('2xl:max-h-[276px]');
+      imageContainerParent.classList.add('grid-cols-10');
+      imageContainerParent.children[0].classList.add('col-span-4');
+      imageContainerParent.children[0].classList.add('col-start-4');
     }
 
     imageContainerParent.classList.remove('hidden');

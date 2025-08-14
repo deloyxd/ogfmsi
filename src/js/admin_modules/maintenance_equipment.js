@@ -25,9 +25,9 @@ async function loadExistingEquipment() {
 
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment`);
     const result = await response.json();
-    
+
     if (response.ok && result.result) {
-      result.result.forEach(equipment => {
+      result.result.forEach((equipment) => {
         const columnsData = [
           equipment.equipment_id,
           equipment.equipment_name,
@@ -36,23 +36,29 @@ async function loadExistingEquipment() {
           `<p class="text-green-600 font-bold emoji">${equipment.condition_status.charAt(0).toUpperCase() + equipment.condition_status.slice(1)} Condition ${getEmoji('✅')}</p>`,
           'custom_date_today',
         ];
-        
-        main.createAtSectionOne('maintenance-equipment', columnsData, 1, equipment.equipment_name, (frontendResult, status) => {
-          if (status === 'success') {
-            if (equipment.created_at) {
-              const date = new Date(equipment.created_at).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              });
-              frontendResult.dataset.date = date;
-              frontendResult.children[5].innerHTML = date; 
-            }
 
-            // Setup action buttons
-            setupEquipmentButtons(frontendResult, equipment);
+        main.createAtSectionOne(
+          'maintenance-equipment',
+          columnsData,
+          1,
+          equipment.equipment_name,
+          (frontendResult, status) => {
+            if (status === 'success') {
+              if (equipment.created_at) {
+                const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                });
+                frontendResult.dataset.date = date;
+                frontendResult.children[5].innerHTML = date;
+              }
+
+              // Setup action buttons
+              setupEquipmentButtons(frontendResult, equipment);
+            }
           }
-        });
+        );
       });
     }
   } catch (error) {
@@ -83,11 +89,11 @@ function showEquipmentDetails(frontendResult, equipment) {
     image: {
       src: equipment.image_url || '/src/images/client_logo.jpg',
       type: 'normal',
-      short: [
-        { placeholder: 'Equipment name', value: equipment.equipment_name, required: true },
-        { placeholder: 'Quantity', value: equipment.quantity.toString(), required: true },
-      ],
     },
+    short: [
+      { placeholder: 'Equipment name', value: equipment.equipment_name, required: true },
+      { placeholder: 'Quantity', value: equipment.quantity.toString(), required: true },
+    ],
     spinner: [
       {
         label: 'Equipment category',
@@ -126,21 +132,21 @@ function showEquipmentDetails(frontendResult, equipment) {
  */
 async function updateEquipmentDetails(frontendResult, equipment, result) {
   const updateData = {
-    equipment_name: result.image.short[0].value,
+    equipment_name: result.short[0].value,
     equipment_type: result.spinner[0].options[result.spinner[0].selected - 1].value,
-    quantity: parseInt(result.image.short[1].value),
+    quantity: parseInt(result.short[1].value),
     image_url: result.image.src,
     condition_status: equipment.condition_status,
-    notes: result.large[0].value
+    notes: result.large[0].value,
   };
 
   const success = await updateEquipment(equipment.equipment_id, updateData);
-  
+
   if (success) {
     const columnsData = [
       equipment.equipment_id,
-      result.image.short[0].value,
-      result.image.short[1].value,
+      result.short[0].value,
+      result.short[1].value,
       updateData.equipment_type,
       `<p class="text-green-600 font-bold">${equipment.condition_status.charAt(0).toUpperCase() + equipment.condition_status.slice(1)} Condition ${getEmoji('✅')}</p>`,
       `custom_date_${frontendResult.dataset.date}`,
@@ -156,15 +162,15 @@ async function updateEquipmentDetails(frontendResult, equipment, result) {
       const data = {
         id: equipment.equipment_id,
         image: result.image.src,
-        name: result.image.short[0].value,
-        quantity: result.image.short[1].value,
+        name: result.short[0].value,
+        quantity: result.short[1].value,
         category: updateData.equipment_type,
         condition: equipment.condition_status,
         date: updatedResult.dataset.date,
         type: 'equipment',
       };
       accesscontrol.log(action, data);
-      
+
       main.closeModal();
     });
   }
@@ -176,7 +182,7 @@ async function updateEquipmentDetails(frontendResult, equipment, result) {
 async function deleteEquipmentDetails(frontendResult, equipment) {
   main.openConfirmationModal(`Delete equipment: ${equipment.equipment_name}`, async () => {
     const success = await deleteEquipment(equipment.equipment_id);
-    
+
     if (success) {
       // Log deletion and update UI
       const action = {
@@ -195,7 +201,7 @@ async function deleteEquipmentDetails(frontendResult, equipment) {
         type: 'equipment',
       };
       accesscontrol.log(action, data);
-      
+
       frontendResult.remove();
       main.closeModal();
       main.closeConfirmationModal();
@@ -215,11 +221,11 @@ function mainBtnFunction() {
     image: {
       src: '/src/images/client_logo.jpg',
       type: 'normal',
-      short: [
-        { placeholder: 'Equipment name', value: '', required: true },
-        { placeholder: 'Initial quantity', value: '', required: true },
-      ],
     },
+    short: [
+      { placeholder: 'Equipment name', value: '', required: true },
+      { placeholder: 'Initial quantity', value: '', required: true },
+    ],
     spinner: [
       {
         label: 'Equipment category',
@@ -236,20 +242,20 @@ function mainBtnFunction() {
 
   main.openModal(mainBtn, inputs, (result) => {
     // Validate inputs
-    if (!main.isValidPaymentAmount(+result.image.short[1].value)) {
-      main.toast(`Invalid quantity: ${result.image.short[1].value}`, 'error');
+    if (!main.isValidPaymentAmount(+result.short[1].value)) {
+      main.toast(`Invalid quantity: ${result.short[1].value}`, 'error');
       return;
     }
     if (result.spinner[0].selected < 1) {
       main.toast(`Invalid category`, 'error');
       return;
     }
-    
+
     // Register new equipment
     registerNewProduct(
       result.image.src,
-      result.image.short[0].value,
-      +result.image.short[1].value,
+      result.short[0].value,
+      +result.short[1].value,
       result.spinner[0].options[result.spinner[0].selected - 1].value
     );
   });
@@ -265,7 +271,7 @@ async function registerNewProduct(image, name, quantity, category) {
       equipment_type: category,
       quantity: quantity,
       image_url: image,
-      condition_status: 'good'
+      condition_status: 'good',
     };
 
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment`, {
@@ -273,7 +279,7 @@ async function registerNewProduct(image, name, quantity, category) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(equipmentData)
+      body: JSON.stringify(equipmentData),
     });
 
     const result = await response.json();
@@ -299,11 +305,11 @@ async function registerNewProduct(image, name, quantity, category) {
             image_url: image,
             condition_status: 'good',
             notes: '',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
           };
-          
+
           setupEquipmentButtons(frontendResult, equipmentData);
-          
+
           const action = {
             module: 'Maintenance',
             submodule: 'Equipment',
@@ -345,9 +351,9 @@ function refreshAllTabs() {
   if (emptyText) {
     const tableBody = emptyText.closest('tbody');
     const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
-    existingRows.forEach(row => row.remove());
+    existingRows.forEach((row) => row.remove());
   }
-  
+
   loadExistingEquipment();
 }
 
@@ -361,11 +367,11 @@ async function updateEquipment(equipmentId, updateData) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(updateData)
+      body: JSON.stringify(updateData),
     });
 
     const result = await response.json();
-    
+
     if (response.ok) {
       main.toast('Equipment updated successfully!', 'success');
       return true;
@@ -389,11 +395,11 @@ async function deleteEquipment(equipmentId) {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
     });
 
     const result = await response.json();
-    
+
     if (response.ok) {
       main.toast('Equipment deleted successfully!', 'success');
       return true;
