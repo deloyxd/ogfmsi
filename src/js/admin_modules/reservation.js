@@ -78,13 +78,13 @@ function renderCalendar() {
   // Add previous month's trailing days
   for (let i = startingDayOfWeek - 1; i >= 0; i--) {
     const dayNum = prevMonthDays - i;
-    const dayElement = createDayElement(dayNum, true, false);
+    const dayElement = createDayElement(dayNum, month - 1, false);
     calendarGrid.appendChild(dayElement);
   }
 
   // Add current month's days
   for (let day = 1; day <= daysInMonth; day++) {
-    const dayElement = createDayElement(day, false, isToday(year, month, day));
+    const dayElement = createDayElement(day, month, isToday(year, month, day));
     calendarGrid.appendChild(dayElement);
   }
 
@@ -93,37 +93,30 @@ function renderCalendar() {
   const remainingCells = 42 - totalCells; // 6 rows × 7 days
 
   for (let day = 1; day <= remainingCells; day++) {
-    const dayElement = createDayElement(day, true, false);
+    const dayElement = createDayElement(day, month + 1, false);
     calendarGrid.appendChild(dayElement);
   }
 }
 
-function createDayElement(day, isOtherMonth, isToday) {
+function createDayElement(day, month, isToday) {
+  const isPreviousDay = day + 30 * month < today.getDate() + 30 * today.getMonth();
   const dayElement = document.createElement('div');
   dayElement.className = `
-                    relative p-2 text-center cursor-pointer transition-all duration-200
-                    border-r border-b border-gray-100 hover:bg-blue-50
-                    ${isOtherMonth ? 'text-gray-400 bg-gray-25' : 'text-gray-800'}
-                    ${isToday ? 'bg-blue-500 text-white font-semibold hover:bg-blue-600' : ''}
-                `;
+      relative p-2 text-center cursor-pointer duration-300
+      hover:bg-teal-500/50
+      ${isPreviousDay ? 'text-gray-400 bg-teal-25' : 'text-teal-800'}
+      ${isToday ? 'ring-inset ring-2 ring-teal-500 font-bold bg-teal-300' : ''}
+  `;
 
-  dayElement.innerHTML = `
-                    <span class="text-sm">${day}</span>
-                `;
+  dayElement.innerHTML = `<span class="text-sm">${day}</span>`;
 
-  // Add click event for date selection
   dayElement.addEventListener('click', () => {
-    // Remove previous selection
     if (selectedDate) {
-      selectedDate.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-100');
+      selectedDate.classList.remove('bg-teal-400');
     }
 
-    // Add selection to clicked date (only for current month)
-    if (!isOtherMonth) {
-      dayElement.classList.add('ring-2', 'ring-blue-400');
-      if (!isToday) {
-        dayElement.classList.add('bg-blue-100');
-      }
+    if (!isPreviousDay) {
+      dayElement.classList.add('bg-teal-400');
       selectedDate = dayElement;
     }
   });
