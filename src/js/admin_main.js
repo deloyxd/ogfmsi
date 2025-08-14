@@ -142,6 +142,19 @@ async function loadSectionSilently(sectionName) {
 
       await loadComponent(name, element, dataset);
 
+      async function loadComponent(componentName, element, dataset) {
+        const response = await fetch(`admin_${componentName}.html`);
+        let html = await response.text();
+
+        html = html.replace(/\$\{(\w+)\}/g, (match, varName) =>
+          dataset[varName] !== undefined ? dataset[varName] : match
+        );
+
+        element.innerHTML = html;
+
+        decodeEmojis(element);
+      }
+
       if (name.includes('header')) {
         fields.forEach((field) => {
           if (field == 'mainbtntext' && !dataset[field]) {
@@ -237,8 +250,8 @@ async function loadSectionSilently(sectionName) {
             const clone = sectionOne.children[0].cloneNode(true);
             clone.id = `${sectionName}_tab${i + 1}`;
 
-            clone.children[0].textContent = dataset['tabtitles'][i];
-            clone.children[1].children[0].textContent = dataset['subtitles'][i];
+            clone.children[0].innerHTML = dataset['tabtitles'][i];
+            clone.children[1].children[0].innerHTML = dataset['subtitles'][i];
             if (dataset['sectiononesearchtext'] && i == 0) {
               sectionOne.parentElement.children[1].children[0].classList.remove('hidden');
               sectionOne.parentElement.children[1].children[0].children[0].placeholder =
@@ -284,7 +297,7 @@ async function loadSectionSilently(sectionName) {
               titleTexts.forEach((titleText, index) => {
                 const th = document.createElement('th');
                 th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
-                th.textContent = titleText;
+                th.innerHTML = titleText;
                 if (index < titleTexts.length - 1) {
                   const resizer = document.createElement('div');
                   resizer.className =
@@ -322,9 +335,11 @@ async function loadSectionSilently(sectionName) {
                   for (let k = 0; k < itemBtnIds.length; k++) {
                     const btn = document.createElement('button');
                     btn.id = itemBtnIds[k];
-                    btn.textContent = itemBtnTexts[k];
+                    btn.innerHTML = itemBtnTexts[k];
                     btn.className = `rounded-lg bg-${itemBtnColors[k]}-500 px-4 py-2 text-white duration-300 hover:-translate-y-1 hover:scale-105 hover:bg-${itemBtnColors[k]}-600 hover:shadow-lg hover:shadow-${itemBtnColors[k]}-400 active:scale-95 active:shadow-none active:translate-y-0`;
                     itemBtns.appendChild(btn);
+
+                    decodeEmojis(btn);
                   }
                   td.appendChild(itemBtns);
                 }
@@ -354,8 +369,8 @@ async function loadSectionSilently(sectionName) {
           let totalSectionTwoListContainerHeight = 534;
           if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
-            sectionTwoTitles.children[0].textContent = dataset['sectiontwotitletexts'][0];
-            sectionTwoTitles.children[1].textContent = dataset['sectiontwotitletexts'][1];
+            sectionTwoTitles.children[0].innerHTML = dataset['sectiontwotitletexts'][0];
+            sectionTwoTitles.children[1].innerHTML = dataset['sectiontwotitletexts'][1];
             const sectionTwoSettings = sectionTwo.children[0].children[0].children[1];
 
             if (dataset['sectiontwosettings'] && dataset['sectiontwosettings'] == 1) {
@@ -448,7 +463,7 @@ async function loadSectionSilently(sectionName) {
 
               sectionTwoMainBtn.id = `${sectionName}SectionTwoMainBtn`;
               sectionTwoMainBtn.className = `section-content-submit bg-${mainColor}-500 hover:bg-${mainColor}-600 hover:shadow-${mainColor}-400 active:scale-95 active:bg-${mainColor}-700`;
-              sectionTwoMainBtn.textContent = dataset['sectiontwobtntext'];
+              sectionTwoMainBtn.innerHTML = dataset['sectiontwobtntext'];
 
               sectionTwoContent.appendChild(sectionTwoMainBtn);
             }
@@ -560,18 +575,26 @@ async function loadSectionSilently(sectionName) {
           document.removeEventListener('mouseup', stopResize);
         }
       }
+
+      function decodeEmojis(element) {
+        element.innerHTML = element.innerHTML.replace(/\[-(.*?)-\]/g, (match, emoji) => {
+          const replacement = getEmoji(emoji);
+          return replacement !== match ? `<span class="emoji-replaced">${replacement}</span>` : match;
+        });
+
+        const emojis = element.querySelectorAll('span.emoji-replaced');
+
+        emojis.forEach((emoji) => {
+          const parent = emoji.parentElement;
+          parent.appendChild(emoji.children[0]);
+          parent.classList.add('emoji');
+          emoji.remove();
+        });
+      }
     }
   }
 
   targetSection.classList.add('hidden');
-}
-
-async function loadComponent(componentName, element, dataset) {
-  const response = await fetch(`admin_${componentName}.html`);
-  const html = await response.text();
-  element.innerHTML = html.replace(/\$\{(\w+)\}/g, (match, varName) =>
-    dataset[varName] !== undefined ? dataset[varName] : match
-  );
 }
 
 function showSection(sectionName) {
@@ -645,13 +668,13 @@ export function openConfirmationModal(action, callback) {
   setupModalTheme('red', tempModalConfirmationContainer);
 
   const data = {
-    title: 'Are you sure? 💀',
+    title: `Are you sure? ${getEmoji('💀')}`,
     subtitle:
       'Please double check or review any details you may have provided<br>before proceeding with the action stated below:<br><br><b>' +
       action.trim() +
       '</b>',
     button: {
-      main: 'Confirm 💀',
+      main: `Confirm ${getEmoji('💀')}`,
       sub: 'Cancel',
     },
   };
@@ -661,10 +684,10 @@ export function openConfirmationModal(action, callback) {
   const modalMainBtn = tempModalConfirmationContainer.querySelector('#modalMainBtn');
   const modalSubBtn = tempModalConfirmationContainer.querySelector('#modalSubBtn');
 
-  modalTitle.textContent = data.title;
+  modalTitle.innerHTML = data.title;
   modalSubtitle.innerHTML = data.subtitle;
-  modalMainBtn.textContent = data.button.main;
-  modalSubBtn.textContent = data.button.sub;
+  modalMainBtn.innerHTML = data.button.main;
+  modalSubBtn.innerHTML = data.button.sub;
 
   modalMainBtn.onclick = callback;
   modalSubBtn.onclick = closeConfirmationModal;
@@ -755,9 +778,7 @@ function setupModalBase(defaultData, inputs, callback) {
     title: inputs.header ? inputs.header.title?.trim() || '' : 'Fitworx Gym Form',
     subtitle: inputs.header ? inputs.header.subtitle?.trim() || '' : 'Please fill up empty fields',
     button: {
-      main: inputs.footer
-        ? inputs.footer.main?.trim() || defaultData.textContent.trim()
-        : defaultData.textContent.trim(),
+      main: inputs.footer ? inputs.footer.main?.trim() || defaultData.innerHTML : defaultData.innerHTML,
       sub: inputs.footer ? inputs.footer.sub?.trim() || '' : '',
     },
   };
@@ -767,10 +788,10 @@ function setupModalBase(defaultData, inputs, callback) {
   const modalMainBtn = tempModalContainer.querySelector('#modalMainBtn');
   const modalSubBtn = tempModalContainer.querySelector('#modalSubBtn');
 
-  modalTitle.textContent = data.title;
-  modalSubtitle.textContent = data.subtitle;
-  modalMainBtn.textContent = data.button.main;
-  modalSubBtn.textContent = data.button.sub;
+  modalTitle.innerHTML = data.title;
+  modalSubtitle.innerHTML = data.subtitle;
+  modalMainBtn.innerHTML = data.button.main;
+  modalSubBtn.innerHTML = data.button.sub;
 
   if (data.subtitle != '') modalSubtitle.classList.remove('hidden');
   modalMainBtn.onclick = () => {
@@ -817,7 +838,7 @@ function setupModalBase(defaultData, inputs, callback) {
         const clone = imageContainerInputsContainer.children[0].cloneNode(true);
 
         clone.children[1].addEventListener('input', () => {
-          if (inputs.image.type === 'live') imageContainerTexts[index].textContent = clone.children[1].value;
+          if (inputs.image.type === 'live') imageContainerTexts[index].innerHTML = clone.children[1].value;
           input.value = clone.children[1].value;
         });
 
@@ -848,7 +869,7 @@ function setupModalBase(defaultData, inputs, callback) {
       const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement.parentElement;
       const spinnerContainer = originalContainer.cloneNode(true);
       const label = spinnerContainer.children[0];
-      label.textContent = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
+      label.innerHTML = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
       if (spinnerGroup.locked) spinnerContainer.children[1].children[0].disabled = true;
 
       const selectElement = spinnerContainer.querySelector('select');
@@ -856,7 +877,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
       const placeholderOption = document.createElement('option');
       placeholderOption.value = '';
-      placeholderOption.textContent = spinnerGroup.placeholder || 'Select an option';
+      placeholderOption.innerHTML = spinnerGroup.placeholder || 'Select an option';
       placeholderOption.disabled = typeof spinnerGroup.selected == 'number' && spinnerGroup.selected == 0;
       placeholderOption.selected = true;
       selectElement.appendChild(placeholderOption);
@@ -864,7 +885,7 @@ function setupModalBase(defaultData, inputs, callback) {
       spinnerGroup.options.forEach((optionData, index) => {
         const option = document.createElement('option');
         option.value = optionData.value;
-        option.textContent = optionData.label;
+        option.innerHTML = optionData.label;
         option.classList.add('font-medium');
 
         if (typeof spinnerGroup.selected == 'number') {
@@ -897,7 +918,7 @@ function setupModalBase(defaultData, inputs, callback) {
     const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
     const radioContainer = originalContainer.cloneNode(true);
     const label = radioContainer.children[0];
-    label.textContent = inputs.radio[0].label;
+    label.innerHTML = inputs.radio[0].label;
 
     const container = radioContainer.children[1];
     container.id = `input-${type}-1`;
@@ -914,9 +935,9 @@ function setupModalBase(defaultData, inputs, callback) {
       const title = clone.children[1];
       const subtitle = clone.children[2];
 
-      icon.textContent = input.icon;
-      title.textContent = input.title;
-      subtitle.textContent = input.subtitle;
+      icon.innerHTML = input.icon;
+      title.innerHTML = input.title;
+      subtitle.innerHTML = input.subtitle;
 
       clone.classList.remove('hidden');
       clone.dataset.color = clone.classList[clone.classList.length - 1].split(':')[1];
@@ -972,15 +993,15 @@ function setupModalBase(defaultData, inputs, callback) {
     }
 
     label.for = id;
-    label.textContent = data.placeholder + (data.required ? ' *' : '');
+    label.innerHTML = data.placeholder + (data.required ? ' *' : '');
 
     input.id = id;
     input.placeholder = data.placeholder;
     input.value = data.value;
 
-    if (data.icon) input.querySelectorAll('p')[0].textContent = data.icon;
-    if (data.title) input.querySelectorAll('p')[1].textContent = data.title;
-    if (data.subtitle) input.querySelectorAll('p')[2].textContent = data.subtitle;
+    if (data.icon) input.querySelectorAll('p')[0].innerHTML = data.icon;
+    if (data.title) input.querySelectorAll('p')[1].innerHTML = data.title;
+    if (data.subtitle) input.querySelectorAll('p')[2].innerHTML = data.subtitle;
 
     input.dispatchEvent(new Event('input'));
 
@@ -1392,7 +1413,8 @@ export function updateDateAndTime(sectionName) {
       ?.children[0]?.children[0];
 
     if (headerElement) {
-      headerElement.textContent = `📆 ${date} ⌚ ${time}`;
+      headerElement.classList.add('emoji');
+      headerElement.innerHTML = `${getEmoji('📆')} ${date} ${getEmoji('⌚')} ${time}`;
     }
   }
 }
@@ -1408,10 +1430,10 @@ export function decodePrice(price) {
 
 export function getStockStatus(quantity) {
   if (typeof quantity != 'number') quantity = +quantity;
-  if (quantity === 0) return '<p class="text-gray-800 font-bold">Out of Stock ⚠️</p>';
-  if (quantity <= 10) return '<p class="text-red-700 font-bold">Super Low Stock ‼️</p>';
-  if (quantity <= 50) return '<p class="text-amber-500 font-bold">Low Stock ⚠️</p>';
-  return '<p class="text-emerald-600 font-bold">High Stock ✅</p>';
+  if (quantity === 0) return `<div class="emoji text-gray-800 font-bold">Out of Stock ${getEmoji('⚠️')}</div>`;
+  if (quantity <= 10) return `<div class="emoji text-red-700 font-bold">Super Low Stock ${getEmoji('‼️')}</div>`;
+  if (quantity <= 50) return `<div class="emoji text-amber-500 font-bold">Low Stock ${getEmoji('⚠️')}</div>`;
+  return `<div class="emoji text-emerald-600 font-bold">High Stock ${getEmoji('✅')}</div>`;
 }
 
 export function validateStockInputs(price, quantity, measurement) {
@@ -1507,8 +1529,8 @@ async function showLoadingAndPreloadSections() {
     const currentSectionText = document.querySelector('.loading-current-section');
 
     if (progressBar) progressBar.style.width = `${progressPercent}%`;
-    if (progressText) progressText.textContent = `${progressPercent}%`;
-    if (currentSectionText) currentSectionText.textContent = `Loading ${sectionName}...`;
+    if (progressText) progressText.innerHTML = `${progressPercent}%`;
+    if (currentSectionText) currentSectionText.innerHTML = `Loading ${sectionName}...`;
   }
 
   try {

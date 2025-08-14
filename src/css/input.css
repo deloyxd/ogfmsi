@@ -4,6 +4,10 @@
 
 @layer components {
   /* Base button component */
+  .emoji {
+    @apply flex items-center justify-center gap-1;
+  }
+
   .sidebar-btn-base {
     @apply relative flex w-full items-center rounded-md text-gray-300 duration-300;
   }

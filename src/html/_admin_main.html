@@ -13,6 +13,13 @@
     <link href="/src/css/output.css" rel="stylesheet" />
     <!-- add new css here 👆 -->
 
+    <!-- emojis -->
+    <script>
+      function getEmoji(emoji, size = 4) {
+        return `<img src="/src/images/${emoji}.png" class="inline w-${size} h-${size} 2xl:w-${size + 0.5} 2xl:h-${size + 0.5}">`;
+      }
+    </script>
+
     <!-- icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
@@ -40,9 +47,14 @@
         <!-- 🔑 CLIENT -->
         <p class="text-xl font-bold text-white">Fitworx Gym</p>
         <p class="text-sm text-gray-400">Welcome, User!</p>
-        <div class="mt-3 flex text-sm text-gray-400">
+        <div class="mt-3 flex items-center gap-1 text-sm text-gray-400">
           <p>Role:</p>
-          <b id="role" class="ml-1">👨‍💼 Staff</b>
+          <div id="role" class="emoji font-bold">
+            <script>
+              document.write(getEmoji('👨‍💼'));
+            </script>
+            Staff
+          </div>
         </div>
       </header>
 
@@ -108,9 +120,9 @@
           id="section-header"
           data-title="What's New?"
           data-subtitle="Announcements"
-          data-middletext="There's no news yet. Create one! 👉"
-          data-mainbtntext="Announce 📢"
-          data-subbtntext="Check 👁‍🗨"
+          data-middletext="There's no news yet. Create one! [-👉-]"
+          data-mainbtntext="Announce [-📢-]"
+          data-subbtntext="Check [-👁️-]"
           data-customcontent="1"
         ></div>
         <div
@@ -131,28 +143,28 @@
           data-listemptytexts="::<p class='text-sm'>No upcoming monthly pass renewals yet</p><p>Range: Two weeks notice</p>"
           data-listtitletexts="[]::[User ID//User//Expires After]"
           data-listitembtnids="[]::[renewBtn]"
-          data-listitembtntexts="[]::[Renew 🎫]"
+          data-listitembtntexts="[]::[Renew [-🎫-]]"
           data-listitembtncolors="[]::[sky]"
           data-sectiontwotitletexts="User Statistic Analysis::Below the chart, you can click legends to toggle"
           data-sectiontwosettings="1"
         ></div>
       </section>
 
-      <!-- 🔥 checkin-daily 🔥 -->
+      <!-- 🔥 inquiry-regular 🔥 -->
       <section
-        id="checkin-daily-section"
+        id="inquiry-regular-section"
         data-icons="fa-users::fa-ticket-simple"
-        data-sectiontexts="Check In::Daily Pass"
+        data-sectiontexts="Inquiry::Regular Check-In"
         data-color="blue-indigo-orange"
         class="section"
       >
         <div
           id="section-header"
-          data-title="Daily Check-In"
-          data-subtitle="Track User Attendance"
-          data-middletext='<p class="skew-x-12 text-white">📆 Live date ⌚ Live time</p>'
-          data-mainbtntext="Register New User 💪"
-          data-subbtntext="Logs 📜"
+          data-title="Regular Check-In"
+          data-subtitle="Track Regular User Attendance"
+          data-middletext="<div class='skew-x-12 text-white'></div>"
+          data-mainbtntext="Register New User [-💪-]"
+          data-subbtntext="Logs [-📜-]"
         ></div>
         <div
           id="section-stats"
@@ -171,7 +183,7 @@
           data-listemptytexts="No registered users yet::No check-ins yet"
           data-listtitletexts="[User ID//User//Date Registered]::[User ID//User//Date & Time]"
           data-listitembtnids="[userEditDetailsBtn]::[userViewDetailsBtn//userVoidBtn]"
-          data-listitembtntexts="[Edit Details ⚙]::[View Details ⚙//Void 📕]"
+          data-listitembtntexts="[Edit Details [-⚙️-]]::[View Details [-⚙️-]//Void [-📕-]]"
           data-listitembtncolors="[orange]::[gray//red]"
           data-sectiontwotitletexts="Quick Check-In::Upload user QR code or enter ID manually"
           data-sectiontwosettings="1"
@@ -182,12 +194,12 @@
       </section>
 
       <!-- 🔥 reservation 🔥 -->
-      <section id="reservation-section" data-icons="fa-calendar-days" data-color="teal-stone-orange" class="section">
+      <section id="reservation-section" data-icons="fa-calendar-check" data-color="teal-stone-orange" class="section">
         <div
           id="section-header"
           data-title="Reservation"
           data-subtitle="Live Calendar Module"
-          data-mainbtntext="Manual Reserve Facility 🛕"
+          data-mainbtntext="Manual Reserve Facility [-🛕-]"
         ></div>
         <div
           id="section-stats"
@@ -205,7 +217,7 @@
           data-listemptytexts="::No schedules yet::No past schedules yet"
           data-listtitletexts="[]::[Reservation ID//User//Facility//Schedule//Date & Time Registered]::[Reservation ID//User//Facility//Schedule//Date & Time Registered]"
           data-listitembtnids="[]::[reservationViewDetailsBtn//reservationVoidBtn]::[reservationViewDetailsBtn//reservationVoidBtn]"
-          data-listitembtntexts="[]::[View Details ⚙//Void 📕]::[View Details ⚙//Void 📕]"
+          data-listitembtntexts="[]::[View Details [-⚙️-]//Void [-📕-]]::[View Details [-⚙️-]//Void [-📕-]]"
           data-listitembtncolors="[]::[yellow//red]::[yellow//red]"
           data-sectiontwotitletexts="Quick Reservation::👈 Click a date in the live calendar tab"
           data-sectiontwobtntext="Process Reservation Date"
@@ -224,7 +236,7 @@
           id="section-header"
           data-title="Cart"
           data-subtitle="Sales Draft Management"
-          data-middletext='<p class="skew-x-12 text-white">📆 Live date ⌚ Live time</p>'
+          data-middletext="<div class='skew-x-12 text-white'></div>"
         ></div>
         <div id="section-stats"></div>
         <div
@@ -253,8 +265,8 @@
           id="section-header"
           data-title="Stock"
           data-subtitle="Product Catalog"
-          data-mainbtntext="Register Product 🧊"
-          data-subbtntext="Logs 📜"
+          data-mainbtntext="Register Product [-🧊-]"
+          data-subbtntext="Logs [-📜-]"
         ></div>
         <div
           id="section-stats"
@@ -272,7 +284,7 @@
           data-listemptytexts="No unique products yet::No low stock products yet::No out of stock products yet::No fast moving stocks yet::No slow moving stocks yet"
           data-listtitletexts="[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Product Category ID//Date Registered]"
           data-listitembtnids="[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]"
-          data-listitembtntexts="[Details ⚙]::[Details ⚙]::[Details ⚙]::[Details ⚙]::[Details ⚙]"
+          data-listitembtntexts="[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]"
           data-listitembtncolors="[yellow]::[yellow]::[yellow]::[yellow]::[yellow]"
         ></div>
       </section>
@@ -283,8 +295,8 @@
           id="section-header"
           data-title="Invoicing"
           data-subtitle="Transaction Processing"
-          data-mainbtntext="Manual Transaction 💳"
-          data-subbtntext="Logs 📜"
+          data-mainbtntext="Manual Transaction [-💳-]"
+          data-subbtntext="Logs [-📜-]"
         ></div>
         <div
           id="section-stats"
@@ -304,7 +316,7 @@
           data-listemptytexts="No complete transactions today::No complete transactions yet"
           data-listtitletexts="[Transaction ID//User ID//Date & Time]::[Transaction ID//User ID//Date & Time]"
           data-listitembtnids="[invoicingDetailsBtn//invoicingVoidBtn]::[invoicingDetailsBtn//invoicingVoidBtn]"
-          data-listitembtntexts="[Details 📒//Void 📕]::[Details 📒//Void 📕]"
+          data-listitembtntexts="[Details [-📒-]//Void [-📕-]]::[Details [-📒-]//Void [-📕-]]"
           data-listitembtncolors="[yellow//red]::[yellow//red]"
           data-sectiontwotitletexts="Pending Payment Queue::Recent pending transactions"
           data-sectiontwosettings="1"
@@ -320,7 +332,7 @@
           id="section-header"
           data-title="Reports"
           data-subtitle="Data Overview"
-          data-mainbtntext="Export to PDF 📄"
+          data-mainbtntext="Export to PDF [-📄-]"
         ></div>
         <div id="section-stats"></div>
         <div
@@ -333,7 +345,7 @@
           data-listemptytexts="No monthly members found::No regular users found::No student users found::No supplement sales found::No reservations found"
           data-listtitletexts="[Member ID//Member Name//Type//Status//Start Date//End Date//Amount//Renewal Amount]::[ID//Type//Client Name//Time In//Amount]::[ID//Type//Client Name//Time In//Amount]::[Product ID//Product Name//Quantity//Price//Quantity Sold//Total Sales//Date]::[Reservation ID//Service Type//Customer Name//Start Time//End Time//Reservation Date//Additional Members//Price]"
           data-listitembtnids="[userDetailsBtn]::[userDetailsBtn]::[userDetailsBtn]::[userDetailsBtn]::[userDetailsBtn]"
-          data-listitembtntexts="[Details 📙]::[Details 📙]::[Details 📙]::[Details 📙]::[Details 📙]"
+          data-listitembtntexts="[Details [-📙-]]::[Details [-📙-]]::[Details [-📙-]]::[Details [-📙-]]::[Details [-📙-]]"
           data-listitembtncolors="[orange]::[orange]::[orange]::[orange]::[orange]"
         ></div>
       </section>
@@ -350,7 +362,7 @@
           id="section-header"
           data-title="Access Control"
           data-subtitle="System Access Management"
-          data-mainbtntext="Manage 🔧"
+          data-mainbtntext="Manage [-🔧-]"
         ></div>
         <div id="section-stats"></div>
         <div
@@ -363,7 +375,7 @@
           data-listemptytexts="No permissions yet::No roles yet::No users yet::No logs yet"
           data-listtitletexts="[Permission ID//Permission//Permission Mode]::[Role ID//Role//Role Permissions]::[User ID//User//User Role]::[User ID//User//Module(s)//User Action//Action Date and Time]"
           data-listitembtnids="[permissionUpdateBtn//permissionDeleteBtn]::[roleUpdateBtn//roleDeleteBtn]::[userUpdateBtn//userDeleteBtn]::[actionDetailsBtn]"
-          data-listitembtntexts="[Update 🖊️//Delete 🗑️]::[Update 🖊️//Delete 🗑️]::[Update 🖊️//Delete 🗑️]::[View Action Details 🔧]"
+          data-listitembtntexts="[Update [-🖊️-]//Delete [-🗑️-]]::[Update [-🖊️-]//Delete [-🗑️-]]::[Update [-🖊️-]//Delete [-🗑️-]]::[View Action Details [-🔧-]]"
           data-listitembtncolors="[blue//red]::[blue//red]::[blue//red]::[gray]"
         ></div>
       </section>
@@ -388,8 +400,8 @@
                 data-force-rest="Status: Resting 😴"
                 data-force-awake="Status: Awake 🤩"
               ></p>'
-          data-mainbtntext="Switch 🧠 Sync Status"
-          data-subbtntext="Logs 📜"
+          data-mainbtntext="Switch [-🧠-] Sync Status"
+          data-subbtntext="Logs [-📜-]"
         ></div>
         <div
           id="section-stats"
@@ -408,7 +420,7 @@
           data-listemptytexts="No synced data today::No synced data yet"
           data-listtitletexts="[Actor//Action//Sync Date & Time]::[Actor//Action//Sync Date & Time]"
           data-listitembtnids="[dataSyncDetailsBtn]::[dataSyncDetailsBtn]"
-          data-listitembtntexts="[Data 🧠]::[Data 🧠]"
+          data-listitembtntexts="[Data [-🧠-]]::[Data [-🧠-]]"
           data-listitembtncolors="[rose]::[rose]"
           data-sectiontwotitletexts="Sync Queue::These data will auto-sync once the internet is back"
           data-sectiontwosettings="1"
@@ -425,7 +437,7 @@
           data-title="Equipment Maintenance"
           data-subtitle="Manage Gym Equipment Maintenance"
           data-middletext="Monitor and log maintenance for all gym equipment"
-          data-mainbtntext="Log Maintenance 🛠️"
+          data-mainbtntext="Log Maintenance [-🛠️-]"
         ></div>
         <div id="section-stats"></div>
         <div
@@ -439,7 +451,7 @@
           data-listemptytexts="No equipment maintenance records::No logs available"
           data-listtitletexts="[Equipment ID//Equipment Name//Quantity//Machine Type//Status//Register Date]::[Equipment ID//Quantity//Machine Type//Status//Timestamp]"
           data-listitembtnids="[maintenanceDetailsBtn]::[viewLogDetails]"
-          data-listitembtntexts="[Details 🛠️]::[Details 🔍]"
+          data-listitembtntexts="[Details [-🛠️-]]::[Details [-🔍-]]"
           data-listitembtncolors="[orange]::[blue]"
         ></div>
       </section>
@@ -451,7 +463,7 @@
           data-title="Settings"
           data-subtitle="Manage your preferences"
           data-middletext="Customize your dashboard"
-          data-mainbtntext="Save Changes 💾"
+          data-mainbtntext="Save Changes [-💾-]"
         ></div>
         <div id="section-stats"></div>
         <div id="section-content"></div>
@@ -490,6 +502,7 @@
 
     <!-- 🔥 resources 🔥 -->
     <!-- icons: https://fontawesome.com/search -->
+    <!-- emojis: https://emojipedia.org/microsoft/windows-10-may-2019-update -->
     <!-- colors: https://tailwindcss.com/docs/colors -->
 
     <!-- 🔥 dynamic modal 🔥 -->

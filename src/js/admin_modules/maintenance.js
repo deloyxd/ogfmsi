@@ -76,7 +76,7 @@ function setupEquipmentButtons(frontendResult, equipment) {
 function showEquipmentDetails(frontendResult, equipment) {
   const inputs = {
     header: {
-      title: 'Equipment Details 🛠️',
+      title: `Equipment Details ${getEmoji('🛠️', 7)}`,
       subtitle: `Equipment ID: ${equipment.equipment_id}`,
     },
     image: {
@@ -106,8 +106,8 @@ function showEquipmentDetails(frontendResult, equipment) {
       },
     ],
     footer: {
-      main: 'Update 📌',
-      sub: 'Delete 💀',
+      main: `Update ${getEmoji('📌')}`,
+      sub: `Delete ${getEmoji('💀')}`,
     },
   };
 
@@ -141,7 +141,7 @@ async function updateEquipmentDetails(frontendResult, equipment, result) {
       result.image.short[0].value,
       result.image.short[1].value,
       updateData.equipment_type,
-      `<p class="text-green-600 font-bold">${equipment.condition_status.charAt(0).toUpperCase() + equipment.condition_status.slice(1)} Condition ✅</p>`,
+      `<p class="text-green-600 font-bold">${equipment.condition_status.charAt(0).toUpperCase() + equipment.condition_status.slice(1)} Condition ${getEmoji('✅')}</p>`,
       `custom_date_${frontendResult.dataset.date}`,
     ];
 
@@ -208,7 +208,7 @@ async function deleteEquipmentDetails(frontendResult, equipment) {
 function mainBtnFunction() {
   const inputs = {
     header: {
-      title: 'Register Equipment 🧊',
+      title: `Register Equipment ${getEmoji('🧊', 7)}`,
       subtitle: 'Equipment registration form',
     },
     image: {
@@ -283,7 +283,7 @@ async function registerNewProduct(image, name, quantity, category) {
         name,
         quantity + '',
         category,
-        '<p class="text-green-600 font-bold">Good Condition ✅</p>',
+        `<p class="text-green-600 font-bold">Good Condition ${getEmoji('✅')}</p>`,
         'custom_date_today',
       ];
 

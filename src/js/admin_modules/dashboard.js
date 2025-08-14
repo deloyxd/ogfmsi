@@ -42,7 +42,7 @@ function mainBtnFunction() {
 
   const inputs = {
     header: {
-      title: 'Create Announcement 📢',
+      title: `Create Announcement ${getEmoji('📢', 7)}`,
       subtitle: 'Announcement form',
     },
     image: {
@@ -51,7 +51,7 @@ function mainBtnFunction() {
       short: [
         {
           placeholder: 'Title - Top',
-          value: "💪 Let's go 🏋️‍♀️",
+          value: `💪 Let's go 🏋️‍♀️`,
           required: true,
         },
         {
@@ -121,11 +121,11 @@ function mainBtnFunction() {
         }
       });
     });
-    result.header.title = 'Update Announcement 📌';
+    result.header.title = `Update Announcement ${getEmoji('📌', 7)}`;
     result.header.subtitle = 'Announcement form';
     result.footer = {};
-    result.footer.main = 'Update 📌';
-    result.footer.sub = 'Delete 💀';
+    result.footer.main = `Update ${getEmoji('📌')}`;
+    result.footer.sub = `Delete ${getEmoji('💀')}`;
     element.dataset.description = result.large[0].value;
 
     element.addEventListener('mouseenter', () => {

@@ -2,9 +2,9 @@ import main from '../admin_main.js';
 import invoicing from './invoicing.js';
 import accesscontrol from './accesscontrol.js';
 
-const SECTION_NAME = 'checkin-daily';
-const MODULE_NAME = 'Check-In';
-const SUBMODULE_NAME = 'Daily Pass';
+const SECTION_NAME = 'inquiry-regular';
+const MODULE_NAME = 'Inquiry';
+const SUBMODULE_NAME = 'Regular Check-In';
 
 let mainBtn, subBtn, sectionTwoMainBtn;
 let liveActivated = false;
@@ -31,7 +31,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
 function mainBtnFunction() {
   const inputs = {
     header: {
-      title: 'Register New User 💪',
+      title: `Register New User ${getEmoji('💪', 7)}`,
       subtitle: 'New user form',
     },
     image: {
@@ -78,7 +78,7 @@ function sectionTwoMainBtnFunction() {
 }
 
 function registerNewUser(image, firstName, lastName, contact) {
-  const name = combineUserName(firstName, lastName);
+  const name = main.encodeName(firstName, lastName);
   const columnsData = createUserColumnsData('id_U_random', image, name, contact);
 
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, name, (result, status) => {
@@ -102,14 +102,14 @@ function handleSuccessfulRegistration(result, image, name, contact) {
     date: result.dataset.date,
   });
 
-  const { firstName } = parseUserName(result.dataset.text);
+  const { firstName } = main.decodeName(result.dataset.text);
   main.createRedDot(SECTION_NAME, 1);
   main.toast(`${firstName}, successfully registered!`, 'success');
   main.closeModal();
 }
 
 function handleDuplicateUser(result, columnsData, image, name, contact) {
-  const { fullName } = parseUserName(result.dataset.text);
+  const { _, __, fullName } = main.decodeName(result.dataset.text);
 
   main.openConfirmationModal(
     `Data duplication: User with same details (ID: ${result.dataset.id}, Name: ${fullName})`,
@@ -137,7 +137,7 @@ function userViewDetailsBtnFunction(user, isViewMode) {
 function showUserViewModal(user, firstName, lastName) {
   const inputs = {
     header: {
-      title: 'View User Details 📙',
+      title: `View User Details ${getEmoji('📙', 7)}`,
       subtitle: `View mode: ${user.dataset.id}`,
     },
     image: {
@@ -168,7 +168,7 @@ function showUserViewModal(user, firstName, lastName) {
 function showUserEditModal(user, firstName, lastName, fullName) {
   const inputs = {
     header: {
-      title: 'Update User Details 📌',
+      title: `Update User Details ${getEmoji('📌', 7)}`,
       subtitle: `User details form: ${user.dataset.id}`,
     },
     image: {
@@ -181,8 +181,8 @@ function showUserEditModal(user, firstName, lastName, fullName) {
       ],
     },
     footer: {
-      main: 'Update 📌',
-      sub: 'Delete 💀',
+      main: `Update ${getEmoji('📌')}`,
+      sub: `Delete ${getEmoji('💀')}`,
     },
   };
 
@@ -257,7 +257,7 @@ function deleteUser(user, fullName) {
 function userVoidBtnFunction(user) {
   const { firstName } = main.decodeName(user.dataset.text);
 
-  const confirmationMessage = `Void user log: ${firstName}<br><br>Note 📕:<br>Voiding this log will also void any related log or pending transaction under Invoicing module.`;
+  const confirmationMessage = `Void user log: ${firstName}<br><br>Note ${getEmoji('📕')}:<br>Voiding this log will also void any related log or pending transaction under Invoicing module.`;
 
   main.openConfirmationModal(confirmationMessage, () => {
     const { datetime } = main.getDateOrTimeOrBoth();

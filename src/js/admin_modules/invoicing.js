@@ -53,12 +53,12 @@ function sectionTwoMainBtnFunction() {
       radio: [
         { label: 'Payment', selected: 1 },
         {
-          icon: '💵',
+          icon: `${getEmoji('💵')}`,
           title: 'Cash',
           subtitle: 'Traditional payment method',
         },
         {
-          icon: '💳',
+          icon: `${getEmoji('💳')}`,
           title: 'Cashless',
           subtitle: 'Digital payment method',
         },
@@ -75,11 +75,11 @@ function sectionTwoMainBtnFunction() {
         purpose: transaction.children[2].textContent.trim(),
       },
       footer: {
-        main: 'Complete payment transaction 🔏',
+        main: `Complete payment transaction ${getEmoji('🔏')}`,
       },
     };
     const { fullName } = main.decodeName(inputs.payment.user.data[1]);
-    inputs.header.title = `${fullName} 🔏`;
+    inputs.header.title = `${fullName} ${getEmoji('🔏', 7)}`;
 
     main.openModal('green', inputs, (result) => {
       if (!main.isValidPaymentAmount(+result.short[0].value)) {
@@ -143,7 +143,7 @@ function completeTransaction(id, result) {
           main.deleteAtSectionTwo(SECTION_NAME, id);
 
           // updating "Pending" value
-          const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement
+          const items = document.getElementById('inquiry-regularSectionOneListEmpty2').parentElement.parentElement
             .children;
           for (let i = 1; i < items.length; i++) {
             if (items[i].dataset.tid == id) {
@@ -156,9 +156,9 @@ function completeTransaction(id, result) {
 
           main.createRedDot(SECTION_NAME, 1);
           main.createRedDot(SECTION_NAME, 2);
-          main.createRedDot('checkin', 'main');
-          main.createRedDot('checkin-daily', 'sub');
-          main.createRedDot('checkin-daily', 2);
+          main.createRedDot('inquiry', 'main');
+          main.createRedDot('inquiry-regular', 'sub');
+          main.createRedDot('inquiry-regular', 2);
 
           main.toast('Transaction successfully completed!', 'success');
           main.closeConfirmationModal();
@@ -179,7 +179,7 @@ export function processPayment(user) {
   };
   main.createAtSectionTwo(SECTION_NAME, data, (result) => {
     // updating transaction id of pending user
-    const items = document.getElementById('checkin-dailySectionOneListEmpty2').parentElement.parentElement.children;
+    const items = document.getElementById('inquiry-regularSectionOneListEmpty2').parentElement.parentElement.children;
     for (let i = 1; i < items.length; i++) {
       if (items[i].dataset.id == user.id) {
         items[i].dataset.tid = result.dataset.id;
@@ -216,8 +216,8 @@ export function processPayment(user) {
     `;
 
     data.action.id = result.dataset.id;
-    user.usertype = 'daily pass';
-    user.userrate = 'regular';
+    user.usertype = 'regular check-in';
+    user.userrate = 'regular rate';
 
     accesscontrol.log(data.action, user);
 

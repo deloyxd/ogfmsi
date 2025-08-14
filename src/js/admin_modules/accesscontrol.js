@@ -46,7 +46,7 @@ function getInputs(actionData) {
     const userLastName = actionData.name.split(':://')[1];
     const inputs = {
       header: {
-        title: 'View Action Details 🔧',
+        title: `View Action Details ${getEmoji('🔧', 7)}`,
         subtitle: 'User ID: ' + actionData.id,
       },
       image: {
@@ -77,7 +77,7 @@ function getInputs(actionData) {
   if (actionData.type.includes('transaction')) {
     const inputs = {
       header: {
-        title: 'View Action Details 🔧',
+        title: `View Action Details ${getEmoji('🔧', 7)}`,
         subtitle: 'Transaction ID: ' + actionData.id,
       },
       short: [
@@ -98,7 +98,7 @@ function getInputs(actionData) {
   if (actionData.type.includes('product')) {
     const inputs = {
       header: {
-        title: 'View Action Details 🔧',
+        title: `View Action Details ${getEmoji('🔧', 7)}`,
         subtitle: 'Product ID: ' + actionData.id,
       },
       image: {
