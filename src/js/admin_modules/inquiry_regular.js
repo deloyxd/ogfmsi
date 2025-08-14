@@ -1,6 +1,6 @@
 import main from '../admin_main.js';
 import invoicing from './invoicing.js';
-import accesscontrol from './accesscontrol.js';
+import accesscontrol from './maintenance_accesscontrol.js';
 
 const SECTION_NAME = 'inquiry-regular';
 const MODULE_NAME = 'Inquiry';

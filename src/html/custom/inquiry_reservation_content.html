@@ -1,0 +1,39 @@
+<!-- do not remove class="h-[530px]" and class="h-[500px] pt-4" -jest -->
+<div data-sectionindex="1" data-tabindex="1" class="h-[530px]">
+  <div id="calendar" class="flex h-full flex-col rounded-lg bg-white shadow-lg">
+    <div class="flex items-center justify-between border-b p-1">
+      <button id="prevMonth" class="rounded-lg p-2 transition-colors hover:bg-gray-100">
+        <i class="fas fa-chevron-left w-10 text-lg"></i>
+      </button>
+
+      <div class="flex items-center justify-center gap-4">
+        <div id="month" class="text-lg font-semibold"></div>
+        <div class="flex items-center">
+          <button id="prevYear" class="rounded-r px-2 py-1 text-gray-600 hover:bg-gray-100">
+            <i class="fas fa-chevron-left text-lg"></i>
+          </button>
+          <span id="year" class="bg-gray-100 px-2 py-1 text-lg font-semibold"></span>
+          <button id="nextYear" class="rounded-l px-2 py-1 text-gray-600 hover:bg-gray-100">
+            <i class="fas fa-chevron-right text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <button id="nextMonth" class="rounded-lg p-2 transition-colors hover:bg-gray-100">
+        <i class="fas fa-chevron-right w-10 text-lg"></i>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-7 border-b bg-gray-50 p-2 text-center text-sm font-medium text-gray-600">
+      <p>Sun</p>
+      <p>Mon</p>
+      <p>Tue</p>
+      <p>Wed</p>
+      <p>Thu</p>
+      <p>Fri</p>
+      <p>Sat</p>
+    </div>
+
+    <div id="calendarGrid" class="grid flex-1 grid-cols-7"></div>
+  </div>
+</div>

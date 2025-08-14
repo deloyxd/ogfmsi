@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import accesscontrol from './accesscontrol.js';
+import accesscontrol from './maintenance_accesscontrol.js';
 import { API_BASE_URL } from '../_global.js';
 
 // DOM elements
@@ -14,7 +14,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
   refreshAllTabs();
 });
-
 /**
  * Fetch and display equipment from backend
  */
@@ -49,6 +48,8 @@ async function loadExistingEquipment() {
               frontendResult.dataset.date = date;
               frontendResult.children[5].innerHTML = date; 
             }
+
+            // Setup action buttons
             setupEquipmentButtons(frontendResult, equipment);
           }
         });

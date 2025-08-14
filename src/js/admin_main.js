@@ -23,7 +23,7 @@ function setupSidebar() {
     }
     if (section) {
       button.onclick = () => {
-        closeAllDropDownsExcept(section);
+        // closeAllDropDownsExcept(section);
         showSection(section);
         document.dispatchEvent(new CustomEvent('ogfmsiAdminMainLoaded'));
       };

@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import accesscontrol from './accesscontrol.js';
+import accesscontrol from './maintenance_accesscontrol.js';
 
 // default codes:
 let mainBtn, subBtn, sectionTwoMainBtn;

@@ -1,7 +1,7 @@
 import main from '../admin_main.js';
-import datasync from './datasync.js';
+import datasync from './maintenance_datasync.js';
 
-const SECTION_NAME = 'accesscontrol';
+const SECTION_NAME = 'maintenance-accesscontrol';
 
 let mainBtn;
 
@@ -32,7 +32,7 @@ export function log(action, data) {
       const actionDetailsBtn = btns.querySelector('#actionDetailsBtn');
       actionDetailsBtn.addEventListener('click', () => main.openModal('gray', getInputs(data), main.closeModal));
 
-      main.createRedDot(SECTION_NAME, 'main');
+      main.createRedDot(SECTION_NAME, 'sub');
       main.createRedDot(SECTION_NAME, 4);
     }
   });
