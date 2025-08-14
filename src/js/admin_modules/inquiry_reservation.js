@@ -59,6 +59,7 @@ function bindEvents() {
         
         .bookmark-body {
             animation: cloth-sway 6s ease-out infinite;
+            animation-delay: var(--animation-delay, 0s);
         }
     `;
     document.head.appendChild(style);
@@ -138,7 +139,7 @@ function renderCalendar() {
 function createDayElement(day, month, year, isToday) {
   const isPreviousDay =
     day + 31 * month + 366 * year < today.getDate() + 31 * today.getMonth() + 366 * today.getFullYear();
-  // get live reservation count at this date
+  // todo, get live reservation count at this date
   const reservedCount = Math.max(0, Math.round(Math.random() * 11) - Math.round(Math.random() * 10));
   const dayElement = document.createElement('div');
   dayElement.className = `
@@ -170,6 +171,8 @@ function createDayElement(day, month, year, isToday) {
           </div>
       </div>
   `;
+
+  dayElement.style.setProperty('--animation-delay', `-${Math.random() * 6}s`);
 
   dayElement.addEventListener('click', () => {
     if (selectedDate) {
