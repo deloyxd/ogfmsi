@@ -5,21 +5,25 @@ import { API_BASE_URL } from '../_global.js';
 // DOM elements
 let mainBtn, subBtn, sectionTwoMainBtn;
 
-// Initialize module when admin loads
+// Default codes
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== 'maintenance') return;
+
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
-});
 
-// Load equipment on page load
-loadExistingEquipment();
+  refreshAllTabs();
+});
 
 /**
  * Fetch and display equipment from backend
  */
 async function loadExistingEquipment() {
   try {
+    // Clear table first to prevent duplicates
+    const tableBody = document.querySelector('#maintenanceSectionOneList');
+    if (tableBody) tableBody.innerHTML = '';
+
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment`);
     const result = await response.json();
     
@@ -34,10 +38,8 @@ async function loadExistingEquipment() {
           'custom_date_today',
         ];
         
-        // Create table row
         main.createAtSectionOne('maintenance', columnsData, 1, equipment.equipment_name, (frontendResult, status) => {
           if (status === 'success') {
-            // Format creation date
             if (equipment.created_at) {
               const date = new Date(equipment.created_at).toLocaleDateString('en-US', { 
                 year: 'numeric', 
@@ -47,8 +49,6 @@ async function loadExistingEquipment() {
               frontendResult.dataset.date = date;
               frontendResult.children[5].innerHTML = date; 
             }
-            
-            // Setup action buttons
             setupEquipmentButtons(frontendResult, equipment);
           }
         });
