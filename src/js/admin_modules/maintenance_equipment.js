@@ -5,21 +5,24 @@ import { API_BASE_URL } from '../_global.js';
 // DOM elements
 let mainBtn, subBtn, sectionTwoMainBtn;
 
-// Initialize module when admin loads
+// Default codes
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  if (main.sharedState.sectionName !== 'maintenance-equipment') return;
+  if (main.sharedState.sectionName !== 'maintenance') return;
+
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
+
+  refreshAllTabs();
 });
-
-// Load equipment on page load
-loadExistingEquipment();
-
 /**
  * Fetch and display equipment from backend
  */
 async function loadExistingEquipment() {
   try {
+    // Clear table first to prevent duplicates
+    const tableBody = document.querySelector('#maintenanceSectionOneList');
+    if (tableBody) tableBody.innerHTML = '';
+
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment`);
     const result = await response.json();
     
@@ -34,10 +37,8 @@ async function loadExistingEquipment() {
           'custom_date_today',
         ];
         
-        // Create table row
-        main.createAtSectionOne('maintenance-equipment', columnsData, 1, equipment.equipment_name, (frontendResult, status) => {
+        main.createAtSectionOne('maintenance', columnsData, 1, equipment.equipment_name, (frontendResult, status) => {
           if (status === 'success') {
-            // Format creation date
             if (equipment.created_at) {
               const date = new Date(equipment.created_at).toLocaleDateString('en-US', { 
                 year: 'numeric', 
@@ -47,7 +48,7 @@ async function loadExistingEquipment() {
               frontendResult.dataset.date = date;
               frontendResult.children[5].innerHTML = date; 
             }
-            
+
             // Setup action buttons
             setupEquipmentButtons(frontendResult, equipment);
           }
@@ -146,7 +147,7 @@ async function updateEquipmentDetails(frontendResult, equipment, result) {
     ];
 
     // Update UI and log action
-    main.updateAtSectionOne('maintenance-equipment', columnsData, 1, equipment.equipment_id, (updatedResult) => {
+    main.updateAtSectionOne('maintenance', columnsData, 1, equipment.equipment_id, (updatedResult) => {
       const action = {
         module: 'Maintenance',
         submodule: 'Equipment',
@@ -288,7 +289,7 @@ async function registerNewProduct(image, name, quantity, category) {
       ];
 
       // Add to UI and log action
-      main.createAtSectionOne('maintenance-equipment', columnsData, 1, name, (frontendResult, status) => {
+      main.createAtSectionOne('maintenance', columnsData, 1, name, (frontendResult, status) => {
         if (status == 'success') {
           const equipmentData = {
             equipment_id: result.result.equipment_id,
@@ -320,7 +321,7 @@ async function registerNewProduct(image, name, quantity, category) {
           };
           accesscontrol.log(action, data);
 
-          main.createRedDot('maintenance_equipment', 1);
+          main.createRedDot('maintenance', 1);
           main.toast(`${name}, successfully registered!`, 'success');
           main.closeModal();
         } else {
