@@ -115,13 +115,13 @@ function renderCalendar() {
   // Add previous month's trailing days
   for (let i = startingDayOfWeek - 1; i >= 0; i--) {
     const dayNum = prevMonthDays - i;
-    const dayElement = createDayElement(dayNum, month - 1, false);
+    const dayElement = createDayElement(dayNum, month - 1, year, false);
     calendarGrid.appendChild(dayElement);
   }
 
   // Add current month's days
   for (let day = 1; day <= daysInMonth; day++) {
-    const dayElement = createDayElement(day, month, isToday(year, month, day));
+    const dayElement = createDayElement(day, month, year, isToday(year, month, day));
     calendarGrid.appendChild(dayElement);
   }
 
@@ -130,13 +130,14 @@ function renderCalendar() {
   const remainingCells = 6 * 7 - totalCells; // 6 rows × 7 days
 
   for (let day = 1; day <= remainingCells; day++) {
-    const dayElement = createDayElement(day, month + 1, false);
+    const dayElement = createDayElement(day, month + 1, year, false);
     calendarGrid.appendChild(dayElement);
   }
 }
 
-function createDayElement(day, month, isToday) {
-  const isPreviousDay = day + 30 * month < today.getDate() + 30 * today.getMonth();
+function createDayElement(day, month, year, isToday) {
+  const isPreviousDay =
+    day + 31 * month + 366 * year < today.getDate() + 31 * today.getMonth() + 366 * today.getFullYear();
   // get live reservation count at this date
   const reservedCount = Math.max(0, Math.round(Math.random() * 11) - Math.round(Math.random() * 10));
   const dayElement = document.createElement('div');
@@ -202,4 +203,16 @@ function createDayElement(day, month, isToday) {
 
 function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+}
+
+function isPreviousDay(year, month, day) {
+  const currentDate = new Date();
+  const currentDay = currentDate.getDate();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+
+  const inputDateValue = year * 10000 + month * 100 + day;
+  const currentDateValue = currentYear * 10000 + (currentMonth + 1) * 100 + currentDay;
+
+  return inputDateValue < currentDateValue;
 }
