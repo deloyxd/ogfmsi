@@ -4,6 +4,7 @@ import accesscontrol from './maintenance_accesscontrol.js';
 const SECTION_NAME = 'inquiry-reservation';
 
 let mainBtn;
+let bindActivated = false;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
@@ -11,7 +12,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
   mainBtn?.addEventListener('click', mainBtnFunction);
 
-  bindEvents();
+  if (!bindActivated) {
+    bindActivated = true;
+    bindEvents();
+  }
   render();
 });
 
@@ -46,6 +50,16 @@ function bindEvents() {
     currentDate.setMonth(currentDate.getMonth() + 1);
     render();
   });
+
+  document.getElementById('prevYear').addEventListener('click', () => {
+    currentDate.setFullYear(currentDate.getFullYear() - 1);
+    render();
+  });
+
+  document.getElementById('nextYear').addEventListener('click', () => {
+    currentDate.setFullYear(currentDate.getFullYear() + 1);
+    render();
+  });
 }
 
 function render() {
@@ -54,8 +68,8 @@ function render() {
 }
 
 function renderHeader() {
-  const monthYear = document.getElementById('monthYear');
-  monthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+  document.getElementById('month').innerHTML = `${monthNames[currentDate.getMonth()]}`;
+  document.getElementById('year').innerHTML = `${currentDate.getFullYear()}`;
 }
 
 function renderCalendar() {
@@ -90,7 +104,7 @@ function renderCalendar() {
 
   // Add next month's leading days
   const totalCells = calendarGrid.children.length;
-  const remainingCells = 42 - totalCells; // 6 rows × 7 days
+  const remainingCells = 6 * 7 - totalCells; // 6 rows × 7 days
 
   for (let day = 1; day <= remainingCells; day++) {
     const dayElement = createDayElement(day, month + 1, false);
@@ -100,25 +114,62 @@ function renderCalendar() {
 
 function createDayElement(day, month, isToday) {
   const isPreviousDay = day + 30 * month < today.getDate() + 30 * today.getMonth();
+  // get live reservation count at this date
+  const reservedCount = Math.max(0, Math.round(Math.random() * 11) - 5);
   const dayElement = document.createElement('div');
   dayElement.className = `
       relative p-2 text-center cursor-pointer duration-300
       hover:bg-teal-500/50
-      ${isPreviousDay ? 'text-gray-400 bg-teal-25' : 'text-teal-800'}
+      ${isPreviousDay ? 'text-red-500 bg-red-300/30' : 'text-teal-800'}
       ${isToday ? 'ring-inset ring-2 ring-teal-500 font-bold bg-teal-300' : ''}
   `;
 
-  dayElement.innerHTML = `<span class="text-sm">${day}</span>`;
+  dayElement.innerHTML = `
+      <div class="flex flex-col gap-1 justify-center items-center">
+          <p class="text-sm">${day}</p>
+          <div class="duration-300 opacity-0 text-xs font-black bg-gray-200/50 rounded-full px-4 py-1 emoji">${getEmoji('📅', 14)}</div>
+          <div id="dot" class="absolute right-2 top-2 ${reservedCount <= 0 || isPreviousDay ? 'hidden' : ''}">
+            <div class="relative h-2 w-2">
+              <div class="absolute h-full w-full scale-105 animate-ping rounded-full opacity-75"></div>
+              <div class="absolute h-2 w-2 rounded-full"></div>
+            </div>
+          </div>
+      </div>
+  `;
+  if (reservedCount > 5) {
+    dayElement.querySelector(`#dot`).children[0].children[0].classList.add('bg-red-500');
+    dayElement.querySelector(`#dot`).children[0].children[1].classList.add('bg-red-500');
+  } else if (reservedCount > 3) {
+    dayElement.querySelector(`#dot`).children[0].children[0].classList.add('bg-yellow-500');
+    dayElement.querySelector(`#dot`).children[0].children[1].classList.add('bg-yellow-500');
+  } else {
+    dayElement.querySelector(`#dot`).children[0].children[0].classList.add('bg-green-500');
+    dayElement.querySelector(`#dot`).children[0].children[1].classList.add('bg-green-500');
+  }
 
   dayElement.addEventListener('click', () => {
     if (selectedDate) {
       selectedDate.classList.remove('bg-teal-400');
+      selectedDate.children[0].children[1].classList.add('opacity-0');
     }
 
     if (!isPreviousDay) {
       dayElement.classList.add('bg-teal-400');
       selectedDate = dayElement;
+      selectedDate.children[0].children[1].classList.remove('opacity-0');
     }
+  });
+
+  dayElement.addEventListener('mouseenter', () => {
+    dayElement.children[0].children[1].classList.remove('opacity-0');
+    dayElement.children[0].children[1].innerHTML = `${getEmoji('📅', 14)}${reservedCount}`;
+  });
+
+  dayElement.addEventListener('mouseleave', () => {
+    if (dayElement == selectedDate) {
+      return;
+    }
+    dayElement.children[0].children[1].classList.add('opacity-0');
   });
 
   return dayElement;
