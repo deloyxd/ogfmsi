@@ -27,13 +27,13 @@ async function loadDynamicSidebar() {
     } else {
       currentLi = document.createElement('li');
       mainBtn = document.createElement('button');
-      mainBtn.className = 'sidebar-main-btn';
+      mainBtn.className = 'sidebar-main-btn relative';
       mainBtn.dataset.section = mainSectionName;
       if (nestedSections.length > 1) mainBtn.dataset.type = 'dropdown';
       mainBtn.innerHTML = `
         ${nestedSections.length > 1 ? `<div class="flex items-center">` : ``}
-        <i class="fas ${sectionIcons[0]} mr-3"></i>
-        ${nestedSectionTexts != '' ? nestedSectionTexts[0] : mainSectionName.charAt(0).toUpperCase() + mainSectionName.slice(1)}
+        <i class="fas ${sectionIcons[0]}"></i>
+        <p class="absolute ml-7">${nestedSectionTexts != '' ? nestedSectionTexts[0] : mainSectionName.charAt(0).toUpperCase() + mainSectionName.slice(1)}</p>
         ${nestedSections.length > 1 ? `</div><i class="fas fa-chevron-down duration-300 text-xs" id="${mainSectionName}-arrow"></i>` : ``}
         <div class="absolute right-2 top-2 hidden">
             <div class="relative h-2 w-2">
@@ -50,7 +50,7 @@ async function loadDynamicSidebar() {
     if (nestedSections.length > 1) {
       const currentParentBtn = currentLi.querySelector('.sidebar-main-btn');
       currentParentBtn.classList.add('justify-between');
-      
+
       let currentContainer = mainUlContainer.get(mainSectionName);
 
       if (!currentContainer) {
@@ -68,11 +68,11 @@ async function loadDynamicSidebar() {
         if (!subLi) {
           subLi = document.createElement('li');
           const subBtn = document.createElement('button');
-          subBtn.className = 'sidebar-sub-btn';
+          subBtn.className = 'sidebar-sub-btn relative';
           subBtn.dataset.section = currentPath;
           subBtn.innerHTML = `
-            <i class="fas ${sectionIcons[i]} mr-3"></i>
-            ${nestedSectionTexts != '' ? nestedSectionTexts[i] : nestedSections[i].charAt(0).toUpperCase() + nestedSections[i].slice(1)}
+            <i class="fas ${sectionIcons[i]}"></i>
+            <p class="absolute ml-6">${nestedSectionTexts != '' ? nestedSectionTexts[i] : nestedSections[i].charAt(0).toUpperCase() + nestedSections[i].slice(1)}</p>
             <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
                     <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>

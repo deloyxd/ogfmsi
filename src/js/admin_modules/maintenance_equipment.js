@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import accesscontrol from './accesscontrol.js';
+import accesscontrol from './maintenance_accesscontrol.js';
 import { API_BASE_URL } from '../_global.js';
 
 // DOM elements
@@ -7,7 +7,7 @@ let mainBtn, subBtn, sectionTwoMainBtn;
 
 // Initialize module when admin loads
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  if (main.sharedState.sectionName !== 'maintenance') return;
+  if (main.sharedState.sectionName !== 'maintenance-equipment') return;
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
 });
@@ -35,7 +35,7 @@ async function loadExistingEquipment() {
         ];
         
         // Create table row
-        main.createAtSectionOne('maintenance', columnsData, 1, equipment.equipment_name, (frontendResult, status) => {
+        main.createAtSectionOne('maintenance-equipment', columnsData, 1, equipment.equipment_name, (frontendResult, status) => {
           if (status === 'success') {
             // Format creation date
             if (equipment.created_at) {
@@ -146,7 +146,7 @@ async function updateEquipmentDetails(frontendResult, equipment, result) {
     ];
 
     // Update UI and log action
-    main.updateAtSectionOne('maintenance', columnsData, 1, equipment.equipment_id, (updatedResult) => {
+    main.updateAtSectionOne('maintenance-equipment', columnsData, 1, equipment.equipment_id, (updatedResult) => {
       const action = {
         module: 'Maintenance',
         submodule: 'Equipment',
@@ -288,7 +288,7 @@ async function registerNewProduct(image, name, quantity, category) {
       ];
 
       // Add to UI and log action
-      main.createAtSectionOne('maintenance', columnsData, 1, name, (frontendResult, status) => {
+      main.createAtSectionOne('maintenance-equipment', columnsData, 1, name, (frontendResult, status) => {
         if (status == 'success') {
           const equipmentData = {
             equipment_id: result.result.equipment_id,
@@ -320,7 +320,7 @@ async function registerNewProduct(image, name, quantity, category) {
           };
           accesscontrol.log(action, data);
 
-          main.createRedDot('maintenance', 1);
+          main.createRedDot('maintenance_equipment', 1);
           main.toast(`${name}, successfully registered!`, 'success');
           main.closeModal();
         } else {

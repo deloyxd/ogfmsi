@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import accesscontrol from './accesscontrol.js';
+import accesscontrol from './maintenance_accesscontrol.js';
 
 const SECTION_NAME = 'invoicing';
 const MODULE_NAME = 'Invoicing';
@@ -148,6 +148,7 @@ function completeTransaction(id, result) {
           for (let i = 1; i < items.length; i++) {
             if (items[i].dataset.tid == id) {
               items[i].dataset.amount = data.payment_amount;
+              items[i].dataset.time = editedResult.dataset.datetime.split(' - ')[1];
               items[i].dataset.datetime = editedResult.dataset.datetime;
               items[i].children[2].innerHTML = editedResult.dataset.datetime;
               break;

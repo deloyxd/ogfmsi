@@ -1,7 +1,7 @@
 import main from '../admin_main.js';
 import stock from './ecommerce_stock.js';
-import accesscontrol from './accesscontrol.js';
-import datasync from './datasync.js';
+import accesscontrol from './maintenance_accesscontrol.js';
+import datasync from './maintenance_datasync.js';
 
 const SECTION_NAME = 'ecommerce-cart';
 const MODULE_NAME = 'E-Commerce';

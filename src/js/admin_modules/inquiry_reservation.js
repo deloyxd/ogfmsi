@@ -1,7 +1,7 @@
 import main from '../admin_main.js';
-import accesscontrol from './accesscontrol.js';
+import accesscontrol from './maintenance_accesscontrol.js';
 
-const SECTION_NAME = 'reservation';
+const SECTION_NAME = 'inquiry-reservation';
 
 let mainBtn;
 

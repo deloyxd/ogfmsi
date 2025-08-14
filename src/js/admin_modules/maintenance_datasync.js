@@ -5,7 +5,7 @@ import main from '../admin_main.js';
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   // change to right sectionName
-  if (main.sharedState.sectionName != 'datasync') return;
+  if (main.sharedState.sectionName != 'maintenance-datasync') return;
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
@@ -77,7 +77,7 @@ export function enqueue(action, data) {
       description: action.description,
     },
   };
-  main.createAtSectionTwo('datasync', editedData, (result) => {
+  main.createAtSectionTwo('maintenance-datasync', editedData, (result) => {
     result.innerHTML += `
     <div class="overflow-hidden text-ellipsis">
       ${result.dataset.actorid}<br>
