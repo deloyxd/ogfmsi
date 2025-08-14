@@ -15,8 +15,8 @@
 
     <!-- emojis -->
     <script>
-      function getEmoji(emoji, size = 4) {
-        return `<img src="/src/images/${emoji}.png" class="inline w-${size} h-${size} 2xl:w-${size + 0.5} 2xl:h-${size + 0.5}">`;
+      function getEmoji(emoji, size = 16) {
+        return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
       }
     </script>
 
@@ -51,7 +51,7 @@
           <p>Role:</p>
           <div id="role" class="emoji font-bold">
             <script>
-              document.write(getEmoji('👨‍💼'));
+              document.write(getEmoji('👨‍💼', 14));
             </script>
             Staff
           </div>

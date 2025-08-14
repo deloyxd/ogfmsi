@@ -79,7 +79,7 @@ function sectionTwoMainBtnFunction() {
       },
     };
     const { fullName } = main.decodeName(inputs.payment.user.data[1]);
-    inputs.header.title = `${fullName} ${getEmoji('🔏', 7)}`;
+    inputs.header.title = `${fullName} ${getEmoji('🔏', 26)}`;
 
     main.openModal('green', inputs, (result) => {
       if (!main.isValidPaymentAmount(+result.short[0].value)) {
@@ -218,6 +218,7 @@ export function processPayment(user) {
     data.action.id = result.dataset.id;
     user.usertype = 'regular check-in';
     user.userrate = 'regular rate';
+    user.type = 'user_transaction';
 
     accesscontrol.log(data.action, user);
 

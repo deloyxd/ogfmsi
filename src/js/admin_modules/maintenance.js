@@ -76,7 +76,7 @@ function setupEquipmentButtons(frontendResult, equipment) {
 function showEquipmentDetails(frontendResult, equipment) {
   const inputs = {
     header: {
-      title: `Equipment Details ${getEmoji('🛠️', 7)}`,
+      title: `Equipment Details ${getEmoji('🛠️', 26)}`,
       subtitle: `Equipment ID: ${equipment.equipment_id}`,
     },
     image: {
@@ -208,7 +208,7 @@ async function deleteEquipmentDetails(frontendResult, equipment) {
 function mainBtnFunction() {
   const inputs = {
     header: {
-      title: `Register Equipment ${getEmoji('🧊', 7)}`,
+      title: `Register Equipment ${getEmoji('🧊', 26)}`,
       subtitle: 'Equipment registration form',
     },
     image: {

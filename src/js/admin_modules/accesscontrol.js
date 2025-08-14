@@ -46,7 +46,7 @@ function getInputs(actionData) {
     const userLastName = actionData.name.split(':://')[1];
     const inputs = {
       header: {
-        title: `View Action Details ${getEmoji('🔧', 7)}`,
+        title: `View Action Details ${getEmoji('🔧', 26)}`,
         subtitle: 'User ID: ' + actionData.id,
       },
       image: {
@@ -63,11 +63,11 @@ function getInputs(actionData) {
         main: 'Exit view',
       },
     };
-    if (actionData.type == 'user_transaction')
+    if (actionData.type.includes('transaction'))
       inputs.short = [
         {
           placeholder: 'Amount paid',
-          value: actionData.amount ? actionData.amount : "Wasn't able to pay",
+          value: actionData.amount ? actionData.amount : "Not yet paid",
           locked: true,
         },
       ];
@@ -77,7 +77,7 @@ function getInputs(actionData) {
   if (actionData.type.includes('transaction')) {
     const inputs = {
       header: {
-        title: `View Action Details ${getEmoji('🔧', 7)}`,
+        title: `View Action Details ${getEmoji('🔧', 26)}`,
         subtitle: 'Transaction ID: ' + actionData.id,
       },
       short: [
@@ -98,7 +98,7 @@ function getInputs(actionData) {
   if (actionData.type.includes('product')) {
     const inputs = {
       header: {
-        title: `View Action Details ${getEmoji('🔧', 7)}`,
+        title: `View Action Details ${getEmoji('🔧', 26)}`,
         subtitle: 'Product ID: ' + actionData.id,
       },
       image: {

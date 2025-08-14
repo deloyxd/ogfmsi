@@ -31,7 +31,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
 function mainBtnFunction() {
   const inputs = {
     header: {
-      title: `Register New User ${getEmoji('💪', 7)}`,
+      title: `Register New User ${getEmoji('💪', 26)}`,
       subtitle: 'New user form',
     },
     image: {
@@ -137,7 +137,7 @@ function userViewDetailsBtnFunction(user, isViewMode) {
 function showUserViewModal(user, firstName, lastName) {
   const inputs = {
     header: {
-      title: `View User Details ${getEmoji('📙', 7)}`,
+      title: `View User Details ${getEmoji('📙', 26)}`,
       subtitle: `View mode: ${user.dataset.id}`,
     },
     image: {
@@ -168,7 +168,7 @@ function showUserViewModal(user, firstName, lastName) {
 function showUserEditModal(user, firstName, lastName, fullName) {
   const inputs = {
     header: {
-      title: `Update User Details ${getEmoji('📌', 7)}`,
+      title: `Update User Details ${getEmoji('📌', 26)}`,
       subtitle: `User details form: ${user.dataset.id}`,
     },
     image: {
@@ -197,7 +197,7 @@ function showUserEditModal(user, firstName, lastName, fullName) {
 function updateUser(user, result, originalFullName) {
   main.findAtSectionOne(
     SECTION_NAME,
-    combineUserName(result.image.short[0].value, result.image.short[1].value),
+    main.encodeName(result.image.short[0].value, result.image.short[1].value),
     'any',
     1,
     (findResult) => {

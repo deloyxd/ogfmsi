@@ -248,7 +248,7 @@ function deleteProduct(result) {
 
 const createModalInputs = (isUpdate = false, productData = {}) => ({
   header: {
-    title: `${isUpdate ? 'Update' : 'Register'} Product ${getEmoji('🧊', 7)}`,
+    title: `${isUpdate ? 'Update' : 'Register'} Product ${getEmoji('🧊', 26)}`,
     subtitle: 'Unique product form',
   },
   image: {

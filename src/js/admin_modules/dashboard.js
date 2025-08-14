@@ -42,7 +42,7 @@ function mainBtnFunction() {
 
   const inputs = {
     header: {
-      title: `Create Announcement ${getEmoji('📢', 7)}`,
+      title: `Create Announcement ${getEmoji('📢', 26)}`,
       subtitle: 'Announcement form',
     },
     image: {
@@ -121,7 +121,7 @@ function mainBtnFunction() {
         }
       });
     });
-    result.header.title = `Update Announcement ${getEmoji('📌', 7)}`;
+    result.header.title = `Update Announcement ${getEmoji('📌', 26)}`;
     result.header.subtitle = 'Announcement form';
     result.footer = {};
     result.footer.main = `Update ${getEmoji('📌')}`;

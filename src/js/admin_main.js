@@ -668,7 +668,7 @@ export function openConfirmationModal(action, callback) {
   setupModalTheme('red', tempModalConfirmationContainer);
 
   const data = {
-    title: `Are you sure? ${getEmoji('💀')}`,
+    title: `Are you sure? ${getEmoji('💀', 7)}`,
     subtitle:
       'Please double check or review any details you may have provided<br>before proceeding with the action stated below:<br><br><b>' +
       action.trim() +
