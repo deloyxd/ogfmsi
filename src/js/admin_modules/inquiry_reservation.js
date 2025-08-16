@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import invoicing from './invoicing.js';
+import invoicing from './payment.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 
 const SECTION_NAME = 'inquiry-reservation';
@@ -351,16 +351,4 @@ function createDayElement(day, month, year, isToday) {
 
 function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
-}
-
-function isPreviousDay(year, month, day) {
-  const currentDate = new Date();
-  const currentDay = currentDate.getDate();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-
-  const inputDateValue = year * 10000 + month * 100 + day;
-  const currentDateValue = currentYear * 10000 + (currentMonth + 1) * 100 + currentDay;
-
-  return inputDateValue < currentDateValue;
 }

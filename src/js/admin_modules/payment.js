@@ -1,8 +1,8 @@
 import main from '../admin_main.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 
-const SECTION_NAME = 'invoicing';
-const MODULE_NAME = 'Invoicing';
+const SECTION_NAME = 'payment';
+const MODULE_NAME = 'Payment';
 
 let mainBtn, subBtn, sectionTwoMainBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
