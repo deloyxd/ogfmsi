@@ -303,11 +303,10 @@ function processCheckinUser(user) {
         image: result.dataset.image,
         name: result.dataset.text,
         contact: result.dataset.contact,
-        datetime: 'Pending',
       };
 
       logAction('Process check-in user', userData);
-      invoicing.processPayment(userData);
+      invoicing.processCheckinPayment(userData);
 
       const { firstName } = main.decodeName(result.dataset.text);
       main.createRedDot(SECTION_NAME, 2);

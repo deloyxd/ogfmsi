@@ -81,6 +81,13 @@ function sectionTwoMainBtnFunction() {
     const { fullName } = main.decodeName(inputs.payment.user.data[1]);
     inputs.header.title = `${fullName} ${getEmoji('🔏', 26)}`;
 
+    const isReservation = transaction.dataset.type.includes('reservation');
+    if (isReservation) {
+      inputs.short[0].value = inputs.payment.user.data[3];
+      inputs.short[0].locked = true;
+      inputs.spinner[0].locked = true;
+    }
+
     main.openModal('green', inputs, (result) => {
       if (!main.isValidPaymentAmount(+result.short[0].value)) {
         main.toast(`Invalid amount: ${result.short[0].value}`, 'error');
@@ -99,7 +106,7 @@ function sectionTwoMainBtnFunction() {
         result.short[1].value = 'N/A';
       }
       main.openConfirmationModal(`Complete transaction: ${fullName} (${transaction.dataset.id})`, () => {
-        completeTransaction(transaction.dataset.id, result);
+        completeTransaction(transaction.dataset.id, result, isReservation);
         searchInput.value = '';
         searchInput.dispatchEvent(new Event('input'));
       });
@@ -107,7 +114,7 @@ function sectionTwoMainBtnFunction() {
   });
 }
 
-function completeTransaction(id, result) {
+function completeTransaction(id, result, isReservation) {
   const columnsData = [
     'id_' + id,
     {
@@ -116,6 +123,7 @@ function completeTransaction(id, result) {
     },
     'custom_datetime_today',
   ];
+  console.log(columnsData);
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, '', (_, status1) => {
     if (status1 == 'success') {
       main.createAtSectionOne(SECTION_NAME, columnsData, 2, '', (editedResult, status2) => {
@@ -143,23 +151,40 @@ function completeTransaction(id, result) {
           main.deleteAtSectionTwo(SECTION_NAME, id);
 
           // updating "Pending" value
-          const items = document.getElementById('inquiry-regularSectionOneListEmpty2').parentElement.parentElement
-            .children;
-          for (let i = 1; i < items.length; i++) {
-            if (items[i].dataset.tid == id) {
-              items[i].dataset.amount = data.payment_amount;
-              items[i].dataset.time = editedResult.dataset.datetime.split(' - ')[1];
-              items[i].dataset.datetime = editedResult.dataset.datetime;
-              items[i].children[2].innerHTML = editedResult.dataset.datetime;
-              break;
+          let items;
+          if (isReservation) {
+            items = document.getElementById('inquiry-reservationSectionOneListEmpty2').parentElement.parentElement
+              .children;
+            for (let i = 1; i < items.length; i++) {
+              if (items[i].dataset.tid == id) {
+                items[i].dataset.amount = data.payment_amount;
+                items[i].dataset.datetime = editedResult.dataset.datetime;
+                items[i].children[4].innerHTML = editedResult.dataset.datetime;
+                break;
+              }
+            }
+          } else {
+            items = document.getElementById('inquiry-regularSectionOneListEmpty2').parentElement.parentElement.children;
+            for (let i = 1; i < items.length; i++) {
+              if (items[i].dataset.tid == id) {
+                items[i].dataset.amount = data.payment_amount;
+                items[i].dataset.time = editedResult.dataset.datetime.split(' - ')[1];
+                items[i].dataset.datetime = editedResult.dataset.datetime;
+                items[i].children[2].innerHTML = editedResult.dataset.datetime;
+                break;
+              }
             }
           }
 
           main.createRedDot(SECTION_NAME, 1);
           main.createRedDot(SECTION_NAME, 2);
-          main.createRedDot('inquiry', 'main');
-          main.createRedDot('inquiry-regular', 'sub');
-          main.createRedDot('inquiry-regular', 2);
+          if (isReservation) {
+            main.createRedDot('inquiry-reservation', 'sub');
+            main.createRedDot('inquiry-reservation', 2);
+          } else {
+            main.createRedDot('inquiry-regular', 'sub');
+            main.createRedDot('inquiry-regular', 2);
+          }
 
           main.toast('Transaction successfully completed!', 'success');
           main.closeConfirmationModal();
@@ -170,23 +195,19 @@ function completeTransaction(id, result) {
   });
 }
 
-export function processPayment(user) {
+export function processCheckinPayment(user) {
   const data = {
     id: 'T_random',
     action: {
       module: MODULE_NAME,
       description: 'Enqueue check-in transaction',
     },
+    type: 'user',
   };
   main.createAtSectionTwo(SECTION_NAME, data, (result) => {
-    // updating transaction id of pending user
-    const items = document.getElementById('inquiry-regularSectionOneListEmpty2').parentElement.parentElement.children;
-    for (let i = 1; i < items.length; i++) {
-      if (items[i].dataset.id == user.id) {
-        items[i].dataset.tid = result.dataset.id;
-        break;
-      }
-    }
+    main.findAtSectionOne('inquiry-regular', user.id, 'equal_id', 2, (findResult) => {
+      findResult.dataset.tid = result.dataset.id;
+    });
 
     result.dataset.userid = user.id;
     result.innerHTML += `
@@ -227,4 +248,55 @@ export function processPayment(user) {
   });
 }
 
-export default { processPayment };
+export function processReservationPayment(reservation) {
+  const data = {
+    id: 'T_random',
+    action: {
+      module: MODULE_NAME,
+      description: 'Enqueue reservation transaction',
+    },
+    type: 'reservation',
+  };
+  main.createAtSectionTwo(SECTION_NAME, data, (result) => {
+    main.findAtSectionOne('inquiry-reservation', reservation.id, 'equal_id', 2, (findResult) => {
+      findResult.dataset.tid = result.dataset.id;
+    });
+
+    result.dataset.rid = reservation.id;
+    result.dataset.userid = reservation.userid;
+    result.innerHTML += `
+      <div class="overflow-hidden text-ellipsis">
+        ${result.dataset.actorid}<br>
+        <small>
+          ${result.dataset.actorname}<br>
+          ${result.dataset.actorrole}
+        </small>
+      </div>
+      <div class="overflow-hidden text-ellipsis">
+        ${result.dataset.id}<br>
+        <small>
+          ${result.dataset.module}<br>
+          ${result.dataset.description}
+        </small>
+      </div>
+      <div class="overflow-hidden text-ellipsis">
+        ${reservation.id}<br>
+        <small>
+          ${Object.entries(reservation)
+            .filter(([key]) => !['id'].includes(key))
+            .map(([_, value]) => (value ? `${value}` : 'N/A'))
+            .filter(Boolean)
+            .join('<br>')}
+        </small>
+      </div>
+    `;
+
+    data.action.id = result.dataset.id;
+
+    accesscontrol.log(data.action, reservation);
+
+    main.createRedDot(SECTION_NAME, 'main');
+  });
+}
+
+export default { processCheckinPayment, processReservationPayment };

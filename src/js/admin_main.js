@@ -1306,6 +1306,7 @@ export function createAtSectionTwo(sectionName, data, callback) {
   result.dataset.module = data.action.module;
   if (data.action.submodule) result.dataset.submodule = data.action.submodule;
   result.dataset.description = data.action.description;
+  result.dataset.type = data.type;
 
   result.innerHTML = `
     <div class="absolute left-2 top-2">
