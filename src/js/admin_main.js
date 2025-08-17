@@ -289,7 +289,7 @@ async function loadSectionSilently(sectionName) {
               tableParent.dataset.sectionindex = 1;
               tableParent.dataset.tabindex = i + 1;
               const table = document.createElement('table');
-              table.className = 'w-full border-collapse cursor-default text-xs';
+              table.className = 'w-full border-collapse cursor-default text-sm';
               const thead = document.createElement('thead');
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
@@ -1306,6 +1306,7 @@ export function createAtSectionTwo(sectionName, data, callback) {
   result.dataset.module = data.action.module;
   if (data.action.submodule) result.dataset.submodule = data.action.submodule;
   result.dataset.description = data.action.description;
+  result.dataset.type = data.type;
 
   result.innerHTML = `
     <div class="absolute left-2 top-2">

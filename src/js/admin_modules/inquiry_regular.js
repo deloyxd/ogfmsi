@@ -1,5 +1,5 @@
 import main from '../admin_main.js';
-import invoicing from './invoicing.js';
+import payment from './payment.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 
 const SECTION_NAME = 'inquiry-regular';
@@ -273,10 +273,10 @@ function userVoidBtnFunction(user) {
     });
 
     if (user.dataset.amount) {
-      main.deleteAtSectionOne('invoicing', 1, user.dataset.tid);
-      main.deleteAtSectionOne('invoicing', 2, user.dataset.tid);
+      main.deleteAtSectionOne('payment', 1, user.dataset.tid);
+      main.deleteAtSectionOne('payment', 2, user.dataset.tid);
     } else {
-      main.deleteAtSectionTwo('invoicing', user.dataset.tid);
+      main.deleteAtSectionTwo('payment', user.dataset.tid);
     }
 
     main.deleteAtSectionOne(SECTION_NAME, 2, user.dataset.id);
@@ -303,11 +303,10 @@ function processCheckinUser(user) {
         image: result.dataset.image,
         name: result.dataset.text,
         contact: result.dataset.contact,
-        datetime: 'Pending',
       };
 
       logAction('Process check-in user', userData);
-      invoicing.processPayment(userData);
+      payment.processCheckinPayment(userData);
 
       const { firstName } = main.decodeName(result.dataset.text);
       main.createRedDot(SECTION_NAME, 2);
