@@ -1,10 +1,10 @@
 import main from '../admin_main.js';
-import invoicing from './payment.js';
+import payments from './payments.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 
-const SECTION_NAME = 'inquiry-reservation';
+const SECTION_NAME = 'inquiry-reservations';
 const MODULE_NAME = 'Inquiry';
-const SUBMODULE_NAME = 'Reservation';
+const SUBMODULE_NAME = 'Reservations';
 
 const RESERVATION_DURATION = [
   { value: '1', label: '1 hour' },
@@ -140,7 +140,7 @@ function sectionTwoMainBtnFunction() {
               amount: parseInt(main.getSelectedSpinner(result.spinner[0])) * parseInt(result.short[1].value),
             };
             accesscontrol.log(actionData, reservationData);
-            invoicing.processReservationPayment(reservationData);
+            payments.processReservationPayment(reservationData);
 
             main.createRedDot(SECTION_NAME, 2);
 

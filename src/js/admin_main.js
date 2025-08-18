@@ -1,6 +1,7 @@
 const sharedState = {
   sectionName: '',
   activeTab: 1,
+  intervalId: null,
 };
 
 export let { sectionName, activeTab } = sharedState;
@@ -24,8 +25,8 @@ function setupSidebar() {
     if (section) {
       button.onclick = () => {
         // closeAllDropDownsExcept(section);
+
         showSection(section);
-        document.dispatchEvent(new CustomEvent('ogfmsiAdminMainLoaded'));
       };
     }
   });
@@ -597,13 +598,21 @@ async function loadSectionSilently(sectionName) {
   targetSection.classList.add('hidden');
 }
 
-function showSection(sectionName) {
+export function showSection(sectionName) {
   const targetSection = document.getElementById(sectionName + '-section');
   if (!targetSection) {
     return;
   }
 
-  sharedState.sectionName = sectionName;
+  if (sharedState.sectionName != sectionName) {
+    if (sharedState.intervalId) {
+      clearInterval(sharedState.intervalId);
+    }
+    sharedState.sectionName = sectionName;
+    updateDateAndTime();
+    sharedState.intervalId = setInterval(updateDateAndTime, 10000);
+  }
+
   sharedState.activeTab = 1;
 
   const sections = document.querySelectorAll('.section');
@@ -615,6 +624,8 @@ function showSection(sectionName) {
   updateActiveSidebar(sectionName);
   closeConfirmationModal();
   closeModal();
+
+  document.dispatchEvent(new CustomEvent('ogfmsiAdminMainLoaded'));
 }
 
 function updateActiveSidebar(sectionName) {
@@ -690,7 +701,7 @@ export function openConfirmationModal(action, callback) {
   modalSubBtn.innerHTML = data.button.sub;
 
   modalMainBtn.onclick = callback;
-  modalSubBtn.onclick = closeConfirmationModal;
+  modalSubBtn.onclick = () => closeConfirmationModal();
 
   modalSubtitle.classList.remove('hidden');
   modalSubBtn.classList.remove('hidden');
@@ -709,7 +720,7 @@ export function openConfirmationModal(action, callback) {
   }, 0);
 }
 
-export function closeModal() {
+export function closeModal(callback = () => {}) {
   if (!tempModalContainer) return;
   tempModalContainer.classList.remove('opacity-100');
 
@@ -720,10 +731,11 @@ export function closeModal() {
     if (!tempModalContainer) return;
     tempModalContainer.remove();
     tempModalContainer = null;
+    callback();
   }, 300);
 }
 
-export function closeConfirmationModal() {
+export function closeConfirmationModal(callback = () => {}) {
   if (!tempModalConfirmationContainer) return;
   tempModalConfirmationContainer.classList.remove('opacity-100');
 
@@ -734,6 +746,7 @@ export function closeConfirmationModal() {
     if (!tempModalConfirmationContainer) return;
     tempModalConfirmationContainer.remove();
     tempModalConfirmationContainer = null;
+    callback();
   }, 300);
 }
 
@@ -842,7 +855,7 @@ function setupModalBase(defaultData, inputs, callback) {
           input.value = clone.children[1].value;
         });
 
-        renderInput(clone, 'short', input, index);
+        renderInput(imageContainerInputsContainer.children[0], clone, 'short', input, index);
         imageContainerInputsContainer.appendChild(clone);
       });
     } else {
@@ -875,7 +888,8 @@ function setupModalBase(defaultData, inputs, callback) {
       const placeholderOption = document.createElement('option');
       placeholderOption.value = '';
       placeholderOption.innerHTML = spinnerGroup.placeholder || 'Select an option';
-      placeholderOption.disabled = typeof spinnerGroup.selected == 'number' && spinnerGroup.selected == 0;
+      placeholderOption.disabled =
+        (typeof spinnerGroup.selected == 'number' && spinnerGroup.selected == 0) || spinnerGroup.required;
       placeholderOption.selected = true;
       selectElement.appendChild(placeholderOption);
 
@@ -942,14 +956,17 @@ function setupModalBase(defaultData, inputs, callback) {
       container.appendChild(clone);
       if (index == inputs.radio[0].selected) {
         clone.classList.add(clone.dataset.color);
+        clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
       clone.addEventListener('click', function () {
         inputs.radio[0].selected = index;
         radioClones.forEach((radioClone) => {
           if (radioClone == clone) {
             radioClone.classList.add(radioClone.dataset.color);
+            radioClone.classList.add(radioClone.dataset.color.replace('border', 'bg') + '/50');
           } else {
             radioClone.classList.remove(radioClone.dataset.color);
+            radioClone.classList.remove(radioClone.dataset.color.replace('border', 'bg') + '/50');
           }
         });
       });
@@ -972,15 +989,13 @@ function setupModalBase(defaultData, inputs, callback) {
           input.value = clone.children[1].value;
         });
 
-        renderInput(clone, type, input, index + offset);
-
-        clone.classList.remove('hidden');
+        renderInput(originalContainer, clone, type, input, index + offset);
         nextContainer.insertAdjacentElement('beforebegin', clone);
       });
     }
   }
 
-  function renderInput(clone, type, data, index) {
+  function renderInput(originalContainer, clone, type, data, index) {
     const label = clone.children[0];
     const input = clone.children[1];
     const id = `input-${type}-${index + 1}`;
@@ -995,6 +1010,34 @@ function setupModalBase(defaultData, inputs, callback) {
     input.id = id;
     input.placeholder = data.placeholder;
     input.value = data.value;
+
+    if (data.live) {
+      const indexAndFunctionSplit = data.live.split(':');
+      const indices = indexAndFunctionSplit[0].split('-');
+      const dataFunction = indexAndFunctionSplit[1];
+
+      const firstIndexInput = originalContainer.parentElement.querySelector(`#input-${type}-${index + 1 - indices[0]}`);
+      const secondIndexInput = originalContainer.parentElement.querySelector(
+        `#input-${type}-${index + 1 - indices[1]}`
+      );
+
+      firstIndexInput.addEventListener('input', () => {
+        liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
+      });
+      secondIndexInput.addEventListener('input', () => {
+        liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
+      });
+
+      function liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction) {
+        switch (dataFunction) {
+          case 'subtract':
+            const dataFunctionOutput = +decodePrice(firstIndexInput.value) - +decodePrice(secondIndexInput.value);
+            input.value = encodePrice(dataFunctionOutput);
+            data.value = input.value;
+            break;
+        }
+      }
+    }
 
     if (data.icon) input.querySelectorAll('p')[0].innerHTML = data.icon;
     if (data.title) input.querySelectorAll('p')[1].innerHTML = data.title;
@@ -1142,7 +1185,7 @@ function searchFunction(item, findValue, findType, callback) {
   return false;
 }
 
-export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue, callback) {
+export function createAtSectionOne(sectionName, columnsData, tabIndex, callback) {
   const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
   if (searchInput) {
     searchInput.value = '';
@@ -1159,51 +1202,64 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, findValue
     const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
     cell.classList.remove('hidden');
     newRow.appendChild(cell);
-    fillUpCell(newRow, index, cell, columnData);
+    fillUpCell(newRow, index, cell, columnData, sectionName, tabIndex);
   });
   const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
-  cell.classList.remove('hidden');
-  const totalBtnsCellWidth = 180 * cell.children[0].children.length;
-  cell.classList.add(`w-[${totalBtnsCellWidth}px]`);
+  if (newRow.dataset.id != 'generating') cell.classList.remove('hidden');
+  const totalBtnsCellWidth = 150 * cell.children[0].children.length;
+  cell.classList.add(`w-[${totalBtnsCellWidth}px]`, `2xl:w-[${totalBtnsCellWidth + 8}px]`);
   const btnsCellHeader = document.querySelector(
     `#${sectionName}-section-content [data-tabindex="${tabIndex}"] th:nth-child(${columnsData.length + 1})`
   );
-  btnsCellHeader.style.width = `${totalBtnsCellWidth}px`;
+  btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`, `2xl:w-[${totalBtnsCellWidth + 8}px]`);
   newRow.appendChild(cell);
 
-  if (findValue) {
-    const tableBody = emptyText.closest('tbody');
-    const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
+  // if (findValue) {
+  //   const tableBody = emptyText.closest('tbody');
+  //   const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
 
-    for (const row of existingRows) {
-      if (row.dataset.text && row.dataset.text.toLowerCase().trim() === findValue.toLowerCase().trim()) {
-        callback(row, 'fail');
-        return;
-      }
-    }
-  }
+  //   for (const row of existingRows) {
+  //     if (row.dataset.text && row.dataset.text.toLowerCase().trim() === findValue.toLowerCase().trim()) {
+  //       callback(row, 'fail');
+  //       return;
+  //     }
+  //   }
+  // }
 
   tableRow.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
-  callback(newRow, 'success');
+  callback(newRow);
 }
 
-function fillUpCell(row, index, cell, data) {
+function getRandomId(row, cell, data, sectionName, tabIndex) {
+  const randomId_A = Math.floor(100000 + Math.random() * 900000);
+  const randomId_B = Math.floor(100000 + Math.random() * 900000);
+  let randomId = data.split('_')[1] + randomId_A + '' + randomId_B;
+  findAtSectionOne(sectionName, randomId, 'equal_id', tabIndex, (result) => {
+    if (result) {
+      getRandomId(row, cell, data, sectionName, tabIndex);
+    } else {
+      cell.innerHTML = randomId;
+      row.dataset.id = randomId;
+      row.children[row.children.length - 1].classList.remove('hidden');
+    }
+  });
+}
+
+async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
   if (typeof data === 'string') {
     const lowerColumn = data.toLowerCase();
 
     if (lowerColumn.split('_')[0] === 'id') {
-      let idValue;
       if (lowerColumn.includes('random')) {
-        const randomId_A = Math.floor(100000 + Math.random() * 900000);
-        const randomId_B = Math.floor(100000 + Math.random() * 900000);
-        idValue = data.split('_')[1] + randomId_A + '' + randomId_B;
+        cell.innerHTML = 'Generating..';
+        row.dataset.id = 'generating';
+        getRandomId(row, cell, data, sectionName, tabIndex);
       } else {
-        idValue = data.split('_')[1];
+        const idValue = data.split('_')[1];
+        cell.innerHTML = idValue;
+        row.dataset.id = idValue;
       }
-
-      cell.innerHTML = idValue;
-      row.dataset.id = idValue;
       return;
     }
 
@@ -1333,7 +1389,7 @@ export function updateAtSectionOne(sectionName, columnsData, tabIndex, findValue
 
   findAtSectionOne(sectionName, findValue, 'equal_id', tabIndex, (result) => {
     for (let i = 0; i < columnsData.length; i++) {
-      fillUpCell(result, i, result.children[i], columnsData[i]);
+      fillUpCell(result, i, result.children[i], columnsData[i], sectionName, tabIndex);
     }
     callback(result);
   });
@@ -1384,6 +1440,21 @@ export function createRedDot(sectionName, type) {
   }
 }
 
+export function removeRedDot(sectionName, type) {
+  if (typeof type === 'string' && !type.includes('section')) {
+    document
+      .querySelector(`.sidebar-${type}-btn[data-section="${sectionName}"]`)
+      .lastElementChild.classList.add('hidden');
+    return;
+  }
+  if (typeof type === 'number') {
+    if (sectionName != sharedState.sectionName || type != sharedState.activeTab) {
+      document.getElementById(`${sectionName}_tab${type}`).lastElementChild.classList.add('hidden');
+    }
+    return;
+  }
+}
+
 export function encodeName(firstName, lastName) {
   return firstName + ':://' + lastName;
 }
@@ -1404,17 +1475,24 @@ export function getDateOrTimeOrBoth() {
   return { date, time, datetime: `${date} - ${time}` };
 }
 
-export function updateDateAndTime(sectionName) {
-  if (sharedState.sectionName === sectionName) {
-    const { date, time } = getDateOrTimeOrBoth();
-    const headerElement = document.getElementById(`${sectionName}-section-header`)?.children[0]?.children[1]
-      ?.children[0]?.children[0];
+export function updateDateAndTime() {
+  const { date, time } = getDateOrTimeOrBoth();
+  const liveDate = document.getElementById(`${sharedState.sectionName}-section-header`)?.querySelector(`#liveDate`);
 
-    if (headerElement) {
-      headerElement.classList.add('emoji');
-      headerElement.innerHTML = `${getEmoji('📆')} ${date} ${getEmoji('⌚')} ${time}`;
-    }
+  if (liveDate) {
+    liveDate.classList.add('skew-x-12', 'text-white', 'emoji');
+    liveDate.innerHTML = `${getEmoji('📆')} ${date} ${getEmoji('⌚')} ${time}`;
   }
+}
+
+export function isValidDate(dateString) {
+  const regex = /^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])-\d{4}$/;
+  if (!regex.test(dateString)) {
+    return false;
+  }
+  const [month, day, year] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
 export function encodePrice(price) {
@@ -1458,12 +1536,25 @@ export function decodeText(text) {
   return text.replace(/\:\:\/\//g, ' ');
 }
 
+export function fixText(text) {
+  return text.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export function getSelectedSpinner(spinner) {
   return spinner.selected > 0 ? spinner.options[spinner.selected - 1].value : '';
 }
 
+export function getSelectedOption(selected, options) {
+  return options.find((option) => option.value.toLowerCase().includes(selected.toLowerCase())).value;
+}
+
+export function getSelectedRadio(radio) {
+  return radio[radio[0].selected].title.toLowerCase();
+}
+
 export default {
   sharedState,
+  showSection,
   openModal,
   openConfirmationModal,
   closeModal,
@@ -1482,12 +1573,14 @@ export default {
   deleteAtSectionTwo,
   deleteAllAtSectionTwo,
   createRedDot,
+  removeRedDot,
 
-  // checkin-daily
+  // inquiry-customer
   encodeName,
   decodeName,
   getDateOrTimeOrBoth,
   updateDateAndTime,
+  isValidDate,
 
   // ecommerce-stock
   encodePrice,
@@ -1496,7 +1589,10 @@ export default {
   validateStockInputs,
   encodeText,
   decodeText,
+  fixText,
   getSelectedSpinner,
+  getSelectedOption,
+  getSelectedRadio,
 };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -1546,7 +1642,6 @@ async function showLoadingAndPreloadSections() {
       loadingOverlay.remove();
     }, 300);
     showSection('dashboard');
-    document.dispatchEvent(new CustomEvent('ogfmsiAdminMainLoaded'));
   } catch (error) {
     console.error('Error loading sections:', error);
     loadingOverlay.classList.add('opacity-0');
@@ -1554,7 +1649,6 @@ async function showLoadingAndPreloadSections() {
       loadingOverlay.remove();
     }, 300);
     showSection('dashboard');
-    document.dispatchEvent(new CustomEvent('ogfmsiAdminMainLoaded'));
   }
 }
 
