@@ -195,7 +195,7 @@ function subBtnFunction() {}
 
 export function processCheckinPayment(customerId, image, fullName, isMonthlyPass, amountToPay, priceRate, callback) {
   main.showSection(SECTION_NAME);
-  const purpose = `${isMonthlyPass ? 'Monthly ' : 'Daily '} pass check-in${isMonthlyPass ? '' : ' (Regular walk-in)'}`;
+  const purpose = `${isMonthlyPass ? 'Monthly ' : 'Daily '} pass ${isMonthlyPass ? 'registration fee' : 'check-in (Regular walk-in)'}`;
   const columnsData = [
     'id_T_random',
     {
@@ -211,7 +211,15 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
     callback(result.dataset.id);
     const transactionProcessBtn = result.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
-      completeCheckinPayment(result.dataset.id, purpose, fullName, amountToPay, priceRate);
+      completeCheckinPayment(
+        result.dataset.id,
+        result.dataset.image,
+        result.dataset.text,
+        purpose,
+        fullName,
+        amountToPay,
+        priceRate
+      );
     });
     const transactionVoidBtn = result.querySelector('#transactionVoidBtn');
     transactionVoidBtn.addEventListener('click', () => {
@@ -220,15 +228,23 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
         main.toast('Transaction successfully voided!', 'error');
       });
     });
-    completeCheckinPayment(result.dataset.id, purpose, fullName, amountToPay, priceRate);
+    completeCheckinPayment(
+      result.dataset.id,
+      result.dataset.image,
+      result.dataset.text,
+      purpose,
+      fullName,
+      amountToPay,
+      priceRate
+    );
   });
 }
 
-function completeCheckinPayment(id, purpose, fullName, amountToPay, priceRate) {
+function completeCheckinPayment(id, image, customerId, purpose, fullName, amountToPay, priceRate) {
   const inputs = {
     header: {
       title: `${fullName} ${getEmoji('🔏', 26)}`,
-      subtitle: 'Pending payment processing form',
+      subtitle: `Purpose: ${purpose}`,
     },
     short: [
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
@@ -260,6 +276,11 @@ function completeCheckinPayment(id, purpose, fullName, amountToPay, priceRate) {
         title: 'Cashless',
         subtitle: 'Digital payment method',
       },
+      {
+        icon: `${getEmoji('💵', 20)} + ${getEmoji('💳', 20)}`,
+        title: 'Hybrid',
+        subtitle: 'Both physical and digital payment method',
+      },
     ],
     footer: {
       main: `Complete payment transaction ${getEmoji('🔏')}`,
@@ -276,7 +297,7 @@ function completeCheckinPayment(id, purpose, fullName, amountToPay, priceRate) {
 
     const refNum = result.short[3].value;
     if (
-      result.radio[0].selected == 2 &&
+      result.radio[0].selected > 1 &&
       ((refNum != 'N/A' && /[^0-9]/.test(refNum)) || refNum == 'N/A' || refNum == '')
     ) {
       main.toast(`Invalid reference number: ${refNum}`, 'error');
@@ -287,6 +308,10 @@ function completeCheckinPayment(id, purpose, fullName, amountToPay, priceRate) {
 
     const columnsData = [
       'id_' + id,
+      {
+        type: 'object',
+        data: [image, customerId],
+      },
       purpose,
       main.encodePrice(amountToPay),
       main.encodePrice(amountPaid),
@@ -296,9 +321,10 @@ function completeCheckinPayment(id, purpose, fullName, amountToPay, priceRate) {
       'custom_datetime_today',
     ];
 
-    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {
+    main.createAtSectionOne(SECTION_NAME, columnsData, 3, () => {
       main.toast(`Transaction successfully completed!`, 'success');
-      main.createRedDot(SECTION_NAME, 2);
+      main.createRedDot(SECTION_NAME, 'main');
+      main.createRedDot(SECTION_NAME, 3);
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
 
       main.closeModal(() => {

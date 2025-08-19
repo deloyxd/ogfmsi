@@ -176,14 +176,14 @@
         <div
           id="section-content"
           data-sectioncount="1"
-          data-tabtitles="All Registered Customers::Pending Monthly Pass Customers::Active Monthly Pass Customers::Past Monthly Pass Customers"
-          data-subtitles="Manage all customers::Process monthly pass customers::Manage all monthly pass customers::View all past monthly pass customers"
+          data-tabtitles="All Registered Customers::Active Monthly Pass Customers::Past Monthly Pass Customers"
+          data-subtitles="Manage all customers::Manage all monthly pass customers::View all past monthly pass customers"
           data-sectiononesearchtext="Search keyword..."
-          data-listemptytexts="No registered customers yet::No pending monthly pass customers yet::No active monthly pass customers yet::No past monthly pass customers yet"
-          data-listtitletexts="[Customer ID//Customer//Check-in Pass Type//Price Rate//Date Registered]::[Customer ID//Customer//Amount to Pay//Price Rate//Start Date//End Date//Log Date & Time]::[Customer ID//Customer//Amount Paid//Price Rate//Start Date//End Date]::[Customer ID//Customer//Amount Paid//Price Rate//Start Date//End Date]"
-          data-listitembtnids="[customerProcessBtn//customerEditDetailsBtn]::[customerProcessBtn//customerEditDetailsBtn]::[customerProcessBtn//customerEditDetailsBtn]::[customerProcessBtn//customerEditDetailsBtn]"
-          data-listitembtntexts="[Process [-📒-]//Edit Details [-⚙️-]]::[Process [-📒-]//Edit Details [-⚙️-]]::[Renew [-🎫-]]::[Details [-⚙️-]]"
-          data-listitembtncolors="[yellow//orange]::[yellow//orange]::[yellow//orange]::[yellow//orange]"
+          data-listemptytexts="No registered customers yet::No active monthly pass customers yet::No past monthly pass customers yet"
+          data-listtitletexts="[Customer ID//Customer//Check-in Pass Type//Price Rate//Date Registered]::[Customer ID//Customer//Start Date//End Date//Days Left//Amount Paid//Price Rate]::[Customer ID//Customer//Start Date//End Date//Amount Paid//Price Rate]"
+          data-listitembtnids="[customerProcessBtn//customerEditDetailsBtn]::[customerProcessBtn//customerEditDetailsBtn]::[customerDetailsBtn]"
+          data-listitembtntexts="[Process [-📒-]//Edit Details [-⚙️-]]::[Process [-📒-]//Edit Details [-⚙️-]]::[Details [-⚙️-]]"
+          data-listitembtncolors="[yellow//orange]::[yellow//orange]::[gray]"
         ></div>
       </section>
 
@@ -209,12 +209,11 @@
           data-tabtitles="Regular Check-Ins Logbook::Monthly Pass Check-Ins Logbook"
           data-subtitles="All regular customer check-ins::All monthly pass customer check-ins"
           data-sectiononesearchtext="Search keyword..."
-          data-sectiononesettings="1"
           data-listemptytexts="No regular customer check-ins yet::No monthly pass customer check-ins yet"
           data-listtitletexts="[Customer ID//Customer//Log Date & Time]::[Customer ID//Customer//Log Date & Time]"
-          data-listitembtnids="[customerInitiateProcessBtn//customerEditDetailsBtn//customerVoidBtn]::[customerInitiateProcessBtn//customerEditDetailsBtn//customerVoidBtn]"
-          data-listitembtntexts="[Initiate Process [-📒-]//Edit Details [-⚙️-]//Void [-📕-]]::[Initiate Process [-📒-]//Edit Details [-⚙️-]//Void [-📕-]]"
-          data-listitembtncolors="[yellow//orange//red]::[yellow//orange//red]"
+          data-listitembtnids="[customerProcessBtn]::[customerProcessBtn]"
+          data-listitembtntexts="[Process [-📒-]]::[Process [-📒-]]"
+          data-listitembtncolors="[yellow]::[yellow]"
         ></div>
       </section>
 
@@ -246,7 +245,7 @@
           data-tabtitles="Live Calendar::Live Schedules List::Past Schedules List"
           data-subtitles="Auto updating tab::Upcoming reservations::Old reservations"
           data-sectiononesearchtext="Search keyword..."
-          data-listemptytexts="::No schedules yet::No past schedules yet"
+          data-listemptytexts="::No upcoming schedules yet::No past schedules yet"
           data-listtitletexts="[]::[Reservation ID//User//Reservation Type//Schedule//Date & Time Registered]::[Reservation ID//User//Reservation Type//Schedule//Date & Time Registered]"
           data-listitembtnids="[]::[reservationViewDetailsBtn//reservationVoidBtn]::[reservationViewDetailsBtn//reservationVoidBtn]"
           data-listitembtntexts="[]::[View Details [-⚙️-]//Void [-📕-]]::[View Details [-⚙️-]//Void [-📕-]]"
@@ -343,14 +342,14 @@
         <div
           id="section-content"
           data-sectioncount="1"
-          data-tabtitles="Pending Transactions Log::Complete Transactions Log"
-          data-subtitles="Total pending transactions::Total complete transactions"
+          data-tabtitles="Pending Transactions Log::Void Transactions Log::Complete Transactions Log::Refund Transactions Log"
+          data-subtitles="Total pending transactions::Total void transactions::Total complete transactions::Total refund transactions"
           data-sectiononesearchtext="Search keyword..."
-          data-listemptytexts="No pending transactions yet::No complete transactions yet"
-          data-listtitletexts="[Transaction ID//Customer//Purpose//Amount to Pay//Price Rate//Log Date & Time]::[Transaction ID//Purpose//Amount to Pay//Amount Paid//Change Amount//Price Rate//Payment Method//Log Date & Time]"
-          data-listitembtnids="[transactionProcessBtn//transactionVoidBtn]::[transactionDetailsBtn//transactionRefundBtn]"
-          data-listitembtntexts="[Process [-📒-]//Void [-📕-]]::[Details [-📒-]//Refund [-📕-]]"
-          data-listitembtncolors="[yellow//red]::[yellow//red]"
+          data-listemptytexts="No pending transactions yet::No void transactions yet::No complete transactions yet::No refund transactions yet"
+          data-listtitletexts="[Transaction ID//Customer//Purpose//Amount to Pay//Price Rate//Log Date & Time]::[Transaction ID//Customer//Purpose//Log Date & Time]::[Transaction ID//Customer//Purpose//Amount to Pay//Amount Paid//Change Amount//Price Rate//Payment Method//Log Date & Time]::[Transaction ID//Customer//Purpose//Refund Amount//Log Date & Time]"
+          data-listitembtnids="[transactionProcessBtn//transactionVoidBtn]::[transactionDetailsBtn]::[transactionDetailsBtn//transactionRefundBtn]::[transactionDetailsBtn]"
+          data-listitembtntexts="[Process [-📒-]//Void [-📕-]]::[Details [-📒-]]::[Details [-📒-]//Refund [-🧾-]]::[Details [-📒-]]"
+          data-listitembtncolors="[yellow//red]::[yellow]::[yellow//gray]::[yellow]"
         ></div>
       </section>
 

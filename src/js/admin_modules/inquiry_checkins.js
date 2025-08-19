@@ -14,13 +14,31 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   subBtn?.addEventListener('click', () => {});
 });
 
-export function logCheckin(customer, tabIndex) {
+export function logCheckin(transactionId, customer, tabIndex) {
   if (tabIndex == 1) {
     main.showSection(SECTION_NAME);
-  } else {
-    main.createRedDot(SECTION_NAME, 'sub');
-    main.createRedDot(SECTION_NAME, 2);
   }
+  
+  const columnsData = [
+    'id_' + customer.dataset.id,
+    {
+      type: 'object_contact',
+      data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
+    },
+    'custom_datetime_today',
+  ];
+
+  main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
+    createResult.dataset.tid = transactionId;
+
+    const { firstName } = main.decodeName(createResult.dataset.text);
+    main.toast(`${firstName}, successfully checked-in!`, 'success');
+
+    if (tabIndex == 2) {
+      main.createRedDot(SECTION_NAME, 'sub');
+      main.createRedDot(SECTION_NAME, tabIndex);
+    }
+  });
 }
 
 export default { logCheckin };

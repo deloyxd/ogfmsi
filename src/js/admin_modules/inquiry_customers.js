@@ -27,8 +27,8 @@ const CHECKIN_PASS_TYPE = [
 ];
 
 const PRICES_AUTOFILL = {
-  regular_daily: 60,
-  student_daily: 70,
+  regular_daily: 70,
+  student_daily: 60,
   regular_monthly: 950,
   student_monthly: 850,
 };
@@ -150,25 +150,32 @@ function validateRegisterNewCustomer(columnsData, goBackCallback, checkPriceRate
   const checkinPassType = columnsData[2].toLowerCase();
   if (checkinPassType.toLowerCase().includes('monthly')) {
     main.closeModal(() => {
-      const { startDate, endDate } = getStartAndEndDates();
+      const { startDate: startDateNumeric } = main.getStartAndEndDates('2-digit');
+      const { startDate: startDateLong, endDate: endDateLong } = main.getStartAndEndDates('long');
       const inputs = {
         header: {
-          title: `Register New Monthly Pass Customer ${getEmoji('💪', 26)}`,
+          title: `Register New Monthly Pass Customer ${getEmoji('🤩', 26)}`,
           subtitle: 'New monthly pass customer form',
         },
         short: [
           {
-            placeholder: 'Monthly pass start date (mm-dd-yyyy):',
-            value: startDate,
+            placeholder: 'Date range:',
+            value: `from ${startDateLong} to ${endDateLong}`,
+            locked: true,
+          },
+          {
+            placeholder: 'Start date (mm-dd-yyyy):',
+            value: startDateNumeric,
             required: true,
           },
           {
-            placeholder: 'Monthly pass end date (mm-dd-yyyy):',
-            value: endDate,
+            placeholder: 'Days duration:',
+            value: 30,
             required: true,
+            live: '1-2:range',
           },
           {
-            placeholder: 'Monthly pass price:',
+            placeholder: 'Price:',
             value: PRICES_AUTOFILL[`${priceRate}_monthly`],
             required: true,
           },
@@ -180,52 +187,53 @@ function validateRegisterNewCustomer(columnsData, goBackCallback, checkPriceRate
         },
       };
       main.openModal(
-        'orange',
+        'blue',
         inputs,
         (result) => {
-          const startDate = result.short[0].value;
+          const startDate = result.short[1].value;
           if (!main.isValidDate(startDate)) {
             main.toast(`Invalid start date: ${startDate}`, 'error');
             return;
           }
-          const endDate = result.short[1].value;
-          if (!main.isValidDate(endDate)) {
-            main.toast(`Invalid end date: ${endDate}`, 'error');
+          const days = result.short[2].value;
+          if (!main.isValidPaymentAmount(+days)) {
+            main.toast(`Invalid days: ${days}`, 'error');
             return;
           }
-          const price = +result.short[2].value;
+          const price = +result.short[3].value;
           if (!main.isValidPaymentAmount(price)) {
             main.toast(`Invalid price: ${price}`, 'error');
             return;
           }
-          if (price != PRICES_AUTOFILL[`${priceRate}_monthly`]) {
-            main.openConfirmationModal('Monthly pass price: ' + main.encodePrice(price), () => {
-              continueMonthlyPassProcess(columnsData, true, price, priceRate);
-              main.closeConfirmationModal();
-            });
+          const daysChanged = days != 30;
+          const priceChanged = price != PRICES_AUTOFILL[`${priceRate}_monthly`];
+          if (daysChanged || priceChanged) {
+            main.openConfirmationModal(
+              `Monthly pass ${daysChanged ? 'days' : ''}${daysChanged && priceChanged ? ' and ' : ''}${priceChanged ? 'price' : ''}:<br>${daysChanged ? `<br>• ${days} days` : ''}${priceChanged ? `<br>• ${main.encodePrice(price)}` : ''}`,
+              () => {
+                continueMonthlyPassProcess(columnsData, true, price, priceRate);
+                main.closeConfirmationModal();
+              }
+            );
             return;
           }
           continueMonthlyPassProcess(columnsData, true, price, priceRate);
 
           function continueMonthlyPassProcess(columnsData, isMonthlyPassCustomer, price, priceRate) {
-            registerNewCustomer(columnsData, isMonthlyPassCustomer, price, priceRate, (newResult) => {
-              newResult.dataset.startdate = startDate;
-              newResult.dataset.enddate = endDate;
-              newResult.dataset.status = 'pending';
-
-              columnsData = [
-                'id_' + newResult.dataset.id,
-                columnsData[1],
-                main.encodePrice(price),
-                main.fixText(priceRate),
-                startDate,
-                endDate,
-                'custom_datetime_today',
-              ];
-
-              main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {
-                main.createRedDot(SECTION_NAME, 2);
-              });
+            const [month, day, year] = startDate.split('-').map(Number);
+            const startDateObj = new Date(year, month - 1, day);
+            const endDateObj = new Date(startDateObj);
+            endDateObj.setDate(endDateObj.getDate() + +days);
+            const endDate = endDateObj.toLocaleString('en-US', {
+              month: '2-digit',
+              day: '2-digit',
+              year: 'numeric',
+            });
+            registerNewCustomer(columnsData, isMonthlyPassCustomer, price, priceRate, (createResult) => {
+              createResult.dataset.startdate = startDate;
+              createResult.dataset.enddate = endDate.replace('/', '-');
+              createResult.dataset.days = days;
+              createResult.dataset.status = 'pending';
             });
           }
         },
@@ -242,22 +250,6 @@ function validateRegisterNewCustomer(columnsData, goBackCallback, checkPriceRate
   registerNewCustomer(columnsData, false, PRICES_AUTOFILL[`${priceRate}_daily`], main.getSelectedSpinner(priceRate));
 }
 
-function getStartAndEndDates() {
-  const startDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-  });
-  const endDateObj = new Date();
-  endDateObj.setMonth(endDateObj.getMonth() + 1);
-  const endDate = endDateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-  });
-  return { startDate: startDate.replace(/\//g, '-'), endDate: endDate.replace(/\//g, '-') };
-}
-
 function registerNewCustomer(columnsData, isMonthlyPassCustomer, amount, priceRate, callback) {
   const { firstName } = main.decodeName(columnsData[1].data[1]);
   if (isMonthlyPassCustomer) {
@@ -268,13 +260,12 @@ function registerNewCustomer(columnsData, isMonthlyPassCustomer, amount, priceRa
     if (isMonthlyPassCustomer) {
       callback(createResult);
       processCheckinPayment(createResult, isMonthlyPassCustomer, amount, priceRate);
-      return;
     }
     const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
     customerProcessBtn.addEventListener('click', () => customerProcessBtnFunction(createResult));
     const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
     customerEditDetailsBtn.addEventListener('click', () => customerEditDetailsBtnFunction(createResult));
-    main.closeModal(() => customerProcessBtnFunction(createResult));
+    if (!isMonthlyPassCustomer) main.closeModal();
   });
 }
 
@@ -329,7 +320,7 @@ function customerProcessBtnFunction(customer) {
   });
 }
 
-function customerEditDetailsBtnFunction() {}
+function customerEditDetailsBtnFunction(customer) {}
 
 function processCheckinPayment(customer, isMonthlyPassCustomer, amount, priceRate) {
   const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
@@ -357,33 +348,30 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
       const isMonthlyPassCustomer = checkinPassType.toLowerCase().includes('monthly');
       if (isMonthlyPassCustomer) {
         findResult1.children[2].textContent = checkinPassType + ' - Active';
+        findResult1.dataset.status = 'active';
+
+        const columnsData = [
+          'id_' + findResult1.dataset.id,
+          {
+            type: 'object_contact',
+            data: [findResult1.dataset.image, findResult1.dataset.text, findResult1.dataset.contact],
+          },
+          findResult1.dataset.startdate,
+          findResult1.dataset.enddate,
+          findResult1.dataset.days + ' days',
+          main.encodePrice(amountPaid),
+          main.fixText(priceRate),
+        ];
+
+        main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {
+          main.createRedDot(SECTION_NAME, 2);
+        });
+
         main.showSection(SECTION_NAME);
-        checkins.logCheckin(findResult1, 2);
+        checkins.logCheckin(transactionId, findResult1, 2);
       } else {
-        checkins.logCheckin(findResult1, 1);
+        checkins.logCheckin(transactionId, findResult1, 1);
       }
-
-      main.findAtSectionOne(SECTION_NAME, findResult1.dataset.id, 'equal_id', 2, (findResult2) => {
-        if (findResult2) {
-          const columnsData = [
-            'id_' + findResult2.dataset.id,
-            {
-              type: 'object_contact',
-              data: [findResult2.dataset.image, findResult2.dataset.text, findResult2.dataset.contact],
-            },
-            main.encodePrice(amountPaid),
-            main.fixText(priceRate),
-            findResult2.dataset.custom4,
-            findResult2.dataset.custom5,
-          ];
-
-          main.deleteAtSectionOne(SECTION_NAME, 2, findResult2.dataset.id);
-          main.createAtSectionOne(SECTION_NAME, columnsData, 3, () => {
-            main.removeRedDot(SECTION_NAME, 2);
-            main.createRedDot(SECTION_NAME, 3);
-          });
-        }
-      });
     }
   });
 }

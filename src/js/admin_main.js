@@ -880,7 +880,10 @@ function setupModalBase(defaultData, inputs, callback) {
       const spinnerContainer = originalContainer.cloneNode(true);
       const label = spinnerContainer.children[0];
       label.innerHTML = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
-      if (spinnerGroup.locked) spinnerContainer.children[1].children[0].disabled = true;
+      if (spinnerGroup.locked) {
+        spinnerContainer.children[1].children[0].disabled = true;
+        spinnerContainer.children[1].children[0].classList.add('border-gray-400','bg-gray-300', 'text-gray-600');
+      }
 
       const selectElement = spinnerContainer.querySelector('select');
       selectElement.id = `input-${type}-${index + 1}`;
@@ -1002,6 +1005,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
     if (data.locked) {
       input.readOnly = true;
+      input.classList.add('bg-gray-200', 'text-gray-500');
     }
 
     label.for = id;
@@ -1027,13 +1031,37 @@ function setupModalBase(defaultData, inputs, callback) {
       secondIndexInput.addEventListener('input', () => {
         liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
       });
+      if (dataFunction.includes('range')) {
+        input.addEventListener('input', () => {
+          liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
+        });
+      }
 
       function liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction) {
+        let dataFunctionOutput;
         switch (dataFunction) {
           case 'subtract':
-            const dataFunctionOutput = +decodePrice(firstIndexInput.value) - +decodePrice(secondIndexInput.value);
+            dataFunctionOutput = +decodePrice(firstIndexInput.value) - +decodePrice(secondIndexInput.value);
             input.value = encodePrice(dataFunctionOutput);
             data.value = input.value;
+            break;
+          case 'range':
+            const startDateStr = firstIndexInput.value;
+            const daysToAdd = +input.value || 30;
+            const [month, day, year] = startDateStr.split('-').map(Number);
+            const startDate = new Date(year, month - 1, day);
+            const resultDate = new Date(startDate);
+            resultDate.setDate(resultDate.getDate() + daysToAdd);
+            dataFunctionOutput = `from ${startDate.toLocaleString('en-US', {
+              month: 'long',
+              day: '2-digit',
+              year: 'numeric',
+            })} to ${resultDate.toLocaleString('en-US', {
+              month: 'long',
+              day: '2-digit',
+              year: 'numeric',
+            })}`;
+            secondIndexInput.value = dataFunctionOutput;
             break;
         }
       }
@@ -1475,6 +1503,23 @@ export function getDateOrTimeOrBoth() {
   return { date, time, datetime: `${date} - ${time}` };
 }
 
+export function getStartAndEndDates(type) {
+  const separator = type.includes('2-digit') ? '-' : ' ';
+  const startDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: type,
+    day: '2-digit',
+  });
+  const endDateObj = new Date();
+  endDateObj.setMonth(endDateObj.getMonth() + 1);
+  const endDate = endDateObj.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: type,
+    day: '2-digit',
+  });
+  return { startDate: startDate.replace(/\//g, separator), endDate: endDate.replace(/\//g, separator) };
+}
+
 export function updateDateAndTime() {
   const { date, time } = getDateOrTimeOrBoth();
   const liveDate = document.getElementById(`${sharedState.sectionName}-section-header`)?.querySelector(`#liveDate`);
@@ -1579,6 +1624,7 @@ export default {
   encodeName,
   decodeName,
   getDateOrTimeOrBoth,
+  getStartAndEndDates,
   updateDateAndTime,
   isValidDate,
 
