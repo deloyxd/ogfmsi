@@ -14,11 +14,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   subBtn?.addEventListener('click', () => {});
 });
 
-export function logCheckin(transactionId, customer, tabIndex) {
-  if (tabIndex == 1) {
+export function logCheckin(transactionId, customer, tabIndex, showSection) {
+  const { firstName } = main.decodeName(customer.dataset.text);
+  if (showSection) {
     main.showSection(SECTION_NAME);
   }
-  
+
   const columnsData = [
     'id_' + customer.dataset.id,
     {
@@ -31,7 +32,6 @@ export function logCheckin(transactionId, customer, tabIndex) {
   main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
     createResult.dataset.tid = transactionId;
 
-    const { firstName } = main.decodeName(createResult.dataset.text);
     main.toast(`${firstName}, successfully checked-in!`, 'success');
 
     if (tabIndex == 2) {
@@ -41,4 +41,10 @@ export function logCheckin(transactionId, customer, tabIndex) {
   });
 }
 
-export default { logCheckin };
+export function findLogCheckin(id, tabIndex, callback) {
+  main.findAtSectionOne(SECTION_NAME, id, 'equal_id', tabIndex, (findResult) => {
+    callback(findResult);
+  });
+}
+
+export default { logCheckin, findLogCheckin };

@@ -231,7 +231,7 @@ function validateRegisterNewCustomer(columnsData, goBackCallback, checkPriceRate
             });
             registerNewCustomer(columnsData, isMonthlyPassCustomer, price, priceRate, (createResult) => {
               createResult.dataset.startdate = startDate;
-              createResult.dataset.enddate = endDate.replace('/', '-');
+              createResult.dataset.enddate = endDate.replace(/\//g, '-');
               createResult.dataset.days = days;
               createResult.dataset.status = 'pending';
             });
@@ -298,11 +298,15 @@ function customerProcessBtnFunction(customer) {
     const selectedProcess = main.getSelectedRadio(result.radio);
     if (selectedProcess.toLowerCase().includes('check-in')) {
       const isMonthlyPassCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
+      const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
       const priceRate = customer.dataset.custom3.toLowerCase();
-      const amount = isMonthlyPassCustomer
-        ? PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase().split(' - ')[0]}`]
-        : PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase()}`];
-      if (customer.dataset.tid) {
+      const amount =
+        isMonthlyPassCustomer && isPending
+          ? PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase().split(' - ')[0]}`]
+          : isMonthlyPassCustomer
+            ? 0
+            : PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase()}`];
+      if ((isMonthlyPassCustomer && isPending) || (!isMonthlyPassCustomer && customer.dataset.tid)) {
         main.findAtSectionOne('payments', customer.dataset.tid, 'equal_id', 1, (findResult) => {
           if (findResult) {
             main.toast(
@@ -312,7 +316,37 @@ function customerProcessBtnFunction(customer) {
           }
         });
       } else {
-        processCheckinPayment(customer, isMonthlyPassCustomer, amount, priceRate);
+        checkins.findLogCheckin(customer.dataset.id, isMonthlyPassCustomer ? 2 : 1, (findLogResult) => {
+          if (findLogResult) {
+            const logDate = findLogResult.dataset.datetime.split(' - ')[0];
+            const logDateObj = new Date(logDate);
+            const today = new Date();
+            const isToday =
+              logDateObj.getFullYear() === today.getFullYear() &&
+              logDateObj.getMonth() === today.getMonth() &&
+              logDateObj.getDate() === today.getDate();
+            if (isToday) {
+              main.openConfirmationModal(
+                `Customer already checked-in today:<br><br>• ID: ${customer.dataset.id}<br>• Name: ${fullName}<br>• ${findLogResult.dataset.datetime}`,
+                () => {
+                  continueCheckinProcess();
+                  main.closeConfirmationModal();
+                }
+              );
+              return;
+            }
+          }
+          continueCheckinProcess();
+
+          function continueCheckinProcess() {
+            if (isMonthlyPassCustomer && !isPending) {
+              checkins.logCheckin(customer.dataset.tid, customer, 2, true);
+              return;
+            } else {
+              processCheckinPayment(customer, isMonthlyPassCustomer, amount, priceRate);
+            }
+          }
+        });
       }
       return;
     }
@@ -343,11 +377,11 @@ function processCheckinPayment(customer, isMonthlyPassCustomer, amount, priceRat
 export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 1, (findResult1) => {
     if (findResult1) {
-      findResult1.dataset.tid = '';
-      const checkinPassType = findResult1.children[2].textContent.split(' - ')[0];
+      const checkinPassType = findResult1.dataset.custom2.split(' - ')[0];
       const isMonthlyPassCustomer = checkinPassType.toLowerCase().includes('monthly');
       if (isMonthlyPassCustomer) {
-        findResult1.children[2].textContent = checkinPassType + ' - Active';
+        findResult1.dataset.custom2 = checkinPassType + ' - Active';
+        findResult1.children[2].textContent = findResult1.dataset.custom2;
         findResult1.dataset.status = 'active';
 
         const columnsData = [
@@ -368,9 +402,10 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
         });
 
         main.showSection(SECTION_NAME);
-        checkins.logCheckin(transactionId, findResult1, 2);
+        checkins.logCheckin(transactionId, findResult1, 2, false);
       } else {
-        checkins.logCheckin(transactionId, findResult1, 1);
+        findResult1.dataset.tid = '';
+        checkins.logCheckin(transactionId, findResult1, 1, true);
       }
     }
   });
