@@ -1213,7 +1213,9 @@ function searchFunction(item, findValue, findType, callback) {
   return false;
 }
 
-export function createAtSectionOne(sectionName, columnsData, tabIndex, callback) {
+export function createAtSectionOne(sectionName, columnsData, tabIndex, arg4, arg5) {
+  const findValue = typeof arg4 === 'function' ? '' : arg4;
+  const callback = typeof arg4 === 'function' ? arg4 : arg5;
   const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
   if (searchInput) {
     searchInput.value = '';
