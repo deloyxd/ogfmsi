@@ -1121,7 +1121,7 @@ export function checkIfEmpty(inputs) {
   let hasEmpty = false;
 
   if (inputs == '') hasEmpty = true;
-  if (inputs.image) inputs.image.short.forEach((item) => check(item));
+  if (inputs.image && inputs.image.short) inputs.image.short.forEach((item) => check(item));
   if (inputs.short) inputs.short.forEach((item) => check(item));
   if (inputs.large) inputs.large.forEach((item) => check(item));
   if (inputs.spinner) inputs.spinner.forEach((item) => check(item));

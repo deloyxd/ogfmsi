@@ -1,9 +1,15 @@
 import main from '../admin_main.js';
 import accesscontrol from './maintenance_accesscontrol.js';
+import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'ecommerce-stock';
 const MODULE_NAME = 'E-Commerce';
 const SUBMODULE_NAME = 'Stock';
+
+// Helper function for emoji display
+function getEmoji(emoji, size = 16) {
+  return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
+}
 
 export const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
@@ -68,7 +74,24 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
+  mainBtn?.removeEventListener('click', mainBtnFunction);
   mainBtn?.addEventListener('click', mainBtnFunction);
+  
+  // Load products and stats on page load
+  loadProducts();
+  loadStats();
+});
+
+// Listen for section changes to refresh stats when this section becomes active
+document.addEventListener('DOMContentLoaded', () => {
+  // Check if we're on the ecommerce-stock section
+  const currentSection = document.querySelector(`#${SECTION_NAME}-section`);
+  if (currentSection && !currentSection.classList.contains('hidden')) {
+    // Section is already active, load stats
+    setTimeout(() => {
+      loadStats();
+    }, 100);
+  }
 });
 
 function mainBtnFunction() {
@@ -84,37 +107,46 @@ function mainBtnFunction() {
   });
 }
 
-function registerProduct(result, name, price, quantity, measurement) {
+async function registerProduct(result, name, price, quantity, measurement) {
   const category = main.getSelectedSpinner(result.spinner[0]);
   const measurementUnit = main.getSelectedSpinner(result.spinner[1]);
 
-  const columnsData = [
-    'id_P_random',
-    { type: 'object', data: [result.image.src, main.encodeText(name)] },
-    main.encodePrice(price), // dataset.custom2
-    quantity + '', // dataset.custom3
-    main.getStockStatus(quantity), // dataset.custom4
-    measurement, // dataset.custom5
-    measurementUnit, // dataset.custom6
-    category, // dataset.custom7
-    'custom_date_today',
-  ];
+  const productData = {
+    product_name: name,
+    product_name_encoded: main.encodeText(name),
+    price: price,
+    price_encoded: main.encodePrice(price),
+    quantity: quantity,
+    measurement_value: measurement,
+    measurement_unit: measurementUnit,
+    category: category,
+    image_url: result.image.src
+  };
 
-  main.createAtSectionOne(SECTION_NAME, columnsData, 1, name, (result, status) => {
-    if (status === 'success') {
-      setupProductDetailsButton(result);
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
       logAction(
         'Register product',
         {
-          id: result.dataset.id,
-          image: result.dataset.image,
-          name: main.decodeText(result.dataset.text),
-          price: result.dataset.custom2,
-          quantity: result.dataset.custom3,
-          measurement: result.dataset.custom5,
-          measurementUnit: result.dataset.custom6,
-          category: result.dataset.custom7,
-          date: result.dataset.date,
+          id: data.result.product_id,
+          image: result.image.src,
+          name: name,
+          price: price,
+          quantity: quantity,
+          measurement: measurement,
+          measurementUnit: measurementUnit,
+          category: category,
+          date: new Date().toISOString(),
         },
         'product_create'
       );
@@ -122,9 +154,171 @@ function registerProduct(result, name, price, quantity, measurement) {
       main.createRedDot(SECTION_NAME, 1);
       main.toast(`${name}, successfully registered!`, 'success');
       main.closeModal();
+      
+      // Reload products and stats
+      loadProducts();
+      loadStats();
+
     } else {
-      main.toast(`Error: Product duplication detected: ${result.dataset.id}`, 'error');
+      main.toast(`Error: ${data.error}`, 'error');
     }
+  } catch (error) {
+    console.error('Error registering product:', error);
+    main.toast('Error: Failed to register product', 'error');
+  }
+}
+
+async function loadProducts() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
+    const data = await response.json();
+
+    if (response.ok) {
+      displayProducts(data.result);
+    } else {
+      console.error('Error loading products:', data.error);
+    }
+  } catch (error) {
+    console.error('Error loading products:', error);
+  }
+}
+
+async function loadStats() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/stock/stats`);
+    const data = await response.json();
+
+    if (response.ok) {
+      updateStatsDisplay(data.result);
+    } else {
+      console.error('Error loading stats:', data.error);
+    }
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// current logic:
+// Updates the section stats display
+// [0] Total unique products
+// [1] Low stock items (<=5)
+// [2] Out of stock items (0)
+// [3] Best selling products (>50 sold)
+// [4] Slow moving products (<=10 but >0)
+function updateStatsDisplay(stats) {
+  const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+  
+  if (statElements.length >= 5) {
+    const uniqueProductsStat = statElements[0];
+    if (uniqueProductsStat) {
+      const valueElement = uniqueProductsStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.total_products || 0;
+      }
+    }
+
+    const lowStockStat = statElements[1];
+    if (lowStockStat) {
+      const valueElement = lowStockStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.low_stock || 0;
+      }
+    }
+
+    const outOfStockStat = statElements[2];
+    if (outOfStockStat) {
+      const valueElement = outOfStockStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.out_of_stock || 0;
+      }
+    }
+
+    const bestSellingStat = statElements[3];
+    if (bestSellingStat) {
+      const valueElement = bestSellingStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.best_selling || 0;
+      }
+    }
+
+    const slowMovingStat = statElements[4];
+    if (slowMovingStat) {
+      const valueElement = slowMovingStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.slow_moving || 0;
+      }
+    }
+  }
+}
+
+function displayProducts(products) {
+  // Clear existing products first (correctly targets the generated table structure)
+  const emptyCell = document.getElementById(`${SECTION_NAME}SectionOneListEmpty1`);
+  if (emptyCell) {
+    const tbody = emptyCell.closest('tbody');
+    if (tbody) {
+      const existingRows = Array.from(tbody.querySelectorAll('tr:not(:first-child)'));
+      existingRows.forEach((row) => row.remove());
+    }
+    // Show the empty placeholder until new rows are added
+    emptyCell.parentElement.classList.remove('hidden');
+  }
+
+  if (!products || products.length === 0) {
+    return;
+  }
+
+  products.forEach((product) => {
+    const columnsData = [
+      product.product_id,
+      {
+        type: 'object_product',
+        data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
+      },
+      main.encodePrice(product.price),
+      product.quantity + '',
+      main.getStockStatus(product.quantity),
+      product.measurement_value || '',
+      product.measurement_unit || '',
+      product.category,
+      'custom_date_today',
+    ];
+
+    main.createAtSectionOne(
+      SECTION_NAME,
+      columnsData,
+      1,
+      product.product_name,
+      (frontendResult, status) => {
+        if (status === 'success') {
+          // Set the actual date
+          if (product.created_at) {
+            const date = new Date(product.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
+            frontendResult.dataset.date = date;
+            frontendResult.children[8].innerHTML = date; // Date is the 9th column (index 8)
+          }
+
+        // Set up the product data for editing
+        frontendResult.dataset.id = product.product_id;
+        frontendResult.dataset.image = product.image_url || '/src/images/client_logo.jpg';
+        // Keep dataset.text consistent with duplicate detection (use raw name)
+        frontendResult.dataset.text = product.product_name;
+        frontendResult.dataset.custom2 = product.price_encoded;
+        frontendResult.dataset.custom3 = product.quantity;
+        frontendResult.dataset.custom4 = product.stock_status;
+        frontendResult.dataset.custom5 = product.measurement_value;
+        frontendResult.dataset.custom6 = product.measurement_unit;
+        frontendResult.dataset.custom7 = product.category;
+
+          // Setup action buttons
+          setupProductDetailsButton(frontendResult);
+        }
+      }
+    );
   });
 }
 
@@ -159,90 +353,115 @@ function setupProductDetailsButton(result) {
   });
 }
 
-function updateProduct(result, newResult, name) {
+async function updateProduct(result, newResult, name) {
   const [newName, newPrice, newQuantity] = newResult.image.short.map((item) => item.value);
   const newMeasurement = newResult.short[0].value?.trim() || '';
 
   if (!main.validateStockInputs(newPrice, newQuantity, newMeasurement)) return;
 
-  main.findAtSectionOne(
-    SECTION_NAME,
-    main.encodeText(newResult.image.short[0].value),
-    'equal_text',
-    1,
-    (findResult) => {
-      if (findResult && findResult != result) {
-        main.toast('That name already exist!', 'error');
-        return;
-      }
+  const category = main.getSelectedSpinner(newResult.spinner[0]);
+  const measurementUnit = main.getSelectedSpinner(newResult.spinner[1]);
 
-      main.openConfirmationModal(`Update product: ${name}`, () => {
-        const category = main.getSelectedSpinner(newResult.spinner[0]);
-        const measurementUnit = main.getSelectedSpinner(newResult.spinner[1]);
+  const productData = {
+    product_name: newName,
+    product_name_encoded: main.encodeText(newName),
+    price: +newPrice,
+    price_encoded: main.encodePrice(newPrice),
+    quantity: +newQuantity,
+    measurement_value: newMeasurement,
+    measurement_unit: measurementUnit,
+    category: category,
+    image_url: newResult.image.src
+  };
 
-        const columnsData = [
-          `id_${result.dataset.id}`,
-          { type: 'object', data: [newResult.image.src, main.encodeText(newName)] },
-          main.encodePrice(newPrice),
-          +newQuantity,
-          main.getStockStatus(newQuantity),
-          newMeasurement,
-          measurementUnit,
-          category,
-          `custom_date_${result.dataset.date}`,
-        ];
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products/${result.dataset.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData)
+    });
 
-        main.updateAtSectionOne(SECTION_NAME, columnsData, 1, result.dataset.id, (updatedResult) => {
-          logAction(
-            'Update product details',
-            {
-              id: updatedResult.dataset.id,
-              image: updatedResult.dataset.image,
-              name: main.decodeText(updatedResult.dataset.text),
-              price: updatedResult.dataset.custom2,
-              quantity: updatedResult.dataset.custom3,
-              measurement: updatedResult.dataset.custom5,
-              measurementUnit: updatedResult.dataset.custom6,
-              category: updatedResult.dataset.custom7,
-              date: updatedResult.dataset.date,
-            },
-            'product_update'
-          );
+    const data = await response.json();
 
-          main.toast('Successfully updated product details!', 'info');
-          main.closeConfirmationModal();
-          main.closeModal();
-        });
-      });
+    if (response.ok) {
+      logAction(
+        'Update product details',
+        {
+          id: result.dataset.id,
+          image: newResult.image.src,
+          name: newName,
+          price: newPrice,
+          quantity: newQuantity,
+          measurement: newMeasurement,
+          measurementUnit: measurementUnit,
+          category: category,
+          date: result.dataset.date,
+        },
+        'product_update'
+      );
+
+      main.toast('Successfully updated product details!', 'info');
+      main.closeConfirmationModal();
+      main.closeModal();
+      
+      // Reload products and stats
+      loadProducts();
+      loadStats();
+    } else {
+      main.toast(`Error: ${data.error}`, 'error');
     }
-  );
+  } catch (error) {
+    console.error('Error updating product:', error);
+    main.toast('Error: Failed to update product', 'error');
+  }
 }
 
-function deleteProduct(result) {
-  main.openConfirmationModal(`Delete product: ${main.decodeText(result.dataset.text)}`, () => {
-    const now = new Date();
-    const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+async function deleteProduct(result) {
+  main.openConfirmationModal(`Delete product: ${main.decodeText(result.dataset.text)}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ecommerce/products/${result.dataset.id}`, {
+        method: 'DELETE'
+      });
 
-    logAction(
-      'Delete product',
-      {
-        id: result.dataset.id,
-        image: result.dataset.image,
-        name: main.decodeText(result.dataset.text),
-        price: result.dataset.custom2,
-        measurement: result.dataset.custom5,
-        measurementUnit: result.dataset.custom6,
-        category: result.dataset.custom7,
-        datetime: `${date} - ${time}`,
-      },
-      'product_delete'
-    );
+      const data = await response.json();
 
-    main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
-    main.toast('Successfully deleted product!', 'error');
-    main.closeConfirmationModal();
-    main.closeModal();
+      if (response.ok) {
+        const now = new Date();
+        const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+        logAction(
+          'Delete product',
+          {
+            id: result.dataset.id,
+            image: result.dataset.image,
+            name: main.decodeText(result.dataset.text),
+            price: result.dataset.custom2,
+            measurement: result.dataset.custom5,
+            measurementUnit: result.dataset.custom6,
+            category: result.dataset.custom7,
+            datetime: `${date} - ${time}`,
+          },
+          'product_delete'
+        );
+
+        main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
+        main.toast('Successfully deleted product!', 'error');
+        main.closeConfirmationModal();
+        main.closeModal();
+        
+        // Reload products and stats
+        loadProducts();
+        loadStats();
+      } else {
+        main.toast(`Error: ${data.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      main.toast('Error: Failed to delete product', 'error');
+    }
   });
 }
 
@@ -300,4 +519,7 @@ function checkIfSameData(newData, oldData) {
   );
 }
 
-function refreshAllTabs() {}
+function refreshAllTabs() {
+  loadProducts();
+  loadStats();
+}
