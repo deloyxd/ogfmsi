@@ -2,17 +2,27 @@ import main from '../admin_main.js';
 import stock from './ecommerce_stock.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 import datasync from './maintenance_datasync.js';
+import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'ecommerce-cart';
 const MODULE_NAME = 'E-Commerce';
 const SUBMODULE_NAME = 'Cart';
 
 let cart = [],
-  liveActivated = false;
+  liveActivated = false,
+  sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
+  // Connect the checkout button
+  const sectionTwoMainBtn = document.getElementById(`${SECTION_NAME}SectionTwoMainBtn`);
+  if (sectionTwoMainBtn) {
+    sectionTwoMainBtn.addEventListener('click', processCheckout);
+  }
+
   getInventoryItemsFromSystem();
+  loadCartFromServer();
 
   if (!liveActivated) {
     liveActivated = true;
@@ -21,34 +31,55 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   }
 });
 
-function getInventoryItemsFromSystem() {
-  const inventoryItems = [];
+async function getInventoryItemsFromSystem() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
+    const data = await response.json();
 
-  main.getAllSectionOne('ecommerce-stock', 1, (result) => {
-    result.forEach((inventoryItem) => {
-      const id = inventoryItem.dataset.id;
-      const image = inventoryItem.dataset.image;
-      const name = inventoryItem.dataset.text;
-      const price = main.decodePrice(inventoryItem.dataset.custom2);
-      const quantity = inventoryItem.dataset.custom3;
-      const measurement = inventoryItem.dataset.custom5;
-      const measurementUnit = inventoryItem.dataset.custom6;
-      const category = inventoryItem.dataset.custom7;
+    if (response.ok) {
+      const inventoryItems = data.result.map((product) => ({
+        id: product.product_id,
+        image: product.image_url,
+        name: product.product_name_encoded,
+        price: +product.price,
+        quantity: +product.quantity,
+        measurement: product.measurement_value?.trim() || '',
+        measurementUnit: product.measurement_unit?.trim() || '',
+        category: product.category,
+      }));
 
-      inventoryItems.push({
-        id: id,
-        image: image,
-        name: name,
-        price: +price,
-        quantity: +quantity,
-        measurement: measurement?.trim() || '',
-        measurementUnit: measurementUnit?.trim() || '',
-        category: category,
-      });
-    });
+      displayProducts(inventoryItems);
+    } else {
+      console.error('Error fetching products:', data.error);
+    }
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
+}
 
-    displayProducts(inventoryItems);
-  });
+async function loadCartFromServer() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${sessionId}`);
+    const data = await response.json();
+
+    if (response.ok) {
+      cart = data.result.map((item) => ({
+        id: item.product_id,
+        cart_id: item.cart_id,
+        image: item.product_image,
+        name: item.product_name,
+        price: +item.price,
+        quantity: +item.quantity,
+        category: item.category,
+      }));
+      
+      updateCartDisplay();
+    } else {
+      console.error('Error loading cart:', data.error);
+    }
+  } catch (error) {
+    console.error('Error loading cart:', error);
+  }
 }
 
 function displayProducts(products) {
@@ -139,23 +170,83 @@ function displayProducts(products) {
   });
 }
 
-function addToCart(product, quantity) {
+async function addToCart(product, quantity) {
   const existingItem = cart.find((item) => item.id === product.id);
 
   if (existingItem) {
     existingItem.quantity += quantity;
+    await updateCartItemQuantity(existingItem.cart_id, existingItem.quantity);
   } else {
-    cart.push({
-      id: product.id,
-      image: product.image,
-      name: product.name,
+    const cartData = {
+      session_id: sessionId,
+      product_id: product.id,
+      product_name: product.name,
+      product_image: product.image,
       price: product.price,
       quantity: quantity,
       category: product.category,
-    });
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/ecommerce/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cartData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Reload cart from server to get the cart_id
+        await loadCartFromServer();
+      } else {
+        console.error('Error adding to cart:', data.error);
+        main.toast('Error: Failed to add item to cart', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      main.toast('Error: Failed to add item to cart', 'error');
+    }
   }
 
   updateCartDisplay();
+}
+
+async function updateCartItemQuantity(cartId, quantity) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ quantity })
+    });
+
+    if (!response.ok) {
+      console.error('Error updating cart quantity');
+    }
+  } catch (error) {
+    console.error('Error updating cart quantity:', error);
+  }
+}
+
+async function removeCartItem(cartId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      cart = cart.filter(item => item.cart_id !== cartId);
+      updateCartDisplay();
+    } else {
+      console.error('Error removing cart item');
+    }
+  } catch (error) {
+    console.error('Error removing cart item:', error);
+  }
 }
 
 function updateCartDisplay() {
@@ -171,6 +262,7 @@ function updateCartDisplay() {
     };
     main.createAtSectionTwo(SECTION_NAME, data, (result) => {
       result.dataset.itemid = item.id;
+      result.dataset.cartid = item.cart_id;
       result.innerHTML += `
         <!-- Column 1: Image -->
         <div class="w-24 h-24 flex-shrink-0">
@@ -190,16 +282,16 @@ function updateCartDisplay() {
             <div class="text-end font-medium">${main.encodePrice(item.price)}</div>
 
             <div class="my-2 flex items-center">
-              <button class="quantity-btn rounded-l border px-2 py-1" onclick="decreaseQuantity('${item.id}')">-</button>
+              <button class="quantity-btn rounded-l border px-2 py-1" onclick="decreaseQuantity('${item.cart_id}')">-</button>
               <span class="border-b border-t px-3 py-1">${item.quantity}</span>
-              <button class="quantity-btn rounded-r border px-2 py-1" onclick="increaseQuantity('${item.id}')">+</button>
+              <button class="quantity-btn rounded-r border px-2 py-1" onclick="increaseQuantity('${item.cart_id}')">+</button>
             </div>
 
             <div class="text-end my-1 font-bold">${main.encodePrice(item.price * item.quantity)}</div>
           </div>
 
           <div class="items-end">
-            <button class="items-end text-sm text-red-500 hover:underline" onclick="removeItem('${item.id}')">Remove</button>
+            <button class="items-end text-sm text-red-500 hover:underline" onclick="removeItem('${item.cart_id}')">Remove</button>
           </div>
         </div>
       `;
@@ -208,6 +300,31 @@ function updateCartDisplay() {
     });
   });
 }
+
+// Global functions for cart operations (called from HTML onclick)
+window.increaseQuantity = async function(cartId) {
+  const item = cart.find(item => item.cart_id === cartId);
+  if (item) {
+    item.quantity++;
+    await updateCartItemQuantity(cartId, item.quantity);
+    updateCartDisplay();
+  }
+};
+
+window.decreaseQuantity = async function(cartId) {
+  const item = cart.find(item => item.cart_id === cartId);
+  if (item && item.quantity > 1) {
+    item.quantity--;
+    await updateCartItemQuantity(cartId, item.quantity);
+    updateCartDisplay();
+  } else if (item && item.quantity === 1) {
+    await removeCartItem(cartId);
+  }
+};
+
+window.removeItem = async function(cartId) {
+  await removeCartItem(cartId);
+};
 
 function getCategoryLabel(category) {
   return stock.CATEGORIES.find((c) => c.value === category)?.label;
@@ -218,53 +335,181 @@ function getMeasurementText(measurement, measurementUnit) {
   return text || 'No measurement';
 }
 
-function processCheckout() {
+// Helper function for emoji display
+function getEmoji(emoji, size = 16) {
+  return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
+}
+
+function createPaymentModalInputs(totalAmount) {
+  return {
+    header: {
+      title: `Payment ${getEmoji('💳', 26)}`,
+      subtitle: `Total Amount: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+    },
+    short: [
+      { 
+        placeholder: 'Customer Payment Amount', 
+        value: '', 
+        required: true,
+        type: 'number',
+        min: totalAmount,
+        step: '0.01'
+      }
+    ],
+    footer: {
+      main: `Process Payment ${getEmoji('💳')}`,
+    }
+  };
+}
+
+async function updateProductStock(productId, soldQuantity) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}/stock`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        sold_quantity: soldQuantity 
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Error updating product stock');
+      throw new Error('Failed to update product stock');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating product stock:', error);
+    throw error;
+  }
+}
+
+async function processCheckout() {
   if (cart.length === 0) {
     main.toast('Your cart is empty!', 'error');
     return;
   }
 
-  // Process each item in cart
-  cart.forEach((item) => {
-    const action = {
-      module: 'Store',
-      submodule: 'Selling',
-      description: 'Process sale',
-    };
-    const data = {
-      productId: item.id,
-      productName: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      total: item.price * item.quantity,
-      date: new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
-    };
-    datasync.enqueue(action, data);
-  });
-
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  main.toast(
-    `Checkout successful! Total: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
-    'success'
-  );
+  // Show payment modal
+  const paymentInputs = createPaymentModalInputs(totalAmount);
+  
+  main.openModal('green', paymentInputs, async (result) => {
+    const customerPayment = parseFloat(result.short[0].value);
+    
+    if (customerPayment < totalAmount) {
+      main.toast('Payment amount is insufficient!', 'error');
+      return;
+    }
 
-  // Clear cart
-  cart = [];
-  updateCartDisplay();
+    const change = customerPayment - totalAmount;
 
-  // Close cart modal
-  document.getElementById('cartPanel').classList.add('translate-x-full');
-  setTimeout(() => {
-    document.getElementById('cartModal').classList.add('hidden');
-  }, 300);
+    try {
+      // Create order
+      const orderData = {
+        session_id: sessionId,
+        total_amount: totalAmount,
+        payment_method: 'cash',
+        customer_payment: customerPayment,
+        change_amount: change,
+        processed_by: 'admin'
+      };
 
-  // Refresh inventory display
-  setTimeout(() => {
-    loadInventoryItems();
-  }, 1000);
+      const orderResponse = await fetch(`${API_BASE_URL}/ecommerce/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const orderResult = await orderResponse.json();
+
+      if (orderResponse.ok) {
+        const orderId = orderResult.result.order_id;
+
+        // Add order items and update stock
+        for (const item of cart) {
+          const itemData = {
+            product_id: item.id,
+            product_name: item.name,
+            unit_price: item.price,
+            quantity: item.quantity,
+            total_price: item.price * item.quantity
+          };
+
+          // Add order item
+          await fetch(`${API_BASE_URL}/ecommerce/orders/${orderId}/items`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(itemData)
+          });
+
+          // Update product stock
+          await updateProductStock(item.id, item.quantity);
+        }
+
+        // Process each item in cart for data sync
+        cart.forEach((item) => {
+          const action = {
+            module: 'Store',
+            submodule: 'Selling',
+            description: 'Process sale',
+          };
+          const data = {
+            productId: item.id,
+            productName: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.price * item.quantity,
+            customerPayment: customerPayment,
+            change: change,
+            date: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }),
+          };
+          datasync.enqueue(action, data);
+        });
+
+        // Show success message with payment details
+        main.toast(
+          `Checkout successful! Total: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} | Payment: ₱${customerPayment.toLocaleString('en-PH', { minimumFractionDigits: 2 })} | Change: ₱${change.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+          'success',
+          10000
+        );
+
+
+        // Clear cart
+        await fetch(`${API_BASE_URL}/ecommerce/cart/session/${sessionId}`, {
+          method: 'DELETE'
+        });
+        
+        cart = [];
+        updateCartDisplay();
+
+        // Close payment modal
+        main.closeModal();
+
+        // Refresh inventory display
+        setTimeout(() => {
+          getInventoryItemsFromSystem();
+        }, 1000);
+      } else {
+        main.toast('Error: Failed to process checkout', 'error');
+      }
+    } catch (error) {
+      console.error('Error processing checkout:', error);
+      main.toast('Error: Failed to process checkout', 'error');
+    }
+  });
 }
+
+// Make processCheckout available globally
+window.processCheckout = processCheckout;
