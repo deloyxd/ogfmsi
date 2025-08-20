@@ -269,8 +269,9 @@ function displayProducts(products) {
   }
 
   products.forEach((product) => {
+    const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
     const columnsData = [
-      product.product_id,
+      displayId,
       {
         type: 'object_product',
         data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],

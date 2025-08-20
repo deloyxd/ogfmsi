@@ -19,7 +19,7 @@ router.post('/products', async (req, res) => {
   } = req.body;
   
   // Generate unique product ID
-  const product_id = 'PROD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  const product_id = 'PROD_' + Date.now();
   
   // Determine stock status based on quantity
   let stock_status = 'In Stock';
