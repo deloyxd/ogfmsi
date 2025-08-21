@@ -290,8 +290,7 @@ function displayProducts(products) {
       columnsData,
       1,
       product.product_name,
-      (frontendResult, status) => {
-        if (status === 'success') {
+      (frontendResult) => {
           // Set the actual date
           if (product.created_at) {
             const date = new Date(product.created_at).toLocaleDateString('en-US', {
@@ -317,7 +316,6 @@ function displayProducts(products) {
 
           // Setup action buttons
           setupProductDetailsButton(frontendResult);
-        }
       }
     );
   });
@@ -325,6 +323,8 @@ function displayProducts(products) {
 
 function setupProductDetailsButton(result) {
   const productDetailsBtn = result.querySelector('#productDetailsBtn');
+
+  if (!productDetailsBtn) return;
 
   productDetailsBtn.addEventListener('click', () => {
     const productData = {

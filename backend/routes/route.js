@@ -1,7 +1,11 @@
 const { Router } = require("express");
 const demoRoute = require('./demo.route');
 const maintenanceRoute = require('./maintenance.route');
-const ecommerceRoute = require('./ecommerce.route');
+// E-commerce split routes mounted directly
+const ecommerceProductsRoute = require('./ecommerce.products.route');
+const ecommerceCartRoute = require('./ecommerce.cart.route');
+const ecommerceOrdersRoute = require('./ecommerce.orders.route');
+const ecommerceUtilsRoute = require('./ecommerce.utils.route');
 
 const router = Router();
 
@@ -13,7 +17,10 @@ router.use('/demo', demoRoute);
 router.use('/maintenance', maintenanceRoute);
 
 //API URL: (host):(port)/api/ecommerce
-router.use('/ecommerce', ecommerceRoute);
+router.use('/ecommerce', ecommerceProductsRoute);
+router.use('/ecommerce', ecommerceCartRoute);
+router.use('/ecommerce', ecommerceOrdersRoute);
+router.use('/ecommerce', ecommerceUtilsRoute);
 
 // Add routes declaration here:
 
