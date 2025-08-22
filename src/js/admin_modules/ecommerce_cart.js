@@ -41,14 +41,22 @@ async function getInventoryItemsFromSystem() {
         id: product.product_id,
         image: product.image_url,
         name: product.product_name_encoded,
-        price: +product.price,
-        quantity: +product.quantity,
+        price: + product.price,
+        quantity: + product.quantity,
         measurement: product.measurement_value?.trim() || '',
         measurementUnit: product.measurement_unit?.trim() || '',
         category: product.category,
       }));
 
-      displayProducts(inventoryItems);
+      // Tab 1: All Available Products (Products with stocks)
+      displayProductsForTab(inventoryItems.filter((p) => p.quantity > 0), 1);
+
+      // Tab 2: Best Selling Products (Fast moving products)
+      displayProductsForTab(inventoryItems.filter((p) => p.quantity > 50), 2);
+
+      // Tab 3: Least Selling Products (Slow moving products)
+      displayProductsForTab(inventoryItems.filter((p) => p.quantity > 0 && p.quantity <= 10), 3);
+
     } else {
       console.error('Error fetching products:', data.error);
     }
@@ -82,13 +90,18 @@ async function loadCartFromServer() {
   }
 }
 
-function displayProducts(products) {
-  const productsGrid = document.getElementById('ecommerceCartTab1');
-  const productsEmpty = document.getElementById('ecommerceCartTab1Empty');
+function displayProductsForTab(products, tabIndex) {
+  const productsGrid = document.getElementById(`ecommerceCartTab${tabIndex}`);
+  const productsEmpty = document.getElementById(`ecommerceCartTab${tabIndex}Empty`);
+  if (!productsGrid || !productsEmpty) return;
+
   productsGrid.classList.add('justify-center');
   productsEmpty.classList.remove('hidden');
 
-  if (!products || products.length == 0) return;
+  if (!products || products.length == 0) {
+    productsGrid.innerHTML = '';
+    return;
+  }
 
   productsGrid.classList.remove('justify-center');
   productsEmpty.classList.add('hidden');
@@ -97,7 +110,7 @@ function displayProducts(products) {
 
   Array.from(products).forEach((product) => {
     const productCard = document.getElementById('ecommerceCartProduct').cloneNode(true);
-    productCard.id = product.id;
+    productCard.id = `${product.id}_${tabIndex}`;
     productCard.dataset.category = product.category;
 
     productCard.querySelector('img').src = product.image;

@@ -79,7 +79,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   
   // Load products and stats on page load
   loadProducts();
-  loadStats();
 });
 
 // Listen for section changes to refresh stats when this section becomes active
@@ -89,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (currentSection && !currentSection.classList.contains('hidden')) {
     // Section is already active, load stats
     setTimeout(() => {
-      loadStats();
+      loadProducts();
     }, 100);
   }
 });
@@ -174,7 +173,26 @@ async function loadProducts() {
     const data = await response.json();
 
     if (response.ok) {
-      displayProducts(data.result);
+      const products = data.result || [];
+
+      // Tab 1: Unique Products (All stocks)
+      displayProductsForTab(products, 1);
+
+      // Tab 2: Low Stock Products (About to be out of stock)
+      displayProductsForTab(products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 || p.stock_status === 'Low Stock'), 2);
+
+      // Tab 3: Out of Stock Products (Dead stocks)
+      displayProductsForTab(products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock'), 3);
+
+      // Tab 4: Best Selling Products (Fast moving stocks)
+      displayProductsForTab(products.filter((p) => +p.quantity > 50), 4);
+
+      // Tab 5: Least Selling Products (Slow moving stocks)
+      displayProductsForTab(products.filter((p) => +p.quantity > 0 && +p.quantity <= 10), 5);
+      
+      // Update stats using the same logic as the tabs
+      computeAndUpdateStats(products);
+      
     } else {
       console.error('Error loading products:', data.error);
     }
@@ -196,6 +214,27 @@ async function loadStats() {
   } catch (error) {
     console.error('Error loading stats:', error);
   }
+}
+
+// Computes stats client-side using the same logic as the tabs and updates the UI
+function computeAndUpdateStats(products) {
+	if (!Array.isArray(products)) {
+		return;
+	}
+
+	const totalProducts = products.length;
+	const lowStock = products.filter((p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock').length;
+	const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
+	const bestSelling = products.filter((p) => +p.quantity > 50).length;
+	const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
+
+	updateStatsDisplay({
+		total_products: totalProducts,
+		low_stock: lowStock,
+		out_of_stock: outOfStock,
+		best_selling: bestSelling,
+		slow_moving: slowMoving,
+	});
 }
 
 // current logic:
@@ -251,9 +290,9 @@ function updateStatsDisplay(stats) {
   }
 }
 
-function displayProducts(products) {
-  // Clear existing products first (correctly targets the generated table structure)
-  const emptyCell = document.getElementById(`${SECTION_NAME}SectionOneListEmpty1`);
+function displayProductsForTab(products, tabIndex) {
+  // Clear existing products first on the specific tab
+  const emptyCell = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
   if (emptyCell) {
     const tbody = emptyCell.closest('tbody');
     if (tbody) {
@@ -288,10 +327,9 @@ function displayProducts(products) {
     main.createAtSectionOne(
       SECTION_NAME,
       columnsData,
-      1,
+      tabIndex,
       product.product_name,
-      (frontendResult, status) => {
-        if (status === 'success') {
+      (frontendResult) => {
           // Set the actual date
           if (product.created_at) {
             const date = new Date(product.created_at).toLocaleDateString('en-US', {
@@ -317,7 +355,6 @@ function displayProducts(products) {
 
           // Setup action buttons
           setupProductDetailsButton(frontendResult);
-        }
       }
     );
   });
@@ -325,6 +362,8 @@ function displayProducts(products) {
 
 function setupProductDetailsButton(result) {
   const productDetailsBtn = result.querySelector('#productDetailsBtn');
+
+  if (!productDetailsBtn) return;
 
   productDetailsBtn.addEventListener('click', () => {
     const productData = {
