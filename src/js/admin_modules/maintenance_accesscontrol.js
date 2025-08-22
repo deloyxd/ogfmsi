@@ -26,15 +26,13 @@ export function log(action, data) {
     action.description,
     'custom_datetime_today',
   ];
-  main.createAtSectionOne(SECTION_NAME, columnsData, 4, '', (editedResult, status) => {
-    if (status == 'success') {
-      const btns = editedResult.children[editedResult.children.length - 1].children[0];
-      const actionDetailsBtn = btns.querySelector('#actionDetailsBtn');
-      actionDetailsBtn.addEventListener('click', () => main.openModal('gray', getInputs(data), main.closeModal));
+  main.createAtSectionOne(SECTION_NAME, columnsData, 4, (editedResult) => {
+    const btns = editedResult.children[editedResult.children.length - 1].children[0];
+    const actionDetailsBtn = btns.querySelector('#actionDetailsBtn');
+    actionDetailsBtn.addEventListener('click', () => main.openModal('gray', getInputs(data), main.closeModal));
 
-      main.createRedDot(SECTION_NAME, 'sub');
-      main.createRedDot(SECTION_NAME, 4);
-    }
+    main.createRedDot(SECTION_NAME, 'sub');
+    main.createRedDot(SECTION_NAME, 4);
   });
 }
 

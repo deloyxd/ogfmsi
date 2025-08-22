@@ -41,22 +41,19 @@ async function loadExistingEquipment() {
           'maintenance-equipment',
           columnsData,
           1,
-          equipment.equipment_name,
-          (frontendResult, status) => {
-            if (status === 'success') {
-              if (equipment.created_at) {
-                const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                });
-                frontendResult.dataset.date = date;
-                frontendResult.children[5].innerHTML = date;
-              }
-
-              // Setup action buttons
-              setupEquipmentButtons(frontendResult, equipment);
+          (frontendResult) => {
+            if (equipment.created_at) {
+              const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              });
+              frontendResult.dataset.date = date;
+              frontendResult.children[5].innerHTML = date;
             }
+
+            // Setup action buttons
+            setupEquipmentButtons(frontendResult, equipment);
           }
         );
       });
@@ -295,44 +292,40 @@ async function registerNewProduct(image, name, quantity, category) {
       ];
 
       // Add to UI and log action
-      main.createAtSectionOne('maintenance-equipment', columnsData, 1, name, (frontendResult, status) => {
-        if (status == 'success') {
-          const equipmentData = {
-            equipment_id: result.result.equipment_id,
-            equipment_name: name,
-            equipment_type: category,
-            quantity: quantity,
-            image_url: image,
-            condition_status: 'good',
-            notes: '',
-            created_at: new Date().toISOString(),
-          };
+      main.createAtSectionOne('maintenance-equipment', columnsData, 1, (frontendResult) => {
+        const equipmentData = {
+          equipment_id: result.result.equipment_id,
+          equipment_name: name,
+          equipment_type: category,
+          quantity: quantity,
+          image_url: image,
+          condition_status: 'good',
+          notes: '',
+          created_at: new Date().toISOString(),
+        };
 
-          setupEquipmentButtons(frontendResult, equipmentData);
+        setupEquipmentButtons(frontendResult, equipmentData);
 
-          const action = {
-            module: 'Maintenance',
-            submodule: 'Equipment',
-            description: 'Register equipment',
-          };
-          const data = {
-            id: result.result.equipment_id,
-            image: image,
-            name: name,
-            quantity: quantity,
-            category: category,
-            condition: 'Good Condition',
-            date: frontendResult.dataset.date,
-            type: 'equipment',
-          };
-          accesscontrol.log(action, data);
+        const action = {
+          module: 'Maintenance',
+          submodule: 'Equipment',
+          description: 'Register equipment',
+        };
+        const data = {
+          id: result.result.equipment_id,
+          image: image,
+          name: name,
+          quantity: quantity,
+          category: category,
+          condition: 'Good Condition',
+          date: frontendResult.dataset.date,
+          type: 'equipment',
+        };
+        accesscontrol.log(action, data);
 
-          main.createRedDot('maintenance-equipment', 1);
-          main.toast(`${name}, successfully registered!`, 'success');
-          main.closeModal();
-        } else {
-          main.toast('Error: Equipment duplication detected: ' + frontendResult.dataset.id, 'error');
-        }
+        main.createRedDot('maintenance-equipment', 1);
+        main.toast(`${name}, successfully registered!`, 'success');
+        main.closeModal();
       });
     } else {
       main.toast(`Backend Error: ${result.error}`, 'error');

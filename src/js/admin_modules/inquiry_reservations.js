@@ -125,29 +125,27 @@ function sectionTwoMainBtnFunction() {
           `${main.getSelectedSpinner(result.spinner[1])} - ${parseInt(main.getSelectedSpinner(result.spinner[1]).split(':')) + parseInt(main.getSelectedSpinner(result.spinner[0])) + ':00'}`, // dataset.custom3
           'custom_datetime_Pending',
         ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 2, '', (reservation, status) => {
-          if (status == 'success') {
-            const actionData = {
-              module: MODULE_NAME,
-              submodule: SUBMODULE_NAME,
-              description: 'Process user reservation',
-            };
-            const reservationData = {
-              id: reservation.dataset.id,
-              image: user.dataset.image,
-              name: user.dataset.text,
-              userid: user.dataset.id,
-              amount: parseInt(main.getSelectedSpinner(result.spinner[0])) * parseInt(result.short[1].value),
-            };
-            accesscontrol.log(actionData, reservationData);
-            payments.processReservationPayment(reservationData);
+        main.createAtSectionOne(SECTION_NAME, columnsData, 2, (reservation) => {
+          const actionData = {
+            module: MODULE_NAME,
+            submodule: SUBMODULE_NAME,
+            description: 'Process user reservation',
+          };
+          const reservationData = {
+            id: reservation.dataset.id,
+            image: user.dataset.image,
+            name: user.dataset.text,
+            userid: user.dataset.id,
+            amount: parseInt(main.getSelectedSpinner(result.spinner[0])) * parseInt(result.short[1].value),
+          };
+          accesscontrol.log(actionData, reservationData);
+          payments.processReservationPayment(reservationData);
 
-            main.createRedDot(SECTION_NAME, 2);
+          main.createRedDot(SECTION_NAME, 2);
 
-            main.toast('Successfully reserved facility!', 'success');
-            main.closeConfirmationModal();
-            main.closeModal();
-          }
+          main.toast('Successfully reserved facility!', 'success');
+          main.closeConfirmationModal();
+          main.closeModal();
         });
       });
     });

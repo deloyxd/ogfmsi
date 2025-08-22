@@ -328,7 +328,6 @@ function displayProductsForTab(products, tabIndex) {
       SECTION_NAME,
       columnsData,
       tabIndex,
-      product.product_name,
       (frontendResult) => {
           // Set the actual date
           if (product.created_at) {
