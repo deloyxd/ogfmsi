@@ -882,7 +882,7 @@ function setupModalBase(defaultData, inputs, callback) {
       label.innerHTML = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
       if (spinnerGroup.locked) {
         spinnerContainer.children[1].children[0].disabled = true;
-        spinnerContainer.children[1].children[0].classList.add('border-gray-400','bg-gray-300', 'text-gray-600');
+        spinnerContainer.children[1].children[0].classList.add('border-gray-400', 'bg-gray-300', 'text-gray-600');
       }
 
       const selectElement = spinnerContainer.querySelector('select');
@@ -891,8 +891,10 @@ function setupModalBase(defaultData, inputs, callback) {
       const placeholderOption = document.createElement('option');
       placeholderOption.value = '';
       placeholderOption.innerHTML = spinnerGroup.placeholder || 'Select an option';
-      placeholderOption.disabled =
-        (typeof spinnerGroup.selected == 'number' && spinnerGroup.selected == 0) || spinnerGroup.required;
+      if ((isNumeric(spinnerGroup.selected) && spinnerGroup.selected == 0) || spinnerGroup.required) {
+        placeholderOption.readOnly = true;
+        placeholderOption.classList.add('bg-gray-200', 'text-gray-500');
+      }
       placeholderOption.selected = true;
       selectElement.appendChild(placeholderOption);
 
@@ -902,13 +904,13 @@ function setupModalBase(defaultData, inputs, callback) {
         option.innerHTML = optionData.label;
         option.classList.add('font-medium');
 
-        if (typeof spinnerGroup.selected == 'number') {
-          if (index === spinnerGroup.selected - 1) {
+        if (isNumeric(spinnerGroup.selected)) {
+          if (index == spinnerGroup.selected - 1) {
             option.selected = true;
             placeholderOption.selected = false;
           }
         } else {
-          if (option.value === spinnerGroup.selected) {
+          if (option.value == spinnerGroup.selected.toLowerCase()) {
             spinnerGroup.selected = index + 1;
             option.selected = true;
             placeholderOption.selected = false;
@@ -1015,6 +1017,137 @@ function setupModalBase(defaultData, inputs, callback) {
     input.placeholder = data.placeholder;
     input.value = data.value;
 
+    if (type.includes('short')) {
+      const calendarInput = input.nextElementSibling;
+      if (data.calendar) {
+        input.addEventListener('click', () => {
+          if (isValidDate(input.value)) {
+            openInputCalendar(new Date(input.value));
+            return;
+          }
+          openInputCalendar();
+        });
+
+        originalContainer.parentElement.parentElement.parentElement.addEventListener('click', closeInputCalendar);
+
+        function openInputCalendar(dateObj = new Date()) {
+          calendarInput.classList.remove('hidden');
+
+          const month = calendarInput.querySelector(`#input-calendar-month`);
+          const monthNext = calendarInput.querySelector(`#input-calendar-month-next`);
+          const monthPrev = calendarInput.querySelector(`#input-calendar-month-prev`);
+          const year = calendarInput.querySelector(`#input-calendar-year`);
+          const yearNext = calendarInput.querySelector(`#input-calendar-year-next`);
+          const yearPrev = calendarInput.querySelector(`#input-calendar-year-prev`);
+          const calendarGrid = calendarInput.querySelector(`#input-calendar-grid`);
+
+          let dateCell = null;
+          const newDateObj = new Date(dateObj);
+          const todayObj = new Date();
+          displayDate();
+          fillCalendar();
+
+          function displayDate() {
+            const monthName = newDateObj.toLocaleString('en-US', { month: 'long' });
+            const yearNum = newDateObj.getFullYear();
+            month.textContent = monthName;
+            year.textContent = yearNum;
+          }
+
+          function fillCalendar() {
+            calendarGrid.innerHTML = '';
+
+            const yearNum = newDateObj.getFullYear();
+            const monthNum = newDateObj.getMonth();
+
+            const firstDay = new Date(yearNum, monthNum, 1).getDay();
+            const daysInMonth = new Date(yearNum, monthNum + 1, 0).getDate();
+
+            calendarGrid.className = 'grid grid-cols-7 p-2';
+
+            for (let i = 0; i < firstDay; i++) {
+              const emptyCell = document.createElement('div');
+              calendarGrid.appendChild(emptyCell);
+            }
+
+            for (let date = 1; date <= daysInMonth; date++) {
+              const cell = document.createElement('div');
+              if (date == dateObj.getDate() && monthNum === dateObj.getMonth() && yearNum === dateObj.getFullYear()) {
+                dateCell = cell;
+              }
+              cell.textContent = date;
+              cell.className = 'duration-300 text-center p-1 cursor-pointer rounded hover:bg-blue-200';
+
+              if (
+                date === todayObj.getDate() &&
+                monthNum === todayObj.getMonth() &&
+                yearNum === todayObj.getFullYear()
+              ) {
+                cell.classList.add('ring-inset', 'ring-2', 'ring-blue-600');
+              }
+
+              cell.addEventListener('click', () => {
+                selectDayCell(cell);
+                calendarInput.classList.add('hidden');
+                input.value = encodeDate(new Date(yearNum, monthNum, date), '2-digit');
+                input.dispatchEvent(new Event('input'));
+                data.value = input.value;
+              });
+
+              calendarGrid.appendChild(cell);
+            }
+
+            selectDayCell(dateCell);
+          }
+
+          function selectDayCell(dateCell) {
+            [...calendarGrid.querySelectorAll('div')].forEach((c) => {
+              if (c.classList.contains('duration-300')) {
+                c.classList.remove('bg-blue-500');
+                c.classList.add('hover:bg-blue-200');
+              }
+            });
+            if (dateCell) {
+              dateCell.classList.add('bg-blue-500');
+              dateCell.classList.remove('hover:bg-blue-200');
+            }
+          }
+
+          monthNext.addEventListener('click', () => {
+            newDateObj.setMonth(newDateObj.getMonth() + 1);
+            displayDate();
+            fillCalendar();
+          });
+
+          monthPrev.addEventListener('click', () => {
+            newDateObj.setMonth(newDateObj.getMonth() - 1);
+            displayDate();
+            fillCalendar();
+          });
+
+          yearNext.addEventListener('click', () => {
+            newDateObj.setFullYear(newDateObj.getFullYear() + 1);
+            displayDate();
+            fillCalendar();
+          });
+
+          yearPrev.addEventListener('click', () => {
+            newDateObj.setFullYear(newDateObj.getFullYear() - 1);
+            displayDate();
+            fillCalendar();
+          });
+        }
+
+        function closeInputCalendar(e) {
+          if (e.target.id != input.id && e.target.closest(`#input-calendar`) == null) {
+            calendarInput.classList.add('hidden');
+          }
+        }
+      } else if (calendarInput) {
+        calendarInput.remove();
+      }
+    }
+
     if (data.live) {
       const indexAndFunctionSplit = data.live.split(':');
       const indices = indexAndFunctionSplit[0].split('-');
@@ -1117,6 +1250,10 @@ export function isValidPaymentAmount(amount) {
   return true;
 }
 
+export function isNumeric(value) {
+  return !isNaN(parseFloat(value)) && isFinite(value);
+}
+
 export function checkIfEmpty(inputs) {
   let hasEmpty = false;
 
@@ -1149,7 +1286,10 @@ export function getAllSectionOne(sectionName, tabIndex, callback) {
 export function getAllSectionTwo(sectionName, callback) {}
 
 export function findAtSectionOne(sectionName, findValue, findType, tabIndex, callback) {
-  if (checkIfEmpty(findValue)) return;
+  if (findValue.trim() == '') {
+    callback(null);
+    return;
+  }
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   const items = emptyText.parentElement.parentElement.children;
   for (let i = 1; i < items.length; i++) {
@@ -1213,9 +1353,7 @@ function searchFunction(item, findValue, findType, callback) {
   return false;
 }
 
-export function createAtSectionOne(sectionName, columnsData, tabIndex, arg4, arg5) {
-  const findValue = typeof arg4 === 'function' ? '' : arg4;
-  const callback = typeof arg4 === 'function' ? arg4 : arg5;
+export function createAtSectionOne(sectionName, columnsData, tabIndex, callback = () => {}) {
   const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
   if (searchInput) {
     searchInput.value = '';
@@ -1243,18 +1381,6 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, arg4, arg
   );
   btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`, `2xl:w-[${totalBtnsCellWidth + 8}px]`);
   newRow.appendChild(cell);
-
-  // if (findValue) {
-  //   const tableBody = emptyText.closest('tbody');
-  //   const existingRows = Array.from(tableBody.querySelectorAll('tr:not(:first-child)'));
-
-  //   for (const row of existingRows) {
-  //     if (row.dataset.text && row.dataset.text.toLowerCase().trim() === findValue.toLowerCase().trim()) {
-  //       callback(row, 'fail');
-  //       return;
-  //     }
-  //   }
-  // }
 
   tableRow.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
@@ -1498,28 +1624,25 @@ export function decodeName(name) {
   };
 }
 
+export function encodeDate(date, type) {
+  return date
+    .toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: type,
+      day: '2-digit',
+    })
+    .replace(/\//g, '-');
+}
+
+export function decodeDate(date) {
+  return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export function getDateOrTimeOrBoth() {
   const now = new Date();
   const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   return { date, time, datetime: `${date} - ${time}` };
-}
-
-export function getStartAndEndDates(type) {
-  const separator = type.includes('2-digit') ? '-' : ' ';
-  const startDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: type,
-    day: '2-digit',
-  });
-  const endDateObj = new Date();
-  endDateObj.setMonth(endDateObj.getMonth() + 1);
-  const endDate = endDateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: type,
-    day: '2-digit',
-  });
-  return { startDate: startDate.replace(/\//g, separator), endDate: endDate.replace(/\//g, separator) };
 }
 
 export function updateDateAndTime() {
@@ -1540,6 +1663,14 @@ export function isValidDate(dateString) {
   const [month, day, year] = dateString.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+export function isPastDate(dateString) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [month, day, year] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date < today;
 }
 
 export function encodePrice(price) {
@@ -1608,6 +1739,7 @@ export default {
   closeConfirmationModal,
   toast,
   isValidPaymentAmount,
+  isNumeric,
   checkIfEmpty,
   getAllSectionOne,
   getAllSectionTwo,
@@ -1625,10 +1757,12 @@ export default {
   // inquiry-customer
   encodeName,
   decodeName,
+  encodeDate,
+  decodeDate,
   getDateOrTimeOrBoth,
-  getStartAndEndDates,
   updateDateAndTime,
   isValidDate,
+  isPastDate,
 
   // ecommerce-stock
   encodePrice,

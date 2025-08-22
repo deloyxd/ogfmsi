@@ -5,100 +5,137 @@
   class="fixed inset-0 flex hidden h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300"
 >
   <div
-    class="m-auto w-full max-w-lg -translate-y-6 scale-95 overflow-hidden rounded-2xl bg-white shadow-xl duration-300 2xl:max-w-2xl"
+    class="m-auto w-full max-w-lg -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300"
   >
-    <div
-      class="flex flex-col gap-1 bg-gradient-to-br from-amber-500 to-amber-800 p-4 text-center text-white 2xl:gap-2 2xl:p-7"
-    >
-      <p id="modalTitle" class="text-xl font-medium 2xl:text-3xl"></p>
-      <p id="modalSubtitle" class="hidden text-xs 2xl:text-sm"></p>
+    <div class="flex flex-col gap-1 bg-gradient-to-br rounded-t-2xl from-amber-500 to-amber-800 p-4 text-center text-white">
+      <p id="modalTitle" class="text-xl font-medium"></p>
+      <p id="modalSubtitle" class="hidden text-xs"></p>
     </div>
-    <div class="flex flex-col p-4 2xl:p-8">
-      <form class="flex flex-col gap-2 2xl:gap-4">
-        <div class="grid hidden grid-cols-5 gap-3 2xl:gap-6">
+    <div class="flex flex-col p-4">
+      <form class="flex flex-col gap-2">
+        <div class="grid hidden grid-cols-5 gap-3">
           <div
-            class="relative col-span-2 flex flex-col gap-2 rounded-lg border-2 border-gray-300 p-2 duration-300 hover:border-amber-500 2xl:gap-4 2xl:p-4"
+            class="relative col-span-2 flex flex-col gap-2 rounded-lg border-2 border-gray-300 p-2 duration-300 hover:border-amber-500"
           >
-            <label class="text-xs font-medium text-gray-600 2xl:text-sm">Image</label>
-            <div class="relative max-h-[136px] min-h-[136px] cursor-pointer 2xl:max-h-[176px] 2xl:min-h-[176px]">
+            <label class="text-xs font-medium text-gray-600">Image</label>
+            <div class="relative max-h-[136px] min-h-[136px] cursor-pointer">
               <img id="input-image" class="h-full w-full rounded-lg object-cover" />
               <div class="absolute inset-0 rounded-lg bg-black/30 backdrop-blur-[2px]"></div>
               <div
                 class="absolute inset-0 content-center text-center font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
               >
-                <p class="-mb-1 text-sm 2xl:text-base"></p>
-                <p class="text-2xl text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)] 2xl:text-3xl"></p>
-                <p class="2xl:text-lg"></p>
+                <p class="-mb-1 text-sm"></p>
+                <p class="text-2xl text-yellow-500 drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"></p>
+                <p class=""></p>
               </div>
             </div>
             <input type="file" id="input-image-upload" accept="image/*" class="hidden" />
             <button
               type="button"
-              class="absolute right-0 top-0 mx-2 my-1.5 hidden rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-500 duration-300 hover:bg-amber-500 hover:text-white 2xl:mx-4 2xl:my-3.5 2xl:flex"
+              class="absolute right-0 top-0 mx-2 my-1.5 hidden rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-500 duration-300 hover:bg-amber-500 hover:text-white"
             >
               Upload Photo
             </button>
           </div>
 
-          <div class="col-span-3 flex flex-col gap-2 2xl:gap-4">
+          <div class="col-span-3 flex flex-col gap-2">
             <div class="flex hidden flex-col gap-2 font-medium">
-              <label class="text-xs text-gray-600 2xl:text-sm"></label>
+              <label class="text-xs text-gray-600"></label>
               <input
                 id="input-short-0"
                 autocomplete="off"
-                class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-3 2xl:py-2 2xl:text-base"
+                class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
                 placeholder="Input"
               />
             </div>
           </div>
         </div>
 
-        <div class="flex hidden flex-col gap-2 font-medium">
-          <label class="text-xs text-gray-600 2xl:text-sm"></label>
+        <div class="relative flex hidden flex-col gap-2 font-medium">
+          <label class="text-xs text-gray-600"></label>
           <input
             id="input-short-4"
             autocomplete="off"
-            class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-3 2xl:py-2 2xl:text-base"
+            class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
             placeholder="Input"
           />
-        </div>
+          <div
+            id="input-calendar"
+            class="absolute left-0 top-16 z-10 flex hidden flex-col overflow-hidden rounded-lg border-2 border-amber-500 bg-white shadow-lg shadow-black/50"
+          >
+            <div class="flex items-center justify-between gap-1 border-b p-1">
+              <button type="button" id="input-calendar-month-prev" class="rounded-lg p-1 transition-colors hover:bg-gray-100">
+                <i class="fas fa-chevron-left w-5"></i>
+              </button>
 
-        <div class="flex hidden flex-col gap-2 font-medium">
-          <label class="text-xs text-gray-600 2xl:text-sm"></label>
-          <div class="relative cursor-pointer">
-            <select
-              id="input-spinner"
-              class="w-full cursor-pointer appearance-none rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-4 2xl:py-3 2xl:text-base"
-            ></select>
-            <p class="absolute right-0 top-0 m-2 text-xs text-gray-400 2xl:m-4">▼</p>
+              <div class="flex items-center justify-center gap-4">
+                <div id="input-calendar-month" class="min-w-[75px] text-center text-sm font-semibold"></div>
+                <div class="flex items-center">
+                  <button type="button" id="input-calendar-year-prev" class="rounded-r px-2 py-1 text-gray-600 hover:bg-gray-100">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <span id="input-calendar-year" class="bg-gray-100 px-2 py-1 min-w-[55px] text-center text-sm font-semibold"></span>
+                  <button type="button" id="input-calendar-year-next" class="rounded-l px-2 py-1 text-gray-600 hover:bg-gray-100">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="button" id="input-calendar-month-next" class="rounded-lg p-1 transition-colors hover:bg-gray-100">
+                <i class="fas fa-chevron-right w-5"></i>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-7 border-b bg-gray-50 p-2 text-center text-sm font-medium text-gray-600">
+              <p>Su</p>
+              <p>M</p>
+              <p>T</p>
+              <p>W</p>
+              <p>Th</p>
+              <p>F</p>
+              <p>Sa</p>
+            </div>
+
+            <div id="input-calendar-grid" class="grid flex-1 grid-cols-7"></div>
           </div>
         </div>
 
         <div class="flex hidden flex-col gap-2 font-medium">
-          <label class="text-xs text-gray-600 2xl:text-sm"></label>
+          <label class="text-xs text-gray-600"></label>
+          <div class="relative cursor-pointer">
+            <select
+              id="input-spinner"
+              class="w-full cursor-pointer appearance-none rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+            ></select>
+            <p class="absolute right-0 top-0 m-2 text-xs text-gray-400">▼</p>
+          </div>
+        </div>
+
+        <div class="flex hidden flex-col gap-2 font-medium">
+          <label class="text-xs text-gray-600"></label>
           <textarea
             id="input-large"
             autocomplete="off"
-            class="resize-none rounded-md border-2 border-gray-300 bg-gray-100 px-3 py-2 text-xs duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200 2xl:px-4 2xl:py-3 2xl:text-sm"
+            class="resize-none rounded-md border-2 border-gray-300 bg-gray-100 px-3 py-2 text-xs duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
             placeholder="Input"
             rows="7"
           ></textarea>
         </div>
 
         <div class="flex hidden flex-col gap-2">
-          <label class="text-xs font-medium text-gray-600 2xl:text-sm"></label>
-          <div id="input-radio" class="grid h-36 gap-4 2xl:gap-6">
+          <label class="text-xs font-medium text-gray-600"></label>
+          <div id="input-radio" class="grid h-36 gap-4">
             <div
-              class="hidden cursor-pointer content-center space-y-2 rounded-md border-2 border-gray-300 bg-gray-100 text-center duration-300 hover:border-amber-500"
+              class="hidden cursor-pointer content-center space-y-2 rounded-md border-2 border-gray-300 bg-gray-100 text-center duration-300  hover:bg-amber-100/50 hover:border-amber-500"
             >
               <p class="text-4xl"></p>
               <p class="font-medium"></p>
-              <p class="text-sm text-gray-500"></p>
+              <p class="text-xs text-gray-500"></p>
             </div>
           </div>
         </div>
 
-        <div class="mt-2 flex gap-2 2xl:mt-4 2xl:gap-4">
+        <div class="mt-2 flex gap-2">
           <button
             type="button"
             id="modalSubBtn"
