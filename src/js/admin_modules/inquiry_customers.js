@@ -167,7 +167,7 @@ function mainBtnFunction(
         });
       },
       () => {
-        main.openConfirmationModal('Archive customer. Cannot be undone.' + customer.id, () => {
+        main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>• ID: ' + customer.id, () => {
           main.findAtSectionOne(SECTION_NAME, customer.id, 'equal_id', 1, (findResult) => {
             if (findResult) {
               const columnsData = [

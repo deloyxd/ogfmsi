@@ -49,7 +49,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
     });
     const transactionVoidBtn = result.querySelector('#transactionVoidBtn');
     transactionVoidBtn.addEventListener('click', () => {
-      main.openConfirmationModal('Void transaction. Cannot be undone. ' + result.dataset.id, () => {
+      main.openConfirmationModal('Void pending transaction. Cannot be undone.<br><br>• ID: ' + result.dataset.id, () => {
         main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
         main.toast('Transaction successfully voided!', 'error');
       });

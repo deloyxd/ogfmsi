@@ -46,7 +46,7 @@ export function logCheckin(transactionId, customer, tabIndex, showSection) {
 }
 
 function checkinArchiveBtnFunction(checkin, tabIndex) {
-  main.openConfirmationModal('Archive check-in log. Cannot be undone.' + checkin.dataset.id, () => {
+  main.openConfirmationModal('Archive check-in log. Cannot be undone.<br><br>• ID: ' + checkin.dataset.id, () => {
     main.findAtSectionOne(SECTION_NAME, checkin.dataset.id, 'equal_id', tabIndex, (findResult) => {
       if (findResult) {
         const columnsData = [
