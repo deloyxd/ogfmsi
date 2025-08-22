@@ -52,6 +52,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
       main.openConfirmationModal('Void pending transaction. Cannot be undone.<br><br>• ID: ' + result.dataset.id, () => {
         main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
         main.toast('Transaction successfully voided!', 'error');
+        main.closeConfirmationModal();
       });
     });
     completeCheckinPayment(
