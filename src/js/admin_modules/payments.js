@@ -168,7 +168,7 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
 
       const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
       transactionDetailsBtn.addEventListener('click', () =>
-        customers.customerDetailsBtnFunction(result.dataset.text, 'Transaction Details', '🔏')
+        customers.customerDetailsBtnFunction(customerId, 'Transaction Details', '🔏')
       );
 
       main.closeModal(() => {
