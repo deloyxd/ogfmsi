@@ -1,4 +1,5 @@
 import main from '../admin_main.js';
+import customers from './inquiry_customers.js';
 
 const SECTION_NAME = 'inquiry-checkins';
 const MODULE_NAME = 'Inquiry';
@@ -57,9 +58,14 @@ function checkinArchiveBtnFunction(checkin, tabIndex) {
           },
           'custom_datetime_today',
         ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 3, () => {
+        main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
           main.createRedDot(SECTION_NAME, 3);
           main.deleteAtSectionOne(SECTION_NAME, tabIndex, checkin.dataset.id);
+
+          const checkinDetailsBtn = createResult.querySelector(`#checkinDetailsBtn`);
+          checkinDetailsBtn.addEventListener('click', () =>
+            customers.customerDetailsBtnFunction(checkin.dataset.id, 'Archive Details', '🧾')
+          );
         });
       }
     });

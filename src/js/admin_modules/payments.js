@@ -49,11 +49,35 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
     });
     const transactionVoidBtn = result.querySelector('#transactionVoidBtn');
     transactionVoidBtn.addEventListener('click', () => {
-      main.openConfirmationModal('Void pending transaction. Cannot be undone.<br><br>• ID: ' + result.dataset.id, () => {
-        main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
-        main.toast('Transaction successfully voided!', 'error');
-        main.closeConfirmationModal();
-      });
+      main.openConfirmationModal(
+        'Void pending transaction. Cannot be undone.<br><br>• ID: ' + result.dataset.id,
+        () => {
+          main.findAtSectionOne(SECTION_NAME, result.dataset.id, 'equal_id', 1, (findResult) => {
+            if (findResult) {
+              const columnsData = [
+                'id_' + result.dataset.id,
+                {
+                  type: 'object',
+                  data: [result.dataset.image, result.dataset.text],
+                },
+                result.dataset.custom2,
+                'custom_datetime_today',
+              ];
+              main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+                main.createRedDot(SECTION_NAME, 2);
+                main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
+
+                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                transactionDetailsBtn.addEventListener('click', () =>
+                  customers.customerDetailsBtnFunction(result.dataset.text, 'Transaction Details', '🔏')
+                );
+              });
+            }
+          });
+          main.toast('Transaction successfully voided!', 'error');
+          main.closeConfirmationModal();
+        }
+      );
     });
     completeCheckinPayment(
       result.dataset.id,
@@ -136,11 +160,16 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
       'custom_datetime_today',
     ];
 
-    main.createAtSectionOne(SECTION_NAME, columnsData, 3, () => {
+    main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
       main.toast(`Transaction successfully completed!`, 'success');
       main.createRedDot(SECTION_NAME, 'main');
       main.createRedDot(SECTION_NAME, 3);
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
+
+      const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+      transactionDetailsBtn.addEventListener('click', () =>
+        customers.customerDetailsBtnFunction(result.dataset.text, 'Transaction Details', '🔏')
+      );
 
       main.closeModal(() => {
         customers.completeCheckinPayment(id, amountPaid, priceRate);

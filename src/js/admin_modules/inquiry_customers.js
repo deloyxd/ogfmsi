@@ -178,9 +178,14 @@ function mainBtnFunction(
                 },
                 'custom_datetime_today',
               ];
-              main.createAtSectionOne(SECTION_NAME, columnsData, 4, () => {
+              main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
                 main.createRedDot(SECTION_NAME, 4);
                 main.deleteAtSectionOne(SECTION_NAME, 1, customer.id);
+
+                const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
+                customerDetailsBtn.addEventListener('click', () =>
+                  customerDetailsBtnFunction(customer.id, 'Archive Details', '🧾')
+                );
               });
             }
           });
@@ -608,4 +613,51 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
   });
 }
 
-export default { completeCheckinPayment };
+export function customerDetailsBtnFunction(customerId, title, emoji) {
+  main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult1) => {
+    if (findResult1) {
+      continueCustomerDetailsBtnFunction(findResult1);
+    } else {
+      main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 4, (findResult2) => {
+        if (findResult2) {
+          continueCustomerDetailsBtnFunction(findResult2);
+        } else {
+          main.toast("There's no customer with that customer ID anymore!", 'error');
+        }
+      });
+    }
+  });
+
+  function continueCustomerDetailsBtnFunction(customer) {
+    const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
+    const inputs = {
+      header: {
+        title: `${title} ${getEmoji(emoji, 26)}`,
+        subtitle: `Customer ID: ${customerId}`,
+      },
+      image: {
+        src: customer.dataset.image,
+        type: 'normal',
+        locked: true,
+        short: [
+          { placeholder: 'First name', value: firstName, locked: true },
+          { placeholder: 'Last name', value: lastName, locked: true },
+          { placeholder: 'Email / contact number', value: customer.dataset.contact, locked: true },
+        ],
+      },
+      short: [
+        { placeholder: 'Actor ID', value: 'U288343611137', locked: true },
+        { placeholder: 'Actor name', value: 'Jestley', locked: true },
+        { placeholder: 'Actor role', value: 'Admin', locked: true },
+      ],
+      footer: {
+        main: `Exit View`,
+      },
+    };
+    main.openModal('gray', inputs, (result) => {
+      main.closeModal();
+    });
+  }
+}
+
+export default { completeCheckinPayment, customerDetailsBtnFunction };
