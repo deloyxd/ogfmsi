@@ -310,7 +310,7 @@ async function loadSectionSilently(sectionName) {
 
               const th = document.createElement('th');
               th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
-              th.innerHTML = '<p class="text-center">Controls</p>';
+              th.innerHTML = '<p class="text-center">Actions</p>';
               headerRow.appendChild(th);
 
               thead.appendChild(headerRow);
@@ -679,13 +679,13 @@ export function openConfirmationModal(action, callback) {
   setupModalTheme('red', tempModalConfirmationContainer);
 
   const data = {
-    title: `Are you sure? ${getEmoji('💀', 26)}`,
+    title: `Are you sure? ${getEmoji('⚠️', 26)}`,
     subtitle:
       'Please double check or review any details you may have provided<br>before proceeding with the action stated below:<br><br><b>' +
       action.trim() +
       '</b>',
     button: {
-      main: `Confirm ${getEmoji('💀')}`,
+      main: `Confirm ${getEmoji('⚠️')}`,
       sub: 'Cancel',
     },
   };
@@ -1146,6 +1146,26 @@ function setupModalBase(defaultData, inputs, callback) {
       } else if (calendarInput) {
         calendarInput.remove();
       }
+
+      if (data.autoformat) {
+        input.addEventListener('blur', () => {
+          // if (data.autoformat.includes('date')) {
+          //   input.value = encodeDate(new Date(input.value), '2-digit');
+          // }
+          if (data.autoformat.includes('price')) {
+            input.value = encodePrice(input.value);
+          }
+        });
+
+        input.addEventListener('focus', () => {
+          // if (data.autoformat.includes('date')) {
+          //   input.value = encodeDate(new Date(input.value), '2-digit');
+          // }
+          if (data.autoformat.includes('price')) {
+            input.value = decodePrice(input.value);
+          }
+        });
+      }
     }
 
     if (data.live) {
@@ -1581,7 +1601,7 @@ export function deleteAllAtSectionTwo(sectionName) {
   items.forEach((item) => item.remove());
 }
 
-export function createRedDot(sectionName, type) {
+export function createNotifDot(sectionName, type) {
   if (typeof type === 'string' && !type.includes('section')) {
     document
       .querySelector(`.sidebar-${type}-btn[data-section="${sectionName}"]`)
@@ -1682,6 +1702,10 @@ export function decodePrice(price) {
   return price.replace(/[^\d.-]/g, '');
 }
 
+export function formatPrice(price) {
+  return `<p class="text-right">${encodePrice(price)}</p>`;
+}
+
 export function getStockStatus(quantity) {
   if (typeof quantity != 'number') quantity = +quantity;
   if (quantity === 0) return `<div class="emoji text-gray-800 font-bold">Out of Stock ${getEmoji('⚠️')}</div>`;
@@ -1751,7 +1775,7 @@ export default {
   deleteAtSectionOne,
   deleteAtSectionTwo,
   deleteAllAtSectionTwo,
-  createRedDot,
+  createNotifDot,
   removeRedDot,
 
   // inquiry-customer
@@ -1767,6 +1791,7 @@ export default {
   // ecommerce-stock
   encodePrice,
   decodePrice,
+  formatPrice,
   getStockStatus,
   validateStockInputs,
   encodeText,

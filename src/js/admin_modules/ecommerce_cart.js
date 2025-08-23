@@ -137,7 +137,7 @@ function displayProductsForTab(products, tabIndex) {
     const quantityDisplay = productCard.querySelector('.quantity-display');
     const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
 
-    let quantity = 0;
+    let quantity = 1;
 
     if (product.quantity > 0) {
       increaseBtn.addEventListener('click', () => {

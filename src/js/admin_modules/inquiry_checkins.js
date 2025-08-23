@@ -20,7 +20,7 @@ export function logCheckin(transactionId, customer, tabIndex, showSection) {
   if (showSection) {
     main.showSection(SECTION_NAME);
   } else {
-    main.createRedDot(SECTION_NAME, 'sub');
+    main.createNotifDot(SECTION_NAME, 'sub');
   }
 
   const columnsData = [
@@ -41,7 +41,7 @@ export function logCheckin(transactionId, customer, tabIndex, showSection) {
     main.toast(`${firstName}, successfully checked-in!`, 'success');
 
     if (tabIndex == 2) {
-      main.createRedDot(SECTION_NAME, tabIndex);
+      main.createNotifDot(SECTION_NAME, tabIndex);
     }
   });
 }
@@ -59,7 +59,7 @@ function checkinArchiveBtnFunction(checkin, tabIndex) {
           'custom_datetime_today',
         ];
         main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
-          main.createRedDot(SECTION_NAME, 3);
+          main.createNotifDot(SECTION_NAME, 3);
           main.deleteAtSectionOne(SECTION_NAME, tabIndex, checkin.dataset.id);
 
           const checkinDetailsBtn = createResult.querySelector(`#checkinDetailsBtn`);

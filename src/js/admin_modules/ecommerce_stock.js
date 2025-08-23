@@ -135,7 +135,7 @@ async function registerProduct(result, name, price, quantity, measurement) {
 
     if (response.ok) {
       logAction(
-        'Register product',
+        'Add product',
         {
           id: data.result.product_id,
           image: result.image.src,
@@ -150,8 +150,8 @@ async function registerProduct(result, name, price, quantity, measurement) {
         'product_create'
       );
 
-      main.createRedDot(SECTION_NAME, 1);
-      main.toast(`${name}, successfully registered!`, 'success');
+      main.createNotifDot(SECTION_NAME, 1);
+      main.toast(`${name}, successfully added!`, 'success');
       main.closeModal();
       
       // Reload products and stats
@@ -506,8 +506,8 @@ async function deleteProduct(result) {
 
 const createModalInputs = (isUpdate = false, productData = {}) => ({
   header: {
-    title: `${isUpdate ? 'Update' : 'Register'} Product ${getEmoji('🧊', 26)}`,
-    subtitle: 'Unique product form',
+    title: `${isUpdate ? 'Update' : 'Add'} Product ${getEmoji('🧊', 26)}`,
+    subtitle: 'Add product form',
   },
   image: {
     src: productData.image || '/src/images/client_logo.jpg',

@@ -323,7 +323,7 @@ async function registerNewProduct(image, name, quantity, category) {
         };
         accesscontrol.log(action, data);
 
-        main.createRedDot('maintenance-equipment', 1);
+        main.createNotifDot('maintenance-equipment', 1);
         main.toast(`${name}, successfully registered!`, 'success');
         main.closeModal();
       });

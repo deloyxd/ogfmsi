@@ -19,9 +19,9 @@ function mainBtnFunction() {}
 
 function subBtnFunction() {}
 
-export function processCheckinPayment(customerId, image, fullName, isMonthlyPass, amountToPay, priceRate, callback) {
+export function processCheckinPayment(customerId, image, fullName, isMonthlyType, amountToPay, priceRate, callback) {
   main.showSection(SECTION_NAME);
-  const purpose = `${isMonthlyPass ? 'Monthly ' : 'Daily '} pass ${isMonthlyPass ? 'registration fee' : 'check-in (Regular walk-in)'}`;
+  const purpose = `${isMonthlyType ? 'Monthly ' : 'Daily '} ${isMonthlyType ? 'registration fee' : 'check-in (Walk-in)'}`;
   const columnsData = [
     'id_T_random',
     {
@@ -29,7 +29,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
       data: [image, customerId],
     },
     purpose,
-    main.encodePrice(amountToPay),
+    main.formatPrice(amountToPay),
     main.fixText(priceRate),
     'custom_datetime_today',
   ];
@@ -47,8 +47,8 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
         priceRate
       );
     });
-    const transactionVoidBtn = result.querySelector('#transactionVoidBtn');
-    transactionVoidBtn.addEventListener('click', () => {
+    const transactionCancelBtn = result.querySelector('#transactionCancelBtn');
+    transactionCancelBtn.addEventListener('click', () => {
       main.openConfirmationModal(
         'Void pending transaction. Cannot be undone.<br><br>• ID: ' + result.dataset.id,
         () => {
@@ -64,7 +64,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyPass
                 'custom_datetime_today',
               ];
               main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-                main.createRedDot(SECTION_NAME, 2);
+                main.createNotifDot(SECTION_NAME, 2);
                 main.deleteAtSectionOne(SECTION_NAME, 1, result.dataset.id);
 
                 const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
@@ -100,7 +100,7 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
     short: [
       { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
-      { placeholder: 'Payment amount', value: amountToPay, required: true },
+      { placeholder: 'Payment amount', value: amountToPay, required: true, autoformat: 'price' },
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1-2:subtract' },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
       { placeholder: 'Reference number', value: 'N/A', required: true },
@@ -152,9 +152,9 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
         data: [image, customerId],
       },
       purpose,
-      main.encodePrice(amountToPay),
-      main.encodePrice(amountPaid),
-      change,
+      main.formatPrice(amountToPay),
+      main.formatPrice(amountPaid),
+      main.formatPrice(main.decodePrice(change)),
       main.fixText(priceRate),
       main.fixText(main.getSelectedRadio(result.radio)),
       'custom_datetime_today',
@@ -162,8 +162,8 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
 
     main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
       main.toast(`Transaction successfully completed!`, 'success');
-      main.createRedDot(SECTION_NAME, 'main');
-      main.createRedDot(SECTION_NAME, 3);
+      main.createNotifDot(SECTION_NAME, 'main');
+      main.createNotifDot(SECTION_NAME, 3);
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
 
       const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
@@ -194,8 +194,8 @@ export function voidCheckinPayment(transactionId) {
       main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {
         main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
         main.toast(`${transactionId}, successfully voided pending transaction!`, 'error');
-        main.createRedDot(SECTION_NAME, 'main');
-        main.createRedDot(SECTION_NAME, 2);
+        main.createNotifDot(SECTION_NAME, 'main');
+        main.createNotifDot(SECTION_NAME, 2);
       });
     }
   });

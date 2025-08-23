@@ -37,8 +37,8 @@ async function loadDynamicSidebar() {
         ${nestedSections.length > 1 ? `</div><i class="fas fa-chevron-down duration-300 text-xs" id="${mainSectionName}-arrow"></i>` : ``}
         <div class="absolute right-2 top-2 hidden">
             <div class="relative h-2 w-2">
-                <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                <div class="full absolute scale-105 animate-ping rounded-full bg-green-500 opacity-75"></div>
+                <div class="absolute h-2 w-2 rounded-full bg-green-500"></div>
             </div>
         </div>
       `;
@@ -75,8 +75,8 @@ async function loadDynamicSidebar() {
             <p class="absolute ml-6">${nestedSectionTexts != '' ? nestedSectionTexts[i] : nestedSections[i].charAt(0).toUpperCase() + nestedSections[i].slice(1)}</p>
             <div class="absolute right-2 top-2 hidden">
                 <div class="relative h-2 w-2">
-                    <div class="full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-                    <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+                    <div class="full absolute scale-105 animate-ping rounded-full bg-green-500 opacity-75"></div>
+                    <div class="absolute h-2 w-2 rounded-full bg-green-500"></div>
                 </div>
             </div>
             `;

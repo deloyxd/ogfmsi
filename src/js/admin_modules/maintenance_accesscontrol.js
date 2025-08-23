@@ -31,8 +31,8 @@ export function log(action, data) {
     const actionDetailsBtn = btns.querySelector('#actionDetailsBtn');
     actionDetailsBtn.addEventListener('click', () => main.openModal('gray', getInputs(data), main.closeModal));
 
-    main.createRedDot(SECTION_NAME, 'sub');
-    main.createRedDot(SECTION_NAME, 4);
+    main.createNotifDot(SECTION_NAME, 'sub');
+    main.createNotifDot(SECTION_NAME, 4);
   });
 }
 

@@ -141,7 +141,7 @@ function sectionTwoMainBtnFunction() {
           accesscontrol.log(actionData, reservationData);
           payments.processReservationPayment(reservationData);
 
-          main.createRedDot(SECTION_NAME, 2);
+          main.createNotifDot(SECTION_NAME, 2);
 
           main.toast('Successfully reserved facility!', 'success');
           main.closeConfirmationModal();
