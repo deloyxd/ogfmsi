@@ -304,7 +304,7 @@ async function loadSectionSilently(sectionName) {
                 const sorter = document.createElement('div');
                 sorter.dataset.sortby = sortBys ? sortBys[index] : '';
                 sorter.className =
-                  'sorter absolute right-2 top-0 h-full flex flex-col cursor-pointer justify-center -space-y-1';
+                  'sorter absolute right-2 top-0 h-full flex flex-col cursor-pointer justify-center -space-y-1 hidden group-hover:flex';
                 sorter.innerHTML =
                   '<i class="sorter-asc fas fa-caret-up"></i><i class="sorter-des fas fa-caret-down"></i>';
                 th.appendChild(sorter);
