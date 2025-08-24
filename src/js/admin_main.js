@@ -88,6 +88,7 @@ async function loadSectionSilently(sectionName) {
         'sectiononesearchtext',
         'listemptytexts',
         'listtitletexts',
+        'listdatasortby',
         'listitembtnids',
         'listitembtntexts',
         'listitembtncolors',
@@ -294,11 +295,19 @@ async function loadSectionSilently(sectionName) {
               const thead = document.createElement('thead');
               const headerRow = document.createElement('tr');
               const titleTexts = dataset['listtitletexts'][i].slice(1, -1).split('//');
+              const sortBys = dataset['listdatasortby'][i]?.slice(1, -1).split('//');
               clone.dataset.columncount = titleTexts.length;
               titleTexts.forEach((titleText, index) => {
                 const th = document.createElement('th');
                 th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-center';
                 th.innerHTML = titleText;
+                const sorter = document.createElement('div');
+                sorter.dataset.sortby = sortBys ? sortBys[index] : '';
+                sorter.className =
+                  'sorter absolute right-2 top-0 h-full flex flex-col cursor-pointer justify-center -space-y-1';
+                sorter.innerHTML =
+                  '<i class="sorter-asc fas fa-caret-up"></i><i class="sorter-des fas fa-caret-down"></i>';
+                th.appendChild(sorter);
                 if (index < titleTexts.length - 1) {
                   const resizer = document.createElement('div');
                   resizer.className =
@@ -520,6 +529,90 @@ async function loadSectionSilently(sectionName) {
             console.warn(`Could not load custom content for ${sectionName}:`, error);
           }
         }
+
+        const sorters = document.querySelectorAll('.sorter');
+        sorters.forEach((sorter) => {
+          sorter.addEventListener('click', (e) => {
+            e.stopImmediatePropagation();
+            sorters.forEach((resetSorter) => {
+              if (resetSorter !== sorter) {
+                const resetAscending = resetSorter.querySelector('.sorter-asc');
+                const resetDescending = resetSorter.querySelector('.sorter-des');
+                resetAscending.classList.remove('opacity-0');
+                resetDescending.classList.remove('opacity-0');
+              }
+            });
+            const ascending = sorter.querySelector('.sorter-asc');
+            const descending = sorter.querySelector('.sorter-des');
+            const isAscending = !ascending.classList.contains('opacity-0');
+            const isDescending = !descending.classList.contains('opacity-0');
+            const isBoth = isAscending && isDescending;
+            if (isBoth) {
+              descending.classList.add('opacity-0');
+              sortBy('ascending', sorter.dataset.sortby);
+            } else if (isAscending) {
+              ascending.classList.add('opacity-0');
+              descending.classList.remove('opacity-0');
+              sortBy('descending', sorter.dataset.sortby);
+            } else if (isDescending) {
+              ascending.classList.remove('opacity-0');
+              descending.classList.add('opacity-0');
+              sortBy('ascending', sorter.dataset.sortby);
+            }
+          });
+
+          function sortBy(order, type) {
+          const table = sorter.closest('table');
+          const tbody = table.querySelector('tbody');
+            const columnIndex = Array.from(sorter.closest('tr').children).indexOf(sorter.parentElement);
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.shift();
+
+            rows.sort((rowA, rowB) => {
+              const cellA = rowA.children[columnIndex];
+              const cellB = rowB.children[columnIndex];
+
+              let valueA, valueB;
+
+              if (type === 'name') {
+                valueA = cellA.innerText.trim().toLowerCase();
+                valueB = cellB.innerText.trim().toLowerCase();
+
+                const comparison = valueA.localeCompare(valueB, undefined, {
+                  numeric: true,
+                  sensitivity: 'base',
+                });
+
+                return order === 'ascending' ? comparison : -comparison;
+              } else if (type === 'date') {
+                valueA = new Date(cellA.innerText.trim());
+                valueB = new Date(cellB.innerText.trim());
+
+                if (isNaN(valueA.getTime()) && isNaN(valueB.getTime())) return 0;
+                if (isNaN(valueA.getTime())) return 1;
+                if (isNaN(valueB.getTime())) return -1;
+
+                const comparison = valueA.getTime() - valueB.getTime();
+                return order === 'ascending' ? comparison : -comparison;
+              } else if (type === 'number') {
+                valueA = parseFloat(cellA.innerText.replace(/[^\d.-]/g, '')) || 0;
+                valueB = parseFloat(cellB.innerText.replace(/[^\d.-]/g, '')) || 0;
+
+                const comparison = valueA - valueB;
+                return order === 'ascending' ? comparison : -comparison;
+              } else {
+                valueA = cellA.innerText.trim().toLowerCase();
+                valueB = cellB.innerText.trim().toLowerCase();
+
+                const comparison = valueA.localeCompare(valueB);
+                return order === 'ascending' ? comparison : -comparison;
+              }
+            });
+
+            rows.forEach((row) => row.remove());
+            rows.forEach((row) => tbody.appendChild(row));
+          }
+        });
 
         const resizers = document.querySelectorAll('.resizer');
         let isResizing = false;
