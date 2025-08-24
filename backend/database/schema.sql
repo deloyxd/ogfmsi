@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS ecommerce_orders_tbl (
     session_id VARCHAR(100) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     payment_method ENUM('cash', 'cashless') DEFAULT 'cash',
-    customer_payment DEC    IMAL(10,2),
+    customer_payment DECIMAL(10,2),
     change_amount DECIMAL(10,2),
     status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
     processed_by VARCHAR(100),
