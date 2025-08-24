@@ -1629,6 +1629,10 @@ export function updateAtSectionOne(sectionName, columnsData, tabIndex, findValue
   }
 
   findAtSectionOne(sectionName, findValue, 'equal_id', tabIndex, (result) => {
+    if (!result) {
+      // Row not found: could show a toast or ignore silently
+      return;
+    }
     for (let i = 0; i < columnsData.length; i++) {
       fillUpCell(result, i, result.children[i], columnsData[i], sectionName, tabIndex);
     }

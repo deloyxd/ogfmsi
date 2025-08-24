@@ -29,8 +29,8 @@ async function loadExistingEquipment() {
     if (response.ok && result.result) {
       result.result.forEach((equipment) => {
         const columnsData = [
-          equipment.equipment_id,
-          equipment.equipment_name,
+          equipment.equipment_id.split('_').slice(0,2).join('_'),
+          `<img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;vertical-align:middle;margin-right:8px;border-radius:4px;">${equipment.equipment_name}`,
           equipment.quantity + '',
           equipment.equipment_type,
           `<p class="text-green-600 font-bold emoji">${equipment.condition_status.charAt(0).toUpperCase() + equipment.condition_status.slice(1)} Condition ${getEmoji('✅')}</p>`,
@@ -141,35 +141,20 @@ async function updateEquipmentDetails(frontendResult, equipment, result) {
 
   if (success) {
     const columnsData = [
-      equipment.equipment_id,
-      result.short[0].value,
+      equipment.equipment_id.split('_').slice(0,2).join('_'),
+      `<img src="${updateData.image_url || '/src/images/client_logo.jpg'}" alt="${result.short[0].value}" style="width:32px;height:32px;object-fit:cover;vertical-align:middle;margin-right:8px;border-radius:4px;">${result.short[0].value}`,
       result.short[1].value,
       updateData.equipment_type,
       `<p class="text-green-600 font-bold">${equipment.condition_status.charAt(0).toUpperCase() + equipment.condition_status.slice(1)} Condition ${getEmoji('✅')}</p>`,
       `custom_date_${frontendResult.dataset.date}`,
     ];
 
-    // Update UI and log action
-    main.updateAtSectionOne('maintenance-equipment', columnsData, 1, equipment.equipment_id, (updatedResult) => {
-      const action = {
-        module: 'Maintenance',
-        submodule: 'Equipment',
-        description: 'Update equipment',
-      };
-      const data = {
-        id: equipment.equipment_id,
-        image: result.image.src,
-        name: result.short[0].value,
-        quantity: result.short[1].value,
-        category: updateData.equipment_type,
-        condition: equipment.condition_status,
-        date: updatedResult.dataset.date,
-        type: 'equipment',
-      };
-      accesscontrol.log(action, data);
-
-      main.closeModal();
-    });
+    // UI refresh: reload the latest data directly from backend
+    main.closeModal();
+    refreshAllTabs();
+    // Optionally, you could still log the update if needed
+    // const action = { ... } ...
+    // accesscontrol.log(action, data);
   }
 }
 
@@ -283,8 +268,8 @@ async function registerNewProduct(image, name, quantity, category) {
 
     if (response.ok) {
       const columnsData = [
-        result.result.equipment_id,
-        name,
+        result.result.equipment_id.split('_').slice(0,2).join('_'),
+        `<img src="${image || '/src/images/client_logo.jpg'}" alt="${name}" style="width:32px;height:32px;object-fit:cover;vertical-align:middle;margin-right:8px;border-radius:4px;">${name}`,
         quantity + '',
         category,
         `<p class="text-green-600 font-bold">Good Condition ${getEmoji('✅')}</p>`,
