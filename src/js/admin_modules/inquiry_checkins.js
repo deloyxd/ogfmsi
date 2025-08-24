@@ -5,14 +5,18 @@ const SECTION_NAME = 'inquiry-checkins';
 const MODULE_NAME = 'Inquiry';
 const SUBMODULE_NAME = 'Check-Ins';
 
-let subBtn;
+let activated = false,
+  subBtn;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
-  subBtn = document.querySelector(`.section-sub-btn[data-section="${SECTION_NAME}"]`);
-  subBtn?.classList.remove('hidden');
-  subBtn?.addEventListener('click', () => {});
+  if (!activated) {
+    activated = true;
+    subBtn = document.querySelector(`.section-sub-btn[data-section="${SECTION_NAME}"]`);
+    subBtn?.classList.remove('hidden');
+    subBtn?.addEventListener('click', () => {});
+  }
 });
 
 export function logCheckin(transactionId, customer, tabIndex, showSection) {

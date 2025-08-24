@@ -4,6 +4,8 @@ import payments from './payments.js';
 
 const SECTION_NAME = 'inquiry-customers';
 
+const PENDING_TRANSACTION_MESSAGE = 'Please complete pending transaction first at Payments module:';
+
 const PRICE_RATE = [
   {
     value: 'regular',
@@ -113,6 +115,11 @@ function mainBtnFunction(
           return;
         }
 
+        if (!isCreating && customer.tid != '') {
+          main.toast(`${PENDING_TRANSACTION_MESSAGE} ${customer.tid}`, 'error');
+          return;
+        }
+
         const image = result.image.src;
         const [firstName, lastName, contact] = result.image.short.map((item) => item.value);
         const name = main.encodeName(firstName, lastName);
@@ -143,6 +150,7 @@ function mainBtnFunction(
               customerType,
               priceRate,
               date: customer.date,
+              tid: customer.tid,
             };
             mainBtnFunction(customer);
           }
@@ -170,6 +178,7 @@ function mainBtnFunction(
         main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>• ID: ' + customer.id, () => {
           main.findAtSectionOne(SECTION_NAME, customer.id, 'equal_id', 1, (findResult) => {
             if (findResult) {
+              if (findResult.dataset.tid) payments.cancelCheckinPayment(findResult.dataset.tid);
               const columnsData = [
                 'id_' + customer.id,
                 {
@@ -382,7 +391,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
         callback(findResult);
         processCheckinPayment(findResult, true, amount, priceRate);
       } else {
-        payments.voidCheckinPayment(findResult.dataset.tid);
+        if (findResult.dataset.tid) payments.cancelCheckinPayment(findResult.dataset.tid);
         main.closeModal();
       }
     }
@@ -416,6 +425,19 @@ function updateCustomer(newData, oldData, tabIndex) {
   }
 }
 
+function autoChangeButtonText(title, button, text) {
+  switch (title.toLowerCase()) {
+    case 'check-in':
+      button.innerHTML = text;
+      break;
+    case 'renew':
+    case 'monthly':
+    case 'reserve':
+      button.innerHTML = `Initiate Process ${getEmoji('📒')}`;
+      break;
+  }
+}
+
 function customerProcessBtnFunction(customer, { firstName, lastName, fullName }) {
   const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
   const inputs = {
@@ -424,25 +446,30 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
     },
     short: [{ placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true }],
     radio: [
-      { label: 'Process options', selected: 1 },
+      { label: 'Process options', selected: 1, autoformat: { type: 'footer:sub', text: `Time-in ${getEmoji('📘')}` } },
       {
         icon: `${getEmoji('📘', 26)}`,
         title: 'Check-in',
         subtitle: 'Check-in this customer for today',
+        listener: (title, button, text) => {
+          if (isMonthlyCustomer) autoChangeButtonText(title, button, text);
+        },
       },
       {
         icon: `${getEmoji('🎫', 26)}`,
         title: `${isMonthlyCustomer ? 'Renew' : 'Monthly'}`,
         subtitle: `${isMonthlyCustomer ? 'Monthly renewal' : 'Register this customer to monthly'}`,
+        listener: autoChangeButtonText,
       },
       {
         icon: `${getEmoji('🛕', 26)}`,
         title: 'Reserve',
         subtitle: 'Reserve facility with this customer',
+        listener: autoChangeButtonText,
       },
     ],
     footer: {
-      main: `Initiate Process ${getEmoji('📒')}`,
+      main: isMonthlyCustomer ? `Time-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('📒')}`,
     },
   };
 
@@ -459,18 +486,35 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
           : isMonthlyCustomer
             ? 0
             : PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase()}`];
+      const selectedProcess = main.getSelectedRadio(result.radio).toLowerCase();
       if ((isMonthlyCustomer && isPending) || (!isMonthlyCustomer && customer.dataset.tid)) {
-        main.findAtSectionOne('payments', customer.dataset.tid, 'equal_id', 1, (findResult) => {
-          if (findResult) {
-            main.toast(
-              `Please complete pending transaction first at Payments module: ${customer.dataset.tid}`,
-              'error'
-            );
+        payments.pendingTransaction(customer.dataset.tid, (pendingResult) => {
+          if (pendingResult) {
+            const purpose = pendingResult.dataset.custom2.toLowerCase();
+            if (!isMonthlyCustomer && purpose.includes('daily') && selectedProcess.includes('check-in')) {
+              successPending();
+            } else if (
+              purpose.includes('monthly') &&
+              (selectedProcess.includes('monthly') || selectedProcess.includes('renew'))
+            ) {
+              successPending();
+            } else {
+              failedPending();
+            }
+
+            function successPending() {
+              main.closeModal(() => {
+                payments.continueProcessCheckinPayment(customer.dataset.tid, fullName, amount, priceRate);
+              });
+            }
+
+            function failedPending() {
+              main.toast(`${PENDING_TRANSACTION_MESSAGE} ${customer.dataset.tid}`, 'error');
+            }
           }
         });
       } else {
-        const selectedProcess = main.getSelectedRadio(result.radio);
-        if (selectedProcess.toLowerCase().includes('check-in')) {
+        if (selectedProcess.includes('check-in')) {
           checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
             if (findLogResult) {
               const logDate = findLogResult.dataset.datetime.split(' - ')[0];
@@ -505,7 +549,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
           return;
         }
-        if (selectedProcess.toLowerCase().includes('monthly') || selectedProcess.toLowerCase().includes('renew')) {
+        if (selectedProcess.includes('monthly') || selectedProcess.includes('renew')) {
           const columnsData = [
             'id_' + customer.dataset.id,
             {
@@ -519,7 +563,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
           validateCustomer(
             columnsData,
             continueCustomerProcessBtnFunction,
-            selectedProcess.toLowerCase().includes('renew')
+            selectedProcess.includes('renew')
               ? {
                   startDate: customer.dataset.startdate,
                   endDate: customer.dataset.enddate,
@@ -547,11 +591,12 @@ function customerEditDetailsBtnFunction(customer, { firstName, lastName, fullNam
     customerType: customer.dataset.custom2.split(' - ')[0],
     priceRate: customer.dataset.custom3,
     date: customer.dataset.date,
+    tid: customer.dataset.tid,
   };
   mainBtnFunction(customerData);
 }
 
-function processCheckinPayment(customer, isMonthlyCustomerPending, amount, priceRate) {
+function processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate) {
   const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
   main.toast(`${firstName}, is now ready for check-in payment!`, 'success');
   main.closeModal(() => {
@@ -559,7 +604,7 @@ function processCheckinPayment(customer, isMonthlyCustomerPending, amount, price
       customer.dataset.id,
       customer.dataset.image,
       fullName,
-      isMonthlyCustomerPending,
+      isMonthlyCustomer,
       amount,
       main.getSelectedOption(priceRate, PRICE_RATE),
       (transactionId) => {
@@ -590,7 +635,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           findResult1.dataset.days + ' day' + (+findResult1.dataset.days > 1 ? 's' : ''),
           main.formatPrice(amountPaid),
           main.fixText(priceRate),
-          'custom_datetime_today'
+          'custom_datetime_today',
         ];
 
         main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
@@ -607,7 +652,6 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
         });
 
         main.showSection(SECTION_NAME);
-        // checkins.logCheckin(transactionId, findResult1, 2, false);
       } else {
         findResult1.dataset.tid = '';
         checkins.logCheckin(transactionId, findResult1, 1, true);

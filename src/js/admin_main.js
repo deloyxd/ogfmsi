@@ -263,7 +263,7 @@ async function loadSectionSilently(sectionName) {
                 const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
                 if (emptyText) {
                   const items = Array.from(emptyText.parentElement.parentElement.children);
-                  if (searchTerm == '') {
+                  if (searchTerm === '') {
                     items.forEach((item, i) => {
                       if (i > 0) {
                         item.classList.remove('hidden');
@@ -297,7 +297,7 @@ async function loadSectionSilently(sectionName) {
               clone.dataset.columncount = titleTexts.length;
               titleTexts.forEach((titleText, index) => {
                 const th = document.createElement('th');
-                th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
+                th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-center';
                 th.innerHTML = titleText;
                 if (index < titleTexts.length - 1) {
                   const resizer = document.createElement('div');
@@ -309,8 +309,8 @@ async function loadSectionSilently(sectionName) {
               });
 
               const th = document.createElement('th');
-              th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-left';
-              th.innerHTML = '<p class="text-center">Actions</p>';
+              th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-center';
+              th.innerHTML = 'Actions';
               headerRow.appendChild(th);
 
               thead.appendChild(headerRow);
@@ -412,7 +412,7 @@ async function loadSectionSilently(sectionName) {
                 const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
                 if (emptyText) {
                   const items = Array.from(emptyText.parentElement.children);
-                  if (searchTerm == '') {
+                  if (searchTerm === '') {
                     items.forEach((item, i) => {
                       if (i > 1) {
                         item.classList.remove('hidden');
@@ -934,6 +934,9 @@ function setupModalBase(defaultData, inputs, callback) {
     const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement;
     const radioContainer = originalContainer.cloneNode(true);
     const label = radioContainer.children[0];
+    const autoformatType = inputs.radio[0].autoformat?.type || '';
+    const autoformatIndex = inputs.radio[0].autoformat?.index || 0;
+    const autoformatText = inputs.radio[0].autoformat?.text || '';
     label.innerHTML = inputs.radio[0].label;
 
     const container = radioContainer.children[1];
@@ -964,7 +967,6 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
       clone.addEventListener('click', function () {
-        inputs.radio[0].selected = index;
         radioClones.forEach((radioClone) => {
           if (radioClone == clone) {
             radioClone.classList.add(radioClone.dataset.color);
@@ -974,6 +976,25 @@ function setupModalBase(defaultData, inputs, callback) {
             radioClone.classList.remove(radioClone.dataset.color.replace('border', 'bg') + '/50');
           }
         });
+
+        inputs.radio[0].selected = index;
+
+        if (autoformatType != '') {
+          if (autoformatType.includes('footer')) {
+            if (autoformatText != '') {
+              input.listener(input.title, tempModalContainer.querySelector(`#modalMainBtn`), autoformatText);
+            }
+          } else {
+            if (autoformatIndex > 0) {
+              input.listener(
+                input.title,
+                tempModalContainer.querySelector(`#input-${autoformatType}-${autoformatIndex}`),
+                tempModalContainer,
+                inputs
+              );
+            }
+          }
+        }
       });
     });
 
@@ -1010,7 +1031,7 @@ function setupModalBase(defaultData, inputs, callback) {
       input.classList.add('bg-gray-200', 'text-gray-500');
     }
 
-    label.for = id;
+    label.setAttribute('for', id);
     label.innerHTML = data.placeholder + (data.required ? ' *' : '');
 
     input.id = id;
@@ -1148,53 +1169,85 @@ function setupModalBase(defaultData, inputs, callback) {
       }
 
       if (data.autoformat) {
+        input.value = encodePrice(input.value);
+
+        input.addEventListener('input', () => {
+          if (data.autoformat.includes('price')) {
+            data.value = decodePrice(input.value);
+          }
+        });
+
         input.addEventListener('blur', () => {
-          // if (data.autoformat.includes('date')) {
-          //   input.value = encodeDate(new Date(input.value), '2-digit');
-          // }
           if (data.autoformat.includes('price')) {
             input.value = encodePrice(input.value);
+            data.value = decodePrice(input.value);
           }
         });
 
         input.addEventListener('focus', () => {
-          // if (data.autoformat.includes('date')) {
-          //   input.value = encodeDate(new Date(input.value), '2-digit');
-          // }
           if (data.autoformat.includes('price')) {
             input.value = decodePrice(input.value);
+            data.value = input.value;
           }
         });
       }
     }
 
     if (data.live) {
-      const indexAndFunctionSplit = data.live.split(':');
-      const indices = indexAndFunctionSplit[0].split('-');
-      const dataFunction = indexAndFunctionSplit[1];
+      let [indices, dataFunction] = data.live.split(':');
+      indices = indices.split('|');
 
       const firstIndexInput = originalContainer.parentElement.querySelector(`#input-${type}-${index + 1 - indices[0]}`);
-      const secondIndexInput = originalContainer.parentElement.querySelector(
-        `#input-${type}-${index + 1 - indices[1]}`
+      let [secondIndexInputOperator, secondIndexInput] = indices[1].split('');
+      secondIndexInput = originalContainer.parentElement.querySelector(
+        `#input-${type}-${index + 1 - secondIndexInput}`
       );
+      let [thirdIndexInputOperator, thirdIndexInput] = indices[2]?.split('');
+      thirdIndexInput = originalContainer.parentElement.querySelector(`#input-${type}-${index + 1 - thirdIndexInput}`);
 
       firstIndexInput.addEventListener('input', () => {
-        liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
+        liveUpdate(
+          input,
+          { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+          dataFunction
+        );
       });
       secondIndexInput.addEventListener('input', () => {
-        liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
+        liveUpdate(
+          input,
+          { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+          dataFunction
+        );
       });
       if (dataFunction.includes('range')) {
         input.addEventListener('input', () => {
-          liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction);
+          liveUpdate(
+            input,
+            { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+            dataFunction
+          );
         });
       }
 
-      function liveUpdate(input, firstIndexInput, secondIndexInput, dataFunction) {
+      function liveUpdate(
+        input,
+        { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+        dataFunction
+      ) {
         let dataFunctionOutput;
         switch (dataFunction) {
-          case 'subtract':
-            dataFunctionOutput = +decodePrice(firstIndexInput.value) - +decodePrice(secondIndexInput.value);
+          case 'arithmetic':
+            dataFunctionOutput = +decodePrice(firstIndexInput.value);
+            switch (secondIndexInputOperator) {
+              case '+':
+                dataFunctionOutput += +decodePrice(secondIndexInput.value);
+                break;
+            }
+            switch (thirdIndexInputOperator) {
+              case '-':
+                dataFunctionOutput -= +decodePrice(thirdIndexInput.value);
+                break;
+            }
             input.value = encodePrice(dataFunctionOutput);
             data.value = input.value;
             break;
@@ -1226,7 +1279,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
     input.dispatchEvent(new Event('input'));
 
-    clone.classList.remove('hidden');
+    if (!data.hidden) clone.classList.remove('hidden');
   }
 }
 
@@ -1277,7 +1330,7 @@ export function isNumeric(value) {
 export function checkIfEmpty(inputs) {
   let hasEmpty = false;
 
-  if (inputs == '') hasEmpty = true;
+  if (inputs === '') hasEmpty = true;
   if (inputs.image && inputs.image.short) inputs.image.short.forEach((item) => check(item));
   if (inputs.short) inputs.short.forEach((item) => check(item));
   if (inputs.large) inputs.large.forEach((item) => check(item));
@@ -1285,7 +1338,7 @@ export function checkIfEmpty(inputs) {
 
   function check(item) {
     if (item.required && !hasEmpty) {
-      if (item.value == '' || item.selected == 0) {
+      if (item.value === '' || item.selected == 0) {
         hasEmpty = true;
       }
     }
@@ -1306,7 +1359,7 @@ export function getAllSectionOne(sectionName, tabIndex, callback) {
 export function getAllSectionTwo(sectionName, callback) {}
 
 export function findAtSectionOne(sectionName, findValue, findType, tabIndex, callback) {
-  if (findValue.trim() == '') {
+  if (findValue.trim() === '') {
     callback(null);
     return;
   }
@@ -1694,12 +1747,11 @@ export function isPastDate(dateString) {
 }
 
 export function encodePrice(price) {
-  if (typeof price != 'number') price = +price;
-  return `₱${price.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `₱${Number(price).toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 export function decodePrice(price) {
-  return price.replace(/[^\d.-]/g, '');
+  return Number(String(price).replace(/[^\d.-]/g, '')).toString();
 }
 
 export function formatPrice(price) {

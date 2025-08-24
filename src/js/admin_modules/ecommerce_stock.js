@@ -102,11 +102,11 @@ function mainBtnFunction() {
 
     if (!main.validateStockInputs(price, quantity, measurement)) return;
 
-    registerProduct(result, name, +price, +quantity, measurement);
+    addProduct(result, name, +price, +quantity, measurement);
   });
 }
 
-async function registerProduct(result, name, price, quantity, measurement) {
+async function addProduct(result, name, price, quantity, measurement) {
   const category = main.getSelectedSpinner(result.spinner[0]);
   const measurementUnit = main.getSelectedSpinner(result.spinner[1]);
 
@@ -162,8 +162,8 @@ async function registerProduct(result, name, price, quantity, measurement) {
       main.toast(`Error: ${data.error}`, 'error');
     }
   } catch (error) {
-    console.error('Error registering product:', error);
-    main.toast('Error: Failed to register product', 'error');
+    console.error('Error adding product:', error);
+    main.toast('Error: Failed to add product', 'error');
   }
 }
 
