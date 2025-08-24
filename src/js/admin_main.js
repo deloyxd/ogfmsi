@@ -1549,6 +1549,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, callback 
   referenceCells.shift();
 
   const newRow = document.createElement('tr');
+  newRow.className = 'hover:bg-orange-500/10 duration-300';
 
   columnsData.forEach((columnData, index) => {
     const cell = index < referenceCells.length ? referenceCells[index].cloneNode(true) : document.createElement('td');
