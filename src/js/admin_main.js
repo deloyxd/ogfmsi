@@ -1189,6 +1189,12 @@ function setupModalBase(defaultData, inputs, callback) {
           }
         });
       }
+
+      if (data.listener) {
+        input.addEventListener('input', () => {
+          data.listener(input, tempModalContainer);
+        });
+      }
     }
 
     if (data.live) {

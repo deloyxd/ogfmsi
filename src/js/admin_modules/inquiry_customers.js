@@ -161,7 +161,7 @@ function mainBtnFunction(
             const { _, __, fullName } = main.decodeName(findResult.dataset.text);
 
             main.openConfirmationModal(
-              `Data duplication - Customer with same details:<br><br>• ID: ${findResult.dataset.id}<br>• Name: ${fullName}`,
+              `Data duplication - Customer with same details:<br><br>ID: ${findResult.dataset.id}<br>Name: ${fullName}`,
               () => {
                 main.closeConfirmationModal(() => {
                   validateCustomer(columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
@@ -175,7 +175,7 @@ function mainBtnFunction(
         });
       },
       () => {
-        main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>• ID: ' + customer.id, () => {
+        main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>ID: ' + customer.id, () => {
           main.findAtSectionOne(SECTION_NAME, customer.id, 'equal_id', 1, (findResult) => {
             if (findResult) {
               if (findResult.dataset.tid) payments.cancelCheckinPayment(findResult.dataset.tid);
@@ -263,6 +263,12 @@ function validateCustomer(
           },
           short: [
             {
+              placeholder: 'Total price:',
+              value: main.encodePrice(PRICES_AUTOFILL[`${priceRate}_monthly`]),
+              locked: true,
+            },
+            { placeholder: 'Price rate:', value: main.fixText(priceRate), locked: true },
+            {
               placeholder: 'Date range:',
               value: '',
               locked: true,
@@ -278,13 +284,8 @@ function validateCustomer(
               value: 30,
               required: true,
               live: '1| 2:range',
+              listener: activeShortListener,
             },
-            {
-              placeholder: 'Price per 30 days:',
-              value: main.encodePrice(PRICES_AUTOFILL[`${priceRate}_monthly`]),
-              locked: true,
-            },
-            { placeholder: 'Price rate:', value: main.fixText(priceRate), locked: true },
           ],
           footer: {
             main: `Process Payment ${getEmoji('🔏')}`,
@@ -296,22 +297,22 @@ function validateCustomer(
           'blue',
           inputs,
           (result) => {
-            const startDate = result.short[1].value;
+            const startDate = result.short[3].value;
             if (!main.isValidDate(startDate) || main.isPastDate(startDate)) {
               main.toast(`Invalid start date: ${startDate}`, 'error');
               return;
             }
-            const days = result.short[2].value;
-            if (!main.isValidPaymentAmount(+days)) {
+            const days = +result.short[4].value;
+            if (!main.isValidPaymentAmount(days)) {
               main.toast(`Invalid days: ${days}`, 'error');
               return;
             }
-            const price = +main.decodePrice(result.short[3].value) * Math.ceil(+days / 30);
+            const price = main.decodePrice(result.short[0].value);
 
             const [month, day, year] = startDate.split('-').map(Number);
             const startDateObj = new Date(year, month - 1, day);
             const endDateObj = new Date(startDateObj);
-            endDateObj.setDate(endDateObj.getDate() + +days);
+            endDateObj.setDate(endDateObj.getDate() + days);
             const endDate = endDateObj.toLocaleString('en-US', {
               month: '2-digit',
               day: '2-digit',
@@ -351,6 +352,15 @@ function validateCustomer(
     PRICES_AUTOFILL[`${priceRate}_daily`],
     main.getSelectedSpinner(priceRate)
   );
+}
+
+function activeShortListener(daysInput, container) {
+  const totalPriceInput = container.querySelector(`#input-short-5`);
+  const priceRateInput = container.querySelector(`#input-short-6`);
+  totalPriceInput.value = main.encodePrice(
+    +PRICES_AUTOFILL[`${priceRateInput.value.toLowerCase()}_monthly`] * Math.ceil(+daysInput.value / 30)
+  );
+  totalPriceInput.dispatchEvent(new Event('input'));
 }
 
 function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
@@ -476,7 +486,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
       const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
       const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
       const priceRate = customer.dataset.custom3.toLowerCase();
-      const amount =
+      let amount =
         isMonthlyCustomer && isPending
           ? PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase().split(' - ')[0]}`]
           : isMonthlyCustomer
@@ -711,6 +721,15 @@ export function cancelPendingTransaction(transactionId) {
     main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', tabIndex, (findResult) => {
       if (findResult) {
         findResult.dataset.tid = '';
+        if (findResult.dataset.status == 'pending') {
+          findResult.dataset.startdate = '';
+          findResult.dataset.enddate = '';
+          findResult.dataset.days = '';
+          findResult.dataset.status = '';
+
+          findResult.dataset.custom2 = main.fixText(CUSTOMER_TYPE[0].value);
+          findResult.children[2].innerHTML = findResult.dataset.custom2;
+        }
         cancelPendingTransactionLoop(2);
       } else if (tabIndex == 1) {
         cancelPendingTransactionLoop(2);

@@ -55,7 +55,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
     const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
     transactionCancelBtn.addEventListener('click', () => {
       main.openConfirmationModal(
-        'Cancel pending transaction. Cannot be undone.<br><br>• ID: ' + createResult.dataset.id,
+        'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
         () => {
           cancelCheckinPayment(createResult.dataset.id);
           main.closeConfirmationModal();
@@ -117,25 +117,21 @@ function activeRadioListener(title, input, container, inputGroup) {
     cashInput.previousElementSibling.innerHTML =
       inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
     cashInput.value = main.encodePrice(0);
-    inputGroup.short[2].value = 0;
   } else {
     if (title.toLowerCase() == 'hybrid') {
       cashInput.previousElementSibling.innerHTML =
         inputGroup.short[2].placeholder + ' (cash)' + (inputGroup.short[2].required ? ' *' : '');
       cashInput.value = main.encodePrice(0);
-      inputGroup.short[2].value = 0;
     } else {
       cashInput.previousElementSibling.innerHTML =
         inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
       cashInput.value = main.encodePrice(amountToPay);
-      inputGroup.short[2].value = amountToPay;
     }
   }
   if (inputGroup.short[3].hidden) {
     cashlessInput.previousElementSibling.innerHTML =
       inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     cashlessInput.value = main.encodePrice(0);
-    inputGroup.short[3].value = 0;
   } else {
     if (title.toLowerCase() == 'hybrid') {
       cashlessInput.previousElementSibling.innerHTML =
@@ -145,7 +141,6 @@ function activeRadioListener(title, input, container, inputGroup) {
         inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     }
     cashlessInput.value = main.encodePrice(amountToPay);
-    inputGroup.short[3].value = amountToPay;
   }
   cashInput.dispatchEvent(new Event('input'));
   cashlessInput.dispatchEvent(new Event('input'));
