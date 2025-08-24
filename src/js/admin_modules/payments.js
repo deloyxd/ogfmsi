@@ -57,35 +57,17 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
       main.openConfirmationModal(
         'Cancel pending transaction. Cannot be undone.<br><br>• ID: ' + createResult.dataset.id,
         () => {
-          const columnsData = [
-            'id_' + createResult.dataset.id,
-            {
-              type: 'object',
-              data: [createResult.dataset.image, createResult.dataset.text],
-            },
-            createResult.dataset.custom2,
-            'custom_datetime_today',
-          ];
-          main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-            main.createNotifDot(SECTION_NAME, 2);
-            main.deleteAtSectionOne(SECTION_NAME, 1, createResult.dataset.id);
-
-            const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-            transactionDetailsBtn.addEventListener('click', () =>
-              customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
-            );
-          });
-          main.toast('Transaction successfully cancelled!', 'error');
+          cancelCheckinPayment(createResult.dataset.id);
           main.closeConfirmationModal();
         }
       );
     });
-    continueProcessCheckinPayment(createResult.dataset.id, fullName, amountToPay, priceRate);
+    continueProcessCheckinPayment(createResult.dataset.id, fullName);
     callback(createResult.dataset.id);
   });
 }
 
-export function continueProcessCheckinPayment(transactionId, fullName, amountToPay, priceRate) {
+export function continueProcessCheckinPayment(transactionId, fullName) {
   main.showSection(SECTION_NAME);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
@@ -95,8 +77,8 @@ export function continueProcessCheckinPayment(transactionId, fullName, amountToP
         findResult.dataset.text,
         findResult.dataset.custom2,
         fullName,
-        amountToPay,
-        priceRate
+        main.deformatPrice(findResult.dataset.custom3),
+        findResult.dataset.custom4
       );
     }
   });
@@ -132,24 +114,41 @@ function activeRadioListener(title, input, container, inputGroup) {
   inputGroup.short[2].hidden = cashInput.parentElement.classList.contains('hidden');
   inputGroup.short[3].hidden = cashlessInput.parentElement.classList.contains('hidden');
   if (inputGroup.short[2].hidden) {
+    cashInput.previousElementSibling.innerHTML =
+      inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
     cashInput.value = main.encodePrice(0);
     inputGroup.short[2].value = 0;
   } else {
     if (title.toLowerCase() == 'hybrid') {
+      cashInput.previousElementSibling.innerHTML =
+        inputGroup.short[2].placeholder + ' (cash)' + (inputGroup.short[2].required ? ' *' : '');
       cashInput.value = main.encodePrice(0);
       inputGroup.short[2].value = 0;
     } else {
+      cashInput.previousElementSibling.innerHTML =
+        inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
       cashInput.value = main.encodePrice(amountToPay);
       inputGroup.short[2].value = amountToPay;
     }
   }
   if (inputGroup.short[3].hidden) {
+    cashlessInput.previousElementSibling.innerHTML =
+      inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     cashlessInput.value = main.encodePrice(0);
     inputGroup.short[3].value = 0;
   } else {
+    if (title.toLowerCase() == 'hybrid') {
+      cashlessInput.previousElementSibling.innerHTML =
+        inputGroup.short[3].placeholder + ' (cashless)' + (inputGroup.short[3].required ? ' *' : '');
+    } else {
+      cashlessInput.previousElementSibling.innerHTML =
+        inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
+    }
     cashlessInput.value = main.encodePrice(amountToPay);
     inputGroup.short[3].value = amountToPay;
   }
+  cashInput.dispatchEvent(new Event('input'));
+  cashlessInput.dispatchEvent(new Event('input'));
 }
 
 function completeCheckinPayment(id, image, customerId, purpose, fullName, amountToPay, priceRate) {
@@ -161,8 +160,8 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
     short: [
       { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
-      { placeholder: 'Payment amount (cash)', value: amountToPay, required: true, autoformat: 'price' },
-      { placeholder: 'Payment amount (cashless)', value: 0, required: true, autoformat: 'price', hidden: true },
+      { placeholder: 'Payment amount', value: amountToPay, required: true, autoformat: 'price' },
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true },
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
       { placeholder: 'Reference number', value: 'N/A', required: true },
@@ -261,7 +260,7 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
 }
 
 export function cancelCheckinPayment(transactionId) {
-  clearTransactionIdLoop(1);
+  customers.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
       const columnsData = [
@@ -274,25 +273,18 @@ export function cancelCheckinPayment(transactionId) {
         'custom_datetime_today',
       ];
 
-      main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {
+      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+        transactionDetailsBtn.addEventListener('click', () =>
+          customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
+        );
+
         main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
         main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
-        main.createNotifDot(SECTION_NAME, 'main');
         main.createNotifDot(SECTION_NAME, 2);
       });
     }
   });
-
-  function clearTransactionIdLoop(tabIndex) {
-    main.findAtSectionOne('inquiry-customers', transactionId, 'equal_tid', tabIndex, (findResult) => {
-      if (findResult) {
-        findResult.dataset.tid = '';
-        clearTransactionIdLoop(tabIndex);
-      } else if (tabIndex < 2) {
-        clearTransactionIdLoop(tabIndex + 1);
-      }
-    });
-  }
 }
 
 export default { processCheckinPayment, continueProcessCheckinPayment, pendingTransaction, cancelCheckinPayment };

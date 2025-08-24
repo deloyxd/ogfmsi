@@ -326,7 +326,7 @@ async function loadSectionSilently(sectionName) {
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
                 const td = document.createElement('td');
-                td.className = 'relative hidden border border-gray-300 p-2 h-[49px] 2xl:h-[57px]';
+                td.className = 'relative hidden border border-gray-300 p-2 h-[49px]';
                 if (dataset['listitembtnids'] && j == titleTexts.length) {
                   const itemBtns = document.createElement('div');
                   itemBtns.className = 'absolute inset-0 justify-center m-2 flex gap-2';
@@ -674,7 +674,6 @@ export function openConfirmationModal(action, callback) {
   originalModalContainer.insertAdjacentElement('afterend', tempModalConfirmationContainer);
   tempModalConfirmationContainer.classList.add('z-30');
   tempModalConfirmationContainer.children[0].classList.add('max-w-md');
-  tempModalConfirmationContainer.children[0].classList.add('2xl:max-w-xl');
 
   setupModalTheme('red', tempModalConfirmationContainer);
 
@@ -860,7 +859,6 @@ function setupModalBase(defaultData, inputs, callback) {
       });
     } else {
       imageContainerParent.classList.remove('gap-3');
-      imageContainerParent.classList.remove('2xl:gap-6');
       imageContainerParent.classList.add('grid-cols-10');
       imageContainerParent.children[0].classList.add('col-span-4');
       imageContainerParent.children[0].classList.add('col-start-4');
@@ -1198,13 +1196,6 @@ function setupModalBase(defaultData, inputs, callback) {
       indices = indices.split('|');
 
       const firstIndexInput = originalContainer.parentElement.querySelector(`#input-${type}-${index + 1 - indices[0]}`);
-      let [secondIndexInputOperator, secondIndexInput] = indices[1].split('');
-      secondIndexInput = originalContainer.parentElement.querySelector(
-        `#input-${type}-${index + 1 - secondIndexInput}`
-      );
-      let [thirdIndexInputOperator, thirdIndexInput] = indices[2]?.split('');
-      thirdIndexInput = originalContainer.parentElement.querySelector(`#input-${type}-${index + 1 - thirdIndexInput}`);
-
       firstIndexInput.addEventListener('input', () => {
         liveUpdate(
           input,
@@ -1212,6 +1203,11 @@ function setupModalBase(defaultData, inputs, callback) {
           dataFunction
         );
       });
+
+      let [secondIndexInputOperator, secondIndexInput] = indices[1].split('');
+      secondIndexInput = originalContainer.parentElement.querySelector(
+        `#input-${type}-${index + 1 - secondIndexInput}`
+      );
       secondIndexInput.addEventListener('input', () => {
         liveUpdate(
           input,
@@ -1219,6 +1215,22 @@ function setupModalBase(defaultData, inputs, callback) {
           dataFunction
         );
       });
+
+      let thirdIndexInputOperator, thirdIndexInput;
+      if (indices[2]) {
+        [thirdIndexInputOperator, thirdIndexInput] = indices[2].split('');
+        thirdIndexInput = originalContainer.parentElement.querySelector(
+          `#input-${type}-${index + 1 - thirdIndexInput}`
+        );
+        thirdIndexInput.addEventListener('input', () => {
+          liveUpdate(
+            input,
+            { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+            dataFunction
+          );
+        });
+      }
+
       if (dataFunction.includes('range')) {
         input.addEventListener('input', () => {
           liveUpdate(
@@ -1448,11 +1460,11 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, callback 
   const cell = referenceCells[referenceCells.length - 1].cloneNode(true);
   if (newRow.dataset.id != 'generating') cell.classList.remove('hidden');
   const totalBtnsCellWidth = 150 * cell.children[0].children.length;
-  cell.classList.add(`w-[${totalBtnsCellWidth}px]`, `2xl:w-[${totalBtnsCellWidth + 8}px]`);
+  cell.classList.add(`w-[${totalBtnsCellWidth}px]`);
   const btnsCellHeader = document.querySelector(
     `#${sectionName}-section-content [data-tabindex="${tabIndex}"] th:nth-child(${columnsData.length + 1})`
   );
-  btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`, `2xl:w-[${totalBtnsCellWidth + 8}px]`);
+  btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`);
   newRow.appendChild(cell);
 
   tableRow.classList.add('hidden');
@@ -1550,7 +1562,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
 
     const cellContent = `
       <div class="flex items-center gap-3">
-        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 2xl:h-10 2xl:w-10 rounded-full object-cover" />
+        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 rounded-full object-cover" />
         <p>${data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]}</p>
       </div>
     `;
@@ -1698,6 +1710,7 @@ export function decodeName(name) {
 }
 
 export function encodeDate(date, type) {
+  if (typeof date != 'object') date = new Date(date);
   return date
     .toLocaleDateString('en-US', {
       year: 'numeric',
@@ -1756,6 +1769,13 @@ export function decodePrice(price) {
 
 export function formatPrice(price) {
   return `<p class="text-right">${encodePrice(price)}</p>`;
+}
+
+export function deformatPrice(price) {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = price;
+  const priceText = tempDiv.textContent || tempDiv.innerText;
+  return decodePrice(priceText);
 }
 
 export function getStockStatus(quantity) {
@@ -1844,6 +1864,7 @@ export default {
   encodePrice,
   decodePrice,
   formatPrice,
+  deformatPrice,
   getStockStatus,
   validateStockInputs,
   encodeText,

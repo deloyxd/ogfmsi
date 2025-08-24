@@ -115,7 +115,7 @@ function mainBtnFunction(
           return;
         }
 
-        if (!isCreating && customer.tid != '') {
+        if (!isCreating && customer.tid) {
           main.toast(`${PENDING_TRANSACTION_MESSAGE} ${customer.tid}`, 'error');
           return;
         }
@@ -277,10 +277,10 @@ function validateCustomer(
               placeholder: 'Days duration:',
               value: 30,
               required: true,
-              live: '1-2:range',
+              live: '1| 2:range',
             },
             {
-              placeholder: 'Price:',
+              placeholder: 'Price per 30 days:',
               value: main.encodePrice(PRICES_AUTOFILL[`${priceRate}_monthly`]),
               locked: true,
             },
@@ -306,11 +306,7 @@ function validateCustomer(
               main.toast(`Invalid days: ${days}`, 'error');
               return;
             }
-            const price = +main.decodePrice(result.short[3].value);
-            if (!main.isValidPaymentAmount(price)) {
-              main.toast(`Invalid price: ${price}`, 'error');
-              return;
-            }
+            const price = +main.decodePrice(result.short[3].value) * Math.ceil(+days / 30);
 
             const [month, day, year] = startDate.split('-').map(Number);
             const startDateObj = new Date(year, month - 1, day);
@@ -323,13 +319,13 @@ function validateCustomer(
             });
             const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
             main.openConfirmationModal(
-              `Monthly registration details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDate)}<br>to ${main.decodeDate(endDate)}<br>lasts ${days} day${days > 1 ? 's' : ''}`,
+              `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDate)}<br>to ${main.decodeDate(endDate)}<br>lasts ${days} day${days > 1 ? 's' : ''}<br>total price: ${main.encodePrice(price)}`,
               () => {
                 main.closeConfirmationModal();
                 columnsData[2] += ' - Pending';
                 registerNewCustomer(columnsData, true, price, priceRate, (createResult) => {
-                  createResult.dataset.startdate = startDate;
-                  createResult.dataset.enddate = endDate.replace(/\//g, '-');
+                  createResult.dataset.startdate = main.encodeDate(startDate, 'long');
+                  createResult.dataset.enddate = main.encodeDate(endDate.replace(/\//g, '-'), 'long');
                   createResult.dataset.days = days;
                   createResult.dataset.status = 'pending';
                 });
@@ -446,7 +442,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
     },
     short: [{ placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true }],
     radio: [
-      { label: 'Process options', selected: 1, autoformat: { type: 'footer:sub', text: `Time-in ${getEmoji('📘')}` } },
+      { label: 'Process options', selected: 1, autoformat: { type: 'footer:sub', text: `Check-in ${getEmoji('📘')}` } },
       {
         icon: `${getEmoji('📘', 26)}`,
         title: 'Check-in',
@@ -469,7 +465,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
       },
     ],
     footer: {
-      main: isMonthlyCustomer ? `Time-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('📒')}`,
+      main: isMonthlyCustomer ? `Check-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('📒')}`,
     },
   };
 
@@ -504,7 +500,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
             function successPending() {
               main.closeModal(() => {
-                payments.continueProcessCheckinPayment(customer.dataset.tid, fullName, amount, priceRate);
+                payments.continueProcessCheckinPayment(customer.dataset.tid, fullName);
               });
             }
 
@@ -565,8 +561,8 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
             continueCustomerProcessBtnFunction,
             selectedProcess.includes('renew')
               ? {
-                  startDate: customer.dataset.startdate,
-                  endDate: customer.dataset.enddate,
+                  startDate: main.encodeDate(customer.dataset.startdate, 'long'),
+                  endDate: main.encodeDate(customer.dataset.enddate, 'long'),
                   days: customer.dataset.days,
                 }
               : null,
@@ -623,6 +619,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
         findResult1.dataset.custom2 = customerType + ' - Active';
         findResult1.children[2].textContent = findResult1.dataset.custom2;
         findResult1.dataset.status = 'active';
+        findResult1.dataset.tid = '';
 
         const columnsData = [
           'id_' + findResult1.dataset.id,
@@ -630,8 +627,8 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
             type: 'object_contact',
             data: [findResult1.dataset.image, findResult1.dataset.text, findResult1.dataset.contact],
           },
-          findResult1.dataset.startdate,
-          findResult1.dataset.enddate,
+          main.encodeDate(findResult1.dataset.startdate, 'long'),
+          main.encodeDate(findResult1.dataset.enddate, 'long'),
           findResult1.dataset.days + ' day' + (+findResult1.dataset.days > 1 ? 's' : ''),
           main.formatPrice(amountPaid),
           main.fixText(priceRate),
@@ -707,4 +704,19 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
   }
 }
 
-export default { completeCheckinPayment, customerDetailsBtnFunction };
+export function cancelPendingTransaction(transactionId) {
+  cancelPendingTransactionLoop(1);
+
+  function cancelPendingTransactionLoop(tabIndex) {
+    main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', tabIndex, (findResult) => {
+      if (findResult) {
+        findResult.dataset.tid = '';
+        cancelPendingTransactionLoop(2);
+      } else if (tabIndex == 1) {
+        cancelPendingTransactionLoop(2);
+      }
+    });
+  }
+}
+
+export default { completeCheckinPayment, customerDetailsBtnFunction, cancelPendingTransaction };
