@@ -2371,6 +2371,12 @@ video {
   gap: 2rem;
 }
 
+.-space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(-0.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(-0.25rem * var(--tw-space-y-reverse));
+}
+
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
   margin-right: calc(0.5rem * var(--tw-space-x-reverse));
@@ -5180,28 +5186,12 @@ video {
     margin-top: 1.5rem;
   }
 
-  .\32xl\:h-10 {
-    height: 2.5rem;
-  }
-
-  .\32xl\:h-\[57px\] {
-    height: 57px;
-  }
-
-  .\32xl\:w-10 {
-    width: 2.5rem;
-  }
-
   .\32xl\:w-48 {
     width: 12rem;
   }
 
   .\32xl\:w-\[302px\] {
     width: 302px;
-  }
-
-  .\32xl\:max-w-xl {
-    max-width: 36rem;
   }
 
   .\32xl\:grid-cols-12 {
