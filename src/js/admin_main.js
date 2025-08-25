@@ -330,7 +330,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? 500 + 132 : 500}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? 500 + 106 : 500}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
