@@ -1787,6 +1787,7 @@ export function deleteAtSectionTwo(sectionName, id) {
 
 export function deleteAllAtSectionTwo(sectionName) {
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
+  emptyText.classList.remove('hidden');
   const items = emptyText.parentElement.querySelectorAll('.section-content-list-item:not(.hidden)');
   items.forEach((item) => item.remove());
 }
