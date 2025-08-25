@@ -333,7 +333,7 @@ function displayProductsForTab(products, tabIndex) {
     const columnsData = [
       displayId,
       {
-        type: 'object_product',
+        type: 'object',
         data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
       },
       main.encodePrice(product.price),
