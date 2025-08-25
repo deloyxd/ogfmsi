@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS ecommerce_products_tbl (
     stock_status ENUM('In Stock', 'Low Stock', 'Out of Stock') DEFAULT 'In Stock',
     measurement_value VARCHAR(100),
     measurement_unit VARCHAR(50),
+    purchase_type VARCHAR(100) NOT NULL,
     category VARCHAR(100) NOT NULL,
     image_url LONGTEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
