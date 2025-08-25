@@ -41,22 +41,30 @@ async function getInventoryItemsFromSystem() {
         id: product.product_id,
         image: product.image_url,
         name: product.product_name_encoded,
-        price: + product.price,
-        quantity: + product.quantity,
+        price: +product.price,
+        quantity: +product.quantity,
         measurement: product.measurement_value?.trim() || '',
         measurementUnit: product.measurement_unit?.trim() || '',
         category: product.category,
       }));
 
       // Tab 1: All Available Products (Products with stocks)
-      displayProductsForTab(inventoryItems.filter((p) => p.quantity > 0), 1);
+      displayProductsForTab(
+        inventoryItems.filter((p) => p.quantity > 0),
+        1
+      );
 
       // Tab 2: Best Selling Products (Fast moving products)
-      displayProductsForTab(inventoryItems.filter((p) => p.quantity > 50), 2);
+      displayProductsForTab(
+        inventoryItems.filter((p) => p.quantity > 50),
+        2
+      );
 
       // Tab 3: Least Selling Products (Slow moving products)
-      displayProductsForTab(inventoryItems.filter((p) => p.quantity > 0 && p.quantity <= 10), 3);
-
+      displayProductsForTab(
+        inventoryItems.filter((p) => p.quantity > 0 && p.quantity <= 10),
+        3
+      );
     } else {
       console.error('Error fetching products:', data.error);
     }
@@ -80,7 +88,7 @@ async function loadCartFromServer() {
         quantity: +item.quantity,
         category: item.category,
       }));
-      
+
       updateCartDisplay();
     } else {
       console.error('Error loading cart:', data.error);
@@ -109,17 +117,20 @@ function displayProductsForTab(products, tabIndex) {
   productsGrid.innerHTML = '';
 
   Array.from(products).forEach((product) => {
+    const { firstName, lastName, fullName } = main.decodeName(product.name);
     const productCard = document.getElementById('ecommerceCartProduct').cloneNode(true);
     productCard.id = `${product.id}_${tabIndex}`;
     productCard.dataset.category = product.category;
 
     productCard.querySelector('img').src = product.image;
+    let stockCount = product.quantity;
+    stockCount--;
 
     const dataset = {
-      productName: main.decodeText(product.name),
+      productName: fullName,
       productCategory: getCategoryLabel(product.category),
       statusColor: product.quantity <= 10 ? 'text-orange-500' : 'text-green-600',
-      stockText: 'Stk: ' + product.quantity,
+      stockText: 'Stk: ' + stockCount,
       productPrice: main.encodePrice(product.price),
       productQuantity: product.quantity,
       productMeasurementStatus:
@@ -134,43 +145,45 @@ function displayProductsForTab(products, tabIndex) {
 
     const increaseBtn = productCard.querySelector('.increase-btn');
     const decreaseBtn = productCard.querySelector('.decrease-btn');
+    const stockDisplay = productCard.querySelector('.stock-display');
     const quantityDisplay = productCard.querySelector('.quantity-display');
     const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
 
     let quantity = 1;
 
-    if (product.quantity > 0) {
-      increaseBtn.addEventListener('click', () => {
-        if (quantity < product.quantity) {
-          quantity++;
-          updateAddToCartButton();
-        } else {
-          main.toast(`Cannot add more than the stocks count!`, 'error');
-        }
-      });
+    increaseBtn.addEventListener('click', () => {
+      if (stockCount > 0) {
+        quantity++;
+        stockCount--;
+        updateAddToCartButton();
+      } else {
+        main.toast(`Cannot add anymore!`, 'error');
+      }
+    });
 
-      decreaseBtn.addEventListener('click', () => {
-        if (quantity > 0) {
-          quantity--;
-          updateAddToCartButton();
-        }
-      });
+    decreaseBtn.addEventListener('click', () => {
+      if (quantity > 0) {
+        quantity--;
+        stockCount++;
+        updateAddToCartButton();
+      }
+    });
 
-      addToCartBtn.addEventListener('click', () => {
-        if (quantity > 0) {
-          addToCart(product, quantity);
-          quantity = 0;
-          updateAddToCartButton();
-          const { _, __, fullName } = main.decodeName(product.name);
-          main.toast(`${fullName}, added to cart!`, 'success');
-        }
-      });
-    } else {
-      addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    }
+    addToCartBtn.addEventListener('click', () => {
+      if (quantity > 0) {
+        addToCart(product, quantity);
+        quantity = stockCount > 0 ? 1 : 0;
+        updateAddToCartButton();
+        main.toast(`${fullName}, added to cart!`, 'success');
+      }
+    });
+    // } else {
+    //   addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    // }
 
     function updateAddToCartButton() {
       quantityDisplay.textContent = quantity;
+      stockDisplay.textContent = 'Stk: ' + stockCount;
       if (quantity == 0) {
         addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
       } else {
@@ -206,7 +219,7 @@ async function addToCart(product, quantity) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(cartData)
+        body: JSON.stringify(cartData),
       });
 
       const data = await response.json();
@@ -234,7 +247,7 @@ async function updateCartItemQuantity(cartId, quantity) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ quantity })
+      body: JSON.stringify({ quantity }),
     });
 
     if (!response.ok) {
@@ -248,11 +261,11 @@ async function updateCartItemQuantity(cartId, quantity) {
 async function removeCartItem(cartId) {
   try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
 
     if (response.ok) {
-      cart = cart.filter(item => item.cart_id !== cartId);
+      cart = cart.filter((item) => item.cart_id !== cartId);
       updateCartDisplay();
     } else {
       console.error('Error removing cart item');
@@ -315,8 +328,8 @@ function updateCartDisplay() {
 }
 
 // Global functions for cart operations (called from HTML onclick)
-window.increaseQuantity = async function(cartId) {
-  const item = cart.find(item => item.cart_id === cartId);
+window.increaseQuantity = async function (cartId) {
+  const item = cart.find((item) => item.cart_id === cartId);
   if (item) {
     item.quantity++;
     await updateCartItemQuantity(cartId, item.quantity);
@@ -324,8 +337,8 @@ window.increaseQuantity = async function(cartId) {
   }
 };
 
-window.decreaseQuantity = async function(cartId) {
-  const item = cart.find(item => item.cart_id === cartId);
+window.decreaseQuantity = async function (cartId) {
+  const item = cart.find((item) => item.cart_id === cartId);
   if (item && item.quantity > 1) {
     item.quantity--;
     await updateCartItemQuantity(cartId, item.quantity);
@@ -335,7 +348,7 @@ window.decreaseQuantity = async function(cartId) {
   }
 };
 
-window.removeItem = async function(cartId) {
+window.removeItem = async function (cartId) {
   await removeCartItem(cartId);
 };
 
@@ -360,18 +373,18 @@ function createPaymentModalInputs(totalAmount) {
       subtitle: `Total Amount: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
     },
     short: [
-      { 
-        placeholder: 'Customer Payment Amount', 
-        value: '', 
+      {
+        placeholder: 'Customer Payment Amount',
+        value: '',
         required: true,
         type: 'number',
         min: totalAmount,
-        step: '0.01'
-      }
+        step: '0.01',
+      },
     ],
     footer: {
       main: `Process Payment ${getEmoji('💳')}`,
-    }
+    },
   };
 }
 
@@ -382,9 +395,9 @@ async function updateProductStock(productId, soldQuantity) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        sold_quantity: soldQuantity 
-      })
+      body: JSON.stringify({
+        sold_quantity: soldQuantity,
+      }),
     });
 
     if (!response.ok) {
@@ -409,10 +422,10 @@ async function processCheckout() {
 
   // Show payment modal
   const paymentInputs = createPaymentModalInputs(totalAmount);
-  
+
   main.openModal('green', paymentInputs, async (result) => {
     const customerPayment = parseFloat(result.short[0].value);
-    
+
     if (customerPayment < totalAmount) {
       main.toast('Payment amount is insufficient!', 'error');
       return;
@@ -428,7 +441,7 @@ async function processCheckout() {
         payment_method: 'cash',
         customer_payment: customerPayment,
         change_amount: change,
-        processed_by: 'admin'
+        processed_by: 'admin',
       };
 
       const orderResponse = await fetch(`${API_BASE_URL}/ecommerce/orders`, {
@@ -436,7 +449,7 @@ async function processCheckout() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(orderData),
       });
 
       const orderResult = await orderResponse.json();
@@ -451,7 +464,7 @@ async function processCheckout() {
             product_name: item.name,
             unit_price: item.price,
             quantity: item.quantity,
-            total_price: item.price * item.quantity
+            total_price: item.price * item.quantity,
           };
 
           // Add order item
@@ -460,7 +473,7 @@ async function processCheckout() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(itemData)
+            body: JSON.stringify(itemData),
           });
 
           // Update product stock
@@ -498,12 +511,11 @@ async function processCheckout() {
           10000
         );
 
-
         // Clear cart
         await fetch(`${API_BASE_URL}/ecommerce/cart/session/${sessionId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
         });
-        
+
         cart = [];
         updateCartDisplay();
 

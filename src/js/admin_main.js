@@ -1826,7 +1826,7 @@ export function decodeName(name) {
   return {
     firstName: parts[0],
     lastName: parts[1],
-    fullName: `${parts[0]} ${parts[1]}`,
+    fullName: `${parts[0]}${parts[1] ? ' ' + parts[1] : ''}`,
   };
 }
 
