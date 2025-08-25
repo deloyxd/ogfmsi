@@ -1940,7 +1940,7 @@ export function getSelectedSpinner(spinner) {
 }
 
 export function getSelectedOption(selected, options) {
-  return options.find((option) => option.value.toLowerCase().includes(selected.toLowerCase())).value;
+  return options.find((option) => option.value.toLowerCase().includes(selected.toLowerCase())).label;
 }
 
 export function getSelectedRadio(radio) {

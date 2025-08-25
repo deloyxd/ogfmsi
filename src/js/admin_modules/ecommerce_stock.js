@@ -336,13 +336,13 @@ function displayProductsForTab(products, tabIndex) {
         type: 'object',
         data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
       },
-      main.encodePrice(product.price),
+      main.formatPrice(product.price),
       product.quantity + '',
       main.getStockStatus(product.quantity),
       product.measurement_value || '',
       product.measurement_unit || '',
-      product.purchase_type,
-      product.category,
+      main.getSelectedOption(product.purchase_type, PURCHASE_TYPE),
+      main.getSelectedOption(product.category, CATEGORIES),
       'custom_date_today',
     ];
 
@@ -355,7 +355,7 @@ function displayProductsForTab(products, tabIndex) {
           day: 'numeric',
         });
         frontendResult.dataset.date = date;
-        frontendResult.children[8].innerHTML = date; // Date is the 9th column (index 8)
+        frontendResult.children[9].innerHTML = date;
       }
 
       // Set up the product data for editing
