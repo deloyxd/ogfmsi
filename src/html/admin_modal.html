@@ -4,10 +4,10 @@
   data-color="amber"
   class="fixed inset-0 flex hidden h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300"
 >
-  <div
-    class="m-auto w-full max-w-lg -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300"
-  >
-    <div class="flex flex-col gap-1 bg-gradient-to-br rounded-t-2xl from-amber-500 to-amber-800 p-4 text-center text-white">
+  <div class="m-auto w-full max-w-lg -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300">
+    <div
+      class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-amber-500 to-amber-800 p-4 text-center text-white"
+    >
       <p id="modalTitle" class="text-xl font-medium"></p>
       <p id="modalSubtitle" class="hidden text-xs"></p>
     </div>
@@ -48,6 +48,16 @@
                 placeholder="Input"
               />
             </div>
+            <div class="flex hidden flex-col gap-2 font-medium">
+              <label class="text-xs text-gray-600"></label>
+              <div class="relative cursor-pointer">
+                <select
+                  id="input-spinner-0"
+                  class="w-full cursor-pointer appearance-none rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+                ></select>
+                <p class="absolute right-0 top-0 m-2 text-xs text-gray-400">▼</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -64,24 +74,43 @@
             class="absolute left-0 top-16 z-10 flex hidden flex-col overflow-hidden rounded-lg border-2 border-amber-500 bg-white shadow-lg shadow-black/50"
           >
             <div class="flex items-center justify-between gap-1 border-b p-1">
-              <button type="button" id="input-calendar-month-prev" class="rounded-lg p-1 transition-colors hover:bg-gray-100">
+              <button
+                type="button"
+                id="input-calendar-month-prev"
+                class="rounded-lg p-1 transition-colors hover:bg-gray-100"
+              >
                 <i class="fas fa-chevron-left w-5"></i>
               </button>
 
               <div class="flex items-center justify-center gap-4">
                 <div id="input-calendar-month" class="min-w-[75px] text-center text-sm font-semibold"></div>
                 <div class="flex items-center">
-                  <button type="button" id="input-calendar-year-prev" class="rounded-r px-2 py-1 text-gray-600 hover:bg-gray-100">
+                  <button
+                    type="button"
+                    id="input-calendar-year-prev"
+                    class="rounded-r px-2 py-1 text-gray-600 hover:bg-gray-100"
+                  >
                     <i class="fas fa-chevron-left"></i>
                   </button>
-                  <span id="input-calendar-year" class="bg-gray-100 px-2 py-1 min-w-[55px] text-center text-sm font-semibold"></span>
-                  <button type="button" id="input-calendar-year-next" class="rounded-l px-2 py-1 text-gray-600 hover:bg-gray-100">
+                  <span
+                    id="input-calendar-year"
+                    class="min-w-[55px] bg-gray-100 px-2 py-1 text-center text-sm font-semibold"
+                  ></span>
+                  <button
+                    type="button"
+                    id="input-calendar-year-next"
+                    class="rounded-l px-2 py-1 text-gray-600 hover:bg-gray-100"
+                  >
                     <i class="fas fa-chevron-right"></i>
                   </button>
                 </div>
               </div>
 
-              <button type="button" id="input-calendar-month-next" class="rounded-lg p-1 transition-colors hover:bg-gray-100">
+              <button
+                type="button"
+                id="input-calendar-month-next"
+                class="rounded-lg p-1 transition-colors hover:bg-gray-100"
+              >
                 <i class="fas fa-chevron-right w-5"></i>
               </button>
             </div>
@@ -104,7 +133,7 @@
           <label class="text-xs text-gray-600"></label>
           <div class="relative cursor-pointer">
             <select
-              id="input-spinner"
+              id="input-spinner-4"
               class="w-full cursor-pointer appearance-none rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
             ></select>
             <p class="absolute right-0 top-0 m-2 text-xs text-gray-400">▼</p>
@@ -126,7 +155,7 @@
           <label class="text-xs font-medium text-gray-600"></label>
           <div id="input-radio" class="grid h-36 gap-4">
             <div
-              class="hidden cursor-pointer content-center space-y-2 rounded-md border-2 border-gray-300 bg-gray-100 text-center duration-300  hover:bg-amber-100/50 hover:border-amber-500"
+              class="hidden cursor-pointer content-center space-y-2 rounded-md border-2 border-gray-300 bg-gray-100 text-center duration-300 hover:border-amber-500 hover:bg-amber-100/50"
             >
               <p class="text-4xl"></p>
               <p class="font-medium"></p>

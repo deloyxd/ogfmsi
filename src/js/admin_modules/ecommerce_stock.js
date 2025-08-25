@@ -23,6 +23,11 @@ export const CATEGORIES = [
 
 export default { CATEGORIES };
 
+const PURCHASE_TYPE = [
+  { value: 'retail', label: 'Retail' },
+  { value: 'wholesale', label: 'Wholesale' },
+];
+
 const MEASUREMENT_UNITS = [
   // Weight
   { value: 'mg', label: 'Weight: mg' },
@@ -76,7 +81,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
   mainBtn?.removeEventListener('click', mainBtnFunction);
   mainBtn?.addEventListener('click', mainBtnFunction);
-  
+
   // Load products and stats on page load
   loadProducts();
 });
@@ -97,8 +102,9 @@ function mainBtnFunction() {
   const inputs = createModalInputs();
 
   main.openModal(mainBtn, inputs, (result) => {
-    const [name, price, quantity] = result.image.short.map((item) => item.value);
-    const measurement = result.short[0].value?.trim() || '';
+    const name = result.image.short[0].value;
+    const [price, quantity] = result.short.map((item) => item.value);
+    const measurement = result.image.short[1].value?.trim() || '';
 
     if (!main.validateStockInputs(price, quantity, measurement)) return;
 
@@ -107,19 +113,21 @@ function mainBtnFunction() {
 }
 
 async function addProduct(result, name, price, quantity, measurement) {
-  const category = main.getSelectedSpinner(result.spinner[0]);
-  const measurementUnit = main.getSelectedSpinner(result.spinner[1]);
+  const purchaseType = main.getSelectedSpinner(result.spinner[0]);
+  const category = main.getSelectedSpinner(result.spinner[1]);
+  const measurementUnit = main.getSelectedSpinner(result.image.spinner[0]);
 
   const productData = {
     product_name: name,
     product_name_encoded: main.encodeText(name),
-    price: price,
+    price,
     price_encoded: main.encodePrice(price),
-    quantity: quantity,
+    quantity,
     measurement_value: measurement,
     measurement_unit: measurementUnit,
-    category: category,
-    image_url: result.image.src
+    purchase_type: purchaseType,
+    category,
+    image_url: result.image.src,
   };
 
   try {
@@ -128,7 +136,7 @@ async function addProduct(result, name, price, quantity, measurement) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(productData)
+      body: JSON.stringify(productData),
     });
 
     const data = await response.json();
@@ -139,12 +147,13 @@ async function addProduct(result, name, price, quantity, measurement) {
         {
           id: data.result.product_id,
           image: result.image.src,
-          name: name,
-          price: price,
-          quantity: quantity,
-          measurement: measurement,
-          measurementUnit: measurementUnit,
-          category: category,
+          name,
+          price,
+          quantity,
+          measurement,
+          measurementUnit,
+          purchaseType,
+          category,
           date: new Date().toISOString(),
         },
         'product_create'
@@ -153,11 +162,10 @@ async function addProduct(result, name, price, quantity, measurement) {
       main.createNotifDot(SECTION_NAME, 1);
       main.toast(`${name}, successfully added!`, 'success');
       main.closeModal();
-      
+
       // Reload products and stats
       loadProducts();
       loadStats();
-
     } else {
       main.toast(`Error: ${data.error}`, 'error');
     }
@@ -179,20 +187,31 @@ async function loadProducts() {
       displayProductsForTab(products, 1);
 
       // Tab 2: Low Stock Products (About to be out of stock)
-      displayProductsForTab(products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 || p.stock_status === 'Low Stock'), 2);
+      displayProductsForTab(
+        products.filter((p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock'),
+        2
+      );
 
       // Tab 3: Out of Stock Products (Dead stocks)
-      displayProductsForTab(products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock'), 3);
+      displayProductsForTab(
+        products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock'),
+        3
+      );
 
       // Tab 4: Best Selling Products (Fast moving stocks)
-      displayProductsForTab(products.filter((p) => +p.quantity > 50), 4);
+      displayProductsForTab(
+        products.filter((p) => +p.quantity > 50),
+        4
+      );
 
       // Tab 5: Least Selling Products (Slow moving stocks)
-      displayProductsForTab(products.filter((p) => +p.quantity > 0 && +p.quantity <= 10), 5);
-      
+      displayProductsForTab(
+        products.filter((p) => +p.quantity > 0 && +p.quantity <= 10),
+        5
+      );
+
       // Update stats using the same logic as the tabs
       computeAndUpdateStats(products);
-      
     } else {
       console.error('Error loading products:', data.error);
     }
@@ -218,23 +237,25 @@ async function loadStats() {
 
 // Computes stats client-side using the same logic as the tabs and updates the UI
 function computeAndUpdateStats(products) {
-	if (!Array.isArray(products)) {
-		return;
-	}
+  if (!Array.isArray(products)) {
+    return;
+  }
 
-	const totalProducts = products.length;
-	const lowStock = products.filter((p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock').length;
-	const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
-	const bestSelling = products.filter((p) => +p.quantity > 50).length;
-	const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
+  const totalProducts = products.length;
+  const lowStock = products.filter(
+    (p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock'
+  ).length;
+  const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
+  const bestSelling = products.filter((p) => +p.quantity > 50).length;
+  const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
 
-	updateStatsDisplay({
-		total_products: totalProducts,
-		low_stock: lowStock,
-		out_of_stock: outOfStock,
-		best_selling: bestSelling,
-		slow_moving: slowMoving,
-	});
+  updateStatsDisplay({
+    total_products: totalProducts,
+    low_stock: lowStock,
+    out_of_stock: outOfStock,
+    best_selling: bestSelling,
+    slow_moving: slowMoving,
+  });
 }
 
 // current logic:
@@ -246,7 +267,7 @@ function computeAndUpdateStats(products) {
 // [4] Slow moving products (<=10 but >0)
 function updateStatsDisplay(stats) {
   const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
-  
+
   if (statElements.length >= 5) {
     const uniqueProductsStat = statElements[0];
     if (uniqueProductsStat) {
@@ -312,50 +333,47 @@ function displayProductsForTab(products, tabIndex) {
     const columnsData = [
       displayId,
       {
-        type: 'object_product',
+        type: 'object',
         data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
       },
-      main.encodePrice(product.price),
+      main.formatPrice(product.price),
       product.quantity + '',
       main.getStockStatus(product.quantity),
       product.measurement_value || '',
       product.measurement_unit || '',
-      product.category,
+      main.getSelectedOption(product.purchase_type, PURCHASE_TYPE),
+      main.getSelectedOption(product.category, CATEGORIES),
       'custom_date_today',
     ];
 
-    main.createAtSectionOne(
-      SECTION_NAME,
-      columnsData,
-      tabIndex,
-      (frontendResult) => {
-          // Set the actual date
-          if (product.created_at) {
-            const date = new Date(product.created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            });
-            frontendResult.dataset.date = date;
-            frontendResult.children[8].innerHTML = date; // Date is the 9th column (index 8)
-          }
-
-        // Set up the product data for editing
-        frontendResult.dataset.id = product.product_id;
-        frontendResult.dataset.image = product.image_url || '/src/images/client_logo.jpg';
-        // Keep dataset.text consistent with duplicate detection (use raw name)
-        frontendResult.dataset.text = product.product_name;
-        frontendResult.dataset.custom2 = product.price_encoded;
-        frontendResult.dataset.custom3 = product.quantity;
-        frontendResult.dataset.custom4 = product.stock_status;
-        frontendResult.dataset.custom5 = product.measurement_value;
-        frontendResult.dataset.custom6 = product.measurement_unit;
-        frontendResult.dataset.custom7 = product.category;
-
-          // Setup action buttons
-          setupProductDetailsButton(frontendResult);
+    main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (frontendResult) => {
+      // Set the actual date
+      if (product.created_at) {
+        const date = new Date(product.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        frontendResult.dataset.date = date;
+        frontendResult.children[9].innerHTML = date;
       }
-    );
+
+      // Set up the product data for editing
+      frontendResult.dataset.id = product.product_id;
+      frontendResult.dataset.image = product.image_url || '/src/images/client_logo.jpg';
+      // Keep dataset.text consistent with duplicate detection (use raw name)
+      frontendResult.dataset.text = product.product_name;
+      frontendResult.dataset.custom2 = product.price_encoded;
+      frontendResult.dataset.custom3 = product.quantity;
+      frontendResult.dataset.custom4 = product.stock_status;
+      frontendResult.dataset.custom5 = product.measurement_value;
+      frontendResult.dataset.custom6 = product.measurement_unit;
+      frontendResult.dataset.custom7 = product.purchase_type;
+      frontendResult.dataset.custom8 = product.category;
+
+      // Setup action buttons
+      setupProductDetailsButton(frontendResult);
+    });
   });
 }
 
@@ -372,7 +390,8 @@ function setupProductDetailsButton(result) {
       quantity: result.dataset.custom3,
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
-      category: result.dataset.custom7,
+      purchaseType: result.dataset.custom7,
+      category: result.dataset.custom8,
     };
 
     const inputs = createModalInputs(true, productData);
@@ -393,13 +412,15 @@ function setupProductDetailsButton(result) {
 }
 
 async function updateProduct(result, newResult, name) {
-  const [newName, newPrice, newQuantity] = newResult.image.short.map((item) => item.value);
-  const newMeasurement = newResult.short[0].value?.trim() || '';
+  const newName = newResult.image.short[0].value;
+  const [newPrice, newQuantity] = newResult.short.map((item) => item.value);
+  const newMeasurement = newResult.image.short[1].value?.trim() || '';
 
   if (!main.validateStockInputs(newPrice, newQuantity, newMeasurement)) return;
 
-  const category = main.getSelectedSpinner(newResult.spinner[0]);
-  const measurementUnit = main.getSelectedSpinner(newResult.spinner[1]);
+  const purchaseType = main.getSelectedSpinner(newResult.spinner[0]);
+  const category = main.getSelectedSpinner(newResult.spinner[1]);
+  const measurementUnit = main.getSelectedSpinner(newResult.image.spinner[0]);
 
   const productData = {
     product_name: newName,
@@ -409,8 +430,9 @@ async function updateProduct(result, newResult, name) {
     quantity: +newQuantity,
     measurement_value: newMeasurement,
     measurement_unit: measurementUnit,
+    purchase_type: purchaseType,
     category: category,
-    image_url: newResult.image.src
+    image_url: newResult.image.src,
   };
 
   try {
@@ -419,7 +441,7 @@ async function updateProduct(result, newResult, name) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(productData)
+      body: JSON.stringify(productData),
     });
 
     const data = await response.json();
@@ -434,8 +456,9 @@ async function updateProduct(result, newResult, name) {
           price: newPrice,
           quantity: newQuantity,
           measurement: newMeasurement,
-          measurementUnit: measurementUnit,
-          category: category,
+          measurementUnit,
+          purchaseType,
+          category,
           date: result.dataset.date,
         },
         'product_update'
@@ -444,7 +467,7 @@ async function updateProduct(result, newResult, name) {
       main.toast('Successfully updated product details!', 'info');
       main.closeConfirmationModal();
       main.closeModal();
-      
+
       // Reload products and stats
       loadProducts();
       loadStats();
@@ -461,7 +484,7 @@ async function deleteProduct(result) {
   main.openConfirmationModal(`Delete product: ${main.decodeText(result.dataset.text)}`, async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/ecommerce/products/${result.dataset.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
 
       const data = await response.json();
@@ -480,7 +503,8 @@ async function deleteProduct(result) {
             price: result.dataset.custom2,
             measurement: result.dataset.custom5,
             measurementUnit: result.dataset.custom6,
-            category: result.dataset.custom7,
+            purchaseType: result.dataset.custom7,
+            category: result.dataset.custom8,
             datetime: `${date} - ${time}`,
           },
           'product_delete'
@@ -490,7 +514,7 @@ async function deleteProduct(result) {
         main.toast('Successfully deleted product!', 'error');
         main.closeConfirmationModal();
         main.closeModal();
-        
+
         // Reload products and stats
         loadProducts();
         loadStats();
@@ -514,24 +538,35 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     type: 'normal',
     short: [
       { placeholder: 'Product name', value: productData.name || '', required: true },
-      { placeholder: 'Price', value: productData.price || '', required: true },
-      { placeholder: 'Initial quantity', value: productData.quantity || '', required: true },
+      { placeholder: 'Product measurement value', value: productData.measurement || '' },
+    ],
+    spinner: [
+      {
+        label: 'Product measurement unit',
+        placeholder: 'Select product measurement unit',
+        selected: productData.measurementUnit || 0,
+        options: MEASUREMENT_UNITS,
+      },
     ],
   },
-  short: [{ placeholder: 'Product measurement value', value: productData.measurement || '' }],
+  short: [
+    { placeholder: 'Price', value: productData.price || '', required: true },
+    { placeholder: 'Initial quantity', value: productData.quantity || '', required: true },
+  ],
   spinner: [
+    {
+      label: 'Product purchase type',
+      placeholder: 'Select product purchase type',
+      selected: productData.purchaseType || 0,
+      required: true,
+      options: PURCHASE_TYPE,
+    },
     {
       label: 'Product category',
       placeholder: 'Select product category',
       selected: productData.category || 0,
       required: true,
       options: CATEGORIES,
-    },
-    {
-      label: 'Product measurement unit',
-      placeholder: 'Select product measurement unit',
-      selected: productData.measurementUnit || 0,
-      options: MEASUREMENT_UNITS,
     },
   ],
   ...(isUpdate && {
@@ -550,11 +585,12 @@ function checkIfSameData(newData, oldData) {
   return (
     newData.image.src == oldData.image &&
     newData.image.short[0].value == oldData.name &&
-    newData.image.short[1].value == oldData.price &&
-    newData.image.short[2].value == oldData.quantity &&
-    newData.short[0].value == oldData.measurement &&
-    main.getSelectedSpinner(newData.spinner[1]) == oldData.measurementUnit &&
-    main.getSelectedSpinner(newData.spinner[0]) == oldData.category
+    newData.short[0].value == oldData.price &&
+    newData.short[1].value == oldData.quantity &&
+    newData.image.short[1].value == oldData.measurement &&
+    main.getSelectedSpinner(newData.image.spinner[0]) == oldData.measurementUnit &&
+    main.getSelectedSpinner(newData.spinner[0]) == oldData.purchaseType &&
+    main.getSelectedSpinner(newData.spinner[1]) == oldData.category
   );
 }
 
