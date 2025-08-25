@@ -6,7 +6,7 @@ const router = Router();
 
 // POST add item to cart
 router.post('/cart', async (req, res) => {
-  const { session_id, product_id, product_name, product_image, price, quantity, category } = req.body;
+  const { session_id, product_id, product_name, product_image, price, quantity, measurement, measurement_unit, purchase_type, category } = req.body;
   
   // Generate unique cart ID
   const cart_id = 'CART_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -33,12 +33,12 @@ router.post('/cart', async (req, res) => {
       // Add new item to cart
       const insertQuery = `
         INSERT INTO ecommerce_cart_tbl 
-        (cart_id, session_id, product_id, product_name, product_image, price, quantity, category) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (cart_id, session_id, product_id, product_name, product_image, price, quantity, measurement, measurement_unit, purchase_type, category) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       mysqlConnection.query(insertQuery, [
-        cart_id, session_id, product_id, product_name, product_image, price, quantity, category
+        cart_id, session_id, product_id, product_name, product_image, price, quantity, measurement, measurement_unit, purchase_type, category
       ], (insertError, insertResult) => {
         if (insertError) {
           console.error('Adding to cart error:', insertError);

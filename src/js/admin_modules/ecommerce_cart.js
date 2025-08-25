@@ -46,6 +46,7 @@ async function getInventoryItemsFromSystem() {
         quantity: +product.quantity,
         measurement: product.measurement_value?.trim() || '',
         measurementUnit: product.measurement_unit?.trim() || '',
+        purchaseType: product.purchase_type,
         category: product.category,
       }));
 
@@ -76,12 +77,12 @@ async function getInventoryItemsFromSystem() {
 
 // Helper function to get available stock for a product (considering items already in cart)
 function getAvailableStock(productId) {
-  const product = inventoryItems.find(item => item.id === productId);
+  const product = inventoryItems.find((item) => item.id === productId);
   if (!product) return 0;
-  
-  const cartItem = cart.find(item => item.id === productId);
+
+  const cartItem = cart.find((item) => item.id === productId);
   const cartQuantity = cartItem ? cartItem.quantity : 0;
-  
+
   return Math.max(0, product.quantity - cartQuantity);
 }
 
@@ -104,6 +105,9 @@ async function loadCartFromServer() {
         name: item.product_name,
         price: +item.price,
         quantity: +item.quantity,
+        measurement: item.measurement?.trim() || '',
+        measurementUnit: item.measurement_unit?.trim() || '',
+        purchaseType: item.purchase_type,
         category: item.category,
       }));
 
@@ -141,7 +145,7 @@ function displayProductsForTab(products, tabIndex) {
     productCard.dataset.category = product.category;
 
     productCard.querySelector('img').src = product.image;
-    
+
     // Get available stock considering items already in cart
     let availableStock = getAvailableStock(product.id);
     let stockCount = availableStock;
@@ -157,6 +161,7 @@ function displayProductsForTab(products, tabIndex) {
         product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
       productMeasurement: product.measurement,
       productMeasurementUnit: product.measurementUnit,
+      productPurchaseType: product.purchaseType,
     };
 
     productCard.innerHTML = productCard.innerHTML.replace(/\$\{(\w+)\}/g, (match, varName) =>
@@ -204,7 +209,7 @@ function displayProductsForTab(products, tabIndex) {
       const currentAvailableStock = getAvailableStock(product.id);
       quantityDisplay.textContent = quantity;
       stockDisplay.textContent = 'Stk: ' + currentAvailableStock;
-      
+
       if (quantity == 0 || currentAvailableStock == 0) {
         addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
       } else {
@@ -232,14 +237,14 @@ async function addToCart(product, quantity) {
 
   if (existingItem) {
     const newQuantity = existingItem.quantity + quantity;
-    const productStock = inventoryItems.find(item => item.id === product.id)?.quantity || 0;
-    
+    const productStock = inventoryItems.find((item) => item.id === product.id)?.quantity || 0;
+
     // Double-check stock limit for existing items
     if (newQuantity > productStock) {
       main.toast(`Cannot add ${quantity} more items. Total would exceed available stock of ${productStock}.`, 'error');
       return;
     }
-    
+
     existingItem.quantity = newQuantity;
     await updateCartItemQuantity(existingItem.cart_id, existingItem.quantity);
   } else {
@@ -250,6 +255,9 @@ async function addToCart(product, quantity) {
       product_image: product.image,
       price: product.price,
       quantity: quantity,
+      measurement: product.measurement,
+      measurement_unit: product.measurementUnit,
+      purchase_type: product.purchaseType,
       category: product.category,
     };
 
@@ -278,7 +286,7 @@ async function addToCart(product, quantity) {
   }
 
   updateCartDisplay();
-  
+
   // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
   refreshProductDisplays();
 }
@@ -301,21 +309,27 @@ async function updateCartItemQuantity(cartId, quantity) {
   }
 }
 
-async function removeCartItem(cartId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
-      method: 'DELETE',
-    });
+function removeCartItem(cartId) {
+  main.openConfirmationModal('Remove item added to cart.', () => {
+    main.closeConfirmationModal(async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
+          method: 'DELETE',
+        });
 
-    if (response.ok) {
-      cart = cart.filter((item) => item.cart_id !== cartId);
-      updateCartDisplay();
-    } else {
-      console.error('Error removing cart item');
-    }
-  } catch (error) {
-    console.error('Error removing cart item:', error);
-  }
+        if (response.ok) {
+          cart = cart.filter((item) => item.cart_id !== cartId);
+          main.toast('Successfully removed from cart!', 'success');
+          updateCartDisplay();
+          refreshProductDisplays();
+        } else {
+          console.error('Error removing cart item');
+        }
+      } catch (error) {
+        console.error('Error removing cart item:', error);
+      }
+    });
+  });
 }
 
 function updateCartDisplay() {
@@ -374,18 +388,18 @@ function updateCartDisplay() {
 window.increaseQuantity = async function (cartId) {
   const item = cart.find((item) => item.cart_id === cartId);
   if (item) {
-    const productStock = inventoryItems.find(product => product.id === item.id)?.quantity || 0;
-    
+    const productStock = inventoryItems.find((product) => product.id === item.id)?.quantity || 0;
+
     // Check if we can increase the quantity
     if (item.quantity >= productStock) {
       main.toast(`Cannot add more items. Maximum stock available is ${productStock}.`, 'error');
       return;
     }
-    
+
     item.quantity++;
     await updateCartItemQuantity(cartId, item.quantity);
     updateCartDisplay();
-    
+
     // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
     refreshProductDisplays();
   }
@@ -397,22 +411,18 @@ window.decreaseQuantity = async function (cartId) {
     item.quantity--;
     await updateCartItemQuantity(cartId, item.quantity);
     updateCartDisplay();
-    
+
     // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
     refreshProductDisplays();
   } else if (item && item.quantity === 1) {
-    await removeCartItem(cartId);
-    
-    // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
-    refreshProductDisplays();
+    removeCartItem(cartId);
   }
 };
 
 window.removeItem = async function (cartId) {
-  await removeCartItem(cartId);
-  
+  removeCartItem(cartId);
+
   // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
-  refreshProductDisplays();
 };
 
 // ADD THIS NEW FUNCTION ANYWHERE AFTER THE GLOBAL FUNCTIONS:
