@@ -79,18 +79,18 @@ function mainBtnFunction(
     },
     spinner: [
       {
-        label: 'Price rate',
-        placeholder: 'Select price rate',
-        selected: `${isCreating ? priceRate : customer.priceRate}`,
-        required: true,
-        options: PRICE_RATE,
-      },
-      {
         label: 'Customer type',
         placeholder: 'Select customer type',
         selected: `${isCreating ? customerType : customer.customerType}`,
         required: true,
         options: CUSTOMER_TYPE,
+      },
+      {
+        label: 'Price rate',
+        placeholder: 'Select price rate',
+        selected: `${isCreating ? priceRate : customer.priceRate}`,
+        required: true,
+        options: PRICE_RATE,
       },
     ],
     footer: {
@@ -103,7 +103,7 @@ function mainBtnFunction(
     let isMonthlyCustomerAlready = false;
     if (findResult) {
       isMonthlyCustomerAlready = true;
-      inputs.spinner[1].locked = true;
+      inputs.spinner[0].locked = true;
     }
 
     main.openModal(
@@ -123,8 +123,8 @@ function mainBtnFunction(
         const image = result.image.src;
         const [firstName, lastName, contact] = result.image.short.map((item) => item.value);
         const name = main.encodeName(firstName, lastName);
-        const customerType = main.getSelectedSpinner(result.spinner[1]);
-        const priceRate = main.getSelectedSpinner(result.spinner[0]);
+        const customerType = main.getSelectedSpinner(result.spinner[0]);
+        const priceRate = main.getSelectedSpinner(result.spinner[1]);
 
         const columnsData = [
           'id_' + (isCreating ? 'U_random' : customer.id),
@@ -223,8 +223,8 @@ function checkIfSameData(newData, oldData) {
     newData.image.short[0].value == oldData.firstName &&
     newData.image.short[1].value == oldData.lastName &&
     newData.image.short[2].value == oldData.contact &&
-    main.fixText(main.getSelectedSpinner(newData.spinner[1])) == oldData.customerType &&
-    main.fixText(main.getSelectedSpinner(newData.spinner[0])) == oldData.priceRate
+    main.fixText(main.getSelectedSpinner(newData.spinner[0])) == oldData.customerType &&
+    main.fixText(main.getSelectedSpinner(newData.spinner[1])) == oldData.priceRate
   );
 }
 

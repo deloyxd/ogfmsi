@@ -562,8 +562,8 @@ async function loadSectionSilently(sectionName) {
           });
 
           function sortBy(order, type) {
-          const table = sorter.closest('table');
-          const tbody = table.querySelector('tbody');
+            const table = sorter.closest('table');
+            const tbody = table.querySelector('tbody');
             const columnIndex = Array.from(sorter.closest('tr').children).indexOf(sorter.parentElement);
             const rows = Array.from(tbody.querySelectorAll('tr'));
             rows.shift();
@@ -950,7 +950,19 @@ function setupModalBase(defaultData, inputs, callback) {
         renderInput(imageContainerInputsContainer.children[0], clone, 'short', input, index);
         imageContainerInputsContainer.appendChild(clone);
       });
-    } else {
+    }
+
+    if (inputs.image.spinner) {
+      const imageContainerInputsContainer = imageContainerParent.children[1];
+      inputs.image.spinner.forEach((input, index) => {
+        const clone = imageContainerInputsContainer.children[1].cloneNode(true);
+
+        renderInput(imageContainerInputsContainer.children[1], clone, 'spinner', input, index);
+        imageContainerInputsContainer.appendChild(clone);
+      });
+    }
+
+    if (!inputs.image.short && !inputs.image.spinner) {
       imageContainerParent.classList.remove('gap-3');
       imageContainerParent.classList.add('grid-cols-10');
       imageContainerParent.children[0].classList.add('col-span-4');
@@ -963,62 +975,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
   setupRenderInput('short', inputs.short, 4);
   setupRenderInput('large', inputs.large, 1);
-
-  if (inputs.spinner) {
-    const type = 'spinner';
-    inputs.spinner.forEach((spinnerGroup, index) => {
-      const originalContainer = tempModalContainer.querySelector(`#input-${type}`).parentElement.parentElement;
-      const spinnerContainer = originalContainer.cloneNode(true);
-      const label = spinnerContainer.children[0];
-      label.innerHTML = spinnerGroup.label + (spinnerGroup.required ? ' *' : '');
-      if (spinnerGroup.locked) {
-        spinnerContainer.children[1].children[0].disabled = true;
-        spinnerContainer.children[1].children[0].classList.add('border-gray-400', 'bg-gray-300', 'text-gray-600');
-      }
-
-      const selectElement = spinnerContainer.querySelector('select');
-      selectElement.id = `input-${type}-${index + 1}`;
-
-      const placeholderOption = document.createElement('option');
-      placeholderOption.value = '';
-      placeholderOption.innerHTML = spinnerGroup.placeholder || 'Select an option';
-      if ((isNumeric(spinnerGroup.selected) && spinnerGroup.selected == 0) || spinnerGroup.required) {
-        placeholderOption.readOnly = true;
-        placeholderOption.classList.add('bg-gray-200', 'text-gray-500');
-      }
-      placeholderOption.selected = true;
-      selectElement.appendChild(placeholderOption);
-
-      spinnerGroup.options.forEach((optionData, index) => {
-        const option = document.createElement('option');
-        option.value = optionData.value;
-        option.innerHTML = optionData.label;
-        option.classList.add('font-medium');
-
-        if (isNumeric(spinnerGroup.selected)) {
-          if (index == spinnerGroup.selected - 1) {
-            option.selected = true;
-            placeholderOption.selected = false;
-          }
-        } else {
-          if (option.value == spinnerGroup.selected.toLowerCase()) {
-            spinnerGroup.selected = index + 1;
-            option.selected = true;
-            placeholderOption.selected = false;
-          }
-        }
-
-        selectElement.appendChild(option);
-      });
-
-      selectElement.addEventListener('change', function () {
-        spinnerGroup.selected = this.selectedIndex;
-      });
-
-      spinnerContainer.classList.remove('hidden');
-      originalContainer.insertAdjacentElement('afterend', spinnerContainer);
-    });
-  }
+  setupRenderInput('spinner', inputs.spinner, 4);
 
   if (inputs.radio) {
     const type = 'radio';
@@ -1050,7 +1007,7 @@ function setupModalBase(defaultData, inputs, callback) {
       subtitle.innerHTML = input.subtitle;
 
       clone.classList.remove('hidden');
-      clone.dataset.color = clone.classList[clone.classList.length - 1].split(':')[1];
+      clone.dataset.color = clone.classList[clone.classList.length - 2].split(':')[1];
       radioClones.push(clone);
       container.appendChild(clone);
       if (index == inputs.radio[0].selected) {
@@ -1095,39 +1052,53 @@ function setupModalBase(defaultData, inputs, callback) {
 
   function setupRenderInput(type, render, offset) {
     if (render) {
-      const inputId = type === 'short' ? `#input-${type}-${offset}` : `#input-${type}`;
-      const originalContainer = tempModalContainer.querySelector(inputId).parentElement;
-      const nextContainer = originalContainer.nextElementSibling;
+      const inputId = type === 'short' || 'spinner' ? `#input-${type}-${offset}` : `#input-${type}`;
 
-      render.forEach((input, index) => {
-        const clone = originalContainer.cloneNode(true);
+      if (type === 'spinner') {
+        const originalContainer = tempModalContainer.querySelector(inputId).parentElement.parentElement;
+        const nextContainer = originalContainer.nextElementSibling;
+        render.forEach((spinnerGroup, index) => {
+          const spinnerContainer = originalContainer.cloneNode(true);
 
-        clone.children[1].addEventListener('input', () => {
-          input.value = clone.children[1].value;
+          renderInput(originalContainer, spinnerContainer, type, spinnerGroup, index + offset);
+          nextContainer.insertAdjacentElement('beforebegin', spinnerContainer);
         });
+      } else {
+        const originalContainer = tempModalContainer.querySelector(inputId).parentElement;
+        const nextContainer = originalContainer.nextElementSibling;
+        render.forEach((input, index) => {
+          const clone = originalContainer.cloneNode(true);
 
-        renderInput(originalContainer, clone, type, input, index + offset);
-        nextContainer.insertAdjacentElement('beforebegin', clone);
-      });
+          clone.children[1].addEventListener('input', () => {
+            input.value = clone.children[1].value;
+          });
+
+          renderInput(originalContainer, clone, type, input, index + offset);
+          nextContainer.insertAdjacentElement('beforebegin', clone);
+        });
+      }
     }
   }
 
   function renderInput(originalContainer, clone, type, data, index) {
-    const label = clone.children[0];
-    const input = clone.children[1];
-    const id = `input-${type}-${index + 1}`;
+    let label, input;
+    if (!type.includes('spinner')) {
+      label = clone.children[0];
+      input = clone.children[1];
+      const id = `input-${type}-${index + 1}`;
 
-    if (data.locked) {
-      input.readOnly = true;
-      input.classList.add('bg-gray-200', 'text-gray-500');
+      label.setAttribute('for', id);
+      label.innerHTML = data.placeholder + (data.required ? ' *' : '');
+
+      if (data.locked) {
+        input.readOnly = true;
+        input.classList.add('bg-gray-200', 'text-gray-500');
+      }
+
+      input.id = id;
+      input.placeholder = data.placeholder;
+      input.value = data.value;
     }
-
-    label.setAttribute('for', id);
-    label.innerHTML = data.placeholder + (data.required ? ' *' : '');
-
-    input.id = id;
-    input.placeholder = data.placeholder;
-    input.value = data.value;
 
     if (type.includes('short')) {
       const calendarInput = input.nextElementSibling;
@@ -1290,105 +1261,155 @@ function setupModalBase(defaultData, inputs, callback) {
       }
     }
 
-    if (data.live) {
-      let [indices, dataFunction] = data.live.split(':');
-      indices = indices.split('|');
+    if (type.includes('spinner')) {
+      label = clone.children[0];
+      label.innerHTML = data.label + (data.required ? ' *' : '');
+      if (data.locked) {
+        clone.children[1].children[0].disabled = true;
+        clone.children[1].children[0].classList.add('border-gray-400', 'bg-gray-300', 'text-gray-600');
+      }
 
-      const firstIndexInput = originalContainer.parentElement.querySelector(`#input-${type}-${index + 1 - indices[0]}`);
-      firstIndexInput.addEventListener('input', () => {
-        liveUpdate(
-          input,
-          { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
-          dataFunction
-        );
+      const selectElement = clone.querySelector('select');
+      selectElement.id = `input-${type}-${index + 1}`;
+
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.innerHTML = data.placeholder || 'Select an option';
+      if ((isNumeric(data.selected) && data.selected == 0) || data.required) {
+        placeholderOption.readOnly = true;
+        placeholderOption.classList.add('bg-gray-200', 'text-gray-500');
+      }
+      placeholderOption.selected = true;
+      selectElement.appendChild(placeholderOption);
+
+      data.options.forEach((optionData, index) => {
+        const option = document.createElement('option');
+        option.value = optionData.value;
+        option.innerHTML = optionData.label;
+        option.classList.add('font-medium');
+
+        if (isNumeric(data.selected)) {
+          if (index == data.selected - 1) {
+            option.selected = true;
+            placeholderOption.selected = false;
+          }
+        } else {
+          if (option.value == data.selected.toLowerCase()) {
+            data.selected = index + 1;
+            option.selected = true;
+            placeholderOption.selected = false;
+          }
+        }
+
+        selectElement.appendChild(option);
       });
 
-      let [secondIndexInputOperator, secondIndexInput] = indices[1].split('');
-      secondIndexInput = originalContainer.parentElement.querySelector(
-        `#input-${type}-${index + 1 - secondIndexInput}`
-      );
-      secondIndexInput.addEventListener('input', () => {
-        liveUpdate(
-          input,
-          { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
-          dataFunction
-        );
+      selectElement.addEventListener('change', function () {
+        data.selected = this.selectedIndex;
       });
+    } else {
+      if (data.live) {
+        let [indices, dataFunction] = data.live.split(':');
+        indices = indices.split('|');
 
-      let thirdIndexInputOperator, thirdIndexInput;
-      if (indices[2]) {
-        [thirdIndexInputOperator, thirdIndexInput] = indices[2].split('');
-        thirdIndexInput = originalContainer.parentElement.querySelector(
-          `#input-${type}-${index + 1 - thirdIndexInput}`
+        const firstIndexInput = originalContainer.parentElement.querySelector(
+          `#input-${type}-${index + 1 - indices[0]}`
         );
-        thirdIndexInput.addEventListener('input', () => {
+        firstIndexInput.addEventListener('input', () => {
           liveUpdate(
             input,
             { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
             dataFunction
           );
         });
-      }
 
-      if (dataFunction.includes('range')) {
-        input.addEventListener('input', () => {
+        let [secondIndexInputOperator, secondIndexInput] = indices[1].split('');
+        secondIndexInput = originalContainer.parentElement.querySelector(
+          `#input-${type}-${index + 1 - secondIndexInput}`
+        );
+        secondIndexInput.addEventListener('input', () => {
           liveUpdate(
             input,
             { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
             dataFunction
           );
         });
-      }
 
-      function liveUpdate(
-        input,
-        { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
-        dataFunction
-      ) {
-        let dataFunctionOutput;
-        switch (dataFunction) {
-          case 'arithmetic':
-            dataFunctionOutput = +decodePrice(firstIndexInput.value);
-            switch (secondIndexInputOperator) {
-              case '+':
-                dataFunctionOutput += +decodePrice(secondIndexInput.value);
-                break;
-            }
-            switch (thirdIndexInputOperator) {
-              case '-':
-                dataFunctionOutput -= +decodePrice(thirdIndexInput.value);
-                break;
-            }
-            input.value = encodePrice(dataFunctionOutput);
-            data.value = input.value;
-            break;
-          case 'range':
-            const startDateStr = firstIndexInput.value;
-            const daysToAdd = +input.value || 30;
-            const [month, day, year] = startDateStr.split('-').map(Number);
-            const startDate = new Date(year, month - 1, day);
-            const resultDate = new Date(startDate);
-            resultDate.setDate(resultDate.getDate() + daysToAdd);
-            dataFunctionOutput = `from ${startDate.toLocaleString('en-US', {
-              month: 'long',
-              day: '2-digit',
-              year: 'numeric',
-            })} to ${resultDate.toLocaleString('en-US', {
-              month: 'long',
-              day: '2-digit',
-              year: 'numeric',
-            })}`;
-            secondIndexInput.value = dataFunctionOutput;
-            break;
+        let thirdIndexInputOperator, thirdIndexInput;
+        if (indices[2]) {
+          [thirdIndexInputOperator, thirdIndexInput] = indices[2].split('');
+          thirdIndexInput = originalContainer.parentElement.querySelector(
+            `#input-${type}-${index + 1 - thirdIndexInput}`
+          );
+          thirdIndexInput.addEventListener('input', () => {
+            liveUpdate(
+              input,
+              { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+              dataFunction
+            );
+          });
+        }
+
+        if (dataFunction.includes('range')) {
+          input.addEventListener('input', () => {
+            liveUpdate(
+              input,
+              { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+              dataFunction
+            );
+          });
+        }
+
+        function liveUpdate(
+          input,
+          { firstIndexInput, secondIndexInputOperator, secondIndexInput, thirdIndexInputOperator, thirdIndexInput },
+          dataFunction
+        ) {
+          let dataFunctionOutput;
+          switch (dataFunction) {
+            case 'arithmetic':
+              dataFunctionOutput = +decodePrice(firstIndexInput.value);
+              switch (secondIndexInputOperator) {
+                case '+':
+                  dataFunctionOutput += +decodePrice(secondIndexInput.value);
+                  break;
+              }
+              switch (thirdIndexInputOperator) {
+                case '-':
+                  dataFunctionOutput -= +decodePrice(thirdIndexInput.value);
+                  break;
+              }
+              input.value = encodePrice(dataFunctionOutput);
+              data.value = input.value;
+              break;
+            case 'range':
+              const startDateStr = firstIndexInput.value;
+              const daysToAdd = +input.value || 30;
+              const [month, day, year] = startDateStr.split('-').map(Number);
+              const startDate = new Date(year, month - 1, day);
+              const resultDate = new Date(startDate);
+              resultDate.setDate(resultDate.getDate() + daysToAdd);
+              dataFunctionOutput = `from ${startDate.toLocaleString('en-US', {
+                month: 'long',
+                day: '2-digit',
+                year: 'numeric',
+              })} to ${resultDate.toLocaleString('en-US', {
+                month: 'long',
+                day: '2-digit',
+                year: 'numeric',
+              })}`;
+              secondIndexInput.value = dataFunctionOutput;
+              break;
+          }
         }
       }
+
+      if (data.icon) input.querySelectorAll('p')[0].innerHTML = data.icon;
+      if (data.title) input.querySelectorAll('p')[1].innerHTML = data.title;
+      if (data.subtitle) input.querySelectorAll('p')[2].innerHTML = data.subtitle;
+
+      input.dispatchEvent(new Event('input'));
     }
-
-    if (data.icon) input.querySelectorAll('p')[0].innerHTML = data.icon;
-    if (data.title) input.querySelectorAll('p')[1].innerHTML = data.title;
-    if (data.subtitle) input.querySelectorAll('p')[2].innerHTML = data.subtitle;
-
-    input.dispatchEvent(new Event('input'));
 
     if (!data.hidden) clone.classList.remove('hidden');
   }
