@@ -1052,7 +1052,7 @@ function setupModalBase(defaultData, inputs, callback) {
 
   function setupRenderInput(type, render, offset) {
     if (render) {
-      const inputId = type === 'short' || 'spinner' ? `#input-${type}-${offset}` : `#input-${type}`;
+      const inputId = type === 'short' || type === 'spinner' ? `#input-${type}-${offset}` : `#input-${type}`;
 
       if (type === 'spinner') {
         const originalContainer = tempModalContainer.querySelector(inputId).parentElement.parentElement;
