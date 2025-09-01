@@ -2,22 +2,13 @@ import main from '../admin_main.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 
 // default codes:
-let mainBtn, subBtn, sectionTwoMainBtn;
+let mainBtn, subBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
-  // change to right sectionName
   if (main.sharedState.sectionName != 'dashboard') return;
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-  // this button is hidden initially, using this code will show it
-  // subBtn.classList.remove('hidden');
   subBtn.addEventListener('click', subBtnFunction);
-  // this button is disabled in this module, using this code will enable it
-  // sectionTwoMainBtn = document.getElementById(`${main.sharedState.sectionName}SectionTwoMainBtn`);
-  // sectionTwoMainBtn.addEventListener('click', sectionTwoMainBtnFunction);
-
-  // not default code: sample of custom content setup
-  // fetchAnnouncements();
   setupChartOne();
   setupChartTwo();
 });
@@ -73,7 +64,10 @@ function mainBtnFunction() {
   };
 
   main.openModal(mainBtn, inputs, (result) => {
-    createAnnouncement(result);
+    main.openConfirmationModal('Announce', () => {
+      createAnnouncement(result);
+      main.closeConfirmationModal();
+    });
   });
 
   let announcementBtn;
