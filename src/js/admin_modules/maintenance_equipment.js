@@ -111,7 +111,7 @@ function showEquipmentDetails(frontendResult, equipment) {
     ],
     footer: {
       main: `Update ${getEmoji('📌')}`,
-      sub: `Delete ${getEmoji('💀')}`,
+      sub: `Delete ${getEmoji('⚠️')}`,
     },
   };
 

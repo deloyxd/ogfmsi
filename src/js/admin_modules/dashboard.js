@@ -125,7 +125,7 @@ function mainBtnFunction() {
     result.header.subtitle = 'Announcement form';
     result.footer = {};
     result.footer.main = `Update ${getEmoji('📌')}`;
-    result.footer.sub = `Delete ${getEmoji('💀')}`;
+    result.footer.sub = `Delete ${getEmoji('⚠️')}`;
     element.dataset.description = result.large[0].value;
 
     element.addEventListener('mouseenter', () => {
