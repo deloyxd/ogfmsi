@@ -572,7 +572,7 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
   ...(isUpdate && {
     footer: {
       main: `Update Product ${getEmoji('🧊')}`,
-      sub: `Delete ${getEmoji('💀')}`,
+      sub: `Delete ${getEmoji('⚠️')}`,
     },
   }),
 });
