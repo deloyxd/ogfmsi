@@ -16,7 +16,10 @@ connection.connect((err) => {
     console.error('Error connecting to MySQL database:', err);
     return;
   }
-  console.log('Successfully connected to the MySQL database.');
+  console.log(`✅ Successfully connected to the MySQL database`);
+  console.log('Database name:', process.env.DB_NAME);
+  console.log('Connection ID:', connection.threadId);
+  console.log('Host:', process.env.DB_HOST);
 });
 
 module.exports = connection;
