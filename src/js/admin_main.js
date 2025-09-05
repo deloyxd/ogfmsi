@@ -2,6 +2,7 @@ const sharedState = {
   sectionName: '',
   activeTab: 1,
   intervalId: null,
+  reserveCustomerId: '',
 };
 
 export let { sectionName, activeTab } = sharedState;
@@ -1304,9 +1305,12 @@ function setupModalBase(defaultData, inputs, callback) {
         selectElement.appendChild(option);
       });
 
-      selectElement.addEventListener('change', function () {
+      selectElement.onchange = function () {
         data.selected = this.selectedIndex;
-      });
+        if (data.listener) {
+          data.listener(data.selected, tempModalContainer);
+        }
+      };
     } else {
       if (data.live) {
         let [indices, dataFunction] = data.live.split(':');
@@ -1850,6 +1854,25 @@ export function decodeDate(date) {
   return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+export function decodeTime(time, offsetHours = 0) {
+  const [hourStr, minuteStr] = time.split(':');
+  let hour = parseInt(hourStr, 10);
+  let minute = parseInt(minuteStr, 10);
+
+  let totalMinutes = hour * 60 + minute + offsetHours * 60;
+  totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+  hour = Math.floor(totalMinutes / 60);
+  minute = totalMinutes % 60;
+
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = (hour % 12) || 12;
+  const displayMinute = minute.toString().padStart(2, '0');
+
+  return `${displayHour}:${displayMinute} ${ampm}`;
+}
+
+
+
 export function getDateOrTimeOrBoth() {
   const now = new Date();
   const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -1981,6 +2004,7 @@ export default {
   decodeName,
   encodeDate,
   decodeDate,
+  decodeTime,
   getDateOrTimeOrBoth,
   updateDateAndTime,
   isValidDate,

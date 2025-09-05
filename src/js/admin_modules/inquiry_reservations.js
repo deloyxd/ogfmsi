@@ -1,4 +1,5 @@
 import main from '../admin_main.js';
+import customers from './inquiry_customers.js';
 import payments from './payments.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 
@@ -15,19 +16,56 @@ const RESERVATION_DURATION = [
   { value: '6', label: '6 hours' },
 ];
 
-const RESERVATION_TIME = [
-  { value: '8:00', label: '8:00 AM' },
-  { value: '9:00', label: '9:00 AM' },
-  { value: '10:00', label: '10:00 AM' },
-  { value: '11:00', label: '11:00 AM' },
-  { value: '12:00', label: '12:00 PM' },
-  { value: '13:00', label: '1:00 PM' },
-  { value: '14:00', label: '2:00 PM' },
-  { value: '15:00', label: '3:00 PM' },
-  { value: '16:00', label: '4:00 PM' },
-  { value: '17:00', label: '5:00 PM' },
-  { value: '18:00', label: '6:00 PM' },
-];
+const RESERVATION_TIME = getReservationTimes();
+
+function getReservationTimes(startHour = 8, endHour = 23, interval = 15) {
+  const times = [];
+
+  for (let hour = startHour; hour <= endHour; hour++) {
+    for (let minute = 0; minute < 60; minute += interval) {
+      if (hour === endHour && minute > 0) break;
+
+      const value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+      const labelHour = ((hour + 11) % 12) + 1;
+      const labelMinute = minute.toString().padStart(2, '0');
+      const ampm = hour < 12 ? 'AM' : 'PM';
+
+      times.push({
+        value,
+        label: `${labelHour}:${labelMinute} ${ampm}`.trim(),
+      });
+    }
+  }
+
+  return times;
+}
+
+function roundToNearestSlot(interval = 15) {
+  const { date, time, datetime } = main.getDateOrTimeOrBoth();
+
+  const [hourStr, minuteStr] = time.split(':');
+  let hour = parseInt(hourStr, 10);
+  let minute = parseInt(minuteStr.split(' ')[0], 10);
+  const ampm = minuteStr.split(' ')[1];
+
+  const rounded = Math.floor(minute / interval) * interval;
+
+  if (rounded === 60) {
+    hour += 1;
+    minute = 0;
+  } else {
+    minute = rounded;
+  }
+
+  let hour24 = hour;
+  if (ampm === 'PM' && hour !== 12) hour24 += 12;
+  if (ampm === 'AM' && hour === 12) hour24 = 0;
+
+  const roundedValue = `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+  return RESERVATION_TIME.findIndex((t) => t.value === roundedValue) + 2;
+}
 
 const RESERVATION_TYPES = [
   { value: 'zumba', label: 'Zumba' },
@@ -36,6 +74,7 @@ const RESERVATION_TYPES = [
 
 let mainBtn, sectionTwoMainBtn;
 let bindActivated = false;
+let autoselect = true;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
@@ -59,97 +98,110 @@ function mainBtnFunction() {}
 
 function sectionTwoMainBtnFunction() {
   if (!selectedDate) {
+    if (main.sharedState.reserveCustomerId === '') {
+      main.toast('Please select a customer at customers module first!', 'error');
+      return;
+    }
     main.toast('Please select a date first!', 'error');
     return;
   }
 
-  const inputs = {
-    header: {
-      title: `Reserve Facility ${getEmoji('📆', 26)}`,
-      subtitle: 'Reservation form',
-    },
-    short: [
-      { placeholder: 'User ID', value: '', required: true },
-      { placeholder: 'Price per hour', value: '60', required: true },
-      {
-        placeholder: 'Reservation date (mm-dd-yyyy)',
-        value: `${selectedDate.dataset.month}-${selectedDate.dataset.day}-${selectedDate.dataset.year}`,
-        required: true,
-      },
-    ],
-    spinner: [
-      {
-        label: 'Reservation duration',
-        placeholder: 'Select reservation duration',
-        selected: 0,
-        required: true,
-        options: RESERVATION_DURATION,
-      },
-      {
-        label: 'Reservation time',
-        placeholder: 'Select reservation time',
-        selected: 0,
-        required: true,
-        options: RESERVATION_TIME,
-      },
-      {
-        label: 'Reservation type',
-        placeholder: 'Select reservation type',
-        selected: 0,
-        required: true,
-        options: RESERVATION_TYPES,
-      },
-    ],
-    footer: {
-      main: `Reserve ${getEmoji('📆')}`,
-    },
-  };
-  main.openModal('orange', inputs, (result) => {
-    if (!main.isValidPaymentAmount(parseInt(result.short[1].value))) {
-      main.toast(`Invalid price per hour: ${result.short[1].value}`, 'error');
-      return;
-    }
+  customers.getReserveCustomer((customer) => {
+    if (customer) {
+      const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
+      const inputs = {
+        header: {
+          title: `Reserve Facility ${getEmoji('📆', 26)}`,
+          subtitle: 'Reservation form',
+        },
+        short: [
+          { placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true },
+          {
+            placeholder: 'Price per hour',
+            value: main.encodePrice(roundToNearestSlot() > 40 ? 200 : 180),
+            locked: true,
+          },
+          {
+            placeholder: 'Reservation date (mm-dd-yyyy)',
+            value: `${main.encodeDate(new Date(selectedDate.dataset.year, selectedDate.dataset.month - 1, selectedDate.dataset.day), '2-digit')}`,
+            required: true,
+            calendar: true,
+          },
+        ],
+        spinner: [
+          {
+            label: 'Reservation time',
+            placeholder: 'Select reservation time',
+            selected: roundToNearestSlot(),
+            required: true,
+            options: RESERVATION_TIME,
+            listener: activeSpinnerListener,
+          },
+          {
+            label: 'Reservation duration',
+            placeholder: 'Select reservation duration',
+            selected: 0,
+            required: true,
+            options: RESERVATION_DURATION,
+          },
+          {
+            label: 'Reservation type',
+            placeholder: 'Select reservation type',
+            selected: 0,
+            required: true,
+            options: RESERVATION_TYPES,
+          },
+        ],
+        footer: {
+          main: `Reserve ${getEmoji('📆')}`,
+        },
+      };
+      main.openModal('orange', inputs, (result) => {
+        main.openConfirmationModal(
+          `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]))} to ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]), main.getSelectedSpinner(result.spinner[1]))}`,
+          () => {
+            const columnsData = [
+              'id_R_random',
+              { type: 'object_cid', data: [customer.dataset.image, fullName, customer.dataset.id] },
+              main.fixText(main.getSelectedSpinner(result.spinner[2])),
+              `${main.decodeDate(result.short[2].value)} - ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]))} to ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]), main.getSelectedSpinner(result.spinner[1]))}`, // dataset.custom3
+              'custom_datetime_Pending',
+            ];
+            main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+              main.createNotifDot(SECTION_NAME, 2);
 
-    main.findAtSectionOne('inquiry-regular', result.short[0].value, 'equal_id', 1, (user) => {
-      if (!user) {
-        main.toast("There's no user with that ID!", 'error');
-        return;
-      }
-
-      const { _, __, fullName } = main.decodeName(user.dataset.text);
-      main.openConfirmationModal(`Reservation for user: ${fullName}`, () => {
-        const columnsData = [
-          'id_R_random',
-          { type: 'object_userid', data: [user.dataset.image, fullName, user.dataset.id] },
-          main.getSelectedSpinner(result.spinner[2]), // dataset.custom2
-          `${main.getSelectedSpinner(result.spinner[1])} - ${parseInt(main.getSelectedSpinner(result.spinner[1]).split(':')) + parseInt(main.getSelectedSpinner(result.spinner[0])) + ':00'}`, // dataset.custom3
-          'custom_datetime_Pending',
-        ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 2, (reservation) => {
-          const actionData = {
-            module: MODULE_NAME,
-            submodule: SUBMODULE_NAME,
-            description: 'Process user reservation',
-          };
-          const reservationData = {
-            id: reservation.dataset.id,
-            image: user.dataset.image,
-            name: user.dataset.text,
-            userid: user.dataset.id,
-            amount: parseInt(main.getSelectedSpinner(result.spinner[0])) * parseInt(result.short[1].value),
-          };
-          accesscontrol.log(actionData, reservationData);
-          payments.processReservationPayment(reservationData);
-
-          main.createNotifDot(SECTION_NAME, 2);
-
-          main.toast('Successfully reserved facility!', 'success');
-          main.closeConfirmationModal();
-          main.closeModal();
-        });
+              main.toast('Successfully reserved facility!', 'success');
+              main.closeConfirmationModal();
+              main.closeModal(() => {
+                // const actionData = {
+                //   module: MODULE_NAME,
+                //   submodule: SUBMODULE_NAME,
+                //   description: 'Process customer reservation',
+                // };
+                const reservationData = {
+                  id: createResult.dataset.id,
+                  image: customer.dataset.image,
+                  name: customer.dataset.text,
+                  cid: customer.dataset.id,
+                  amount:
+                    parseInt(main.getSelectedSpinner(result.spinner[1])) * main.decodePrice(result.short[1].value),
+                };
+                // accesscontrol.log(actionData, reservationData);
+                payments.processReservationPayment(reservationData, (transactionId) => {
+                  createResult.dataset.tid = transactionId;
+                });
+              });
+            });
+          }
+        );
       });
-    });
+    }
   });
+}
+
+function activeSpinnerListener(selected, container) {
+  const priceInput = container.querySelector(`#input-short-6`);
+  priceInput.value = main.encodePrice(selected > 40 ? 200 : 180);
 }
 
 const currentDate = new Date();
@@ -271,7 +323,7 @@ function createDayElement(day, month, year, isToday) {
   const isPreviousDay =
     day + 31 * month + 366 * year < today.getDate() + 31 * today.getMonth() + 366 * today.getFullYear();
   // todo, get live reservation count at this date
-  const reservedCount = Math.max(0, Math.round(Math.random() * 11) - Math.round(Math.random() * 10));
+  const reservedCount = Math.max(0, Math.round(Math.random() * 10) - Math.round(Math.random() * 10));
   const dayElement = document.createElement('div');
   dayElement.className = `
     flex justify-center relative p-2 text-center cursor-pointer duration-300
@@ -315,22 +367,31 @@ function createDayElement(day, month, year, isToday) {
       selectedDate.classList.remove('bg-blue-400');
     }
 
-    const inquiryReservationQuick = document.getElementById(`inquiryReservationQuick`).children[0];
-    inquiryReservationQuick.children[0].textContent = `${monthNames[month]} ${day}, ${year} - Reservations: ${reservedCount}`;
-    inquiryReservationQuick.children[1].classList.remove('hidden');
-    inquiryReservationQuick.children[0].classList.add('text-black');
-    inquiryReservationQuick.children[1].classList.add('text-black', 'mt-2');
+    customers.getReserveCustomer((customer) => {
+      const inquiryReservationQuick = document.getElementById(`inquiryReservationQuick`).children[0];
+      inquiryReservationQuick.children[1].classList.remove('hidden');
+      inquiryReservationQuick.children[1].classList.add('text-black', 'mt-2');
+      if (customer) {
+        const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
 
-    if (isPreviousDay) {
-      inquiryReservationQuick.children[1].innerHTML = `${getEmoji('‼️', 12)} Past dates cannot be reserved anymore.`;
-    } else {
-      dayElement.classList.add('bg-blue-400');
-      selectedDate = dayElement;
-      selectedDate.dataset.day = day;
-      selectedDate.dataset.month = month + 1;
-      selectedDate.dataset.year = year;
-      inquiryReservationQuick.children[1].innerHTML = `Click the button below ${getEmoji('👇', 12)} to reserve this date.`;
-    }
+        inquiryReservationQuick.children[0].innerHTML = `Reserve for:<p class="text-lg">${fullName}</p><br>Reserve date:<p class="text-lg">${monthNames[month]} ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
+        inquiryReservationQuick.children[0].classList.add('text-black');
+
+        dayElement.classList.add('bg-blue-400');
+        selectedDate = dayElement;
+        selectedDate.dataset.day = day;
+        selectedDate.dataset.month = month + 1;
+        selectedDate.dataset.year = year;
+        inquiryReservationQuick.children[1].innerHTML = `<br>Click the button below ${getEmoji('👇', 12)} to reserve this date.`;
+      } else {
+        inquiryReservationQuick.children[0].innerHTML = `Reserve date:<p class="text-lg">${monthNames[month]} ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
+        inquiryReservationQuick.children[0].classList.add('text-black');
+        inquiryReservationQuick.children[1].innerHTML = `<br>${getEmoji('⚠️', 12)} There's no selected customer yet.`;
+      }
+      if (isPreviousDay) {
+        inquiryReservationQuick.children[1].innerHTML = `<br>${getEmoji('⚠️', 12)} Past dates cannot be reserved anymore.`;
+      }
+    });
   });
 
   dayElement.addEventListener('mouseenter', () => {
@@ -344,9 +405,25 @@ function createDayElement(day, month, year, isToday) {
     if (isPreviousDay) dayElement.querySelector(`#bookmark`).classList.add('opacity-0');
   });
 
+  if (autoselect && isToday) {
+    autoselect = false;
+    selectedDate = dayElement;
+    selectedDate.dataset.day = day;
+    selectedDate.dataset.month = month + 1;
+    selectedDate.dataset.year = year;
+  }
+
   return dayElement;
 }
 
 function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 }
+
+export function reserveCustomer() {
+  autoselect = true;
+  main.showSection(SECTION_NAME);
+  sectionTwoMainBtnFunction();
+}
+
+export default { reserveCustomer };

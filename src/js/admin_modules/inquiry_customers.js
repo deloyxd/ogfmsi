@@ -1,5 +1,6 @@
 import main from '../admin_main.js';
 import checkins from './inquiry_checkins.js';
+import reservations from './inquiry_reservations.js';
 import payments from './payments.js';
 
 const SECTION_NAME = 'inquiry-customers';
@@ -581,7 +582,12 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
           );
           return;
         }
-        main.closeModal();
+        if (selectedProcess.includes('reserve')) {
+          main.sharedState.reserveCustomerId = customer.dataset.id;
+          main.closeModal(() => {
+            reservations.reserveCustomer();
+          });
+        }
       }
     });
   }
@@ -738,4 +744,10 @@ export function cancelPendingTransaction(transactionId) {
   }
 }
 
-export default { completeCheckinPayment, customerDetailsBtnFunction, cancelPendingTransaction };
+export function getReserveCustomer(callback = () => {}) {
+  main.findAtSectionOne(SECTION_NAME, main.sharedState.reserveCustomerId, 'equal_id', 1, (result) => {
+    callback(result);
+  });
+}
+
+export default { completeCheckinPayment, customerDetailsBtnFunction, cancelPendingTransaction, getReserveCustomer };
