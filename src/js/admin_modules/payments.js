@@ -282,4 +282,58 @@ export function cancelCheckinPayment(transactionId) {
   });
 }
 
-export default { processCheckinPayment, continueProcessCheckinPayment, pendingTransaction, cancelCheckinPayment };
+export function processReservationPayment(reservation, callback = () => {}) {
+  main.showSection(SECTION_NAME);
+  const purpose = `Reservation fee`;
+  const columnsData = [
+    'id_T_random',
+    {
+      type: 'object',
+      data: [reservation.image, reservation.cid],
+    },
+    purpose,
+    main.formatPrice(reservation.amount),
+    'Regular',
+    'custom_datetime_today',
+  ];
+  main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+    const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
+    transactionProcessBtn.addEventListener('click', () => {
+      completeReservationPayment(
+        createResult.dataset.id,
+        createResult.dataset.image,
+        createResult.dataset.text,
+        purpose,
+        reservation.name,
+        reservation.amount,
+        'Regular'
+      );
+    });
+    const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
+    transactionCancelBtn.addEventListener('click', () => {
+      main.openConfirmationModal(
+        'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
+        () => {
+          cancelReservationPayment(createResult.dataset.id);
+          main.closeConfirmationModal();
+        }
+      );
+    });
+    continueProcessReservationPayment(createResult.dataset.id, reservation.name);
+    callback(createResult.dataset.id);
+  });
+}
+
+export function continueProcessReservationPayment() {
+
+}
+
+export function cancelReservationPayment() {
+
+}
+
+function completeReservationPayment() {
+
+}
+
+export default { processCheckinPayment, continueProcessCheckinPayment, cancelCheckinPayment, processReservationPayment, continueProcessReservationPayment, cancelReservationPayment, pendingTransaction };
