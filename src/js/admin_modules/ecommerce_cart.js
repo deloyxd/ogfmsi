@@ -13,6 +13,9 @@ let cart = [],
   sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
   inventoryItems = []; // Store inventory data for stock validation
 
+// Search term for filtering products
+let searchTerm = '';
+
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
@@ -24,6 +27,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
   getInventoryItemsFromSystem();
   loadCartFromServer();
+  setupSearch();
 
   if (!liveActivated) {
     liveActivated = true;
@@ -50,29 +54,37 @@ async function getInventoryItemsFromSystem() {
         category: product.category,
       }));
 
-      // Tab 1: All Available Products (Products with stocks)
-      displayProductsForTab(
-        inventoryItems.filter((p) => p.quantity > 0),
-        1
-      );
-
-      // Tab 2: Best Selling Products (Fast moving products)
-      displayProductsForTab(
-        inventoryItems.filter((p) => p.quantity > 50),
-        2
-      );
-
-      // Tab 3: Least Selling Products (Slow moving products)
-      displayProductsForTab(
-        inventoryItems.filter((p) => p.quantity > 0 && p.quantity <= 10),
-        3
-      );
+      // Initial render respecting current search (if any)
+      refreshProductDisplays();
     } else {
       console.error('Error fetching products:', data.error);
     }
   } catch (error) {
     console.error('Error fetching products:', error);
   }
+}
+
+// Initialize the search input and wire up events
+function setupSearch() {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  searchInput.addEventListener('input', (e) => {
+    searchTerm = (e.target.value || '').trim().toLowerCase();
+    refreshProductDisplays();
+  });
+}
+
+// Returns inventory filtered by current searchTerm (matches name or category)
+function getFilteredInventory() {
+  if (!searchTerm) return inventoryItems;
+  return inventoryItems.filter((p) => {
+    const { fullName } = main.decodeName(p.name);
+    const nameMatch = fullName.toLowerCase().includes(searchTerm);
+    const categoryLabel = getCategoryLabel(p.category) || '';
+    const categoryMatch = categoryLabel.toLowerCase().includes(searchTerm);
+    return nameMatch || categoryMatch;
+  });
 }
 
 // Helper function to get available stock for a product (considering items already in cart)
@@ -427,21 +439,23 @@ window.removeItem = async function (cartId) {
 
 // ADD THIS NEW FUNCTION ANYWHERE AFTER THE GLOBAL FUNCTIONS:
 function refreshProductDisplays() {
+  const filtered = getFilteredInventory();
+
   // Tab 1: All Available Products (Products with stocks)
   displayProductsForTab(
-    inventoryItems.filter((p) => p.quantity > 0),
+    filtered.filter((p) => p.quantity > 0),
     1
   );
 
   // Tab 2: Best Selling Products (Fast moving products)
   displayProductsForTab(
-    inventoryItems.filter((p) => p.quantity > 50),
+    filtered.filter((p) => p.quantity > 50),
     2
   );
 
   // Tab 3: Least Selling Products (Slow moving products)
   displayProductsForTab(
-    inventoryItems.filter((p) => p.quantity > 0 && p.quantity <= 10),
+    filtered.filter((p) => p.quantity > 0 && p.quantity <= 10),
     3
   );
 }
