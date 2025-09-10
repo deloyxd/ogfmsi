@@ -74,28 +74,29 @@ function sectionTwoMainBtnFunction() {
             value: '',
             required: true,
             type: 'time',
-            listener: (input, container) => {
-              // Auto-set end time to 1 hour after start time
-              try {
-                const start = input.value;
-                if (!/^\d{2}:\d{2}$/.test(start)) return;
-                const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-                const endMinutes = (h * 60 + m + 60) % 1440;
-                const endH = Math.floor(endMinutes / 60).toString().padStart(2, '0');
-                const endM = (endMinutes % 60).toString().padStart(2, '0');
-                const endInput = container.querySelector('#input-short-9');
-                if (endInput && !endInput.value) {
-                  endInput.value = `${endH}:${endM}`;
-                  endInput.dispatchEvent(new Event('input'));
-                }
-              } catch (e) {}
-            },
+            // listener: (input, container) => {
+            //   // Auto-set end time to 1 hour after start time
+            //   try {
+            //     const start = input.value;
+            //     if (!/^\d{2}:\d{2}$/.test(start)) return;
+            //     const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+            //     const endMinutes = (h * 60 + m + 60) % 1440;
+            //     const endH = Math.floor(endMinutes / 60).toString().padStart(2, '0');
+            //     const endM = (endMinutes % 60).toString().padStart(2, '0');
+            //     const endInput = container.querySelector('#input-short-9');
+            //     if (endInput && !endInput.value) {
+            //       endInput.value = `${endH}:${endM}`;
+            //       endInput.dispatchEvent(new Event('input'));
+            //     }
+            //   } catch (e) {}
+            // },
           },
           {
             placeholder: 'End time',
             value: '',
             required: true,
             type: 'time',
+            offset: 60,
           },
         ],
         spinner: [

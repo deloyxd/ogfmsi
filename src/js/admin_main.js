@@ -1106,6 +1106,14 @@ function setupModalBase(defaultData, inputs, callback) {
       }
       input.placeholder = data.placeholder;
       input.value = data.value;
+        if (input.type === 'time') {
+          let time = new Date().toTimeString().split(' ')[0];
+          if (data.offset) {
+            time = new Date(Date.now() + data.offset * 60000).toTimeString().split(' ')[0];
+          }
+          time = time.substring(0, time.lastIndexOf(':'));
+          input.value = time;
+        }
     }
 
     if (type.includes('short')) {
