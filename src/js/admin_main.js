@@ -1097,6 +1097,10 @@ function setupModalBase(defaultData, inputs, callback) {
       }
 
       input.id = id;
+      // Allow consumers to specify a custom input type (e.g., 'time')
+      if (data.type) {
+        input.type = data.type;
+      }
       input.placeholder = data.placeholder;
       input.value = data.value;
     }

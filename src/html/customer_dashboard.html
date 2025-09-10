@@ -125,7 +125,7 @@
                 <div class="flex items-center space-x-2">
                   <span class="font-bold text-orange-300">⏰</span>
                   <!-- 🔑 CLIENT -->
-                  <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
+                  <span class="text-sm font-medium">7:00 AM - 11:00 PM</span>
                 </div>
                 <div class="mt-1 text-xs text-orange-200">Operating Hours</div>
               </div>
@@ -411,6 +411,108 @@
     </div>
 
     <!-- 🔥 main 🔥 -->
+    <main class="relative z-10 w-full px-0 py-0 min-h-screen flex flex-col">
+      <section class="w-full">
+        <div class="w-full">
+        </div>
+      </section>
+  
+      <!-- Calendar and Quick Info Container -->
+      <section class="flex-1 flex flex-col lg:flex-row">
+        <!-- Calendar Container -->
+        <div class="flex-1 w-full">
+          <div id="customerCalendar" class="w-full h-full min-h-[400px] md:min-h-[600px] lg:min-h-[700px]"></div>
+        </div>
+        
+        <!-- Quick Info Sidebar -->
+        <div class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-orange-200 bg-white/70">
+          <div class="px-4 py-6 h-full">
+            <h3 class="mb-3 text-base font-semibold text-orange-900">Book a Session</h3>
+            <div id="customerReservationQuick" class="h-full overflow-y-auto pr-1">
+              <form id="bookingForm" class="space-y-4 text-sm">
+                <!-- Choose Service -->
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 mb-1">Choose Service</label>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center rounded-md border border-orange-300 bg-white px-3 py-2 text-orange-700 font-medium cursor-pointer hover:bg-orange-50">
+                      <input type="radio" name="service" value="Basketball Court" class="hidden" checked />
+                      <span class="text-xs sm:text-sm">Basketball Court</span>
+                    </label>
+                    <label class="flex items-center justify-center rounded-md border border-orange-300 bg-white px-3 py-2 text-orange-700 font-medium cursor-pointer hover:bg-orange-50">
+                      <input type="radio" name="service" value="Zumba" class="hidden" />
+                      <span class="text-xs sm:text-sm">Zumba</span>
+                    </label>
+                  </div>
+                </div>
+  
+                <!-- Main Client Name -->
+                <div>
+                  <label for="clientName" class="block text-xs font-semibold text-gray-700 mb-1">Main Client Name</label>
+                  <input id="clientName" name="clientName" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Enter your full name" required />
+                </div>
+  
+                <!-- Quick Booking Tip -->
+                <div class="rounded-md border border-orange-200 bg-orange-50 p-3 text-xs text-orange-900">
+                  <p class="font-semibold mb-1">Quick Booking Tip!</p>
+                  <p class="mb-2">We leave a small gap between appointments to prepare for each customer. Here's how it works:</p>
+                  <ul class="list-disc pl-4 space-y-1 text-xs">
+                    <li>If someone books until 2:00 PM</li>
+                    <li>Your appointment can start at 2:01 PM</li>
+                  </ul>
+                  <p class="mt-2 text-xs">Check our live calendar to see all available time slots!</p>
+                </div>
+  
+                <!-- Time inputs in grid for mobile -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Start Time -->
+                  <div>
+                    <label for="startTime" class="block text-xs font-semibold text-gray-700 mb-1">Start Time</label>
+                    <input id="startTime" name="startTime" type="time" min="07:00" max="23:00" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400" required />
+                    <p class="mt-1 text-xs text-gray-500">Gym opens at 7:00 AM</p>
+                  </div>
+
+                  <!-- End Time -->
+                  <div>
+                    <label for="endTime" class="block text-xs font-semibold text-gray-700 mb-1">End Time</label>
+                    <input id="endTime" name="endTime" type="time" min="07:00" max="23:00" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400" required />
+                    <p class="mt-1 text-xs text-gray-500">Last session ends at 11:00 PM</p>
+                  </div>
+                </div>
+                <p id="timeError" class="text-xs text-red-600 hidden" aria-live="polite"></p>
+  
+                <!-- Select Date -->
+                <div>
+                  <label for="bookingDate" class="block text-xs font-semibold text-gray-700 mb-1">Select Date</label>
+                  <input id="bookingDate" name="bookingDate" type="text" readonly class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-800 focus:outline-none" placeholder="Pick a date from the calendar" />
+                </div>
+  
+                <!-- Team Members -->
+                <div>
+                  <label for="teamMembers" class="block text-xs font-semibold text-gray-700 mb-1">Team Members</label>
+                  <input id="teamMembers" name="teamMembers" type="number" min="0" max="8" value="0" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                  <p class="mt-1 text-xs text-gray-500">Max 8 additional players</p>
+                </div>
+  
+                <!-- Add Additional Participant -->
+                <div>
+                  <button type="button" class="w-full rounded-md border border-orange-300 bg-white px-3 py-2 text-sm text-orange-700 font-medium hover:bg-orange-50">Add Additional Participant</button>
+                </div>
+  
+                <!-- Submit -->
+                <div>
+                  <button type="submit" class="w-full rounded-md bg-orange-600 px-4 py-2 font-semibold text-white shadow hover:bg-orange-700">Book Now</button>
+                </div>
+  
+                <!-- Acknowledgement -->
+                <p class="text-xs leading-snug text-gray-500">
+                  By submitting this form, the Primary Reservation Agent acknowledges having read and agreed to all terms and conditions as outlined in the facility usage policy.
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
 
     <!-- 🔥 footer 🔥 -->
     <footer
@@ -479,7 +581,7 @@
             </h3>
             <ul class="flex grid space-y-2 text-sm">
               <span class="text-gray-300"><b>Monday - Sunday:</b></span>
-              <span class="text-gray-400">9:00 AM - 11:59 AM</span>
+              <span class="text-gray-400">7:00 AM - 11:00 PM</span>
             </ul>
             <!-- <div class="text-sm bg-orange-800 p-3 rounded">
               <p class="text-orange-100 font-medium pb-2">Note:</p>
@@ -695,6 +797,7 @@
 
     <!-- main js -->
     <script src="/src/js/customer_dashboard.js"></script>
+    <script src="/src/js/customer_modules/customer_calendar.js"></script>
     <!-- add new js here 👆 -->
   </body>
 </html>

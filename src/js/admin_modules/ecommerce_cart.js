@@ -474,26 +474,130 @@ function getEmoji(emoji, size = 16) {
   return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
 }
 
+// Attach select-all behavior for quick overwrite on focus/click
+function attachSelectAll(el) {
+  if (!el || el.__selectAllBound) return;
+  const handler = () => requestAnimationFrame(() => el.select());
+  el.addEventListener('focus', handler);
+  el.addEventListener('click', handler);
+  el.__selectAllBound = true;
+}
+
 function createPaymentModalInputs(totalAmount) {
   return {
     header: {
       title: `Payment ${getEmoji('💳', 26)}`,
-      subtitle: `Total Amount: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
     },
     short: [
+      { placeholder: 'Amount to pay', value: main.encodePrice(totalAmount), locked: true }, // id: #input-short-5
+      { placeholder: 'Payment amount', value: totalAmount, required: true, autoformat: 'price' }, // cash, id: #input-short-6
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true }, // cashless, id: #input-short-7
+      { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' }, // id: #input-short-8
+      { placeholder: 'Reference number', value: 'N/A', required: true, hidden: true }, // id: #input-short-9
+    ],
+    radio: [
+      { label: 'Payment method', selected: 1, autoformat: { type: 'short', index: 6 } },
       {
-        placeholder: 'Customer Payment Amount',
-        value: '',
-        required: true,
-        type: 'number',
-        min: totalAmount,
-        step: '0.01',
+        icon: `${getEmoji('💵', 26)}`,
+        title: 'Cash',
+        subtitle: 'Traditional payment method',
+        listener: cartPaymentRadioListener,
+      },
+      {
+        icon: `${getEmoji('💳', 26)}`,
+        title: 'Cashless',
+        subtitle: 'Digital payment method',
+        listener: cartPaymentRadioListener,
+      },
+      {
+        icon: `${getEmoji('💵', 20)} + ${getEmoji('💳', 20)}`,
+        title: 'Hybrid',
+        subtitle: 'Both physical and digital payment method',
+        listener: cartPaymentRadioListener,
       },
     ],
     footer: {
       main: `Process Payment ${getEmoji('💳')}`,
     },
   };
+}
+
+function cartPaymentRadioListener(title, input, container, inputGroup) {
+  const amountToPay = main.decodePrice(inputGroup.short[0].value);
+  const cashInput = container.querySelector(`#input-short-6`);
+  const cashlessInput = container.querySelector(`#input-short-7`);
+  const refInput = container.querySelector(`#input-short-9`);
+  const attachSelectAll = (el) => {
+    if (!el || el.__selectAllBound) return;
+    const handler = () => requestAnimationFrame(() => el.select());
+    el.addEventListener('focus', handler);
+    el.addEventListener('click', handler);
+    el.__selectAllBound = true;
+  };
+  switch (title.toLowerCase()) {
+    case 'cash':
+      if (input.value.trim() == '') input.value = 'N/A';
+      cashInput.parentElement.classList.remove('hidden');
+      cashlessInput.parentElement.classList.add('hidden');
+      // Hide reference number for cash
+      refInput.parentElement.classList.add('hidden');
+      refInput.value = 'N/A';
+      break;
+    case 'cashless':
+      if (input.value == 'N/A') input.value = '';
+      input.focus();
+      cashInput.parentElement.classList.add('hidden');
+      cashlessInput.parentElement.classList.remove('hidden');
+      // Show reference number for cashless
+      refInput.parentElement.classList.remove('hidden');
+      if (refInput.value == 'N/A') refInput.value = '';
+      break;
+    case 'hybrid':
+      if (input.value == 'N/A') input.value = '';
+      input.focus();
+      cashInput.parentElement.classList.remove('hidden');
+      cashlessInput.parentElement.classList.remove('hidden');
+      // Show reference number for hybrid
+      refInput.parentElement.classList.remove('hidden');
+      if (refInput.value == 'N/A') refInput.value = '';
+      break;
+  }
+  // Sync inputGroup hidden flags so values are captured correctly
+  inputGroup.short[1].hidden = cashInput.parentElement.classList.contains('hidden');
+  inputGroup.short[2].hidden = cashlessInput.parentElement.classList.contains('hidden');
+  inputGroup.short[4].hidden = refInput.parentElement.classList.contains('hidden');
+
+  if (inputGroup.short[1].hidden) {
+    cashInput.previousElementSibling.innerHTML = inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
+    cashInput.value = main.encodePrice(0);
+  } else {
+    if (title.toLowerCase() == 'hybrid') {
+      cashInput.previousElementSibling.innerHTML = inputGroup.short[1].placeholder + ' (cash)' + (inputGroup.short[1].required ? ' *' : '');
+      cashInput.value = main.encodePrice(0);
+    } else {
+      cashInput.previousElementSibling.innerHTML = inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
+      cashInput.value = main.encodePrice(amountToPay);
+    }
+  }
+
+  if (inputGroup.short[2].hidden) {
+    cashlessInput.previousElementSibling.innerHTML = inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
+    cashlessInput.value = main.encodePrice(0);
+  } else {
+    if (title.toLowerCase() == 'hybrid') {
+      cashlessInput.previousElementSibling.innerHTML = inputGroup.short[2].placeholder + ' (cashless)' + (inputGroup.short[2].required ? ' *' : '');
+    } else {
+      cashlessInput.previousElementSibling.innerHTML = inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
+    }
+    cashlessInput.value = main.encodePrice(amountToPay);
+  }
+
+  cashInput.dispatchEvent(new Event('input'));
+  cashlessInput.dispatchEvent(new Event('input'));
+
+  // Ensure quick editing UX: auto-select contents on focus/click
+  attachSelectAll(cashInput);
+  attachSelectAll(cashlessInput);
 }
 
 async function updateProductStock(productId, soldQuantity) {
@@ -529,26 +633,56 @@ async function processCheckout() {
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Show payment modal
-  const paymentInputs = createPaymentModalInputs(totalAmount);
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const paymentInputs = createPaymentModalInputs(totalAmount, totalItems);
 
   main.openModal('green', paymentInputs, async (result) => {
-    const customerPayment = parseFloat(result.short[0].value);
+    const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
+    const amountToPay = Number(main.decodePrice(result.short[0].value));
+    const cashAmount = Number(result.short[1].value) || 0;
+    const cashlessAmount = Number(result.short[2].value) || 0;
+    const refNum = result.short[4].value;
 
-    if (customerPayment < totalAmount) {
-      main.toast('Payment amount is insufficient!', 'error');
+    if (paymentMethod === 'cash') {
+      if (!main.isValidPaymentAmount(+cashAmount)) {
+        main.toast(`Invalid payment amount (cash): ${cashAmount}`, 'error');
+        return;
+      }
+    }
+    if (paymentMethod === 'cashless' || paymentMethod === 'hybrid') {
+      if (!main.isValidPaymentAmount(+cashlessAmount)) {
+        main.toast(`Invalid payment amount (cashless): ${cashlessAmount}`, 'error');
+        return;
+      }
+      // Validate reference number is provided and numeric-only
+      if ((refNum !== 'N/A' && /[^0-9]/.test(refNum)) || refNum === 'N/A' || refNum.trim() === '') {
+        main.toast(`Invalid reference number: ${refNum}`, 'error');
+        return;
+      }
+    }
+    // For cash, reference number should remain 'N/A'
+    if (paymentMethod === 'cash' && refNum !== 'N/A') {
+      main.toast(`Cash payment method doesn't need reference number: ${refNum}`, 'error');
       return;
     }
 
-    const change = customerPayment - totalAmount;
+    const customerPayment = cashAmount + (paymentMethod === 'cash' ? 0 : cashlessAmount);
+    if (!main.isValidPaymentAmount(+customerPayment) || +customerPayment < +amountToPay) {
+      main.toast(`Payment amount is insufficient!`, 'error');
+      return;
+    }
+
+    const change = Number(main.decodePrice(result.short[3].value));
 
     try {
       // Create order
       const orderData = {
         session_id: sessionId,
         total_amount: totalAmount,
-        payment_method: 'cash',
+        payment_method: paymentMethod,
         customer_payment: customerPayment,
         change_amount: change,
+        reference_number: refNum,
         processed_by: 'admin',
       };
 
@@ -642,6 +776,14 @@ async function processCheckout() {
       main.toast('Error: Failed to process checkout', 'error');
     }
   });
+
+  // Bind select-all on amount inputs right after modal renders
+  setTimeout(() => {
+    const cashInput = document.querySelector('#input-short-6');
+    const cashlessInput = document.querySelector('#input-short-7');
+    attachSelectAll(cashInput);
+    attachSelectAll(cashlessInput);
+  }, 0);
 }
 
 // Make processCheckout available globally
