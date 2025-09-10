@@ -1015,14 +1015,17 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color);
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
+        clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
       clone.addEventListener('click', function () {
         radioClones.forEach((radioClone) => {
           if (radioClone == clone) {
             radioClone.classList.add(radioClone.dataset.color);
             radioClone.classList.add(radioClone.dataset.color.replace('border', 'bg') + '/50');
+            radioClone.classList.add(radioClone.dataset.color.replace('border', 'hover:bg') + '/50');
           } else {
             radioClone.classList.remove(radioClone.dataset.color);
             radioClone.classList.remove(radioClone.dataset.color.replace('border', 'bg') + '/50');
+            radioClone.classList.add(radioClone.dataset.color.replace('border', 'hover:bg') + '/50');
           }
         });
 
