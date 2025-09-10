@@ -88,31 +88,59 @@ export function pendingTransaction(transactionId, callback) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => callback(findResult));
 }
 
+// Attach select-all behavior for quick overwrite on focus/click
+function attachSelectAll(el) {
+  if (!el || el.__selectAllBound) return;
+  const handler = () => requestAnimationFrame(() => el.select());
+  el.addEventListener('focus', handler);
+  el.addEventListener('click', handler);
+  el.__selectAllBound = true;
+}
+
 function activeRadioListener(title, input, container, inputGroup) {
   const amountToPay = main.decodePrice(inputGroup.short[1].value);
   const cashInput = container.querySelector(`#input-short-7`);
   const cashlessInput = container.querySelector(`#input-short-8`);
+  const refInput = container.querySelector(`#input-short-11`);
   switch (title.toLowerCase()) {
     case 'cash':
       if (input.value.trim() == '') input.value = 'N/A';
       cashInput.parentElement.classList.remove('hidden');
       cashlessInput.parentElement.classList.add('hidden');
+      // Hide reference number for cash
+      if (refInput) {
+        refInput.parentElement.classList.add('hidden');
+        refInput.value = 'N/A';
+      }
       break;
     case 'cashless':
       if (input.value == 'N/A') input.value = '';
       input.focus();
       cashInput.parentElement.classList.add('hidden');
       cashlessInput.parentElement.classList.remove('hidden');
+      // Show reference number for cashless
+      if (refInput) {
+        refInput.parentElement.classList.remove('hidden');
+        if (refInput.value == 'N/A') refInput.value = '';
+      }
       break;
     case 'hybrid':
       if (input.value == 'N/A') input.value = '';
       input.focus();
       cashInput.parentElement.classList.remove('hidden');
       cashlessInput.parentElement.classList.remove('hidden');
+      // Show reference number for hybrid
+      if (refInput) {
+        refInput.parentElement.classList.remove('hidden');
+        if (refInput.value == 'N/A') refInput.value = '';
+      }
       break;
   }
   inputGroup.short[2].hidden = cashInput.parentElement.classList.contains('hidden');
   inputGroup.short[3].hidden = cashlessInput.parentElement.classList.contains('hidden');
+  if (refInput) {
+    inputGroup.short[6].hidden = refInput.parentElement.classList.contains('hidden');
+  }
   if (inputGroup.short[2].hidden) {
     cashInput.previousElementSibling.innerHTML =
       inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
@@ -144,6 +172,10 @@ function activeRadioListener(title, input, container, inputGroup) {
   }
   cashInput.dispatchEvent(new Event('input'));
   cashlessInput.dispatchEvent(new Event('input'));
+
+  // Ensure quick editing UX: auto-select contents on focus/click
+  attachSelectAll(cashInput);
+  attachSelectAll(cashlessInput);
 }
 
 function completeCheckinPayment(id, image, customerId, purpose, fullName, amountToPay, priceRate) {

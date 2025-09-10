@@ -7,65 +7,7 @@ const SECTION_NAME = 'inquiry-reservations';
 const MODULE_NAME = 'Inquiry';
 const SUBMODULE_NAME = 'Reservations';
 
-const RESERVATION_DURATION = [
-  { value: '1', label: '1 hour' },
-  { value: '2', label: '2 hours' },
-  { value: '3', label: '3 hours' },
-  { value: '4', label: '4 hours' },
-  { value: '5', label: '5 hours' },
-  { value: '6', label: '6 hours' },
-];
-
-const RESERVATION_TIME = getReservationTimes();
-
-function getReservationTimes(startHour = 8, endHour = 23, interval = 15) {
-  const times = [];
-
-  for (let hour = startHour; hour <= endHour; hour++) {
-    for (let minute = 0; minute < 60; minute += interval) {
-      if (hour === endHour && minute > 0) break;
-
-      const value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-
-      const labelHour = ((hour + 11) % 12) + 1;
-      const labelMinute = minute.toString().padStart(2, '0');
-      const ampm = hour < 12 ? 'AM' : 'PM';
-
-      times.push({
-        value,
-        label: `${labelHour}:${labelMinute} ${ampm}`.trim(),
-      });
-    }
-  }
-
-  return times;
-}
-
-function roundToNearestSlot(interval = 15) {
-  const { date, time, datetime } = main.getDateOrTimeOrBoth();
-
-  const [hourStr, minuteStr] = time.split(':');
-  let hour = parseInt(hourStr, 10);
-  let minute = parseInt(minuteStr.split(' ')[0], 10);
-  const ampm = minuteStr.split(' ')[1];
-
-  const rounded = Math.floor(minute / interval) * interval;
-
-  if (rounded === 60) {
-    hour += 1;
-    minute = 0;
-  } else {
-    minute = rounded;
-  }
-
-  let hour24 = hour;
-  if (ampm === 'PM' && hour !== 12) hour24 += 12;
-  if (ampm === 'AM' && hour === 12) hour24 = 0;
-
-  const roundedValue = `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-
-  return RESERVATION_TIME.findIndex((t) => t.value === roundedValue) + 2;
-}
+// Time selection now uses native time inputs; removed old 5/15-minute slot logic
 
 const RESERVATION_TYPES = [
   { value: 'zumba', label: 'Zumba' },
@@ -118,7 +60,7 @@ function sectionTwoMainBtnFunction() {
           { placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true },
           {
             placeholder: 'Price per hour',
-            value: main.encodePrice(roundToNearestSlot() > 40 ? 200 : 180),
+            value: main.encodePrice(180),
             locked: true,
           },
           {
@@ -127,23 +69,36 @@ function sectionTwoMainBtnFunction() {
             required: true,
             calendar: true,
           },
+          {
+            placeholder: 'Start time',
+            value: '',
+            required: true,
+            type: 'time',
+            listener: (input, container) => {
+              // Auto-set end time to 1 hour after start time
+              try {
+                const start = input.value;
+                if (!/^\d{2}:\d{2}$/.test(start)) return;
+                const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+                const endMinutes = (h * 60 + m + 60) % 1440;
+                const endH = Math.floor(endMinutes / 60).toString().padStart(2, '0');
+                const endM = (endMinutes % 60).toString().padStart(2, '0');
+                const endInput = container.querySelector('#input-short-9');
+                if (endInput && !endInput.value) {
+                  endInput.value = `${endH}:${endM}`;
+                  endInput.dispatchEvent(new Event('input'));
+                }
+              } catch (e) {}
+            },
+          },
+          {
+            placeholder: 'End time',
+            value: '',
+            required: true,
+            type: 'time',
+          },
         ],
         spinner: [
-          {
-            label: 'Reservation time',
-            placeholder: 'Select reservation time',
-            selected: roundToNearestSlot(),
-            required: true,
-            options: RESERVATION_TIME,
-            listener: activeSpinnerListener,
-          },
-          {
-            label: 'Reservation duration',
-            placeholder: 'Select reservation duration',
-            selected: 0,
-            required: true,
-            options: RESERVATION_DURATION,
-          },
           {
             label: 'Reservation type',
             placeholder: 'Select reservation type',
@@ -157,14 +112,16 @@ function sectionTwoMainBtnFunction() {
         },
       };
       main.openModal('orange', inputs, (result) => {
+        const startTime = result.short[3].value;
+        const endTime = result.short[4].value;
         main.openConfirmationModal(
-          `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]))} to ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]), main.getSelectedSpinner(result.spinner[1]))}`,
+          `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
           () => {
             const columnsData = [
               'id_R_random',
               { type: 'object_cid', data: [customer.dataset.image, fullName, customer.dataset.id] },
-              main.fixText(main.getSelectedSpinner(result.spinner[2])),
-              `${main.decodeDate(result.short[2].value)} - ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]))} to ${main.decodeTime(main.getSelectedSpinner(result.spinner[0]), main.getSelectedSpinner(result.spinner[1]))}`, // dataset.custom3
+              main.fixText(main.getSelectedSpinner(result.spinner[0])),
+              `${main.decodeDate(result.short[2].value)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`, // dataset.custom3
               'custom_datetime_Pending',
             ];
             main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
@@ -183,8 +140,7 @@ function sectionTwoMainBtnFunction() {
                   image: customer.dataset.image,
                   name: customer.dataset.text,
                   cid: customer.dataset.id,
-                  amount:
-                    parseInt(main.getSelectedSpinner(result.spinner[1])) * main.decodePrice(result.short[1].value),
+                  amount: 1 * main.decodePrice(result.short[1].value),
                 };
                 // accesscontrol.log(actionData, reservationData);
                 payments.processReservationPayment(reservationData, (transactionId) => {
@@ -199,10 +155,7 @@ function sectionTwoMainBtnFunction() {
   });
 }
 
-function activeSpinnerListener(selected, container) {
-  const priceInput = container.querySelector(`#input-short-6`);
-  priceInput.value = main.encodePrice(selected > 40 ? 200 : 180);
-}
+// Removed activeSpinnerListener: pricing no longer depends on a time slot spinner
 
 const currentDate = new Date();
 const today = new Date();
