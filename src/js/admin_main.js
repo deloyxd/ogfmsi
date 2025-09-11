@@ -1052,6 +1052,29 @@ function setupModalBase(defaultData, inputs, callback) {
 
     radioContainer.classList.remove('hidden');
     originalContainer.insertAdjacentElement('afterend', radioContainer);
+
+    // Initialize radio-dependent UI on modal open by triggering the selected option's listener once
+    try {
+      const selectedIndex = inputs.radio[0].selected;
+      const selectedRadio = inputs.radio[selectedIndex];
+      if (selectedRadio && inputs.radio[0].autoformat) {
+        const initType = inputs.radio[0].autoformat.type || '';
+        const initIndex = inputs.radio[0].autoformat.index || 0;
+        const initText = inputs.radio[0].autoformat.text || '';
+        if (initType) {
+          if (initType.includes('footer')) {
+            if (initText) {
+              selectedRadio.listener(selectedRadio.title, tempModalContainer.querySelector(`#modalMainBtn`), initText);
+            }
+          } else if (initIndex > 0) {
+            const targetEl = tempModalContainer.querySelector(`#input-${initType}-${initIndex}`);
+            if (targetEl) selectedRadio.listener(selectedRadio.title, targetEl, tempModalContainer, inputs);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   function setupRenderInput(type, render, offset) {

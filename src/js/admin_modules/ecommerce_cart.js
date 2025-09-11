@@ -50,7 +50,6 @@ async function getInventoryItemsFromSystem() {
         quantity: +product.quantity,
         measurement: product.measurement_value?.trim() || '',
         measurementUnit: product.measurement_unit?.trim() || '',
-        purchaseType: product.purchase_type,
         category: product.category,
       }));
 
@@ -119,7 +118,6 @@ async function loadCartFromServer() {
         quantity: +item.quantity,
         measurement: item.measurement?.trim() || '',
         measurementUnit: item.measurement_unit?.trim() || '',
-        purchaseType: item.purchase_type,
         category: item.category,
       }));
 
@@ -173,7 +171,6 @@ function displayProductsForTab(products, tabIndex) {
         product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
       productMeasurement: product.measurement,
       productMeasurementUnit: product.measurementUnit,
-      productPurchaseType: product.purchaseType,
     };
 
     productCard.innerHTML = productCard.innerHTML.replace(/\$\{(\w+)\}/g, (match, varName) =>
@@ -269,7 +266,6 @@ async function addToCart(product, quantity) {
       quantity: quantity,
       measurement: product.measurement,
       measurement_unit: product.measurementUnit,
-      purchase_type: product.purchaseType,
       category: product.category,
     };
 
