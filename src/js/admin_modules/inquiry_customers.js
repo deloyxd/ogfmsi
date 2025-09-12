@@ -2,6 +2,7 @@ import main from '../admin_main.js';
 import checkins from './inquiry_checkins.js';
 import reservations from './inquiry_reservations.js';
 import payments from './payments.js';
+import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'inquiry-customers';
 
@@ -40,7 +41,7 @@ let activated = false,
   mainBtn,
   subBtn;
 
-document.addEventListener('ogfmsiAdminMainLoaded', () => {
+document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
   if (!activated) {
@@ -51,6 +52,126 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
     mainBtn?.addEventListener('click', () => mainBtnFunction());
     subBtn?.classList.remove('hidden');
     subBtn?.addEventListener('click', () => {});
+
+    await fetchAllCustomers();
+    await fetchAllMonthlyCustomers();
+
+    async function fetchAllCustomers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const customers = await response.json();
+
+        customers.result.forEach((customer) => {
+          main.createAtSectionOne(
+            SECTION_NAME,
+            [
+              'id_' + customer.customer_id,
+              {
+                type: 'object_contact',
+                data: [
+                  customer.customer_image_url,
+                  customer.customer_first_name + ' ' + customer.customer_last_name,
+                  customer.customer_contact,
+                ],
+              },
+              main.fixText(customer.customer_type),
+              main.fixText(customer.customer_rate),
+              'custom_date_' + main.encodeDate(customer.created_at, 'long'),
+            ],
+            1,
+            (createResult) => {
+              if (customer.customer_type.includes('monthly')) {
+                if (customer.customer_pending == 1) {
+                  createResult.dataset.status = 'pending';
+                  createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Pending';
+                } else {
+                  createResult.dataset.status = 'active';
+                  createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Active';
+                }
+                createResult.children[2].textContent = createResult.dataset.custom2;
+              } else {
+                if (customer.customer_pending == 1) {
+                  createResult.dataset.status = 'pending';
+                }
+              }
+              const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+              customerProcessBtn.addEventListener('click', () =>
+                customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+              );
+              const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+              customerEditDetailsBtn.addEventListener('click', () =>
+                customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+              );
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+      }
+    }
+
+    async function fetchAllMonthlyCustomers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers/monthly`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const customers = await response.json();
+
+        customers.result.forEach((customer) => {
+          main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
+            if (findResult) {
+              const endDate = new Date(customer.customer_end_date);
+              const today = new Date();
+              endDate.setHours(0, 0, 0, 0);
+              today.setHours(0, 0, 0, 0);
+              const diffTime = endDate - today;
+              const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              if (customer.customer_pending == 1) {
+                payments.findPendingTransaction(findResult.dataset.id, (transactionId) => {
+                  findResult.dataset.tid = transactionId;
+                });
+              } else {
+                main.createAtSectionOne(
+                  SECTION_NAME,
+                  [
+                    'id_' + customer.customer_id,
+                    {
+                      type: 'object_contact',
+                      data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+                    },
+                    main.encodeDate(customer.customer_start_date, 'long'),
+                    main.encodeDate(customer.customer_end_date, 'long'),
+                    daysLeft,
+                    main.encodePrice(
+                      customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                    ),
+                    findResult.dataset.custom3,
+                    'custom_date_' + main.encodeDate(customer.created_at, 'long'),
+                  ],
+                  2,
+                  (createResult) => {
+                    const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+                    customerProcessBtn.addEventListener('click', () =>
+                      customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                    );
+                    const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+                    customerEditDetailsBtn.addEventListener('click', () =>
+                      customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                    );
+                  }
+                );
+              }
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+      }
+    }
   }
 });
 
@@ -281,8 +402,8 @@ function validateCustomer(
               required: true,
             },
             {
-              placeholder: 'Days duration:',
-              value: 30,
+              placeholder: 'Month duration:',
+              value: 1,
               required: true,
               live: '1| 2:range',
               listener: activeShortListener,
@@ -303,9 +424,9 @@ function validateCustomer(
               main.toast(`Invalid start date: ${startDate}`, 'error');
               return;
             }
-            const days = +result.short[4].value;
-            if (!main.isValidPaymentAmount(days)) {
-              main.toast(`Invalid days: ${days}`, 'error');
+            const months = +result.short[4].value;
+            if (!main.isValidPaymentAmount(months)) {
+              main.toast(`Invalid days: ${months}`, 'error');
               return;
             }
             const price = main.decodePrice(result.short[0].value);
@@ -313,7 +434,7 @@ function validateCustomer(
             const [month, day, year] = startDate.split('-').map(Number);
             const startDateObj = new Date(year, month - 1, day);
             const endDateObj = new Date(startDateObj);
-            endDateObj.setDate(endDateObj.getDate() + days);
+            endDateObj.setDate(endDateObj.getDate() + months * 30);
             const endDate = endDateObj.toLocaleString('en-US', {
               month: '2-digit',
               day: '2-digit',
@@ -321,15 +442,40 @@ function validateCustomer(
             });
             const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
             main.openConfirmationModal(
-              `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDate)}<br>to ${main.decodeDate(endDate)}<br>lasts ${days} day${days > 1 ? 's' : ''}<br>total price: ${main.encodePrice(price)}`,
+              `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDate)}<br>to ${main.decodeDate(endDate)}<br>lasts ${months * 30} days<br>total price: ${main.encodePrice(price)}`,
               () => {
                 main.closeConfirmationModal();
                 columnsData[2] += ' - Pending';
-                registerNewCustomer(columnsData, true, price, priceRate, (createResult) => {
+                registerNewCustomer(columnsData, true, price, priceRate, async (createResult) => {
                   createResult.dataset.startdate = main.encodeDate(startDate, 'long');
                   createResult.dataset.enddate = main.encodeDate(endDate.replace(/\//g, '-'), 'long');
-                  createResult.dataset.days = days;
+                  createResult.dataset.days = months * 30;
                   createResult.dataset.status = 'pending';
+
+                  try {
+                    const response = await fetch(`${API_BASE_URL}/inquiry/customers/monthly`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        customer_id: createResult.dataset.id,
+                        customer_start_date: main.encodeDate(startDate.replace(/\//g, '-'), '2-digit'),
+                        customer_end_date: main.encodeDate(endDate.replace(/\//g, '-'), '2-digit'),
+                        customer_months: months,
+                        customer_pending: 1,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const createdCustomer = await response.json();
+                    console.log('Monthly customer created:', createdCustomer);
+                  } catch (error) {
+                    console.error('Error creating monthly customer:', error);
+                  }
                 });
               }
             );
@@ -355,11 +501,11 @@ function validateCustomer(
   );
 }
 
-function activeShortListener(daysInput, container) {
+function activeShortListener(monthInput, container) {
   const totalPriceInput = container.querySelector(`#input-short-5`);
   const priceRateInput = container.querySelector(`#input-short-6`);
   totalPriceInput.value = main.encodePrice(
-    +PRICES_AUTOFILL[`${priceRateInput.value.toLowerCase()}_monthly`] * Math.ceil(+daysInput.value / 30)
+    +PRICES_AUTOFILL[`${priceRateInput.value.toLowerCase()}_monthly`] * +monthInput.value
   );
   totalPriceInput.dispatchEvent(new Event('input'));
 }
@@ -374,7 +520,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
     }
     main.toast(`${firstName}, successfully ${isCreating ? 'registered' : 'updated'}!`, 'success');
     if (isCreating) {
-      main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+      main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
         if (isMonthlyCustomer) {
           if (callback) {
             callback(createResult);
@@ -391,6 +537,43 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
         customerEditDetailsBtn.addEventListener('click', () =>
           customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
         );
+
+        const [customer_id, customer_image_url, customer_contact, customerType, priceRate] = [
+          createResult.dataset.id,
+          createResult.dataset.image,
+          createResult.dataset.contact,
+          createResult.dataset.custom2,
+          createResult.dataset.custom3,
+        ];
+        const { firstName, lastName } = main.decodeName(createResult.dataset.text);
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              customer_id,
+              customer_image_url,
+              customer_first_name: firstName,
+              customer_last_name: lastName,
+              customer_contact,
+              customer_type: customerType.includes('Monthly') ? 'monthly' : 'daily',
+              customer_pending: customerType.includes('Pending') ? 1 : 0,
+              customer_rate: priceRate.toLowerCase(),
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const newCustomer = await response.json();
+          console.log('New customer created:', newCustomer);
+        } catch (error) {
+          console.error('Error creating customer:', error);
+        }
       });
     } else {
       updateCustomer(columnsData, findResult, 1);

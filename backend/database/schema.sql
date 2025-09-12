@@ -110,3 +110,45 @@ CREATE TABLE IF NOT EXISTS equipment_maintenance_tbl (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE IF NOT EXISTS customer_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id VARCHAR(50) UNIQUE NOT NULL,
+    customer_image_url LONGTEXT NOT NULL,
+    customer_first_name VARCHAR(255) NOT NULL,
+    customer_last_name VARCHAR(255) NOT NULL,
+    customer_contact VARCHAR(50),
+    customer_type ENUM('daily', 'monthly') DEFAULT 'daily',
+    customer_pending INT,
+    customer_rate ENUM('regular', 'student') DEFAULT 'regular',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_monthly_tbl (
+    customer_id VARCHAR(50) NOT NULL,
+    customer_start_date DATE,
+    customer_end_date DATE,
+    customer_months INT,
+    customer_tid BIGINT,
+    customer_pending INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS payment_tbl (
+    payment_id VARCHAR(50) UNIQUE NOT NULL,
+    payment_customer_id VARCHAR(50) NOT NULL,
+    payment_purpose VARCHAR(255),
+    payment_amount_to_pay VARCHAR(255),
+    payment_amount_paid_cash VARCHAR(255),
+    payment_amount_paid_cashless VARCHAR(255),
+    payment_amount_change VARCHAR(255),
+    payment_amount_refund VARCHAR(255),
+    payment_method VARCHAR(255),
+    payment_rate VARCHAR(255),
+    payment_type ENUM('pending', 'canceled', 'complete', 'refund') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

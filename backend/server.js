@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 //API URL: (host):(port)/api
 app.use('/api',router);
 
-//Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing 
+//Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing
 // app.use('*', (req, res) => {
 //   res.status(404).json({error: 'Not Found'});
 // });

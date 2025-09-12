@@ -1015,7 +1015,7 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color);
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
-        clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
+      clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
       clone.addEventListener('click', function () {
         radioClones.forEach((radioClone) => {
           if (radioClone == clone) {
@@ -1048,6 +1048,7 @@ function setupModalBase(defaultData, inputs, callback) {
           }
         }
       });
+      if (index == inputs.radio[0].selected) clone.dispatchEvent(new Event('click'));
     });
 
     radioContainer.classList.remove('hidden');
@@ -1106,14 +1107,14 @@ function setupModalBase(defaultData, inputs, callback) {
       }
       input.placeholder = data.placeholder;
       input.value = data.value;
-        if (input.type === 'time') {
-          let time = new Date().toTimeString().split(' ')[0];
-          if (data.offset) {
-            time = new Date(Date.now() + data.offset * 60000).toTimeString().split(' ')[0];
-          }
-          time = time.substring(0, time.lastIndexOf(':'));
-          input.value = time;
+      if (input.type === 'time') {
+        let time = new Date().toTimeString().split(' ')[0];
+        if (data.offset) {
+          time = new Date(Date.now() + data.offset * 60000).toTimeString().split(' ')[0];
         }
+        time = time.substring(0, time.lastIndexOf(':'));
+        input.value = time;
+      }
     }
 
     if (type.includes('short')) {
@@ -1403,7 +1404,7 @@ function setupModalBase(defaultData, inputs, callback) {
               break;
             case 'range':
               const startDateStr = firstIndexInput.value;
-              const daysToAdd = +input.value || 30;
+              const daysToAdd = +input.value * 30 || 30;
               const [month, day, year] = startDateStr.split('-').map(Number);
               const startDate = new Date(year, month - 1, day);
               const resultDate = new Date(startDate);
@@ -1880,13 +1881,11 @@ export function decodeTime(time, offsetHours = 0) {
   minute = totalMinutes % 60;
 
   const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = (hour % 12) || 12;
+  const displayHour = hour % 12 || 12;
   const displayMinute = minute.toString().padStart(2, '0');
 
   return `${displayHour}:${displayMinute} ${ampm}`;
 }
-
-
 
 export function getDateOrTimeOrBoth() {
   const now = new Date();

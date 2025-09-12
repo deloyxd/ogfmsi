@@ -368,4 +368,12 @@ function completeReservationPayment() {
 
 }
 
-export default { processCheckinPayment, continueProcessCheckinPayment, cancelCheckinPayment, processReservationPayment, continueProcessReservationPayment, cancelReservationPayment, pendingTransaction };
+export function findPendingTransaction(customerId, callback = () => {}) {
+  main.findAtSectionOne(SECTION_NAME, customerId, 1, 'equal_text', (findResult) => {
+    if (findResult) {
+      callback(findResult.dataset.id);
+    }
+  });
+}
+
+export default { processCheckinPayment, continueProcessCheckinPayment, cancelCheckinPayment, processReservationPayment, continueProcessReservationPayment, cancelReservationPayment, pendingTransaction, findPendingTransaction };

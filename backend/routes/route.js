@@ -12,6 +12,13 @@ const ecommerceCartRoute = require('./ecommerce.cart.route');
 const ecommerceOrdersRoute = require('./ecommerce.orders.route');
 const ecommerceUtilsRoute = require('./ecommerce.utils.route');
 
+// For inquiry routes
+const inquiryCustomers = require('./inquiry.customer.route');
+const inquiryCustomersMonthly = require('./inquiry.customer.monthly.route');
+
+// For payment route
+const paymentPendingRoute = require('./payment.pending.route');
+
 const router = Router();
 
 //API URL: (host):(port)/api/demo
@@ -25,6 +32,13 @@ router.use('/ecommerce', ecommerceProductsRoute);
 router.use('/ecommerce', ecommerceCartRoute);
 router.use('/ecommerce', ecommerceOrdersRoute);
 router.use('/ecommerce', ecommerceUtilsRoute);
+
+// API URL: (host):(port)/api/inquiry
+router.use('/inquiry', inquiryCustomers);
+router.use('/inquiry', inquiryCustomersMonthly);
+
+// API URL: (host):(port)/api/payment
+router.use('/payment', paymentPendingRoute);
 
 // Add routes declaration here:
 

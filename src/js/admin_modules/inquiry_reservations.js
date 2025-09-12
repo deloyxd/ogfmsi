@@ -265,7 +265,7 @@ function renderCalendar() {
 
   // Add next month's leading days
   const totalCells = calendarGrid.children.length;
-  const remainingCells = 6 * 7 - totalCells; // 6 rows × 7 days
+  const remainingCells = 5 * 7 - totalCells; // 6 rows × 7 days
 
   for (let day = 1; day <= remainingCells; day++) {
     const dayElement = createDayElement(day, month + 1, year, false);
@@ -299,7 +299,7 @@ function createDayElement(day, month, year, isToday) {
   const randomFoldPosition = randomFold == 1 ? 'right-[1px]' : randomFold == 2 ? 'left-[1px]' : 'hidden';
   dayElement.innerHTML = `
       <div class="self-center">
-          <p class="${isPreviousDay ? 'text-xs font-bold opacity-50' : isToday ? 'text-2xl font-black' : 'text-sm font-black'}">${day}</p>
+          <p class="${isPreviousDay ? 'text-xs font-bold opacity-50' : isToday ? 'text-xl font-black' : 'text-sm font-black'}">${day}</p>
           <div id="bookmark" class="absolute top-1 right-1 ${isPreviousDay || reservedCount == 0 ? 'opacity-0' : ''} duration-300">
               <div class="relative">
                   <div class="bookmark-body ${bookmarkColor} w-6 h-8 ${randomFoldDirection}-lg shadow-md shadow-black/50 duration-300 origin-top-right z-10">
