@@ -50,7 +50,6 @@ async function getInventoryItemsFromSystem() {
         quantity: +product.quantity,
         measurement: product.measurement_value?.trim() || '',
         measurementUnit: product.measurement_unit?.trim() || '',
-        purchaseType: product.purchase_type,
         category: product.category,
       }));
 
@@ -119,7 +118,6 @@ async function loadCartFromServer() {
         quantity: +item.quantity,
         measurement: item.measurement?.trim() || '',
         measurementUnit: item.measurement_unit?.trim() || '',
-        purchaseType: item.purchase_type,
         category: item.category,
       }));
 
@@ -173,7 +171,6 @@ function displayProductsForTab(products, tabIndex) {
         product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
       productMeasurement: product.measurement,
       productMeasurementUnit: product.measurementUnit,
-      productPurchaseType: product.purchaseType,
     };
 
     productCard.innerHTML = productCard.innerHTML.replace(/\$\{(\w+)\}/g, (match, varName) =>
@@ -183,14 +180,75 @@ function displayProductsForTab(products, tabIndex) {
     const increaseBtn = productCard.querySelector('.increase-btn');
     const decreaseBtn = productCard.querySelector('.decrease-btn');
     const stockDisplay = productCard.querySelector('.stock-display');
-    const quantityDisplay = productCard.querySelector('.quantity-display');
+    const quantityInput = productCard.querySelector('.quantity-input');
     const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
 
     let quantity = Math.min(1, availableStock); // Start with 1 or 0 if no stock available
+    
+    // Initialize the input field
+    quantityInput.value = quantity;
+    quantityInput.max = availableStock;
+    quantityInput.min = 0;
+
+    // Update quantity when input changes
+    quantityInput.addEventListener('input', (e) => {
+      const newValue = parseInt(e.target.value) || 0;
+      if (newValue > availableStock) {
+        quantity = availableStock;
+        quantityInput.value = availableStock;
+        main.toast(`Maximum available stock is ${availableStock}`, 'warning');
+      } else if (newValue < 0) {
+        quantity = 0;
+        quantityInput.value = 0;
+      } else {
+        quantity = newValue;
+      }
+      updateAddToCartButton();
+    });
+
+    // Only allow numeric input
+    quantityInput.addEventListener('keydown', (e) => {
+      // Allow: backspace, delete, tab, escape, enter, decimal point
+      if ([46, 8, 9, 27, 13, 110].includes(e.keyCode) ||
+          // Ctrl+A, Command+A
+          (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+          // Ctrl+C, Command+C
+          (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
+          // Ctrl+X, Command+X
+          (e.keyCode === 88 && (e.ctrlKey === true || e.metaKey === true)) ||
+          // home, end, left, right
+          (e.keyCode >= 35 && e.keyCode <= 39)) {
+        return;
+      }
+      // Only allow numbers
+      if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+      }
+    });
+
+    // Handle paste to validate pasted content
+    quantityInput.addEventListener('paste', (e) => {
+      const clipboardData = e.clipboardData || window.clipboardData;
+      const pastedData = parseInt(clipboardData.getData('Text'));
+      
+      if (isNaN(pastedData) || pastedData < 0) {
+        e.preventDefault();
+        return;
+      }
+      
+      if (pastedData > availableStock) {
+        e.preventDefault();
+        quantity = availableStock;
+        quantityInput.value = availableStock;
+        updateAddToCartButton();
+        main.toast(`Maximum available stock is ${availableStock}`, 'warning');
+      }
+    });
 
     increaseBtn.addEventListener('click', () => {
       if (canAddToCart(product.id, 1) && quantity < availableStock) {
         quantity++;
+        quantityInput.value = quantity;
         updateAddToCartButton();
       } else {
         main.toast(`Cannot add anymore! Only ${availableStock} available.`, 'error');
@@ -200,6 +258,7 @@ function displayProductsForTab(products, tabIndex) {
     decreaseBtn.addEventListener('click', () => {
       if (quantity > 0) {
         quantity--;
+        quantityInput.value = quantity;
         updateAddToCartButton();
       }
     });
@@ -218,15 +277,16 @@ function displayProductsForTab(products, tabIndex) {
     });
 
     function updateAddToCartButton() {
-      const currentAvailableStock = getAvailableStock(product.id);
-      quantityDisplay.textContent = quantity;
-      stockDisplay.textContent = 'Stk: ' + currentAvailableStock;
-
-      if (quantity == 0 || currentAvailableStock == 0) {
-        addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      } else {
-        addToCartBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-      }
+      // Update the input value to match the current quantity
+      quantityInput.value = quantity;
+      // Update button states
+      addToCartBtn.disabled = quantity === 0;
+      addToCartBtn.classList.toggle('opacity-50', quantity === 0);
+      addToCartBtn.classList.toggle('cursor-not-allowed', quantity === 0);
+      // Update increase button state
+      increaseBtn.disabled = quantity >= availableStock;
+      // Update decrease button state
+      decreaseBtn.disabled = quantity <= 0;
     }
 
     // Initial button state update
@@ -269,7 +329,6 @@ async function addToCart(product, quantity) {
       quantity: quantity,
       measurement: product.measurement,
       measurement_unit: product.measurementUnit,
-      purchase_type: product.purchaseType,
       category: product.category,
     };
 

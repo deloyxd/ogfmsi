@@ -23,10 +23,6 @@ export const CATEGORIES = [
 
 export default { CATEGORIES };
 
-const PURCHASE_TYPE = [
-  { value: 'retail', label: 'Retail' },
-  { value: 'wholesale', label: 'Wholesale' },
-];
 
 const MEASUREMENT_UNITS = [
   // Weight
@@ -113,8 +109,7 @@ function mainBtnFunction() {
 }
 
 async function addProduct(result, name, price, quantity, measurement) {
-  const purchaseType = main.getSelectedSpinner(result.spinner[0]);
-  const category = main.getSelectedSpinner(result.spinner[1]);
+  const category = main.getSelectedSpinner(result.spinner[0]);
   const measurementUnit = main.getSelectedSpinner(result.image.spinner[0]);
 
   const productData = {
@@ -125,7 +120,6 @@ async function addProduct(result, name, price, quantity, measurement) {
     quantity,
     measurement_value: measurement,
     measurement_unit: measurementUnit,
-    purchase_type: purchaseType,
     category,
     image_url: result.image.src,
   };
@@ -152,7 +146,6 @@ async function addProduct(result, name, price, quantity, measurement) {
           quantity,
           measurement,
           measurementUnit,
-          purchaseType,
           category,
           date: new Date().toISOString(),
         },
@@ -341,7 +334,6 @@ function displayProductsForTab(products, tabIndex) {
       main.getStockStatus(product.quantity),
       product.measurement_value || '',
       product.measurement_unit || '',
-      main.getSelectedOption(product.purchase_type, PURCHASE_TYPE),
       main.getSelectedOption(product.category, CATEGORIES),
       'custom_date_today',
     ];
@@ -355,7 +347,8 @@ function displayProductsForTab(products, tabIndex) {
           day: 'numeric',
         });
         frontendResult.dataset.date = date;
-        frontendResult.children[9].innerHTML = date;
+        // Adjusted index due to removed Purchase Type column
+        frontendResult.children[8].innerHTML = date;
       }
 
       // Set up the product data for editing
@@ -368,8 +361,8 @@ function displayProductsForTab(products, tabIndex) {
       frontendResult.dataset.custom4 = product.stock_status;
       frontendResult.dataset.custom5 = product.measurement_value;
       frontendResult.dataset.custom6 = product.measurement_unit;
-      frontendResult.dataset.custom7 = product.purchase_type;
-      frontendResult.dataset.custom8 = product.category;
+      // custom7 now maps to category after removing purchase_type
+      frontendResult.dataset.custom7 = product.category;
 
       // Setup action buttons
       setupProductDetailsButton(frontendResult);
@@ -390,8 +383,7 @@ function setupProductDetailsButton(result) {
       quantity: result.dataset.custom3,
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
-      purchaseType: result.dataset.custom7,
-      category: result.dataset.custom8,
+      category: result.dataset.custom7,
     };
 
     const inputs = createModalInputs(true, productData);
@@ -418,8 +410,7 @@ async function updateProduct(result, newResult, name) {
 
   if (!main.validateStockInputs(newPrice, newQuantity, newMeasurement)) return;
 
-  const purchaseType = main.getSelectedSpinner(newResult.spinner[0]);
-  const category = main.getSelectedSpinner(newResult.spinner[1]);
+  const category = main.getSelectedSpinner(newResult.spinner[0]);
   const measurementUnit = main.getSelectedSpinner(newResult.image.spinner[0]);
 
   const productData = {
@@ -430,7 +421,6 @@ async function updateProduct(result, newResult, name) {
     quantity: +newQuantity,
     measurement_value: newMeasurement,
     measurement_unit: measurementUnit,
-    purchase_type: purchaseType,
     category: category,
     image_url: newResult.image.src,
   };
@@ -457,7 +447,6 @@ async function updateProduct(result, newResult, name) {
           quantity: newQuantity,
           measurement: newMeasurement,
           measurementUnit,
-          purchaseType,
           category,
           date: result.dataset.date,
         },
@@ -503,8 +492,7 @@ async function deleteProduct(result) {
             price: result.dataset.custom2,
             measurement: result.dataset.custom5,
             measurementUnit: result.dataset.custom6,
-            purchaseType: result.dataset.custom7,
-            category: result.dataset.custom8,
+            category: result.dataset.custom7,
             datetime: `${date} - ${time}`,
           },
           'product_delete'
@@ -555,13 +543,6 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
   ],
   spinner: [
     {
-      label: 'Product purchase type',
-      placeholder: 'Select product purchase type',
-      selected: productData.purchaseType || 0,
-      required: true,
-      options: PURCHASE_TYPE,
-    },
-    {
       label: 'Product category',
       placeholder: 'Select product category',
       selected: productData.category || 0,
@@ -589,8 +570,7 @@ function checkIfSameData(newData, oldData) {
     newData.short[1].value == oldData.quantity &&
     newData.image.short[1].value == oldData.measurement &&
     main.getSelectedSpinner(newData.image.spinner[0]) == oldData.measurementUnit &&
-    main.getSelectedSpinner(newData.spinner[0]) == oldData.purchaseType &&
-    main.getSelectedSpinner(newData.spinner[1]) == oldData.category
+    main.getSelectedSpinner(newData.spinner[0]) == oldData.category
   );
 }
 
