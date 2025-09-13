@@ -109,7 +109,7 @@ function sectionTwoMainBtnFunction() {
           },
         ],
         footer: {
-          main: `Reserve ${getEmoji('📆')}`,
+          main: `Reserve ${getEmoji('✅')}`,
         },
       };
       main.openModal('orange', inputs, (result) => {
