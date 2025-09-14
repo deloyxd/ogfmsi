@@ -14,7 +14,6 @@ router.post('/products', async (req, res) => {
     quantity,
     measurement_value,
     measurement_unit,
-    purchase_type,
     category,
     image_url,
   } = req.body;
@@ -48,7 +47,7 @@ router.post('/products', async (req, res) => {
       stock_status,
       measurement_value,
       measurement_unit,
-      purchase_type,
+      'retail',
       category,
       image_url,
     ],
@@ -67,7 +66,6 @@ router.post('/products', async (req, res) => {
           stock_status,
           measurement_value,
           measurement_unit,
-          purchase_type,
           category,
           image_url,
         },
@@ -129,7 +127,6 @@ router.put('/products/:id', async (req, res) => {
     quantity,
     measurement_value,
     measurement_unit,
-    purchase_type,
     category,
     image_url,
   } = req.body;
@@ -146,7 +143,7 @@ router.put('/products/:id', async (req, res) => {
     UPDATE ecommerce_products_tbl 
     SET product_name = ?, product_name_encoded = ?, price = ?, price_encoded = ?, 
         quantity = ?, stock_status = ?, measurement_value = ?, measurement_unit = ?, 
-        purchase_type = ?, category = ?, image_url = ? 
+        category = ?, image_url = ? 
     WHERE product_id = ?
   `;
 
@@ -161,7 +158,6 @@ router.put('/products/:id', async (req, res) => {
       stock_status,
       measurement_value,
       measurement_unit,
-      purchase_type,
       category,
       image_url,
       id,

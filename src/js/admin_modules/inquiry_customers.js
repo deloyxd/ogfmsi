@@ -175,6 +175,23 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   }
 });
 
+// Utility: Convert a name string to Title Case while respecting spaces, hyphens and apostrophes
+// Examples: "enZO" -> "Enzo", "daniElA" -> "Daniela", "maRy aNn" -> "Mary Ann", "anne-marie" -> "Anne-Marie", "o'neill" -> "O'Neill"
+function toTitleCaseName(str = '') {
+  const lower = String(str).toLowerCase();
+  return lower.replace(/(^|[\s\-\'])([a-z\u00C0-\u017F])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+}
+
+// Listener for modal inputs: auto-correct casing on every input change
+function nameAutoCaseListener(inputEl) {
+  const corrected = toTitleCaseName(inputEl.value);
+  if (inputEl.value !== corrected) {
+    inputEl.value = corrected;
+    // Trigger input to sync bound data structures; guard ensures no infinite loop
+    inputEl.dispatchEvent(new Event('input'));
+  }
+}
+
 function mainBtnFunction(
   customer,
   image = '/src/images/client_logo.jpg',
@@ -194,8 +211,18 @@ function mainBtnFunction(
       src: `${isCreating ? image : customer.image}`,
       type: 'normal',
       short: [
-        { placeholder: 'First name', value: `${isCreating ? firstName : customer.firstName}`, required: true },
-        { placeholder: 'Last name', value: `${isCreating ? lastName : customer.lastName}`, required: true },
+        {
+          placeholder: 'First name',
+          value: `${isCreating ? firstName : customer.firstName}`,
+          required: true,
+          listener: nameAutoCaseListener,
+        },
+        {
+          placeholder: 'Last name',
+          value: `${isCreating ? lastName : customer.lastName}`,
+          required: true,
+          listener: nameAutoCaseListener,
+        },
         { placeholder: 'Email / contact number', value: `${isCreating ? contact : customer.contact}` },
       ],
     },
