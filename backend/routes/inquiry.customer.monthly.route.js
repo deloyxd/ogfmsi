@@ -16,7 +16,7 @@ router.get('/customers/monthly', async (req, res) => {
 
 // GET all expired customers
 router.get('/customers/monthly', async (req, res) => {
-  const query = 'SELECT * FROM customer_monthly_tbl ORDER BY created_at DESC WHERE customer_end_date < CURRENT_DATE';
+  const query = 'SELECT * FROM customer_monthly_tbl WHERE customer_end_date < CURRENT_DATE ORDER BY created_at DESC';
   mysqlConnection.query(query, (error, result) => {
     if (error) {
       console.error('Fetching customers error:', error);

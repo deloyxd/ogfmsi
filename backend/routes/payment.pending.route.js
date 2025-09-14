@@ -4,7 +4,7 @@ const router = Router();
 
 // GET all payments
 router.get('/pending', async (req, res) => {
-  const query = `SELECT * FROM payment_tbl ORDER BY created_at DESC WHERE payment_type = 'pending'`;
+  const query = `SELECT * FROM payment_tbl WHERE payment_type = 'pending' ORDER BY created_at DESC`;
   mysqlConnection.query(query, (error, result) => {
     if (error) {
       console.error('Fetching payments error:', error);
@@ -19,8 +19,8 @@ router.post('/pending', async (req, res) => {
   const { payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate } = req.body;
 
   const query = `
-    INSERT INTO payment_tbl 
-    (payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_type) 
+    INSERT INTO payment_tbl
+    (payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_type)
     VALUES (?, ?, ?, ?, ?, 'pending')
   `;
 
@@ -68,3 +68,5 @@ router.delete('/pending/:id', async (req, res) => {
     }
   });
 });
+
+module.exports = router;
