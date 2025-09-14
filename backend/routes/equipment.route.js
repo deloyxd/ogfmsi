@@ -128,18 +128,80 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { equipment_name, equipment_type, total_quantity, image_url, general_status, notes } = req.body;
   
-  const query = 'UPDATE gym_equipment_tbl SET equipment_name = ?, equipment_type = ?, total_quantity = ?, image_url = ?, general_status = ?, notes = ? WHERE equipment_id = ?';
-  
-  mysqlConnection.query(query, [equipment_name, equipment_type, total_quantity, image_url, general_status, notes, id], (error, result) => {
-    if (error) {
-      console.error('Updating equipment error:', error);
-      return res.status(500).json({ error: 'Updating equipment failed' })
+  // Start transaction
+  mysqlConnection.beginTransaction((err) => {
+    if (err) {
+      console.error('Transaction start error:', err);
+      return res.status(500).json({ error: 'Transaction failed' });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Equipment not found' }); 
-    } else {
-      res.status(200).json({ message: 'Equipment updated successfully' });
-    }
+
+    // Update main equipment record
+    const query = 'UPDATE gym_equipment_tbl SET equipment_name = ?, equipment_type = ?, total_quantity = ?, image_url = ?, general_status = ?, notes = ? WHERE equipment_id = ?';
+    
+    mysqlConnection.query(query, [equipment_name, equipment_type, total_quantity, image_url, general_status, notes, id], (error, result) => {
+      if (error) {
+        console.error('Updating equipment error:', error);
+        return mysqlConnection.rollback(() => {
+          res.status(500).json({ error: 'Updating equipment failed' });
+        });
+      }
+      
+      if (result.affectedRows === 0) {
+        return mysqlConnection.rollback(() => {
+          res.status(404).json({ error: 'Equipment not found' });
+        });
+      }
+
+      // Update individual item codes if equipment name changed
+      const updateItemCodesQuery = 'UPDATE gym_equipment_items_tbl SET item_code = ? WHERE item_id = ?';
+      
+      // Get all individual items for this equipment
+      const getItemsQuery = 'SELECT item_id FROM gym_equipment_items_tbl WHERE equipment_id = ? ORDER BY item_id ASC';
+      
+      mysqlConnection.query(getItemsQuery, [id], (itemsError, itemsResult) => {
+        if (itemsError) {
+          console.error('Getting equipment items error:', itemsError);
+          return mysqlConnection.rollback(() => {
+            res.status(500).json({ error: 'Failed to get equipment items' });
+          });
+        }
+
+        // Update each item code
+        const itemPromises = itemsResult.map((item, index) => {
+          const newItemCode = generateEquipmentCode(equipment_name, index + 1);
+          
+          return new Promise((resolve, reject) => {
+            mysqlConnection.query(updateItemCodesQuery, [newItemCode, item.item_id], (updateError) => {
+              if (updateError) {
+                reject(updateError);
+              } else {
+                resolve();
+              }
+            });
+          });
+        });
+
+        // Wait for all item codes to be updated
+        Promise.all(itemPromises)
+          .then(() => {
+            mysqlConnection.commit((commitError) => {
+              if (commitError) {
+                console.error('Commit error:', commitError);
+                return mysqlConnection.rollback(() => {
+                  res.status(500).json({ error: 'Failed to commit transaction' });
+                });
+              }
+              res.status(200).json({ message: 'Equipment and item codes updated successfully' });
+            });
+          })
+          .catch((updateError) => {
+            console.error('Updating item codes error:', updateError);
+            mysqlConnection.rollback(() => {
+              res.status(500).json({ error: 'Failed to update item codes' });
+            });
+          });
+      });
+    });
   });
 });
 
@@ -164,22 +226,160 @@ router.put('/items/:itemId', async (req, res) => {
   });
 });
 
+// POST add quantity to existing equipment
+router.post('/:id/add-quantity', async (req, res) => {
+  const { id } = req.params;
+  const { add_quantity, equipment_name, start_index } = req.body;
+  
+  if (!add_quantity || add_quantity < 1) {
+    return res.status(400).json({ error: 'Invalid quantity' });
+  }
+  
+  if (!equipment_name) {
+    return res.status(400).json({ error: 'Equipment name is required' });
+  }
+  
+  // Start transaction
+  mysqlConnection.beginTransaction((err) => {
+    if (err) {
+      console.error('Transaction start error:', err);
+      return res.status(500).json({ error: 'Transaction failed' });
+    }
+
+    // First, verify the equipment exists and get current quantity
+    const getEquipmentQuery = 'SELECT total_quantity FROM gym_equipment_tbl WHERE equipment_id = ?';
+    
+    mysqlConnection.query(getEquipmentQuery, [id], (error, result) => {
+      if (error) {
+        console.error('Getting equipment error:', error);
+        return mysqlConnection.rollback(() => {
+          res.status(500).json({ error: 'Failed to get equipment' });
+        });
+      }
+      
+      if (result.length === 0) {
+        return mysqlConnection.rollback(() => {
+          res.status(404).json({ error: 'Equipment not found' });
+        });
+      }
+      
+      const currentQuantity = result[0].total_quantity;
+      const newQuantity = currentQuantity + add_quantity;
+      
+      // Update the total quantity in the main equipment table
+      const updateQuantityQuery = 'UPDATE gym_equipment_tbl SET total_quantity = ? WHERE equipment_id = ?';
+      
+      mysqlConnection.query(updateQuantityQuery, [newQuantity, id], (updateError) => {
+        if (updateError) {
+          console.error('Updating quantity error:', updateError);
+          return mysqlConnection.rollback(() => {
+            res.status(500).json({ error: 'Failed to update quantity' });
+          });
+        }
+        
+        // Create new individual items
+        const createItemsQuery = 'INSERT INTO gym_equipment_items_tbl (item_id, equipment_id, item_code, individual_status) VALUES (?, ?, ?, ?)';
+        
+        const itemPromises = [];
+        for (let i = 0; i < add_quantity; i++) {
+          const itemIndex = start_index + i;
+          const item_id = id + '_ITEM_' + itemIndex;
+          const item_code = generateEquipmentCode(equipment_name, itemIndex);
+          
+          itemPromises.push(new Promise((resolve, reject) => {
+            mysqlConnection.query(createItemsQuery, [item_id, id, item_code, 'Available'], (itemError) => {
+              if (itemError) {
+                reject(itemError);
+              } else {
+                resolve();
+              }
+            });
+          }));
+        }
+        
+        // Wait for all new items to be created
+        Promise.all(itemPromises)
+          .then(() => {
+            mysqlConnection.commit((commitError) => {
+              if (commitError) {
+                console.error('Commit error:', commitError);
+                return mysqlConnection.rollback(() => {
+                  res.status(500).json({ error: 'Failed to commit transaction' });
+                });
+              }
+              res.status(200).json({ 
+                message: 'Quantity added successfully',
+                new_quantity: newQuantity,
+                items_added: add_quantity
+              });
+            });
+          })
+          .catch((createError) => {
+            console.error('Creating items error:', createError);
+            mysqlConnection.rollback(() => {
+              res.status(500).json({ error: 'Failed to create new items' });
+            });
+          });
+      });
+    });
+  });
+});
+
 
 // DELETE equipment
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-  const query = 'DELETE FROM gym_equipment_tbl WHERE equipment_id = ?';
   
-  mysqlConnection.query(query, [id], (error, result) => {
-    if (error) {
-      console.error('Deleting equipment error:', error);
-      return res.status(500).json({ error: 'Deleting equipment failed' });
+  // Start transaction
+  mysqlConnection.beginTransaction((err) => {
+    if (err) {
+      console.error('Transaction start error:', err);
+      return res.status(500).json({ error: 'Transaction failed' });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Equipment not found' });
-    } else {
-      res.status(200).json({ message: 'Equipment deleted successfully' });
-    }
+
+    // First, verify the equipment exists
+    const checkQuery = 'SELECT equipment_id FROM gym_equipment_tbl WHERE equipment_id = ?';
+    
+    mysqlConnection.query(checkQuery, [id], (checkError, checkResult) => {
+      if (checkError) {
+        console.error('Checking equipment error:', checkError);
+        return mysqlConnection.rollback(() => {
+          res.status(500).json({ error: 'Failed to check equipment' });
+        });
+      }
+      
+      if (checkResult.length === 0) {
+        return mysqlConnection.rollback(() => {
+          res.status(404).json({ error: 'Equipment not found' });
+        });
+      }
+      
+      // Delete the equipment (individual items will be deleted automatically due to CASCADE)
+      const deleteQuery = 'DELETE FROM gym_equipment_tbl WHERE equipment_id = ?';
+      
+      mysqlConnection.query(deleteQuery, [id], (error, result) => {
+        if (error) {
+          console.error('Deleting equipment error:', error);
+          return mysqlConnection.rollback(() => {
+            res.status(500).json({ error: 'Deleting equipment failed' });
+          });
+        }
+        
+        mysqlConnection.commit((commitError) => {
+          if (commitError) {
+            console.error('Commit error:', commitError);
+            return mysqlConnection.rollback(() => {
+              res.status(500).json({ error: 'Failed to commit transaction' });
+            });
+          }
+          
+          res.status(200).json({ 
+            message: 'Equipment and all associated items deleted successfully',
+            deleted_equipment: id
+          });
+        });
+      });
+    });
   });
 });
 
