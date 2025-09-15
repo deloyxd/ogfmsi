@@ -366,7 +366,7 @@ async function loadExistingEquipment() {
       result.result.forEach((equipment) => {
         const columnsData = [
           equipment.equipment_id.split('_').slice(0,2).join('_'),
-          `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;"><span>${equipment.equipment_name}</span></div>`,
+          `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipment.equipment_name}')"><span>${equipment.equipment_name}</span></div>`,
           equipment.total_quantity + '',
           equipment.equipment_type,
           getGeneralStatusDisplay(equipment.general_status),
@@ -832,4 +832,54 @@ async function deleteEquipment(equipmentId) {
   }
 }
 
-export { updateEquipment, deleteEquipment, refreshAllTabs };
+window.showImageModal = function(imageSrc, equipmentName) {
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/75 opacity-0 duration-300 z-50 hidden" id="imageModal">
+      <div class="m-auto w-full max-w-3xl -translate-y-6 scale-95 p-4 duration-300" onclick="event.stopPropagation()">
+        <div class="relative">
+          <img src="${imageSrc}" alt="${equipmentName}" class="w-full h-auto rounded-lg shadow-2xl">
+        </div>
+        <p class="text-center text-white mt-4 text-lg font-medium">${equipmentName}</p>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('imageModal');
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeImageModal();
+    }
+  });
+
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closeImageModal();
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
+};
+
+window.closeImageModal = function() {
+  const modal = document.getElementById('imageModal');
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  }
+};
