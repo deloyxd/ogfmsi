@@ -455,7 +455,6 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
         </div>
         <div class="flex flex-col p-4">
           <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-3">Equipment Details</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Name</label>
@@ -485,11 +484,11 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
             <div class="mt-4 flex gap-3">
               <button type="button" onclick="saveEquipmentDetails()" 
                       class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                Save Changes
+                💾 Save Changes
               </button>
               <button type="button" onclick="showDeleteEquipmentConfirmation()" 
                       class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
-                Delete Equipment
+                🗑️ Delete Equipment
               </button>
             </div>
           </div>
@@ -515,32 +514,34 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
                              class="w-16 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-center">
                       <button type="button" onclick="addEquipmentQuantity()" 
                               class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">
-                        Add Items
+                        +
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-              <p class="text-sm text-gray-600">
+              <p class="text-sm text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
                 New individual items will be created with sequential codes starting from the last existing item.
               </p>
             </div>
           </div>
           
           <div class="mb-4">
-            <h3 class="text-lg font-semibold mb-2">Individual Items (${individualItems.length})</h3>
+            <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+              Individual Items (${individualItems.length})
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
               ${individualItems.map(item => `
-                <div class="border rounded-lg p-3 ${item.individual_status === 'Available' ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}">
+                <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md ${item.individual_status === 'Available' ? 'border-green-300 bg-green-50 hover:border-green-400' : 'border-red-300 bg-red-50 hover:border-red-400'}">
                   <div class="flex justify-between items-center mb-2">
                     <span class="font-medium">${item.item_code}</span>
-                    <span class="text-xs px-2 py-1 rounded ${item.individual_status === 'Available' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">
-                      ${item.individual_status}
+                    <span class="text-xs px-2 py-1 rounded font-medium ${item.individual_status === 'Available' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">
+                      ${item.individual_status === 'Available' ? '✅' : '❌'} ${item.individual_status}
                     </span>
                   </div>
-                  <select class="w-full text-sm border rounded px-2 py-1" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
-                    <option value="Available" ${item.individual_status === 'Available' ? 'selected' : ''}>Available</option>
-                    <option value="Unavailable" ${item.individual_status === 'Unavailable' ? 'selected' : ''}>Unavailable</option>
+                  <select class="w-full text-sm border rounded px-2 py-1 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                    <option value="Available" ${item.individual_status === 'Available' ? 'selected' : ''}>✅ Available</option>
+                    <option value="Unavailable" ${item.individual_status === 'Unavailable' ? 'selected' : ''}>❌ Unavailable</option>
                   </select>
                 </div>
               `).join('')}
