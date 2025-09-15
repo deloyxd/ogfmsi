@@ -586,38 +586,55 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
   });
   
   window.updateIndividualStatus = async (itemId, newStatus) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/maintenance/equipment/items/${itemId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ individual_status: newStatus }),
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok) {
-        main.toast(`Item status updated to ${newStatus}`, 'success');
-        if (result.general_status) {
-          const modal = document.getElementById('individualItemsModal');
-          const equipmentId = modal.dataset.equipmentId;
-          const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
-          if (row) {
-            const statusElement = row.querySelector('td:nth-child(5)');
-            if (statusElement) {
-              statusElement.innerHTML = getGeneralStatusDisplay(result.general_status);
-            }
+  try {
+    const response = await fetch(`${API_BASE_URL}/maintenance/equipment/items/${itemId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ individual_status: newStatus }),
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      const selectElement = document.querySelector(`select[data-item-id="${itemId}"]`);
+      if (selectElement) {
+        const itemContainer = selectElement.closest('div.border');
+        if (itemContainer) {
+          itemContainer.className = `border rounded-lg p-3 ${newStatus === 'Available' ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`;
+          const statusBadge = itemContainer.querySelector('span.text-xs');
+          if (statusBadge) {
+            statusBadge.className = `text-xs px-2 py-1 rounded ${newStatus === 'Available' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`;
+            statusBadge.textContent = newStatus;
           }
         }
-      } else {
-        main.toast(`Error: ${result.error}`, 'error');
       }
-    } catch (error) {
-      console.error('Error updating item status:', error);
-      main.toast('Network error: Failed to update item status', 'error');
+
+      main.toast(`Item status updated to ${newStatus}`, 'success');
+      if (result.general_status) {
+        const modal = document.getElementById('individualItemsModal');
+        const equipmentId = modal.dataset.equipmentId;
+        const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
+        if (row) {
+          const statusElement = row.querySelector('td:nth-child(5)');
+          if (statusElement) {
+            statusElement.innerHTML = getGeneralStatusDisplay(result.general_status);
+          }
+        }
+      }
+      // open nalang natin if needed or kapag sinabi ni boss flux
+      // setTimeout(() => {
+      //   window.closeIndividualItemsModal();
+      // }, 500);
+    } else {
+      main.toast(`Error: ${result.error}`, 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error updating item status:', error);
+    main.toast('Network error: Failed to update item status', 'error');
+  }
+};
   
   window.closeIndividualItemsModal = () => {
     const modal = document.getElementById('individualItemsModal');
