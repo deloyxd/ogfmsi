@@ -67,7 +67,16 @@ const MEASUREMENT_UNITS = [
   { value: 'mm', label: 'Size: mm' },
   { value: 'size', label: 'Size: size(s)' },
   { value: 'level', label: 'Size: level(s)' },
+  // Clothing sizes
+  { value: 'xs', label: 'Clothing Size: XS' },
+  { value: 's', label: 'Clothing Size: S' },
+  { value: 'm', label: 'Clothing Size: M' },
+  { value: 'l', label: 'Clothing Size: L' },
+  { value: 'xl', label: 'Clothing Size: XL' },
+  { value: 'xxl', label: 'Clothing Size: XXL' },
+  { value: 'xxxl', label: 'Clothing Size: XXXL' },
 ];
+
 
 let mainBtn;
 
