@@ -623,10 +623,6 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
           }
         }
       }
-      // open nalang natin if needed or kapag sinabi ni boss flux
-      // setTimeout(() => {
-      //   window.closeIndividualItemsModal();
-      // }, 500);
     } else {
       main.toast(`Error: ${result.error}`, 'error');
     }
@@ -649,61 +645,6 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
   };
 }
 
-async function updateEquipmentDetails(frontendResult, equipment, result) {
-  const updateData = {
-    equipment_name: result.short[0].value,
-    equipment_type: result.spinner[0].options[result.spinner[0].selected - 1].value,
-    total_quantity: parseInt(result.short[1].value),
-    image_url: result.image.src,
-    general_status: equipment.general_status,
-    notes: result.large[0].value,
-  };
-
-  const success = await updateEquipment(equipment.equipment_id, updateData);
-
-  if (success) {
-    const columnsData = [
-      equipment.equipment_id.split('_').slice(0,2).join('_'),
-      `<div style="display:flex;align-items:center;gap:8px;"><img src="${updateData.image_url || '/src/images/client_logo.jpg'}" alt="${result.short[0].value}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;"><span>${result.short[0].value}</span></div>`,
-      result.short[1].value,
-      updateData.equipment_type,
-      getGeneralStatusDisplay(equipment.general_status),
-      `custom_date_${frontendResult.dataset.date}`,
-    ];
-
-    main.closeModal();
-    refreshAllTabs();
-  }
-}
-
-async function deleteEquipmentDetails(frontendResult, equipment) {
-  main.openConfirmationModal(`Delete equipment: ${equipment.equipment_name}`, async () => {
-    const success = await deleteEquipment(equipment.equipment_id);
-
-    if (success) {
-      const action = {
-        module: 'Maintenance',
-        submodule: 'Equipment',
-        description: 'Delete equipment',
-      };
-      const data = {
-        id: equipment.equipment_id,
-        image: equipment.image_url,
-        name: equipment.equipment_name,
-        quantity: equipment.total_quantity,
-        category: equipment.equipment_type,
-        general_status: equipment.general_status,
-        date: frontendResult.dataset.date,
-        type: 'equipment',
-      };
-      accesscontrol.log(action, data);
-
-      frontendResult.remove();
-      main.closeModal();
-      main.closeConfirmationModal();
-    }
-  });
-}
 
 function mainBtnFunction() {
   const inputs = {
@@ -751,26 +692,6 @@ function mainBtnFunction() {
   });
 }
 
-function generateEquipmentCode(equipmentName, index = 1) {
-  const words = equipmentName.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/);
-  
-  if (words.length < 2) {
-    const consonants = words[0].replace(/[aeiouAEIOU]/g, '').toUpperCase();
-    return consonants.substring(0, 6).padEnd(6, 'X') + String(index).padStart(3, '0');
-  }
-  
-  const firstWordConsonants = words[0].replace(/[aeiouAEIOU]/g, '').toUpperCase();
-  const firstPart = firstWordConsonants.substring(0, 3).padEnd(3, 'X');
-  
-  const secondWordConsonants = words[1].replace(/[aeiouAEIOU]/g, '').toUpperCase();
-  const secondPart = secondWordConsonants.substring(0, 3).padEnd(3, 'X');
-  return firstPart + secondPart + String(index).padStart(3, '0');
-}
-
-function generateSequentialId(baseId, index, total) {
-  const digits = Math.ceil(Math.log10(total + 1));
-  return `${baseId}_${String(index + 1).padStart(digits, '0')}`;
-}
 
 async function registerNewProduct(image, name, quantity, category) {
   try {
