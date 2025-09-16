@@ -7,11 +7,12 @@ function getEmoji(emoji, size = 16) {
   return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
 }
 
-function getGeneralStatusDisplay(generalStatus) {
+function getGeneralStatusDisplay(generalStatus, unavailableCount = 0) {
   if (generalStatus === 'All Available') {
     return `<p class="text-green-600 font-bold emoji">All Available ${getEmoji('✅')}</p>`;
   } else if (generalStatus === 'Warning - Need Repair') {
-    return `<p class="text-yellow-600 font-bold emoji">Warning - Need Repair ${getEmoji('⚠️')}</p>`;
+    const countText = unavailableCount > 0 ? ` - (<span class=\"inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300\">${unavailableCount}</span>) ` : ' ';
+    return `<p class="text-yellow-600 font-bold emoji">Warning${countText}Need Repair ${getEmoji('⚠️')}</p>`;
   } else {
     return `<p class="text-gray-600 font-bold emoji">${generalStatus} ${getEmoji('❓')}</p>`;
   }
@@ -80,7 +81,7 @@ window.saveEquipmentDetails = async () => {
       if (row) {
         const statusElement = row.querySelector('td:nth-child(2)');
         if (statusElement) {
-          statusElement.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imageUrl || '/src/images/client_logo.jpg'}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;"><span>${equipmentName}</span></div>`;
+          statusElement.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imageUrl || '/src/images/client_logo.jpg'}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName}')"><span>${equipmentName}</span></div>`;
         }
       }
       refreshIndividualItemsSection(equipmentId, equipmentName);
@@ -106,6 +107,8 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
     
     if (response.ok && result.result) {
       const individualItems = result.result;
+      const unavailableCount = individualItems.filter(i => i.individual_status === 'Unavailable').length;
+      const generalStatus = unavailableCount > 0 ? 'Warning - Need Repair' : 'All Available';
       const individualItemsContainer = document.querySelector('#individualItemsModal .grid');
       if (individualItemsContainer) {
         individualItemsContainer.innerHTML = individualItems.map(item => `
@@ -124,9 +127,20 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
         `).join('');
       }
       
-      const individualItemsCount = document.querySelector('#individualItemsModal h3');
+      const individualItemsCount = document.querySelector('#individualItemsHeader');
       if (individualItemsCount) {
         individualItemsCount.textContent = `Individual Items (${individualItems.length})`;
+      }
+
+      const modal = document.getElementById('individualItemsModal');
+      if (modal) modal.dataset.generalStatus = generalStatus;
+
+      const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
+      if (row) {
+        const statusElement = row.querySelector('td:nth-child(5)');
+        if (statusElement) {
+          statusElement.innerHTML = getGeneralStatusDisplay(generalStatus, unavailableCount);
+        }
       }
     }
   } catch (error) {
@@ -369,7 +383,7 @@ async function loadExistingEquipment() {
           `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipment.equipment_name}')"><span>${equipment.equipment_name}</span></div>`,
           equipment.total_quantity + '',
           equipment.equipment_type,
-          getGeneralStatusDisplay(equipment.general_status),
+          getGeneralStatusDisplay(equipment.general_status, equipment.unavailable_count || 0),
           'custom_date_today',
         ];
 
@@ -527,7 +541,7 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
           </div>
           
           <div class="mb-4">
-            <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+            <h3 class="text-lg font-semibold mb-2 flex items-center gap-2" id="individualItemsHeader">
               Individual Items (${individualItems.length})
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
@@ -620,7 +634,7 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
         if (row) {
           const statusElement = row.querySelector('td:nth-child(5)');
           if (statusElement) {
-            statusElement.innerHTML = getGeneralStatusDisplay(result.general_status);
+            statusElement.innerHTML = getGeneralStatusDisplay(result.general_status, result.unavailable_count || 0);
           }
         }
       }
@@ -716,7 +730,7 @@ async function registerNewProduct(image, name, quantity, category) {
     if (response.ok) {
       const columnsData = [
         result.result.equipment_id.split('_').slice(0,2).join('_'),
-        `<div style="display:flex;align-items:center;gap:8px;"><img src="${image || '/src/images/client_logo.jpg'}" alt="${name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;"><span>${name}</span></div>`,
+        `<div style="display:flex;align-items:center;gap:8px;"><img src="${image || '/src/images/client_logo.jpg'}" alt="${name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${name}')"><span>${name}</span></div>`,
         quantity.toString(),
         category,
         getGeneralStatusDisplay('All Available'),

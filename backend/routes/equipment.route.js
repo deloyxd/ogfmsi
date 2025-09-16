@@ -83,7 +83,13 @@ router.post('/', async (req, res) => {
 
 // GET all equipment (main entries only)
 router.get('/', async (req, res) => {
-  const query = 'SELECT * FROM gym_equipment_tbl ORDER BY created_at DESC';
+  const query = `
+    SELECT e.*, COALESCE(SUM(CASE WHEN i.individual_status = 'Unavailable' THEN 1 ELSE 0 END), 0) AS unavailable_count
+    FROM gym_equipment_tbl e
+    LEFT JOIN gym_equipment_items_tbl i ON i.equipment_id = e.equipment_id
+    GROUP BY e.equipment_id
+    ORDER BY e.created_at DESC
+  `;
   mysqlConnection.query(query, (error, result) => {
     if (error) {
       console.error('Fetching equipment error:', error);
