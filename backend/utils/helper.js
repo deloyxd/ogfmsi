@@ -58,9 +58,10 @@ function updateGeneralStatus(itemId, res, mysqlConnection) {
         return res.status(500).json({ error: 'Failed to get individual statuses' });
       }
       
-      // Determine general status and count unavailable
-      const unavailable_count = statusResult.filter(item => item.individual_status === 'Unavailable').length;
-      const general_status = unavailable_count > 0 ? 'Warning - Need Repair' : 'All Available';
+      // Determine general status
+      const hasUnavailable = statusResult.some(item => item.individual_status === 'Unavailable');
+      const general_status = hasUnavailable ? 'Warning - Need Repair' : 'All Available';
+      const general_status_2 = hasUnavailable ? 'Warning - Need Repair' : 'Available';
       
       // Update general status
       const updateGeneralQuery = 'UPDATE gym_equipment_tbl SET general_status = ? WHERE equipment_id = ?';
@@ -73,8 +74,7 @@ function updateGeneralStatus(itemId, res, mysqlConnection) {
         
         res.status(200).json({ 
           message: 'Equipment item status updated successfully',
-          general_status: general_status,
-          unavailable_count: unavailable_count
+          general_status: general_status
         });
       });
     });

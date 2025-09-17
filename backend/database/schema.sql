@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS customer_monthly_tbl (
     customer_start_date DATE,
     customer_end_date DATE,
     customer_months INT,
-    customer_tid BIGINT,
+    customer_tid VARCHAR(255),
     customer_pending INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
