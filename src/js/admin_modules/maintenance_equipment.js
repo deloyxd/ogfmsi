@@ -17,7 +17,7 @@ function getGeneralStatusDisplay(generalStatus, unavailableCount = 0) {
   } else if (generalStatus.startsWith('Pending Disposal')) {
     // amber style
     const count = (generalStatus.match(/\((\d+)\)/) || [])[1] || 0;
-    const countText = count > 0 ? ` - (<span class=\"inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 border border-orange-300\">${count}</span>)` : '';
+    const countText = count > 0 ? ` - ${count}` : '';
     return `<p class="text-orange-600 font-bold emoji">Pending Disposal${countText} ${getEmoji('🗑️')}</p>`;
   } else if (generalStatus.startsWith('Partially Available')) {
     return `<p class="text-blue-600 font-bold emoji">${generalStatus} ${getEmoji('📌')}</p>`;
@@ -117,7 +117,6 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
     
     if (response.ok && result.result) {
       const individualItems = result.result;
-      // Recompute general status using full precedence
       let availableCount = 0;
       let unavailableCount = 0;
       let forDisposalCount = 0;
@@ -676,7 +675,6 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
           }
         }
       }
-      // Ensure the Disposal List reflects the latest status change immediately
       if (typeof renderDisposalList === 'function') {
         renderDisposalList();
       }
@@ -742,7 +740,7 @@ function mainBtnFunction() {
       main.toast(`Invalid category`, 'error');
       return;
     }
-    registerNewProduct(
+    validateRegisterIntent(
       result.image.src,
       result.short[0].value,
       +result.short[1].value,
@@ -751,6 +749,139 @@ function mainBtnFunction() {
   });
 }
 
+
+function normalizeEquipmentName(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function validateRegisterIntent(image, name, quantity, category) {
+  try {
+    const newNameNorm = normalizeEquipmentName(name);
+    if (newNameNorm.length < 3) {
+      return registerNewProduct(image, name, quantity, category);
+    }
+
+    const resp = await fetch(`${API_BASE_URL}/maintenance/equipment`);
+    const data = await resp.json();
+    const list = resp.ok ? (data.result || []) : [];
+    const similar = list.find((eq) => {
+      const existingNorm = normalizeEquipmentName(eq.equipment_name);
+      if (!existingNorm) return false;
+      return (
+        existingNorm === newNameNorm ||
+        existingNorm.includes(newNameNorm) ||
+        newNameNorm.includes(existingNorm)
+      );
+    });
+
+    if (similar) {
+      openConfirmAddToExistingModal(similar, quantity, category, image, name);
+      return;
+    }
+    registerNewProduct(image, name, quantity, category);
+  } catch (err) {
+    console.error('Validation error:', err);
+    registerNewProduct(image, name, quantity, category);
+  }
+}
+
+function openConfirmAddToExistingModal(existingEquipment, quantity, category, image, attemptedName) {
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-40 hidden" id="confirmAddToExistingModal">
+      <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-blue-500 to-blue-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Similar Equipment Found</p>
+          <p class="text-xs">Did you mean to add items to the existing equipment?</p>
+        </div>
+        <div class="p-6 text-sm text-gray-700">
+          <p class="mb-3">Attempted name: <span class="font-semibold">${attemptedName}</span></p>
+          <div class="bg-gray-50 p-3 rounded border">
+            <p class="text-gray-600 mb-1">Existing equipment:</p>
+            <p class="font-semibold text-gray-900">${existingEquipment.equipment_name}</p>
+            <p class="text-xs text-gray-500 mt-1">ID: ${existingEquipment.equipment_id.split('_').slice(0,2).join('_')}</p>
+          </div>
+          <p class="mt-4">Add <span class="font-semibold">${quantity}</span> new individual item(s) to this equipment instead?</p>
+          <div class="flex gap-3 mt-5">
+            <button type="button" id="addToExistingCancelBtn" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
+            <button type="button" id="addToExistingConfirmBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600">Add to Existing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('confirmAddToExistingModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const close = () => {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  };
+
+  document.getElementById('addToExistingCancelBtn').addEventListener('click', () => {
+    close();
+  });
+
+  document.getElementById('addToExistingConfirmBtn').addEventListener('click', async () => {
+    try {
+      if (typeof main.closeModal === 'function') {
+        try { main.closeModal(); } catch (_) {}
+      }
+      await addQuantityToExistingEquipment(existingEquipment.equipment_id, existingEquipment.equipment_name, quantity);
+      close();
+    } catch (e) {
+      console.error('Add to existing failed:', e);
+      close();
+    }
+  });
+}
+
+async function addQuantityToExistingEquipment(equipmentId, equipmentName, addQuantity) {
+  try {
+    // Get current items to compute start index
+    const itemsResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/items`);
+    const itemsData = await itemsResp.json();
+    const currentItems = itemsResp.ok ? (itemsData.result || []) : [];
+    const lastItemNumber = currentItems.length;
+
+    const addResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/add-quantity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        add_quantity: addQuantity,
+        equipment_name: equipmentName,
+        start_index: lastItemNumber + 1,
+      }),
+    });
+    const addRes = await addResp.json();
+    if (addResp.ok) {
+      main.toast(`Added ${addQuantity} item(s) to ${equipmentName}`, 'success');
+      refreshAllTabs();
+    } else {
+      main.toast(`Error: ${addRes.error || 'Failed to add items'}`, 'error');
+    }
+  } catch (err) {
+    console.error('Add quantity to existing error:', err);
+    main.toast('Network error: Failed to add items to existing equipment', 'error');
+  }
+}
 
 async function registerNewProduct(image, name, quantity, category) {
   try {
@@ -837,11 +968,7 @@ function refreshAllTabs() {
   }
 
   loadExistingEquipment();
-
-  // Tab 2: Disposal List (For Disposal)
   renderDisposalList();
-
-  // Tab 3: Disposed items
   renderDisposedList();
 }
 
