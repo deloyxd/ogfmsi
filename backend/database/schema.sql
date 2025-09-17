@@ -85,10 +85,10 @@ CREATE TABLE IF NOT EXISTS gym_equipment_tbl (
     id INT AUTO_INCREMENT PRIMARY KEY,
     equipment_id VARCHAR(50) UNIQUE NOT NULL,
     equipment_name VARCHAR(255) NOT NULL,
-    equipment_type ENUM('machine', 'non-machine') NOT NULL,
+    equipment_type ENUM('machine', 'non-machine', 'plates', 'weights') NOT NULL,
     total_quantity INT NOT NULL DEFAULT 1,
     image_url LONGTEXT,
-    general_status ENUM('All Available', 'Warning - Need Repair') DEFAULT 'All Available',
+    general_status VARCHAR(100) NOT NULL DEFAULT 'All Available',
     last_maintenance_date DATE,
     next_maintenance_date DATE,
     notes TEXT,
@@ -102,7 +102,8 @@ CREATE TABLE IF NOT EXISTS gym_equipment_items_tbl (
     item_id VARCHAR(50) UNIQUE NOT NULL,
     equipment_id VARCHAR(50) NOT NULL,
     item_code VARCHAR(20) NOT NULL, -- e.g., CABCRO001, CABCRO002
-    individual_status ENUM('Available', 'Unavailable') DEFAULT 'Available',
+    individual_status ENUM('Available', 'Unavailable', 'For Disposal', 'Disposed') DEFAULT 'Available',
+    disposed_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (equipment_id) REFERENCES gym_equipment_tbl(equipment_id) ON DELETE CASCADE
