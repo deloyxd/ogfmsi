@@ -23,7 +23,6 @@ export const CATEGORIES = [
 
 export default { CATEGORIES };
 
-
 const MEASUREMENT_UNITS = [
   // Weight
   { value: 'mg', label: 'Weight: mg' },
@@ -67,6 +66,14 @@ const MEASUREMENT_UNITS = [
   { value: 'mm', label: 'Size: mm' },
   { value: 'size', label: 'Size: size(s)' },
   { value: 'level', label: 'Size: level(s)' },
+  // Clothing sizes
+  { value: 'extra small', label: 'Clothing Size: XS' },
+  { value: 'small', label: 'Clothing Size: S' },
+  { value: 'medium', label: 'Clothing Size: M' },
+  { value: 'large', label: 'Clothing Size: L' },
+  { value: 'extra large', label: 'Clothing Size: XL' },
+  { value: '2x large', label: 'Clothing Size: XXL' },
+  { value: '3x large', label: 'Clothing Size: XXXL' },
 ];
 
 let mainBtn;

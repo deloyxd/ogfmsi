@@ -121,53 +121,53 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
         const customers = await response.json();
 
-        customers.result.forEach((customer) => {
-          main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
-            if (findResult) {
-              const endDate = new Date(customer.customer_end_date);
-              const today = new Date();
-              endDate.setHours(0, 0, 0, 0);
-              today.setHours(0, 0, 0, 0);
-              const diffTime = endDate - today;
-              const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              if (customer.customer_pending == 1) {
-                payments.findPendingTransaction(findResult.dataset.id, (transactionId) => {
-                  findResult.dataset.tid = transactionId;
-                });
-              } else {
-                main.createAtSectionOne(
-                  SECTION_NAME,
-                  [
-                    'id_' + customer.customer_id,
-                    {
-                      type: 'object_contact',
-                      data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
-                    },
-                    main.encodeDate(customer.customer_start_date, 'long'),
-                    main.encodeDate(customer.customer_end_date, 'long'),
-                    daysLeft,
-                    main.encodePrice(
-                      customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
-                    ),
-                    findResult.dataset.custom3,
-                    'custom_date_' + main.encodeDate(customer.created_at, 'long'),
-                  ],
-                  2,
-                  (createResult) => {
-                    const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-                    customerProcessBtn.addEventListener('click', () =>
-                      customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                    );
-                    const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-                    customerEditDetailsBtn.addEventListener('click', () =>
-                      customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                    );
-                  }
-                );
-              }
-            }
-          });
-        });
+        // customers.result.forEach((customer) => {
+        //   main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
+        //     if (findResult) {
+        //       const endDate = new Date(customer.customer_end_date);
+        //       const today = new Date();
+        //       endDate.setHours(0, 0, 0, 0);
+        //       today.setHours(0, 0, 0, 0);
+        //       const diffTime = endDate - today;
+        //       const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        //       if (customer.customer_pending == 1) {
+        //         payments.findPendingTransaction(findResult.dataset.id, (transactionId) => {
+        //           findResult.dataset.tid = transactionId;
+        //         });
+        //       } else {
+        //         main.createAtSectionOne(
+        //           SECTION_NAME,
+        //           [
+        //             'id_' + customer.customer_id,
+        //             {
+        //               type: 'object_contact',
+        //               data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+        //             },
+        //             main.encodeDate(customer.customer_start_date, 'long'),
+        //             main.encodeDate(customer.customer_end_date, 'long'),
+        //             daysLeft,
+        //             main.encodePrice(
+        //               customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+        //             ),
+        //             findResult.dataset.custom3,
+        //             'custom_date_' + main.encodeDate(customer.created_at, 'long'),
+        //           ],
+        //           2,
+        //           (createResult) => {
+        //             const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+        //             customerProcessBtn.addEventListener('click', () =>
+        //               customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+        //             );
+        //             const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+        //             customerEditDetailsBtn.addEventListener('click', () =>
+        //               customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+        //             );
+        //           }
+        //         );
+        //       }
+        //     }
+        //   });
+        // });
       } catch (error) {
         console.error('Error fetching customers:', error);
       }
@@ -487,9 +487,14 @@ function validateCustomer(
                       },
                       body: JSON.stringify({
                         customer_id: createResult.dataset.id,
-                        customer_start_date: main.encodeDate(startDate.replace(/\//g, '-'), '2-digit'),
-                        customer_end_date: main.encodeDate(endDate.replace(/\//g, '-'), '2-digit'),
+                        customer_start_date: main
+                          .encodeDate(startDate.replace(/\//g, '-'), '2-digit')
+                          .replace(/^(\d{2})-(\d{2})-(\d{4})$/, '$3-$1-$2'),
+                        customer_end_date: main
+                          .encodeDate(endDate.replace(/\//g, '-'), '2-digit')
+                          .replace(/^(\d{2})-(\d{2})-(\d{4})$/, '$3-$1-$2'),
                         customer_months: months,
+                        customer_tid: '',
                         customer_pending: 1,
                       }),
                     });
@@ -829,8 +834,29 @@ function processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate) {
       isMonthlyCustomer,
       amount,
       main.getSelectedOption(priceRate, PRICE_RATE),
-      (transactionId) => {
+      async (transactionId) => {
         customer.dataset.tid = transactionId;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/inquiry/customers/monthly/${customer.dataset.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              customer_tid: customer.dataset.tid,
+              customer_pending: 1,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          await response.json();
+        } catch (error) {
+          console.error('Error updating customer:', error);
+        }
       }
     );
   });
@@ -861,7 +887,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           'custom_datetime_today',
         ];
 
-        main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+        main.createAtSectionOne(SECTION_NAME, columnsData, 2, async (createResult) => {
           main.createNotifDot(SECTION_NAME, 2);
 
           const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
@@ -872,6 +898,27 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           customerEditDetailsBtn.addEventListener('click', () =>
             customerEditDetailsBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
           );
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/inquiry/customers/monthly/${findResult1.dataset.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                customer_tid: '',
+                customer_pending: 0,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            await response.json();
+          } catch (error) {
+            console.error('Error updating customer:', error);
+          }
         });
 
         main.showSection(SECTION_NAME);
@@ -934,7 +981,7 @@ export function cancelPendingTransaction(transactionId) {
   cancelPendingTransactionLoop(1);
 
   function cancelPendingTransactionLoop(tabIndex) {
-    main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', tabIndex, (findResult) => {
+    main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', tabIndex, async (findResult) => {
       if (findResult) {
         findResult.dataset.tid = '';
         if (findResult.dataset.status == 'pending') {
@@ -945,6 +992,23 @@ export function cancelPendingTransaction(transactionId) {
 
           findResult.dataset.custom2 = main.fixText(CUSTOMER_TYPE[0].value);
           findResult.children[2].innerHTML = findResult.dataset.custom2;
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/inquiry/customers/monthly/${customer.dataset.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            await response.json();
+          } catch (error) {
+            console.error('Error deleting customer:', error);
+          }
         }
         cancelPendingTransactionLoop(2);
       } else if (tabIndex == 1) {

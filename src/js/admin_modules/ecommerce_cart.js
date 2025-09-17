@@ -167,8 +167,7 @@ function displayProductsForTab(products, tabIndex) {
       stockText: 'Stk: ' + stockCount,
       productPrice: main.encodePrice(product.price),
       productQuantity: product.quantity,
-      productMeasurementStatus:
-        product.measurement.trim() === '' || product.measurementUnit.trim() === '' ? 'hidden' : '',
+      productMeasurementStatus: product.measurementUnit.trim() === '' ? 'hidden' : '',
       productMeasurement: product.measurement,
       productMeasurementUnit: product.measurementUnit,
     };
@@ -184,7 +183,7 @@ function displayProductsForTab(products, tabIndex) {
     const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
 
     let quantity = Math.min(1, availableStock); // Start with 1 or 0 if no stock available
-    
+
     // Initialize the input field
     quantityInput.value = quantity;
     quantityInput.max = availableStock;
@@ -209,19 +208,21 @@ function displayProductsForTab(products, tabIndex) {
     // Only allow numeric input
     quantityInput.addEventListener('keydown', (e) => {
       // Allow: backspace, delete, tab, escape, enter, decimal point
-      if ([46, 8, 9, 27, 13, 110].includes(e.keyCode) ||
-          // Ctrl+A, Command+A
-          (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
-          // Ctrl+C, Command+C
-          (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
-          // Ctrl+X, Command+X
-          (e.keyCode === 88 && (e.ctrlKey === true || e.metaKey === true)) ||
-          // home, end, left, right
-          (e.keyCode >= 35 && e.keyCode <= 39)) {
+      if (
+        [46, 8, 9, 27, 13, 110].includes(e.keyCode) ||
+        // Ctrl+A, Command+A
+        (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+        // Ctrl+C, Command+C
+        (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
+        // Ctrl+X, Command+X
+        (e.keyCode === 88 && (e.ctrlKey === true || e.metaKey === true)) ||
+        // home, end, left, right
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
         return;
       }
       // Only allow numbers
-      if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+      if ((e.shiftKey || e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
         e.preventDefault();
       }
     });
@@ -230,12 +231,12 @@ function displayProductsForTab(products, tabIndex) {
     quantityInput.addEventListener('paste', (e) => {
       const clipboardData = e.clipboardData || window.clipboardData;
       const pastedData = parseInt(clipboardData.getData('Text'));
-      
+
       if (isNaN(pastedData) || pastedData < 0) {
         e.preventDefault();
         return;
       }
-      
+
       if (pastedData > availableStock) {
         e.preventDefault();
         quantity = availableStock;
@@ -627,26 +628,32 @@ function cartPaymentRadioListener(title, input, container, inputGroup) {
   inputGroup.short[4].hidden = refInput.parentElement.classList.contains('hidden');
 
   if (inputGroup.short[1].hidden) {
-    cashInput.previousElementSibling.innerHTML = inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
+    cashInput.previousElementSibling.innerHTML =
+      inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
     cashInput.value = main.encodePrice(0);
   } else {
     if (title.toLowerCase() == 'hybrid') {
-      cashInput.previousElementSibling.innerHTML = inputGroup.short[1].placeholder + ' (cash)' + (inputGroup.short[1].required ? ' *' : '');
+      cashInput.previousElementSibling.innerHTML =
+        inputGroup.short[1].placeholder + ' (cash)' + (inputGroup.short[1].required ? ' *' : '');
       cashInput.value = main.encodePrice(0);
     } else {
-      cashInput.previousElementSibling.innerHTML = inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
+      cashInput.previousElementSibling.innerHTML =
+        inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
       cashInput.value = main.encodePrice(amountToPay);
     }
   }
 
   if (inputGroup.short[2].hidden) {
-    cashlessInput.previousElementSibling.innerHTML = inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
+    cashlessInput.previousElementSibling.innerHTML =
+      inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
     cashlessInput.value = main.encodePrice(0);
   } else {
     if (title.toLowerCase() == 'hybrid') {
-      cashlessInput.previousElementSibling.innerHTML = inputGroup.short[2].placeholder + ' (cashless)' + (inputGroup.short[2].required ? ' *' : '');
+      cashlessInput.previousElementSibling.innerHTML =
+        inputGroup.short[2].placeholder + ' (cashless)' + (inputGroup.short[2].required ? ' *' : '');
     } else {
-      cashlessInput.previousElementSibling.innerHTML = inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
+      cashlessInput.previousElementSibling.innerHTML =
+        inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
     }
     cashlessInput.value = main.encodePrice(amountToPay);
   }

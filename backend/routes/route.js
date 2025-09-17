@@ -3,8 +3,10 @@ const { Router } = require("express");
 // For demo routes
 const demoRoute = require('./demo.route');
 
-// For maintenance routes
-const maintenanceRoute = require('./maintenance.route');
+// For equipment routes
+const equipmentRoute = require('./equipment.route');
+const equipmentMaintenanceRoute = require('./equipment_maintenance.route');
+const equipmentStatsRoute = require('./equipment_stats.route');
 
 // For ecommerce routes
 const ecommerceProductsRoute = require('./ecommerce.products.route');
@@ -24,8 +26,14 @@ const router = Router();
 //API URL: (host):(port)/api/demo
 router.use('/demo', demoRoute);
 
+//API URL: (host):(port)/api/maintenance/equipment
+router.use('/maintenance/equipment', equipmentRoute);
+
 //API URL: (host):(port)/api/maintenance
-router.use('/maintenance', maintenanceRoute);
+router.use('/maintenance', equipmentMaintenanceRoute);
+
+//API URL: (host):(port)/api/maintenance/stats
+router.use('/maintenance/stats', equipmentStatsRoute);
 
 //API URL: (host):(port)/api/ecommerce
 router.use('/ecommerce', ecommerceProductsRoute);
