@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const mysqlConnection = require('../database/mysql');
-const { generateEquipmentCode, updateGeneralStatus } = require('../utils/helper');
+const { generateEquipmentCode, updateGeneralStatus, updateGeneralStatusForEquipment } = require('../utils/helper');
 const router = Router();
 
 /* 🔥 EQUIPMENT INVENTORY ROUTES 🔥 */
@@ -109,6 +109,27 @@ router.get('/:id/items', async (req, res) => {
       return res.status(500).json({ error: 'Fetching equipment items failed' });
     }
     res.status(200).json({ message: 'Fetching equipment items successful', result: result });
+  });
+});
+
+// GET equipment items (optionally filter by status) - across all equipment
+router.get('/items', async (req, res) => {
+  const { status } = req.query;
+  const whereClause = status ? 'WHERE i.individual_status = ?' : '';
+  const params = status ? [status] : [];
+  const query = `
+    SELECT i.*, e.equipment_name
+    FROM gym_equipment_items_tbl i
+    JOIN gym_equipment_tbl e ON e.equipment_id = i.equipment_id
+    ${whereClause}
+    ORDER BY i.created_at DESC
+  `;
+  mysqlConnection.query(query, params, (error, result) => {
+    if (error) {
+      console.error('Fetching items error:', error);
+      return res.status(500).json({ error: 'Fetching equipment items failed' });
+    }
+    res.status(200).json({ message: 'Fetching equipment items successful', result });
   });
 });
 
@@ -232,6 +253,25 @@ router.put('/items/:itemId', async (req, res) => {
   });
 });
 
+// DELETE individual equipment item (Dispose)
+router.delete('/items/:itemId', async (req, res) => {
+  const { itemId } = req.params;
+  // Mark as Disposed and set disposed_at
+  const query = "UPDATE gym_equipment_items_tbl SET individual_status = 'Disposed', disposed_at = CURRENT_TIMESTAMP WHERE item_id = ?";
+  
+  mysqlConnection.query(query, [itemId], (error, result) => {
+    if (error) {
+      console.error('Disposing equipment item error:', error);
+      return res.status(500).json({ error: 'Disposing equipment item failed' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Equipment item not found' });
+    }
+    // Update general status for parent equipment after disposal
+    updateGeneralStatus(itemId, res, mysqlConnection);
+  });
+});
+
 // POST add quantity to existing equipment
 router.post('/:id/add-quantity', async (req, res) => {
   const { id } = req.params;
@@ -313,11 +353,20 @@ router.post('/:id/add-quantity', async (req, res) => {
                   res.status(500).json({ error: 'Failed to commit transaction' });
                 });
               }
-              res.status(200).json({ 
-                message: 'Quantity added successfully',
-                new_quantity: newQuantity,
-                items_added: add_quantity
-              });
+
+              // Recompute general status after adding items (to reflect partial availability with disposed items)
+              updateGeneralStatusForEquipment(id, (gsErr, gs) => {
+                if (gsErr) {
+                  // Not fatal for the add-quantity action
+                  console.warn('General status recompute failed:', gsErr);
+                }
+                res.status(200).json({ 
+                  message: 'Quantity added successfully',
+                  new_quantity: newQuantity,
+                  items_added: add_quantity,
+                  general_status: gs ? gs.general_status : undefined,
+                });
+              }, mysqlConnection);
             });
           })
           .catch((createError) => {
