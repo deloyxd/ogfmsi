@@ -3,7 +3,7 @@ const mysqlConnection = require('../database/mysql');
 const router = Router();
 
 // GET all customers
-router.get('/customers/monthly', async (req, res) => {
+router.get('/monthly', async (req, res) => {
   const query = 'SELECT * FROM customer_monthly_tbl ORDER BY created_at DESC';
   mysqlConnection.query(query, (error, result) => {
     if (error) {
@@ -27,7 +27,7 @@ router.get('/customers/monthly', async (req, res) => {
 // });
 
 // POST new customer
-router.post('/customers/monthly', async (req, res) => {
+router.post('/monthly', async (req, res) => {
   const { customer_id, customer_start_date, customer_end_date, customer_months, customer_tid, customer_pending } =
     req.body;
 
@@ -61,7 +61,7 @@ router.post('/customers/monthly', async (req, res) => {
 });
 
 // PUT update customer
-router.put('/customers/monthly/:id', async (req, res) => {
+router.put('/monthly/:id', async (req, res) => {
   const { id } = req.params;
   const { customer_tid, customer_pending } = req.body;
 
@@ -85,7 +85,7 @@ router.put('/customers/monthly/:id', async (req, res) => {
 });
 
 // DELETE customers
-router.delete('/customers/monthly/:id', async (req, res) => {
+router.delete('/monthly/:id', async (req, res) => {
   const { id } = req.params;
   const query = 'DELETE FROM customer_monthly_tbl WHERE customer_id = ?';
 
@@ -108,7 +108,7 @@ router.delete('/customers/monthly/:id', async (req, res) => {
 });
 
 // DELETE expired customers
-router.delete('/customers/monthly', async (req, res) => {
+router.delete('/monthly', async (req, res) => {
   const query = 'DELETE FROM customer_monthly_tbl WHERE customer_end_date < CURRENT_DATE';
 
   mysqlConnection.query(query, [], (error, result) => {

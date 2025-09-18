@@ -40,14 +40,15 @@ router.post('/customers', async (req, res) => {
     customer_last_name,
     customer_contact,
     customer_type,
+    customer_tid,
     customer_pending,
     customer_rate,
   } = req.body;
 
   const query = `
     INSERT INTO customer_tbl 
-    (customer_id, customer_image_url, customer_first_name, customer_last_name, customer_contact, customer_type, customer_pending, customer_rate) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (customer_id, customer_image_url, customer_first_name, customer_last_name, customer_contact, customer_type, customer_tid, customer_pending, customer_rate) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   mysqlConnection.query(
@@ -59,6 +60,7 @@ router.post('/customers', async (req, res) => {
       customer_last_name,
       customer_contact,
       customer_type,
+      customer_tid,
       customer_pending,
       customer_rate,
     ],
@@ -76,12 +78,37 @@ router.post('/customers', async (req, res) => {
           customer_last_name,
           customer_contact,
           customer_type,
+          customer_tid,
           customer_pending,
           customer_rate,
         },
       });
     }
   );
+});
+
+// PUT update customer pending
+router.put('/customers/pending/:id', async (req, res) => {
+  const { id } = req.params;
+  const { customer_type, customer_tid, customer_pending } = req.body;
+
+  const query = `
+    UPDATE customer_tbl 
+    SET customer_type = ?, customer_tid = ?, customer_pending = ?
+    WHERE customer_id = ?
+  `;
+
+  mysqlConnection.query(query, [customer_type, customer_tid, customer_pending, id], (error, result) => {
+    if (error) {
+      console.error('Updating customer error:', error);
+      return res.status(500).json({ error: 'Updating customer failed' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    } else {
+      res.status(200).json({ message: 'Customer updated successfully' });
+    }
+  });
 });
 
 // PUT update customer
@@ -93,13 +120,14 @@ router.put('/customers/:id', async (req, res) => {
     customer_last_name,
     customer_contact,
     customer_type,
+    customer_tid,
     customer_pending,
     customer_rate,
   } = req.body;
 
   const query = `
     UPDATE customer_tbl 
-    SET customer_image_url = ?, customer_first_name = ?, customer_last_name = ?, customer_contact = ?, customer_type = ?, customer_pending = ?, customer_rate = ?
+    SET customer_image_url = ?, customer_first_name = ?, customer_last_name = ?, customer_contact = ?, customer_type = ?, customer_tid = ?, customer_pending = ?, customer_rate = ?
     WHERE customer_id = ?
   `;
 
@@ -111,6 +139,7 @@ router.put('/customers/:id', async (req, res) => {
       customer_last_name,
       customer_contact,
       customer_type,
+      customer_tid,
       customer_pending,
       customer_rate,
       id,
