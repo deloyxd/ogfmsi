@@ -618,6 +618,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
               customer_last_name: lastName,
               customer_contact,
               customer_type: customerType.includes('Monthly') ? 'monthly' : 'daily',
+              customer_tid: '',
               customer_pending: customerType.includes('Pending') ? 1 : 0,
               customer_rate: priceRate.toLowerCase(),
             }),
@@ -636,8 +637,12 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
     } else {
       updateCustomer(columnsData, findResult, 1);
       if (isMonthlyCustomer) {
-        callback(findResult);
-        processCheckinPayment(findResult, true, amount, priceRate);
+        if (!findResult.dataset.status || findResult.dataset.status === 'pending') {
+          callback(findResult);
+          processCheckinPayment(findResult, true, amount, priceRate);
+        } else {
+          main.closeModal();
+        }
       } else {
         if (findResult.dataset.tid) payments.cancelCheckinPayment(findResult.dataset.tid);
         main.closeModal();
@@ -653,7 +658,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
   }
 }
 
-function updateCustomer(newData, oldData, tabIndex) {
+async function updateCustomer(newData, oldData, tabIndex) {
   oldData.dataset.image = newData[1].data[0];
   oldData.dataset.text = newData[1].data[1];
   oldData.dataset.contact = newData[1].data[2];
@@ -670,6 +675,33 @@ function updateCustomer(newData, oldData, tabIndex) {
       break;
     case 2:
       break;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/inquiry/customers/${oldData.dataset.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customer_image_url: newData[1].data[0],
+        customer_first_name: firstName,
+        customer_last_name: lastName,
+        customer_contact: newData[1].data[2],
+        customer_type: newData[2].toLowerCase().includes('monthly') ? 'monthly' : 'daily',
+        customer_tid: '',
+        customer_pending: newData[2].toLowerCase().includes('active') ? 0 : 1,
+        customer_rate: newData[3].toLowerCase(),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    await response.json();
+  } catch (error) {
+    console.error('Error updating customer:', error);
   }
 }
 

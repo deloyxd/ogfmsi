@@ -3,8 +3,8 @@ const mysqlConnection = require('../database/mysql');
 const router = Router();
 
 // GET all payments
-router.get('/pending', async (req, res) => {
-  const query = `SELECT * FROM payment_tbl WHERE payment_type = 'pending' ORDER BY created_at DESC`;
+router.get('/complete', async (req, res) => {
+  const query = `SELECT * FROM payment_tbl WHERE payment_type = 'complete' ORDER BY created_at DESC`;
   mysqlConnection.query(query, (error, result) => {
     if (error) {
       console.error('Fetching payments error:', error);
@@ -14,19 +14,20 @@ router.get('/pending', async (req, res) => {
   });
 });
 
-// POST new payment
-router.post('/pending', async (req, res) => {
-  const { payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate } = req.body;
+// PUT new complete payment
+router.put('/complete/:id', async (req, res) => {
+  const { id } = req.params;
+  const { payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method } = req.body;
 
   const query = `
-    INSERT INTO payment_tbl
-    (payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_type)
-    VALUES (?, ?, ?, ?, ?, 'pending')
+    UPDATE payment_tbl 
+    SET payment_amount_paid_cash = ?, payment_amount_paid_cashless = ?, payment_amount_change = ?, payment_method = ?, payment_type = 'complete'
+    WHERE payment_id = ?
   `;
 
   mysqlConnection.query(
     query,
-    [payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate],
+    [payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method, id],
     (error, result) => {
       if (error) {
         console.error('Creating payment error:', error);
@@ -35,11 +36,11 @@ router.post('/pending', async (req, res) => {
       res.status(201).json({
         message: 'Payment created successfully',
         result: {
-          payment_id,
-          payment_customer_id,
-          payment_purpose,
-          payment_amount_to_pay,
-          payment_rate,
+          payment_id: id,
+          payment_amount_paid_cash,
+          payment_amount_paid_cashless,
+          payment_amount_change,
+          payment_method,
         },
       });
     }

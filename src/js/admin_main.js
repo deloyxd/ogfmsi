@@ -692,7 +692,7 @@ async function loadSectionSilently(sectionName) {
   targetSection.classList.add('hidden');
 }
 
-export function showSection(sectionName) {
+export async function showSection(sectionName) {
   const targetSection = document.getElementById(sectionName + '-section');
   if (!targetSection) {
     return;
@@ -1889,6 +1889,15 @@ export function encodeDate(date, type) {
     .replace(/\//g, '-');
 }
 
+export function encodeTime(time) {
+  if (typeof time != 'object') time = new Date(time);
+  return time.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export function decodeDate(date) {
   return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
@@ -2040,6 +2049,7 @@ export default {
   encodeName,
   decodeName,
   encodeDate,
+  encodeTime,
   decodeDate,
   decodeTime,
   getDateOrTimeOrBoth,
@@ -2097,6 +2107,7 @@ async function showLoadingAndPreloadSections() {
   try {
     const loadPromises = sectionNames.map(async (sectionName) => {
       await loadSectionSilently(sectionName);
+      await showSection(sectionName);
       updateProgress(sectionName);
     });
 

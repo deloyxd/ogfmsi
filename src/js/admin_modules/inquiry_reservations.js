@@ -53,7 +53,7 @@ function sectionTwoMainBtnFunction() {
       const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
       const inputs = {
         header: {
-          title: `Reserve Facility ${getEmoji('📆', 26)}`,
+          title: `Reserve Facility ${getEmoji('📅', 26)}`,
           subtitle: 'Reservation form',
         },
         short: [
@@ -109,7 +109,7 @@ function sectionTwoMainBtnFunction() {
           },
         ],
         footer: {
-          main: `Reserve ${getEmoji('✅')}`,
+          main: `Reserve ${getEmoji('📅')}`,
         },
       };
       main.openModal('orange', inputs, (result) => {

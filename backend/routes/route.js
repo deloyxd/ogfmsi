@@ -20,6 +20,7 @@ const inquiryMonthly = require('./inquiry.monthly.route');
 
 // For payment route
 const paymentPendingRoute = require('./payment.pending.route');
+const paymentCompleteRoute = require('./payment.complete.route');
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.use('/inquiry', inquiryMonthly);
 
 // API URL: (host):(port)/api/payment
 router.use('/payment', paymentPendingRoute);
+router.use('/payment', paymentCompleteRoute);
 
 // Add routes declaration here:
 

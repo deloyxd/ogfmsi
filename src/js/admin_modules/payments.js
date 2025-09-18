@@ -1,5 +1,6 @@
 import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
+import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'payments';
 const MODULE_NAME = 'Payments';
@@ -8,7 +9,7 @@ let activated = false,
   mainBtn,
   subBtn;
 
-document.addEventListener('ogfmsiAdminMainLoaded', function () {
+document.addEventListener('ogfmsiAdminMainLoaded', async function () {
   if (main.sharedState.sectionName != SECTION_NAME) return;
 
   if (!activated) {
@@ -19,6 +20,123 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
     subBtn.classList.remove('hidden');
     subBtn.addEventListener('click', subBtnFunction);
+
+    await fetchAllPendingPayments();
+    await fetchAllCompletePayments();
+
+    async function fetchAllPendingPayments() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/pending`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const pendingPayments = await response.json();
+
+        pendingPayments.result.forEach((pendingPayment) => {
+          main.findAtSectionOne(
+            'inquiry-customers',
+            pendingPayment.payment_customer_id,
+            'equal_id',
+            1,
+            (findResult) => {
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + pendingPayment.payment_id,
+                  {
+                    type: 'object',
+                    data: [findResult.dataset.image, findResult.dataset.id],
+                  },
+                  pendingPayment.payment_purpose,
+                  main.formatPrice(pendingPayment.payment_amount_to_pay),
+                  main.fixText(pendingPayment.payment_rate),
+                  'custom_datetime_' + main.encodeDate(pendingPayment.created_at, 'long'),
+                ],
+                1,
+                (createResult) => {
+                  const { firstName, lastName, fullName } = main.decodeName(findResult.dataset.text);
+                  const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
+                  transactionProcessBtn.addEventListener('click', () => {
+                    completeCheckinPayment(
+                      createResult.dataset.id,
+                      createResult.dataset.image,
+                      createResult.dataset.text,
+                      createResult.dataset.custom2,
+                      fullName,
+                      pendingPayment.payment_amount_to_pay,
+                      pendingPayment.payment_rate
+                    );
+                  });
+                  const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
+                  transactionCancelBtn.addEventListener('click', () => {
+                    main.openConfirmationModal(
+                      'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
+                      () => {
+                        cancelCheckinPayment(createResult.dataset.id);
+                        main.closeConfirmationModal();
+                      }
+                    );
+                  });
+                }
+              );
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching pending payments:', error);
+      }
+    }
+
+    async function fetchAllCompletePayments() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/complete`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const completePayments = await response.json();
+
+        completePayments.result.forEach((completePayment) => {
+          main.findAtSectionOne(
+            'inquiry-customers',
+            completePayment.payment_customer_id,
+            'equal_id',
+            1,
+            (findResult) => {
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + completePayment.payment_id,
+                  {
+                    type: 'object',
+                    data: [findResult.dataset.image, findResult.dataset.id],
+                  },
+                  completePayment.payment_purpose,
+                  main.formatPrice(completePayment.payment_amount_to_pay),
+                  main.formatPrice(completePayment.payment_amount_paid_cash),
+                  main.formatPrice(completePayment.payment_amount_paid_cashless),
+                  main.formatPrice(completePayment.payment_amount_change),
+                  main.fixText(completePayment.payment_rate),
+                  main.fixText(completePayment.payment_method),
+                  'custom_datetime_' +
+                    main.encodeDate(completePayment.created_at, 'long') +
+                    ' - ' +
+                    main.encodeTime(completePayment.created_at, 'long'),
+                ],
+                3,
+                (createResult) => {
+                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                  transactionDetailsBtn.addEventListener('click', () =>
+                    customers.customerDetailsBtnFunction(findResult.dataset.id, 'Transaction Details', '🔏')
+                  );
+                }
+              );
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching pending payments:', error);
+      }
+    }
   }
 });
 
@@ -39,7 +157,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
     main.fixText(priceRate),
     'custom_datetime_today',
   ];
-  main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+  main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completeCheckinPayment(
@@ -64,6 +182,30 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
     });
     continueProcessCheckinPayment(createResult.dataset.id, fullName);
     callback(createResult.dataset.id);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/pending`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_id: createResult.dataset.id,
+          payment_customer_id: createResult.dataset.text,
+          payment_purpose: purpose,
+          payment_amount_to_pay: amountToPay,
+          payment_rate: priceRate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      await response.json();
+    } catch (error) {
+      console.error('Error creating pending payment:', error);
+    }
   });
 }
 
@@ -266,7 +408,7 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
       'custom_datetime_today',
     ];
 
-    main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
+    main.createAtSectionOne(SECTION_NAME, columnsData, 3, async (createResult) => {
       createResult.dataset.refnum = refNum;
 
       main.toast(`Transaction successfully completed!`, 'success');
@@ -282,6 +424,29 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
       main.closeModal(() => {
         customers.completeCheckinPayment(id, amountPaid, priceRate);
       });
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/complete/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            payment_amount_paid_cash: result.short[2].value,
+            payment_amount_paid_cashless: result.short[3].value,
+            payment_amount_change: main.decodePrice(change),
+            payment_method: paymentMethod,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        await response.json();
+      } catch (error) {
+        console.error('Error creating complete payment:', error);
+      }
     });
   });
 }
@@ -356,17 +521,11 @@ export function processReservationPayment(reservation, callback = () => {}) {
   });
 }
 
-export function continueProcessReservationPayment() {
+export function continueProcessReservationPayment() {}
 
-}
+export function cancelReservationPayment() {}
 
-export function cancelReservationPayment() {
-
-}
-
-function completeReservationPayment() {
-
-}
+function completeReservationPayment() {}
 
 export function findPendingTransaction(customerId, callback = () => {}) {
   main.findAtSectionOne(SECTION_NAME, customerId, 1, 'equal_text', (findResult) => {
@@ -376,4 +535,13 @@ export function findPendingTransaction(customerId, callback = () => {}) {
   });
 }
 
-export default { processCheckinPayment, continueProcessCheckinPayment, cancelCheckinPayment, processReservationPayment, continueProcessReservationPayment, cancelReservationPayment, pendingTransaction, findPendingTransaction };
+export default {
+  processCheckinPayment,
+  continueProcessCheckinPayment,
+  cancelCheckinPayment,
+  processReservationPayment,
+  continueProcessReservationPayment,
+  cancelReservationPayment,
+  pendingTransaction,
+  findPendingTransaction,
+};
