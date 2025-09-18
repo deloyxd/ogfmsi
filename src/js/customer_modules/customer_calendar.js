@@ -31,11 +31,7 @@ const state = {
 };
 
 function isToday(year, month, day) {
-  return (
-    year === today.getFullYear() &&
-    month === today.getMonth() &&
-    day === today.getDate()
-  );
+  return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 }
 
 function renderHeader(container) {
@@ -45,7 +41,7 @@ function renderHeader(container) {
 
 // Returns pseudo-random reservation count for each date
 function getReservedCount(year, month, day) {
-  const seed = (year * 10000) + (month * 100) + day;
+  const seed = year * 10000 + month * 100 + day;
   let x = Math.sin(seed) * 10000;
   const rand01 = x - Math.floor(x);
   const value = Math.max(0, Math.round(rand01 * 10) - Math.round((1 - rand01) * 6));
@@ -80,7 +76,8 @@ function createDayElement(day, month, year) {
   const randomFoldPosition = randomFold == 1 ? 'right-[1px]' : randomFold == 2 ? 'left-[1px]' : 'hidden';
 
   // Handle touch devices differently for bookmark visibility
-  const isCoarsePointer = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  const isCoarsePointer =
+    typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   const bookmarkHiddenClass = (isPrevDay && !isCoarsePointer) || reservedCount === 0 ? 'opacity-0' : '';
 
   el.innerHTML = `
@@ -89,8 +86,8 @@ function createDayElement(day, month, year) {
         isPrevDay
           ? 'text-sm sm:text-lg md:text-xl font-bold opacity-60'
           : isToday(year, month, day)
-          ? 'text-lg sm:text-2xl md:text-3xl font-black'
-          : 'text-base sm:text-xl md:text-2xl font-black'
+            ? 'text-lg sm:text-2xl md:text-3xl font-black'
+            : 'text-base sm:text-xl md:text-2xl font-black'
       }">${day}</p>
       <div class="bookmark absolute top-0.5 sm:top-1 right-0.5 sm:right-1 ${bookmarkHiddenClass} duration-300">
         <div class="relative">
