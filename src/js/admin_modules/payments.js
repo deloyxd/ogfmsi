@@ -1,5 +1,6 @@
 import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
+import reservations from './inquiry_reservations.js';
 import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'payments';
@@ -423,6 +424,7 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
 
       main.closeModal(() => {
         customers.completeCheckinPayment(id, amountPaid, priceRate);
+        reservations.completeReservationPayment(id);
       });
 
       try {
@@ -480,7 +482,7 @@ export function cancelCheckinPayment(transactionId) {
 }
 
 export function processReservationPayment(reservation, callback = () => {}) {
-  main.showSection(SECTION_NAME);
+  const { firstName, lastName, fullName} = main.decodeName(reservation.name);
   const purpose = `Reservation fee`;
   const columnsData = [
     'id_T_random',
@@ -496,12 +498,12 @@ export function processReservationPayment(reservation, callback = () => {}) {
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
-      completeReservationPayment(
+      completeCheckinPayment(
         createResult.dataset.id,
         createResult.dataset.image,
         createResult.dataset.text,
         purpose,
-        reservation.name,
+        fullName,
         reservation.amount,
         'Regular'
       );
@@ -516,16 +518,55 @@ export function processReservationPayment(reservation, callback = () => {}) {
         }
       );
     });
-    continueProcessReservationPayment(createResult.dataset.id, reservation.name);
+    continueProcessReservationPayment(createResult.dataset.id, fullName);
     callback(createResult.dataset.id);
   });
 }
 
-export function continueProcessReservationPayment() {}
+export function continueProcessReservationPayment(transactionId, fullName) {
+  main.showSection(SECTION_NAME);
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
+    if (findResult) {
+      completeCheckinPayment(
+        findResult.dataset.id,
+        findResult.dataset.image,
+        findResult.dataset.text,
+        findResult.dataset.custom2,
+        fullName,
+        main.decodePrice(findResult.dataset.custom3),
+        'Regular'
+      );
+    }
+  });
+}
 
-export function cancelReservationPayment() {}
+export function cancelReservationPayment(transactionId) {
+  reservations.cancelPendingTransaction(transactionId);
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
+    if (findResult) {
+      const columnsData = [
+        'id_' + findResult.dataset.id,
+        {
+          type: 'object',
+          data: [findResult.dataset.image, findResult.dataset.text],
+        },
+        findResult.dataset.custom2,
+        'custom_datetime_today',
+      ];
 
-function completeReservationPayment() {}
+      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+        transactionDetailsBtn.addEventListener('click', () =>
+          customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
+        );
+
+        main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+        main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
+        main.createNotifDot(SECTION_NAME, 2);
+      });
+    }
+  });
+}
 
 export function findPendingTransaction(customerId, callback = () => {}) {
   main.findAtSectionOne(SECTION_NAME, customerId, 1, 'equal_text', (findResult) => {

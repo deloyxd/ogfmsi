@@ -692,7 +692,7 @@ async function loadSectionSilently(sectionName) {
   targetSection.classList.add('hidden');
 }
 
-export async function showSection(sectionName) {
+export async function showSection(sectionName, tabIndex = 1) {
   const targetSection = document.getElementById(sectionName + '-section');
   if (!targetSection) {
     return;
@@ -707,7 +707,7 @@ export async function showSection(sectionName) {
     sharedState.intervalId = setInterval(updateDateAndTime, 10000);
   }
 
-  sharedState.activeTab = 1;
+  sharedState.activeTab = tabIndex;
 
   const sections = document.querySelectorAll('.section');
   sections.forEach((section) => {
@@ -1932,7 +1932,7 @@ export function updateDateAndTime() {
 
   if (liveDate) {
     liveDate.classList.add('skew-x-12', 'text-white', 'emoji');
-    liveDate.innerHTML = `${getEmoji('📆')} ${date} ${getEmoji('⌚')} ${time}`;
+    liveDate.innerHTML = `${getEmoji('📅')} ${date} ${getEmoji('⌚')} ${time}`;
   }
 }
 
@@ -1959,7 +1959,7 @@ export function encodePrice(price) {
 }
 
 export function decodePrice(price) {
-  return Number(String(price).replace(/[^\d.-]/g, '')).toString();
+  return Number(String(price).replace(/<[^>]*>/g, '').replace(/[^\d.-]/g, '')).toString();
 }
 
 export function formatPrice(price) {

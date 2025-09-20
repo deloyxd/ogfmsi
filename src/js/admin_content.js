@@ -7,7 +7,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   const TAB_SWITCH_DELAY = 1000;
   let activeTimeout = null;
 
-  showTab(1);
+  showTab(main.sharedState.activeTab);
 
   function showTab(tabIndex) {
     const now = Date.now();

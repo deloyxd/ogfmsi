@@ -113,8 +113,57 @@ function sectionTwoMainBtnFunction() {
         },
       };
       main.openModal('orange', inputs, (result) => {
+        const dateStart = result.short[2].value;
+
+        try {
+          const [month, day, year] = dateStart.split('-').map(Number);
+          const selectedDate = new Date(year, month - 1, day);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (selectedDate < today) {
+            throw new Error('Selected date cannot be in the past');
+          }
+        } catch (error) {
+          main.toast(error.message, 'error');
+          return;
+        }
+
         const startTime = result.short[3].value;
         const endTime = result.short[4].value;
+
+        try {
+          const start = new Date(`1970-01-01T${startTime}`);
+          const end = new Date(`1970-01-01T${endTime}`);
+          const durationHours = (end - start) / (1000 * 60 * 60);
+
+          if (end <= start) {
+            throw new Error('End time must be after start time');
+          }
+
+          if (durationHours < 1) {
+            throw new Error('Reservation must be at least 1 hour');
+          }
+
+          if (durationHours > 4) {
+            throw new Error('Reservation cannot exceed 4 hours');
+          }
+
+          const startHour = start.getHours();
+          const endHour = end.getHours();
+          const endMinutes = end.getMinutes();
+
+          if (startHour < 9) {
+            throw new Error('Reservation cannot start before 9:00 AM');
+          }
+
+          if (endHour > 23 || (endHour === 23 && endMinutes === 60)) {
+            throw new Error('Reservation cannot end after 11:59 PM');
+          }
+        } catch (error) {
+          main.toast(error.message, 'error');
+          return;
+        }
+
         main.openConfirmationModal(
           `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
           () => {
@@ -380,4 +429,20 @@ export function reserveCustomer() {
   sectionTwoMainBtnFunction();
 }
 
-export default { reserveCustomer };
+export function cancelPendingTransaction(transactionId) {
+
+}
+
+export function completeReservationPayment(transactionId) {
+  main.showSection(SECTION_NAME, 2);
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, (findResult) => {
+    if (findResult) {
+      findResult.dataset.tid = '';
+      const {date, time, datetime} = main.getDateOrTimeOrBoth();
+      findResult.dataset.datetime = datetime;
+      findResult.children[4].innerHTML = datetime;
+    }
+  });
+}
+
+export default { reserveCustomer, cancelPendingTransaction, completeReservationPayment };
