@@ -113,7 +113,7 @@ function sectionTwoMainBtnFunction() {
         },
       };
       main.openModal('orange', inputs, (result) => {
-        const dateStart = result.short[2].value;
+        let dateStart = result.short[2].value;
 
         try {
           const [month, day, year] = dateStart.split('-').map(Number);
@@ -152,6 +152,13 @@ function sectionTwoMainBtnFunction() {
           const endHour = end.getHours();
           const endMinutes = end.getMinutes();
 
+          const today = new Date();
+          const hourToday = today.getHours();
+
+          if (startHour < hourToday) {
+            throw new Error('Reservation cannot start at past hour');
+          }
+
           if (startHour < 9) {
             throw new Error('Reservation cannot start before 9:00 AM');
           }
@@ -164,42 +171,91 @@ function sectionTwoMainBtnFunction() {
           return;
         }
 
-        main.openConfirmationModal(
-          `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
-          () => {
-            const columnsData = [
-              'id_R_random',
-              { type: 'object_cid', data: [customer.dataset.image, fullName, customer.dataset.id] },
-              main.fixText(main.getSelectedSpinner(result.spinner[0])),
-              `${main.decodeDate(result.short[2].value)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`, // dataset.custom3
-              'custom_datetime_Pending',
-            ];
-            main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-              main.createNotifDot(SECTION_NAME, 2);
+        main.getAllSectionOne(SECTION_NAME, 2, (reservations) => {
+          let alreadyReserved = false;
+          for (let i = 0; i < reservations.length; i++) {
+            const reservation = reservations[i];
+            const reservationDate = reservation.dataset.custom3.split(' - ')[0];
+            dateStart = main.decodeDate(dateStart);
 
-              main.toast('Successfully reserved facility!', 'success');
-              main.closeConfirmationModal();
-              main.closeModal(() => {
-                // const actionData = {
-                //   module: MODULE_NAME,
-                //   submodule: SUBMODULE_NAME,
-                //   description: 'Process customer reservation',
-                // };
-                const reservationData = {
-                  id: createResult.dataset.id,
-                  image: customer.dataset.image,
-                  name: customer.dataset.text,
-                  cid: customer.dataset.id,
-                  amount: 1 * main.decodePrice(result.short[1].value),
-                };
-                // accesscontrol.log(actionData, reservationData);
-                payments.processReservationPayment(reservationData, (transactionId) => {
-                  createResult.dataset.tid = transactionId;
-                });
-              });
-            });
+            if (reservationDate === dateStart) {
+              const start = new Date(`1970-01-01T${startTime}`);
+              const end = new Date(`1970-01-01T${endTime}`);
+
+              const existingTimes = reservation.dataset.custom3.split(' - ')[1].split(' to ');
+              const convert12to24 = (time12h) => {
+                const [time, modifier] = time12h.trim().split(' ');
+                let [hours, minutes] = time.split(':');
+
+                hours = parseInt(hours, 10);
+                minutes = minutes || '00';
+
+                if (hours === 12) {
+                  hours = 0;
+                }
+                if (modifier === 'PM') {
+                  hours += 12;
+                }
+
+                const hh = String(hours).padStart(2, '0');
+                const mm = String(minutes).padStart(2, '0');
+
+                return `${hh}:${mm}:00`;
+              };
+
+              const existingStart = new Date(`1970-01-01T${convert12to24(existingTimes[0])}`);
+              const existingEnd = new Date(`1970-01-01T${convert12to24(existingTimes[1])}`);
+
+              const bufferMs = 60 * 1000;
+              const existingEndWithBuffer = new Date(existingEnd.getTime() + bufferMs);
+
+              if (start < existingEndWithBuffer && end > existingStart) {
+                alreadyReserved = true;
+                main.toast('This time slot is already reserved.', 'error');
+                break;
+              }
+            }
           }
-        );
+
+          if (!alreadyReserved) {
+            main.openConfirmationModal(
+              `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
+              () => {
+                const columnsData = [
+                  'id_R_random',
+                  { type: 'object_cid', data: [customer.dataset.image, fullName, customer.dataset.id] },
+                  main.fixText(main.getSelectedSpinner(result.spinner[0])),
+                  `${main.decodeDate(result.short[2].value)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`, // dataset.custom3
+                  'custom_datetime_Pending',
+                ];
+                main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+                  main.createNotifDot(SECTION_NAME, 2);
+
+                  main.toast('Successfully reserved facility!', 'success');
+                  main.closeConfirmationModal();
+                  main.closeModal(() => {
+                    // const actionData = {
+                    //   module: MODULE_NAME,
+                    //   submodule: SUBMODULE_NAME,
+                    //   description: 'Process customer reservation',
+                    // };
+                    const reservationData = {
+                      id: createResult.dataset.id,
+                      image: customer.dataset.image,
+                      name: customer.dataset.text,
+                      cid: customer.dataset.id,
+                      amount: 1 * main.decodePrice(result.short[1].value),
+                    };
+                    // accesscontrol.log(actionData, reservationData);
+                    payments.processReservationPayment(reservationData, (transactionId) => {
+                      createResult.dataset.tid = transactionId;
+                    });
+                  });
+                });
+              }
+            );
+          }
+        });
       });
     }
   });
@@ -429,16 +485,14 @@ export function reserveCustomer() {
   sectionTwoMainBtnFunction();
 }
 
-export function cancelPendingTransaction(transactionId) {
-
-}
+export function cancelPendingTransaction(transactionId) {}
 
 export function completeReservationPayment(transactionId) {
   main.showSection(SECTION_NAME, 2);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, (findResult) => {
     if (findResult) {
       findResult.dataset.tid = '';
-      const {date, time, datetime} = main.getDateOrTimeOrBoth();
+      const { date, time, datetime } = main.getDateOrTimeOrBoth();
       findResult.dataset.datetime = datetime;
       findResult.children[4].innerHTML = datetime;
     }
