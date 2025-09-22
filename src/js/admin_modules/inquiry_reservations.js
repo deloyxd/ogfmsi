@@ -393,9 +393,9 @@ function sectionTwoMainBtnFunction() {
                 const start = input.value;
                 if (!/^\d{2}:\d{2}$/.test(start)) return;
 
-                const durationSelect = container.querySelector('#input-spinner-1');
+                const durationSelect = container.querySelector('#input-spinner-5');
                 if (durationSelect) {
-                  durationSelect.selectedIndex = 0;
+                  durationSelect.selectedIndex = 1;
                   durationSelect.dispatchEvent(new Event('change'));
                 }
 
