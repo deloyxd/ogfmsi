@@ -621,7 +621,7 @@ function sectionTwoMainBtnFunction() {
         }
 
         main.openConfirmationModal(
-          `<p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
+          `Reserve for<br><p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
           () => {
             const columnsData = [
               'id_R_random',
