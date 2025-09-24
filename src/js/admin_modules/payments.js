@@ -110,27 +110,27 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 [
                   'id_' + completePayment.payment_id,
                   {
-                    type: 'object',
-                    data: [customerImage, customerIdSafe],
+                    type:
+                      'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    data: [
+                      customerImage,
+                      customerIdSafe,
+                      completePayment.payment_purpose,
+                      main.formatPrice(completePayment.payment_amount_to_pay),
+                      main.formatPrice(completePayment.payment_amount_paid_cash),
+                      main.formatPrice(completePayment.payment_amount_paid_cashless),
+                      main.formatPrice(completePayment.payment_amount_change),
+                      main.fixText(completePayment.payment_rate),
+                      main.fixText(completePayment.payment_method),
+                      `${main.encodeDate(completePayment.created_at, 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                    ],
                   },
-                  completePayment.payment_purpose,
-                  main.formatPrice(completePayment.payment_amount_to_pay),
-                  main.formatPrice(completePayment.payment_amount_paid_cash),
-                  main.formatPrice(completePayment.payment_amount_paid_cashless),
-                  main.formatPrice(completePayment.payment_amount_change),
-                  main.fixText(completePayment.payment_rate),
-                  main.fixText(completePayment.payment_method),
-                  'custom_datetime_' +
-                    main.encodeDate(completePayment.created_at, 'long') +
-                    ' - ' +
-                    main.encodeTime(completePayment.created_at, 'long'),
+                  `${main.encodeDate(completePayment.created_at, 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                 ],
                 3,
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () =>
-                    customers.customerDetailsBtnFunction(customerIdSafe, 'Transaction Details', '🔏')
-                  );
+                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
                 }
               );
             }
@@ -403,20 +403,26 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
       return;
     }
 
+    const dateTimeText = `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`;
     const columnsData = [
       'id_' + id,
       {
-        type: 'object',
-        data: [image, customerId],
+        type:
+          'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+        data: [
+          image,
+          customerId,
+          purpose,
+          main.formatPrice(amountToPay),
+          main.formatPrice(result.short[2].value),
+          main.formatPrice(result.short[3].value),
+          main.formatPrice(main.decodePrice(change)),
+          main.fixText(priceRate),
+          main.fixText(paymentMethod),
+          dateTimeText,
+        ],
       },
-      purpose,
-      main.formatPrice(amountToPay),
-      main.formatPrice(result.short[2].value),
-      main.formatPrice(result.short[3].value),
-      main.formatPrice(main.decodePrice(change)),
-      main.fixText(priceRate),
-      main.fixText(paymentMethod),
-      'custom_datetime_today',
+      dateTimeText,
     ];
 
     main.createAtSectionOne(SECTION_NAME, columnsData, 3, async (createResult) => {
@@ -428,9 +434,7 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
 
       const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-      transactionDetailsBtn.addEventListener('click', () =>
-        customers.customerDetailsBtnFunction(customerId, 'Transaction Details', '🔏')
-      );
+      transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
 
       main.closeModal(() => {
         customers.completeCheckinPayment(id, amountPaid, priceRate);
@@ -584,6 +588,41 @@ export function findPendingTransaction(customerId, callback = () => {}) {
       callback(findResult.dataset.id);
     }
   });
+}
+
+function openTransactionDetails(row) {
+  const transactionId = row.dataset.id;
+  const customerId = row.dataset.text;
+  const purpose = row.dataset.purpose || row.dataset.custom2 || 'N/A';
+  const amountToPay = main.encodePrice(main.deformatPrice(row.dataset.amounttopay || 0));
+  const paidCash = main.encodePrice(main.deformatPrice(row.dataset.amountpaidcash || 0));
+  const paidCashless = main.encodePrice(main.deformatPrice(row.dataset.amountpaidcashless || 0));
+  const changeAmount = main.encodePrice(main.deformatPrice(row.dataset.changeamount || 0));
+  const priceRate = row.dataset.pricerate || 'N/A';
+  const paymentMethod = row.dataset.paymentmethod || 'N/A';
+  const dateTime = row.dataset.datetime || row.dataset.datetime_text || 'N/A';
+
+  const inputs = {
+    header: {
+      title: `Transaction Details ${getEmoji('🔏', 26)}`,
+      subtitle: `Transaction ID: ${transactionId}`,
+    },
+    short: [
+      { placeholder: 'Customer', value: customerId, locked: true },
+      { placeholder: 'Purpose', value: purpose, locked: true },
+      { placeholder: 'Amount to Pay', value: amountToPay, locked: true },
+      { placeholder: 'Amount Paid: Cash', value: paidCash, locked: true },
+      { placeholder: 'Amount Paid: Cashless', value: paidCashless, locked: true },
+      { placeholder: 'Change Amount', value: changeAmount, locked: true },
+      { placeholder: 'Price Rate', value: main.fixText(priceRate), locked: true },
+      { placeholder: 'Payment Method', value: main.fixText(paymentMethod), locked: true },
+    ],
+    footer: {
+      main: 'Close',
+    },
+  };
+
+  main.openModal('gray', inputs, () => main.closeModal());
 }
 
 export default {

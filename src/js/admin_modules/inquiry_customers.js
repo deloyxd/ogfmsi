@@ -797,6 +797,80 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
             function failedPending() {
               main.toast(`${PENDING_TRANSACTION_MESSAGE} ${customer.dataset.tid}`, 'error');
             }
+          } else {
+            const proceedWithoutPending = () => {
+              if (selectedProcess.includes('check-in')) {
+                checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
+                  if (findLogResult) {
+                    const logDate = findLogResult.dataset.datetime.split(' - ')[0];
+                    const logDateObj = new Date(logDate);
+                    const today = new Date();
+                    const isToday =
+                      logDateObj.getFullYear() === today.getFullYear() &&
+                      logDateObj.getMonth() === today.getMonth() &&
+                      logDateObj.getDate() === today.getDate();
+                    if (isToday) {
+                      main.openConfirmationModal(
+                        `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${findLogResult.dataset.datetime}`,
+                        () => {
+                          continueCheckinProcess();
+                          main.closeConfirmationModal();
+                        }
+                      );
+                      return;
+                    }
+                  }
+                  continueCheckinProcess();
+
+                  function continueCheckinProcess() {
+                    if (isMonthlyCustomer && !isPending) {
+                      checkins.logCheckin(customer.dataset.tid, customer, 2, true);
+                      return;
+                    } else {
+                      processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
+                    }
+                  }
+                });
+
+                return;
+              }
+              if (selectedProcess.includes('monthly') || selectedProcess.includes('renew')) {
+                const columnsData = [
+                  'id_' + customer.dataset.id,
+                  {
+                    type: 'object_contact',
+                    data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
+                  },
+                  'Monthly',
+                  customer.dataset.custom3,
+                  'custom_date_' + customer.dataset.date,
+                ];
+                validateCustomer(
+                  columnsData,
+                  continueCustomerProcessBtnFunction,
+                  selectedProcess.includes('renew')
+                    ? {
+                        startDate: main.encodeDate(customer.dataset.startdate, 'long'),
+                        endDate: main.encodeDate(customer.dataset.enddate, 'long'),
+                        days: customer.dataset.days,
+                      }
+                    : null,
+                  true,
+                  true
+                );
+                return;
+              }
+              if (selectedProcess.includes('reserve')) {
+                main.sharedState.reserveCustomerId = customer.dataset.id;
+                main.closeModal(() => {
+                  reservations.reserveCustomer();
+                });
+              }
+            };
+
+            // Clear stale TID locally to avoid future false positives
+            customer.dataset.tid = '';
+            proceedWithoutPending();
           }
         });
       } else {
