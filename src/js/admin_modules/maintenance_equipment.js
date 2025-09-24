@@ -32,28 +32,28 @@ window.saveEquipmentDetails = async () => {
   try {
     const equipmentName = document.getElementById('equipmentNameInput').value.trim();
     const equipmentNotes = document.getElementById('equipmentNotesInput').value.trim();
-    
+
     if (!equipmentName) {
       main.toast('Equipment name is required', 'error');
       return;
     }
-    
+
     const modal = document.getElementById('individualItemsModal');
     const equipmentId = modal.dataset.equipmentId;
     const imageUrl = modal.dataset.newImageUrl || modal.dataset.currentImageUrl;
     const originalName = modal.dataset.originalName || '';
     const originalNotes = modal.dataset.originalNotes || '';
     const originalImageUrl = modal.dataset.currentImageUrl || '';
-    
+
     const hasNameChange = equipmentName !== originalName;
     const hasNotesChange = equipmentNotes !== originalNotes;
     const hasImageChange = imageUrl !== originalImageUrl;
-    
+
     if (!hasNameChange && !hasNotesChange && !hasImageChange) {
       main.toast('No changes detected. Please make changes before saving.', 'warning');
       return;
     }
-    
+
     const updateData = {
       equipment_name: equipmentName,
       image_url: imageUrl,
@@ -62,8 +62,7 @@ window.saveEquipmentDetails = async () => {
       total_quantity: parseInt(modal.dataset.totalQuantity) || 1,
       general_status: modal.dataset.generalStatus || 'All Available',
     };
-    
-    
+
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}`, {
       method: 'PUT',
       headers: {
@@ -71,8 +70,7 @@ window.saveEquipmentDetails = async () => {
       },
       body: JSON.stringify(updateData),
     });
-    
-    
+
     let result;
     try {
       result = await response.json();
@@ -83,10 +81,10 @@ window.saveEquipmentDetails = async () => {
       main.toast('Server error: Invalid response format', 'error');
       return;
     }
-    
+
     if (response.ok) {
       main.toast('Equipment details updated successfully!', 'success');
-      
+
       const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
       if (row) {
         const statusElement = row.querySelector('td:nth-child(2)');
@@ -95,11 +93,10 @@ window.saveEquipmentDetails = async () => {
         }
       }
       refreshIndividualItemsSection(equipmentId, equipmentName);
-      
+
       setTimeout(() => {
         window.closeIndividualItemsModal();
       }, 500);
-      
     } else {
       console.error('Update failed:', result);
       main.toast(`Error: ${result.error || 'Unknown server error'}`, 'error');
@@ -114,7 +111,7 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
   try {
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/items`);
     const result = await response.json();
-    
+
     if (response.ok && result.result) {
       const individualItems = result.result;
       let availableCount = 0;
@@ -141,25 +138,119 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
       } else {
         generalStatus = 'All Available';
       }
-      const individualItemsContainer = document.querySelector('#individualItemsModal .grid');
-      if (individualItemsContainer) {
-        individualItemsContainer.innerHTML = individualItems.map(item => `
-          <div class="border rounded-lg p-3 ${item.individual_status === 'Available' ? 'border-green-300 bg-green-50' : (item.individual_status === 'For Disposal' ? 'border-yellow-300 bg-yellow-50' : 'border-red-300 bg-red-50')}">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-medium">${item.item_code}</span>
-              <span class="text-xs px-2 py-1 rounded ${item.individual_status === 'Available' ? 'bg-green-200 text-green-800' : (item.individual_status === 'For Disposal' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800')}">
-                ${item.individual_status}
-              </span>
+      const columnsContainer = document.getElementById('individualItemsColumns');
+      if (columnsContainer) {
+        const availableCol = columnsContainer.querySelector('#itemsAvailableCol');
+        const unavailableCol = columnsContainer.querySelector('#itemsUnavailableCol');
+        const forDisposalCol = columnsContainer.querySelector('#itemsForDisposalCol');
+        const disposedCol = columnsContainer.querySelector('#itemsDisposedCol');
+
+        const renderCard = (item) => {
+          const status = item.individual_status;
+          if (status === 'Disposed') {
+            return `
+              <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-gray-300 bg-gray-50">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-medium">${item.item_code}</span>
+                  <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-gray-200 text-gray-800">🗑️ <span>Disposed</span></span>
+                </div>
+                <select class="w-full text-sm border rounded px-2 py-1 mt-2 opacity-60 cursor-not-allowed" data-item-id="${item.item_id}" disabled>
+                  <option value="Disposed" selected>Disposed</option>
+                </select>
+              </div>
+            `;
+          }
+          if (status === 'Available') {
+            return `
+              <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-green-300 bg-green-50 hover:border-green-400">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-medium">${item.item_code}</span>
+                  <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-200 text-green-800">✅ <span>Available</span></span>
+                </div>
+                <select class="w-full text-sm border rounded px-2 py-1 mt-2 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                  <option value="Available" selected>✅ Available</option>
+                  <option value="Unavailable">❌ Unavailable</option>
+                  <option value="For Disposal">⚠️ For Disposal</option>
+                </select>
+              </div>
+            `;
+          }
+          // Unavailable card
+          return `
+            <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-red-300 bg-red-50 hover:border-red-400">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-medium">${item.item_code}</span>
+                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-red-200 text-red-800">❌ <span>Unavailable</span></span>
+              </div>
+              <select class="w-full text-sm border rounded px-2 py-1 mt-2 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                <option value="Available">✅ Available</option>
+                <option value="Unavailable" selected>❌ Unavailable</option>
+                <option value="For Disposal">⚠️ For Disposal</option>
+              </select>
             </div>
-            <select class="w-full text-sm border rounded px-2 py-1" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)" ${item.individual_status === 'Disposed' ? 'disabled' : ''}>
-              <option value="Available" ${item.individual_status === 'Available' ? 'selected' : ''}>Available</option>
-              <option value="Unavailable" ${item.individual_status === 'Unavailable' ? 'selected' : ''}>Unavailable</option>
-              <option value="For Disposal" ${item.individual_status === 'For Disposal' ? 'selected' : ''}>For Disposal</option>
-            </select>
-          </div>
-        `).join('');
+          `;
+        };
+
+        if (availableCol) {
+          const header = availableCol.querySelector(':scope > .sticky');
+          availableCol.innerHTML = header ? header.outerHTML : '';
+          availableCol.insertAdjacentHTML(
+            'beforeend',
+            individualItems
+              .filter((i) => i.individual_status === 'Available')
+              .map(renderCard)
+              .join('')
+          );
+        }
+        if (unavailableCol) {
+          const header = unavailableCol.querySelector(':scope > .sticky');
+          unavailableCol.innerHTML = header ? header.outerHTML : '';
+          unavailableCol.insertAdjacentHTML(
+            'beforeend',
+            individualItems
+              .filter((i) => i.individual_status === 'Unavailable')
+              .map(renderCard)
+              .join('')
+          );
+        }
+        if (forDisposalCol) {
+          const header = forDisposalCol.querySelector(':scope > .sticky');
+          forDisposalCol.innerHTML = header ? header.outerHTML : '';
+          forDisposalCol.insertAdjacentHTML(
+            'beforeend',
+            individualItems
+              .filter((i) => i.individual_status === 'For Disposal')
+              .map(
+                (item) => `
+            <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-yellow-300 bg-yellow-50 hover:border-yellow-400">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-medium">${item.item_code}</span>
+                <span class="text-xs px-2 py-1 rounded font-medium bg-yellow-200 text-yellow-800">⚠️ For Disposal</span>
+              </div>
+              <select class="w-full text-sm border rounded px-2 py-1 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                <option value="Available">✅ Available</option>
+                <option value="Unavailable">❌ Unavailable</option>
+                <option value="For Disposal" selected>⚠️ For Disposal</option>
+              </select>
+            </div>
+          `
+              )
+              .join('')
+          );
+        }
+        if (disposedCol) {
+          const header = disposedCol.querySelector(':scope > .sticky');
+          disposedCol.innerHTML = header ? header.outerHTML : '';
+          disposedCol.insertAdjacentHTML(
+            'beforeend',
+            individualItems
+              .filter((i) => i.individual_status === 'Disposed')
+              .map(renderCard)
+              .join('')
+          );
+        }
       }
-      
+
       const individualItemsCount = document.querySelector('#individualItemsHeader');
       if (individualItemsCount) {
         individualItemsCount.textContent = `Individual Items (${individualItems.length})`;
@@ -181,37 +272,37 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
   }
 }
 
-window.addEquipmentQuantity = async function() {
+window.addEquipmentQuantity = async function () {
   try {
     const addQuantity = parseInt(document.getElementById('addQuantityInput').value);
-    
+
     if (!addQuantity || addQuantity < 1) {
       main.toast('Please enter a valid quantity (minimum 1)', 'error');
       return;
     }
-    
+
     if (addQuantity > 100) {
       main.toast('Maximum quantity to add is 100', 'error');
       return;
     }
-    
+
     const modal = document.getElementById('individualItemsModal');
     const equipmentId = modal.dataset.equipmentId;
     const equipmentName = document.getElementById('equipmentNameInput').value.trim();
-    
+
     if (!equipmentName) {
       main.toast('Equipment name is required', 'error');
       return;
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/items`);
     const result = await response.json();
-    
+
     if (!response.ok) {
       main.toast('Failed to load current items', 'error');
       return;
     }
-    
+
     const currentItems = result.result || [];
     const lastItemNumber = currentItems.length;
     const addResponse = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/add-quantity`, {
@@ -219,24 +310,24 @@ window.addEquipmentQuantity = async function() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         add_quantity: addQuantity,
         equipment_name: equipmentName,
-        start_index: lastItemNumber + 1
+        start_index: lastItemNumber + 1,
       }),
     });
-    
+
     const addResult = await addResponse.json();
-    
+
     if (addResponse.ok) {
       main.toast(`Successfully added ${addQuantity} new items!`, 'success');
-      
+
       const currentQuantityDisplay = document.getElementById('currentQuantityDisplay');
       if (currentQuantityDisplay) {
         const newQuantity = parseInt(currentQuantityDisplay.value) + addQuantity;
         currentQuantityDisplay.value = newQuantity;
       }
-      
+
       const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
       if (row) {
         const quantityElement = row.querySelector('td:nth-child(3)');
@@ -254,28 +345,26 @@ window.addEquipmentQuantity = async function() {
         }
       }
       await refreshIndividualItemsSection(equipmentId, equipmentName);
-      
+
       modal.dataset.totalQuantity = (parseInt(modal.dataset.totalQuantity) + addQuantity).toString();
-      
+
       setTimeout(() => {
         window.closeIndividualItemsModal();
       }, 500);
-      
     } else {
       main.toast(`Error: ${addResult.error || 'Failed to add items'}`, 'error');
     }
-    
   } catch (error) {
     console.error('Error adding equipment quantity:', error);
     main.toast('Network error: Failed to add equipment quantity', 'error');
   }
 };
 
-window.showDeleteEquipmentConfirmation = function() {
+window.showDeleteEquipmentConfirmation = function () {
   const modal = document.getElementById('individualItemsModal');
   const equipmentId = modal.dataset.equipmentId;
   const equipmentName = document.getElementById('equipmentNameInput').value.trim();
-  
+
   const deleteModalHTML = `
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-30 hidden" id="deleteEquipmentModal">
       <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
@@ -288,7 +377,7 @@ window.showDeleteEquipmentConfirmation = function() {
             <p class="text-gray-700 mb-2">Are you sure you want to delete this equipment?</p>
             <div class="bg-gray-100 p-3 rounded-md">
               <p class="font-semibold text-gray-900">${equipmentName}</p>
-              <p class="text-sm text-gray-600">Equipment ID: ${equipmentId.split('_').slice(0,2).join('_')}</p>
+              <p class="text-sm text-gray-600">Equipment ID: ${equipmentId.split('_').slice(0, 2).join('_')}</p>
             </div>
           </div>
           
@@ -316,7 +405,7 @@ window.showDeleteEquipmentConfirmation = function() {
       </div>
     </div>
   `;
-  
+
   document.body.insertAdjacentHTML('beforeend', deleteModalHTML);
   const deleteModal = document.getElementById('deleteEquipmentModal');
   deleteModal.classList.remove('hidden');
@@ -326,10 +415,10 @@ window.showDeleteEquipmentConfirmation = function() {
     deleteModal.children[0].classList.remove('-translate-y-6');
     deleteModal.children[0].classList.add('scale-100');
   }, 10);
-  
+
   const deleteInput = document.getElementById('deleteConfirmationInput');
   const confirmBtn = document.getElementById('confirmDeleteBtn');
-  
+
   deleteInput.addEventListener('input', (e) => {
     if (e.target.value.toLowerCase() === 'delete') {
       confirmBtn.disabled = false;
@@ -339,7 +428,7 @@ window.showDeleteEquipmentConfirmation = function() {
       confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
   });
-  
+
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
       closeDeleteEquipmentModal();
@@ -349,7 +438,7 @@ window.showDeleteEquipmentConfirmation = function() {
   deleteModal.dataset.escapeHandler = 'true';
 };
 
-window.closeDeleteEquipmentModal = function() {
+window.closeDeleteEquipmentModal = function () {
   const deleteModal = document.getElementById('deleteEquipmentModal');
   if (deleteModal) {
     deleteModal.classList.remove('opacity-100');
@@ -363,42 +452,39 @@ window.closeDeleteEquipmentModal = function() {
   }
 };
 
-window.confirmDeleteEquipment = async function() {
+window.confirmDeleteEquipment = async function () {
   try {
     const modal = document.getElementById('individualItemsModal');
     const equipmentId = modal.dataset.equipmentId;
-    
+
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       },
     });
-    
+
     const result = await response.json();
-    
+
     if (response.ok) {
       main.toast('Equipment deleted successfully!', 'success');
-      
+
       closeDeleteEquipmentModal();
       window.closeIndividualItemsModal();
-      
+
       const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
       if (row) {
         row.remove();
       }
       refreshAllTabs();
-      
     } else {
       main.toast(`Error: ${result.error || 'Failed to delete equipment'}`, 'error');
     }
-    
   } catch (error) {
     console.error('Error deleting equipment:', error);
     main.toast('Network error: Failed to delete equipment', 'error');
   }
 };
-
 
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== 'maintenance-equipment') return;
@@ -419,7 +505,7 @@ async function loadExistingEquipment() {
     if (response.ok && result.result) {
       result.result.forEach((equipment) => {
         const columnsData = [
-          equipment.equipment_id.split('_').slice(0,2).join('_'),
+          equipment.equipment_id.split('_').slice(0, 2).join('_'),
           `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipment.equipment_name}')"><span>${equipment.equipment_name}</span></div>`,
           equipment.total_quantity + '',
           equipment.equipment_type,
@@ -427,25 +513,20 @@ async function loadExistingEquipment() {
           'custom_date_today',
         ];
 
-        main.createAtSectionOne(
-          'maintenance-equipment',
-          columnsData,
-          1,
-          (frontendResult) => {
-            if (equipment.created_at) {
-              const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              });
-              frontendResult.dataset.date = date;
-              frontendResult.children[5].innerHTML = date;
-            }
-
-            frontendResult.dataset.equipmentId = equipment.equipment_id;
-            setupEquipmentButtons(frontendResult, equipment);
+        main.createAtSectionOne('maintenance-equipment', columnsData, 1, (frontendResult) => {
+          if (equipment.created_at) {
+            const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
+            frontendResult.dataset.date = date;
+            frontendResult.children[5].innerHTML = date;
           }
-        );
+
+          frontendResult.dataset.equipmentId = equipment.equipment_id;
+          setupEquipmentButtons(frontendResult, equipment);
+        });
       });
     }
   } catch (error) {
@@ -465,27 +546,26 @@ async function showEquipmentDetails(frontendResult, equipment) {
   try {
     const equipmentResponse = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipment.equipment_id}`);
     const equipmentResult = await equipmentResponse.json();
-    
+
     if (!equipmentResponse.ok) {
       console.error('Error fetching equipment details:', equipmentResult.error);
       main.toast('Failed to load equipment details', 'error');
       return;
     }
-    
+
     const freshEquipment = equipmentResult.result || equipment;
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipment.equipment_id}/items`);
     const result = await response.json();
-    
+
     if (!response.ok) {
       console.error('Error fetching equipment items:', result.error);
       main.toast('Failed to load equipment items', 'error');
       return;
     }
-    
+
     const individualItems = result.result || [];
-    
+
     showIndividualItemsModal(freshEquipment, individualItems, frontendResult);
-    
   } catch (error) {
     console.error('Error loading equipment items:', error);
     main.toast('Network error: Failed to load equipment items', 'error');
@@ -505,7 +585,7 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
       <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
         <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-orange-500 to-orange-800 p-4 text-center text-white">
           <p class="text-xl font-medium">Equipment Details ${getEmoji('🛠️', 26)}</p>
-          <p class="text-xs">${equipment.equipment_name} - ${equipment.equipment_id.split('_').slice(0,2).join('_')}</p>
+          <p class="text-xs">${equipment.equipment_name} - ${equipment.equipment_id.split('_').slice(0, 2).join('_')}</p>
         </div>
         <div class="flex flex-col p-4">
           <div class="mb-6">
@@ -580,33 +660,108 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
             <h3 class="text-lg font-semibold mb-2 flex items-center gap-2" id="individualItemsHeader">
               Individual Items (${individualItems.length})
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-              ${individualItems.map(item => `
-                <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md ${item.individual_status === 'Available' ? 'border-green-300 bg-green-50 hover:border-green-400' : (item.individual_status === 'For Disposal' ? 'border-yellow-300 bg-yellow-50 hover:border-yellow-400' : 'border-red-300 bg-red-50 hover:border-red-400')}">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="font-medium">${item.item_code}</span>
-                    <span class="text-xs px-2 py-1 rounded font-medium ${item.individual_status === 'Available' ? 'bg-green-200 text-green-800' : (item.individual_status === 'For Disposal' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800')}">
-                      ${item.individual_status === 'Available' ? '✅' : (item.individual_status === 'For Disposal' ? '⚠️' : '❌')} ${item.individual_status}
-                    </span>
-                  </div>
-                  <select class="w-full text-sm border rounded px-2 py-1 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)" ${item.individual_status === 'Disposed' ? 'disabled' : ''}>
-                    <option value="Available" ${item.individual_status === 'Available' ? 'selected' : ''}>✅ Available</option>
-                    <option value="Unavailable" ${item.individual_status === 'Unavailable' ? 'selected' : ''}>❌ Unavailable</option>
-                    <option value="For Disposal" ${item.individual_status === 'For Disposal' ? 'selected' : ''}>⚠️ For Disposal</option>
-                  </select>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto" id="individualItemsColumns">
+              <div class="flex flex-col gap-3" id="itemsAvailableCol">
+                <div class="sticky top-0 z-10 bg-white/80 backdrop-blur px-1 py-1">
+                  <p class="text-sm font-semibold text-green-700">Available</p>
                 </div>
-              `).join('')}
+                ${individualItems
+                  .filter((i) => i.individual_status === 'Available')
+                  .map(
+                    (item) => `
+                  <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-green-300 bg-green-50 hover:border-green-400">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium">${item.item_code}</span>
+                      <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-200 text-green-800">✅ <span>Available</span></span>
+                    </div>
+                    <select class="w-full text-sm border rounded px-2 py-1 mt-2 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                      <option value="Available" selected>✅ Available</option>
+                      <option value="Unavailable">❌ Unavailable</option>
+                      <option value="For Disposal">⚠️ For Disposal</option>
+                    </select>
+                  </div>
+                `
+                  )
+                  .join('')}
+              </div>
+              <div class="flex flex-col gap-3" id="itemsUnavailableCol">
+                <div class="sticky top-0 z-10 bg-white/80 backdrop-blur px-1 py-1">
+                  <p class="text-sm font-semibold text-red-700">Unavailable</p>
+                </div>
+                ${individualItems
+                  .filter((i) => i.individual_status === 'Unavailable')
+                  .map(
+                    (item) => `
+                  <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-red-300 bg-red-50 hover:border-red-400">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium">${item.item_code}</span>
+                      <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-red-200 text-red-800">❌ <span>Unavailable</span></span>
+                    </div>
+                    <select class="w-full text-sm border rounded px-2 py-1 mt-2 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                      <option value="Available">✅ Available</option>
+                      <option value="Unavailable" selected>❌ Unavailable</option>
+                      <option value="For Disposal">⚠️ For Disposal</option>
+                    </select>
+                  </div>
+                `
+                  )
+                  .join('')}
+              </div>
+              <div class="flex flex-col gap-3" id="itemsForDisposalCol">
+                <div class="sticky top-0 z-10 bg-white/80 backdrop-blur px-1 py-1">
+                  <p class="text-sm font-semibold text-yellow-700">For Disposal</p>
+                </div>
+                ${individualItems
+                  .filter((i) => i.individual_status === 'For Disposal')
+                  .map(
+                    (item) => `
+                  <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-yellow-300 bg-yellow-50 hover:border-yellow-400">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium">${item.item_code}</span>
+                      <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-yellow-200 text-yellow-800">⚠️ <span>For Disposal</span></span>
+                    </div>
+                    <select class="w-full text-sm border rounded px-2 py-1 mt-2 transition-all duration-200 hover:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-500" data-item-id="${item.item_id}" onchange="updateIndividualStatus('${item.item_id}', this.value)">
+                      <option value="Available">✅ Available</option>
+                      <option value="Unavailable">❌ Unavailable</option>
+                      <option value="For Disposal" selected>⚠️ For Disposal</option>
+                    </select>
+                  </div>
+                `
+                  )
+                  .join('')}
+              </div>
+              <div class="flex flex-col gap-3" id="itemsDisposedCol">
+                <div class="sticky top-0 z-10 bg-white/80 backdrop-blur px-1 py-1">
+                  <p class="text-sm font-semibold text-gray-700">Disposed</p>
+                </div>
+                ${individualItems
+                  .filter((i) => i.individual_status === 'Disposed')
+                  .map(
+                    (item) => `
+                  <div class="border rounded-lg p-3 transition-all duration-200 hover:scale-102 hover:shadow-md border-gray-300 bg-gray-50">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium">${item.item_code}</span>
+                      <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-gray-200 text-gray-800">🗑️ <span>Disposed</span></span>
+                    </div>
+                    <select class="w-full text-sm border rounded px-2 py-1 mt-2 opacity-60 cursor-not-allowed" data-item-id="${item.item_id}" disabled>
+                      <option value="Disposed" selected>Disposed</option>
+                    </select>
+                  </div>
+                `
+                  )
+                  .join('')}
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   `;
-  
+
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const imageInput = document.getElementById('equipmentImageInput');
   const imagePreview = document.getElementById('equipmentImagePreview');
-  
+
   if (imageInput && imagePreview) {
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -621,7 +776,7 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
       }
     });
   }
-  
+
   const modal = document.getElementById('individualItemsModal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -630,63 +785,67 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
     modal.children[0].classList.remove('-translate-y-6');
     modal.children[0].classList.add('scale-100');
   }, 0);
-  
+
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeIndividualItemsModal();
     }
   });
-  
-  window.updateIndividualStatus = async (itemId, newStatus) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/maintenance/equipment/items/${itemId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ individual_status: newStatus }),
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok) {
-      const selectElement = document.querySelector(`select[data-item-id="${itemId}"]`);
-      if (selectElement) {
-        const itemContainer = selectElement.closest('div.border');
-        if (itemContainer) {
-          itemContainer.className = `border rounded-lg p-3 ${newStatus === 'Available' ? 'border-green-300 bg-green-50' : (newStatus === 'For Disposal' ? 'border-yellow-300 bg-yellow-50' : 'border-red-300 bg-red-50')}`;
-          const statusBadge = itemContainer.querySelector('span.text-xs');
-          if (statusBadge) {
-            statusBadge.className = `text-xs px-2 py-1 rounded ${newStatus === 'Available' ? 'bg-green-200 text-green-800' : (newStatus === 'For Disposal' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800')}`;
-            statusBadge.textContent = newStatus;
-          }
-        }
-      }
 
-      main.toast(`Item status updated to ${newStatus}`, 'success');
-      if (result.general_status) {
-        const modal = document.getElementById('individualItemsModal');
-        const equipmentId = modal.dataset.equipmentId;
-        const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
-        if (row) {
-          const statusElement = row.querySelector('td:nth-child(5)');
-          if (statusElement) {
-            statusElement.innerHTML = getGeneralStatusDisplay(result.general_status, result.unavailable_count || 0);
+  window.updateIndividualStatus = async (itemId, newStatus) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/maintenance/equipment/items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ individual_status: newStatus }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        const selectElement = document.querySelector(`select[data-item-id="${itemId}"]`);
+        if (selectElement) {
+          const itemContainer = selectElement.closest('div.border');
+          if (itemContainer) {
+            itemContainer.className = `border rounded-lg p-3 ${newStatus === 'Available' ? 'border-green-300 bg-green-50' : newStatus === 'For Disposal' ? 'border-yellow-300 bg-yellow-50' : 'border-red-300 bg-red-50'}`;
+            const statusBadge = itemContainer.querySelector('span.text-xs');
+            if (statusBadge) {
+              statusBadge.className = `text-xs px-2 py-1 rounded ${newStatus === 'Available' ? 'bg-green-200 text-green-800' : newStatus === 'For Disposal' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'}`;
+              statusBadge.textContent = newStatus;
+            }
           }
         }
+
+        main.toast(`Item status updated to ${newStatus}`, 'success');
+        if (result.general_status) {
+          const modal = document.getElementById('individualItemsModal');
+          const equipmentId = modal.dataset.equipmentId;
+          const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
+          if (row) {
+            const statusElement = row.querySelector('td:nth-child(5)');
+            if (statusElement) {
+              statusElement.innerHTML = getGeneralStatusDisplay(result.general_status, result.unavailable_count || 0);
+            }
+          }
+          try {
+            const equipmentName = (document.getElementById('equipmentNameInput') || { value: '' }).value.trim();
+            await refreshIndividualItemsSection(modal.dataset.equipmentId, equipmentName);
+          } catch (_) {}
+        }
+        if (typeof renderDisposalList === 'function') {
+          renderDisposalList();
+        }
+      } else {
+        main.toast(`Error: ${result.error}`, 'error');
       }
-      if (typeof renderDisposalList === 'function') {
-        renderDisposalList();
-      }
-    } else {
-      main.toast(`Error: ${result.error}`, 'error');
+    } catch (error) {
+      console.error('Error updating item status:', error);
+      main.toast('Network error: Failed to update item status', 'error');
     }
-  } catch (error) {
-    console.error('Error updating item status:', error);
-    main.toast('Network error: Failed to update item status', 'error');
-  }
-};
-  
+  };
+
   window.closeIndividualItemsModal = () => {
     const modal = document.getElementById('individualItemsModal');
     modal.classList.remove('opacity-100');
@@ -699,7 +858,6 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
     }, 300);
   };
 }
-
 
 function mainBtnFunction() {
   const inputs = {
@@ -749,7 +907,6 @@ function mainBtnFunction() {
   });
 }
 
-
 function normalizeEquipmentName(name) {
   return (name || '')
     .toLowerCase()
@@ -767,15 +924,11 @@ async function validateRegisterIntent(image, name, quantity, category) {
 
     const resp = await fetch(`${API_BASE_URL}/maintenance/equipment`);
     const data = await resp.json();
-    const list = resp.ok ? (data.result || []) : [];
+    const list = resp.ok ? data.result || [] : [];
     const similar = list.find((eq) => {
       const existingNorm = normalizeEquipmentName(eq.equipment_name);
       if (!existingNorm) return false;
-      return (
-        existingNorm === newNameNorm ||
-        existingNorm.includes(newNameNorm) ||
-        newNameNorm.includes(existingNorm)
-      );
+      return existingNorm === newNameNorm || existingNorm.includes(newNameNorm) || newNameNorm.includes(existingNorm);
     });
 
     if (similar) {
@@ -802,7 +955,7 @@ function openConfirmAddToExistingModal(existingEquipment, quantity, category, im
           <div class="bg-gray-50 p-3 rounded border">
             <p class="text-gray-600 mb-1">Existing equipment:</p>
             <p class="font-semibold text-gray-900">${existingEquipment.equipment_name}</p>
-            <p class="text-xs text-gray-500 mt-1">ID: ${existingEquipment.equipment_id.split('_').slice(0,2).join('_')}</p>
+            <p class="text-xs text-gray-500 mt-1">ID: ${existingEquipment.equipment_id.split('_').slice(0, 2).join('_')}</p>
           </div>
           <p class="mt-4">Add <span class="font-semibold">${quantity}</span> new individual item(s) to this equipment instead?</p>
           <div class="flex gap-3 mt-5">
@@ -842,7 +995,9 @@ function openConfirmAddToExistingModal(existingEquipment, quantity, category, im
   document.getElementById('addToExistingConfirmBtn').addEventListener('click', async () => {
     try {
       if (typeof main.closeModal === 'function') {
-        try { main.closeModal(); } catch (_) {}
+        try {
+          main.closeModal();
+        } catch (_) {}
       }
       await addQuantityToExistingEquipment(existingEquipment.equipment_id, existingEquipment.equipment_name, quantity);
       close();
@@ -858,7 +1013,7 @@ async function addQuantityToExistingEquipment(equipmentId, equipmentName, addQua
     // Get current items to compute start index
     const itemsResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/items`);
     const itemsData = await itemsResp.json();
-    const currentItems = itemsResp.ok ? (itemsData.result || []) : [];
+    const currentItems = itemsResp.ok ? itemsData.result || [] : [];
     const lastItemNumber = currentItems.length;
 
     const addResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/add-quantity`, {
@@ -904,7 +1059,7 @@ async function registerNewProduct(image, name, quantity, category) {
 
     if (response.ok) {
       const columnsData = [
-        result.result.equipment_id.split('_').slice(0,2).join('_'),
+        result.result.equipment_id.split('_').slice(0, 2).join('_'),
         `<div style="display:flex;align-items:center;gap:8px;"><img src="${image || '/src/images/client_logo.jpg'}" alt="${name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${name}')"><span>${name}</span></div>`,
         quantity.toString(),
         category,
@@ -951,7 +1106,7 @@ async function registerNewProduct(image, name, quantity, category) {
       console.error('Error registering equipment:', result.error);
       main.toast(`Error: ${result.error}`, 'error');
     }
-    
+
     main.closeModal();
   } catch (error) {
     console.error('Error registering equipment:', error);
@@ -974,9 +1129,11 @@ function refreshAllTabs() {
 
 async function renderDisposalList() {
   try {
-    const response = await fetch(`${API_BASE_URL}/maintenance/equipment/items?status=${encodeURIComponent('For Disposal')}`);
+    const response = await fetch(
+      `${API_BASE_URL}/maintenance/equipment/items?status=${encodeURIComponent('For Disposal')}`
+    );
     const data = await response.json();
-    const items = response.ok ? (data.result || []) : [];
+    const items = response.ok ? data.result || [] : [];
 
     const emptyCell = document.getElementById('maintenance-equipmentSectionOneListEmpty2');
     if (emptyCell) {
@@ -986,12 +1143,7 @@ async function renderDisposalList() {
       if (!items.length) return;
 
       items.forEach((item) => {
-        const columnsData = [
-          item.item_code,
-          item.equipment_name,
-          item.individual_status,
-          'custom_date_today'
-        ];
+        const columnsData = [item.item_code, item.equipment_name, item.individual_status, 'custom_date_today'];
         main.createAtSectionOne('maintenance-equipment', columnsData, 2, (frontendResult) => {
           frontendResult.dataset.itemId = item.item_id;
           const btn = frontendResult.querySelector('#disposeConfirmBtn');
@@ -1050,7 +1202,9 @@ function confirmDisposeItem(item) {
   cancel.addEventListener('click', () => closeDisposeModal());
   proceed.addEventListener('click', async () => {
     try {
-      const resp = await fetch(`${API_BASE_URL}/maintenance/equipment/items/${encodeURIComponent(item.item_id)}`, { method: 'DELETE' });
+      const resp = await fetch(`${API_BASE_URL}/maintenance/equipment/items/${encodeURIComponent(item.item_id)}`, {
+        method: 'DELETE',
+      });
       const res = await resp.json();
       if (resp.ok) {
         main.toast('Item disposed successfully', 'success');
@@ -1081,9 +1235,11 @@ function closeDisposeModal() {
 
 async function renderDisposedList() {
   try {
-    const response = await fetch(`${API_BASE_URL}/maintenance/equipment/items?status=${encodeURIComponent('Disposed')}`);
+    const response = await fetch(
+      `${API_BASE_URL}/maintenance/equipment/items?status=${encodeURIComponent('Disposed')}`
+    );
     const data = await response.json();
-    const items = response.ok ? (data.result || []) : [];
+    const items = response.ok ? data.result || [] : [];
     const emptyCell = document.getElementById('maintenance-equipmentSectionOneListEmpty3');
     if (emptyCell) {
       const tbody = emptyCell.closest('tbody');
@@ -1091,13 +1247,36 @@ async function renderDisposedList() {
       existingRows.forEach((row) => row.remove());
       if (!items.length) return;
       items.forEach((item) => {
-        const columnsData = [
-          item.item_code,
-          item.equipment_name,
-          'custom_date_today'
-        ];
+        const disposedAtRaw =
+          item.disposed_at || item.updated_at || item.status_updated_at || item.date || item.created_at;
+        let disposedDateDisp = '—';
+        let disposedTimeDisp = '—';
+        if (disposedAtRaw) {
+          try {
+            const dt = new Date(disposedAtRaw);
+            disposedDateDisp = dt.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: '2-digit',
+            });
+            disposedTimeDisp = dt.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true,
+            });
+          } catch (_) {
+            disposedDateDisp = disposedAtRaw;
+            disposedTimeDisp = '—';
+          }
+        }
+        const columnsData = [item.item_code, item.equipment_name, disposedDateDisp, disposedTimeDisp];
         main.createAtSectionOne('maintenance-equipment', columnsData, 3, (frontendResult) => {
           frontendResult.dataset.itemId = item.item_id;
+          const dateCell = frontendResult.children[2];
+          const timeCell = frontendResult.children[3];
+          if (dateCell) dateCell.textContent = disposedDateDisp;
+          if (timeCell) timeCell.textContent = disposedTimeDisp;
         });
       });
     }
@@ -1157,7 +1336,7 @@ async function deleteEquipment(equipmentId) {
   }
 }
 
-window.showImageModal = function(imageSrc, equipmentName) {
+window.showImageModal = function (imageSrc, equipmentName) {
   const modalHTML = `
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/75 opacity-0 duration-300 z-50 hidden" id="imageModal">
       <div class="m-auto w-full max-w-3xl -translate-y-6 scale-95 p-4 duration-300" onclick="event.stopPropagation()">
@@ -1171,7 +1350,7 @@ window.showImageModal = function(imageSrc, equipmentName) {
 
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const modal = document.getElementById('imageModal');
-  
+
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   setTimeout(() => {
@@ -1195,7 +1374,7 @@ window.showImageModal = function(imageSrc, equipmentName) {
   modal.dataset.escapeHandler = 'true';
 };
 
-window.closeImageModal = function() {
+window.closeImageModal = function () {
   const modal = document.getElementById('imageModal');
   if (modal) {
     modal.classList.remove('opacity-100');
