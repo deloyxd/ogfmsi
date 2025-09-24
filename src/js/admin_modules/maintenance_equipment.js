@@ -1146,6 +1146,32 @@ async function renderDisposalList() {
         const columnsData = [item.item_code, item.equipment_name, item.individual_status, 'custom_date_today'];
         main.createAtSectionOne('maintenance-equipment', columnsData, 2, (frontendResult) => {
           frontendResult.dataset.itemId = item.item_id;
+          const nameCell = frontendResult.children[1];
+          if (nameCell) {
+            const equipmentName = item.equipment_name || '';
+            const renderWithImage = (img) => {
+              const imgSrc = img || '/src/images/client_logo.jpg';
+              nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, "&#39;")}')"><span>${equipmentName}</span></div>`;
+            };
+
+            const inlineImage = item.image_url || item.equipment_image_url || item.equipmentImageUrl;
+            if (inlineImage) {
+              renderWithImage(inlineImage);
+            } else if (item.equipment_id) {
+              (async () => {
+                try {
+                  const eqResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(item.equipment_id)}`);
+                  const eqData = await eqResp.json();
+                  const eq = eqResp.ok ? eqData.result || {} : {};
+                  renderWithImage(eq.image_url || '/src/images/client_logo.jpg');
+                } catch (_) {
+                  renderWithImage('/src/images/client_logo.jpg');
+                }
+              })();
+            } else {
+              renderWithImage('/src/images/client_logo.jpg');
+            }
+          }
           const btn = frontendResult.querySelector('#disposeConfirmBtn');
           if (btn) {
             btn.addEventListener('click', () => confirmDisposeItem(item));
@@ -1273,6 +1299,33 @@ async function renderDisposedList() {
         const columnsData = [item.item_code, item.equipment_name, disposedDateDisp, disposedTimeDisp];
         main.createAtSectionOne('maintenance-equipment', columnsData, 3, (frontendResult) => {
           frontendResult.dataset.itemId = item.item_id;
+          const nameCell = frontendResult.children[1];
+          if (nameCell) {
+            const equipmentName = item.equipment_name || '';
+            const renderWithImage = (img) => {
+              const imgSrc = img || '/src/images/client_logo.jpg';
+              nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, "&#39;")}')"><span>${equipmentName}</span></div>`;
+            };
+
+            const inlineImage = item.image_url || item.equipment_image_url || item.equipmentImageUrl;
+            if (inlineImage) {
+              renderWithImage(inlineImage);
+            } else if (item.equipment_id) {
+              // Fallback: fetch the equipment to get its image
+              (async () => {
+                try {
+                  const eqResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(item.equipment_id)}`);
+                  const eqData = await eqResp.json();
+                  const eq = eqResp.ok ? eqData.result || {} : {};
+                  renderWithImage(eq.image_url || '/src/images/client_logo.jpg');
+                } catch (_) {
+                  renderWithImage('/src/images/client_logo.jpg');
+                }
+              })();
+            } else {
+              renderWithImage('/src/images/client_logo.jpg');
+            }
+          }
           const dateCell = frontendResult.children[2];
           const timeCell = frontendResult.children[3];
           if (dateCell) dateCell.textContent = disposedDateDisp;

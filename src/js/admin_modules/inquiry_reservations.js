@@ -243,6 +243,7 @@ function cleanupExpiredReservations() {
     const reservationEnd = new Date(`${reservation.date}T${reservation.endTime}`);
     return reservationEnd > now;
   });
+  updateReservationStats();
 }
 
 // Loads existing reservations from the DOM into memory
@@ -323,6 +324,7 @@ function getReservationCountForDate(date) {
 function refreshCalendar() {
   loadExistingReservations();
   render();
+  updateReservationStats();
 }
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
@@ -345,6 +347,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
     loadExistingReservations();
   }
   render();
+  updateReservationStats();
 });
 
 // Main section button handler
@@ -742,6 +745,7 @@ function bindEvents() {
 function render() {
   renderHeader();
   renderCalendar();
+  updateReservationStats();
 }
 
 // Updates the calendar header with current month and year
@@ -892,6 +896,29 @@ function createDayElement(day, month, year, isToday) {
 // Checks if the given date is today
 function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+}
+
+// Computes and updates the stats cards (Active Reservations, Total Reservations)
+function getReservationCountForTab(tabIndex) {
+  const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
+  if (!emptyText) return 0;
+  const items = emptyText.parentElement.parentElement.children;
+  // Skip header/placeholder row
+  return Math.max(0, items.length - 1);
+}
+
+function updateReservationStats() {
+  try {
+    const statElementsAll = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+    const statElements = Array.from(statElementsAll).filter((el) => !el.classList.contains('hidden'));
+    if (!statElements || statElements.length < 2) return;
+    const activeCount = getReservationCountForTab(2);
+    const totalCount = getReservationCountForTab(2);
+    const activeEl = statElements[0]?.querySelector('.section-stats-c');
+    const totalEl = statElements[1]?.querySelector('.section-stats-c');
+    if (activeEl) activeEl.textContent = activeCount;
+    if (totalEl) totalEl.textContent = totalCount;
+  } catch (e) {}
 }
 
 // Public function to initiate reservation process
