@@ -55,6 +55,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
+    updateCustomerStats();
 
     async function fetchAllCustomers() {
       try {
@@ -108,6 +109,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               customerEditDetailsBtn.addEventListener('click', () =>
                 customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
               );
+              updateCustomerStats();
             }
           );
         });
@@ -163,6 +165,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                     customerEditDetailsBtn.addEventListener('click', () =>
                       customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
                     );
+                    updateCustomerStats();
                   }
                 );
               }
@@ -595,6 +598,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
         customerEditDetailsBtn.addEventListener('click', () =>
           customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
         );
+        updateCustomerStats();
 
         const [customer_id, customer_image_url, customer_contact, customerType, priceRate] = [
           createResult.dataset.id,
@@ -653,6 +657,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
     main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 2, (findResult) => {
       if (findResult) {
         updateCustomer(columnsData, findResult, 2);
+        updateCustomerStats();
       }
     });
   }
@@ -703,6 +708,7 @@ async function updateCustomer(newData, oldData, tabIndex) {
   } catch (error) {
     console.error('Error updating customer:', error);
   }
+  updateCustomerStats();
 }
 
 function autoChangeButtonText(title, button, text) {
@@ -1023,6 +1029,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           } catch (error) {
             console.error('Error updating customer:', error);
           }
+          updateCustomerStats();
         });
 
         main.showSection(SECTION_NAME);
@@ -1148,6 +1155,55 @@ export function getReserveCustomer(callback = () => {}) {
   main.findAtSectionOne(SECTION_NAME, main.sharedState.reserveCustomerId, 'equal_id', 1, (result) => {
     callback(result);
   });
+}
+
+function getCountFromTab(tabIndex) {
+  const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
+  if (!emptyText) return 0;
+  const items = emptyText.parentElement.parentElement.children;
+  return Math.max(0, items.length - 1);
+}
+
+function updateCustomerStats() {
+  try {
+    const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+    if (!statElements || statElements.length < 1) return;
+    const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty1`);
+    let totalRegular = 0;
+    let totalStudent = 0;
+    if (emptyText) {
+      const tbody = emptyText.parentElement.parentElement;
+      for (let i = 1; i < tbody.children.length; i++) {
+        const row = tbody.children[i];
+        const rate = (row.dataset.custom3 || '').toLowerCase();
+        if (rate.includes('regular')) totalRegular++;
+        else if (rate.includes('student')) totalStudent++;
+      }
+    }
+
+    // Active monthly customers are rows in tab 2
+    const activeMonthly = getCountFromTab(2);
+
+    // Active reservations are rows in inquiry-reservations tab 2
+    const activeReservations = (() => {
+      const emptyTextRes = document.getElementById(`inquiry-reservationsSectionOneListEmpty2`);
+      if (!emptyTextRes) return 0;
+      const items = emptyTextRes.parentElement.parentElement.children;
+      return Math.max(0, items.length - 1);
+    })();
+
+    // Update the cards based on their header labels to avoid index/order issues
+    statElements.forEach((card) => {
+      const header = card.querySelector('.section-stats-h');
+      const valueEl = card.querySelector('.section-stats-c');
+      if (!header || !valueEl) return;
+      const label = header.textContent.toLowerCase();
+      if (label.includes('regular')) valueEl.textContent = totalRegular;
+      else if (label.includes('student')) valueEl.textContent = totalStudent;
+      else if (label.includes('monthly')) valueEl.textContent = activeMonthly;
+      else if (label.includes('reservations')) valueEl.textContent = activeReservations;
+    });
+  } catch (e) {}
 }
 
 export default { completeCheckinPayment, customerDetailsBtnFunction, cancelPendingTransaction, getReserveCustomer };

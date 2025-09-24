@@ -103,13 +103,15 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             (findResult) => {
+              const customerImage = findResult ? findResult.dataset.image : '';
+              const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
               main.createAtSectionOne(
                 SECTION_NAME,
                 [
                   'id_' + completePayment.payment_id,
                   {
                     type: 'object',
-                    data: [findResult.dataset.image, findResult.dataset.id],
+                    data: [customerImage, customerIdSafe],
                   },
                   completePayment.payment_purpose,
                   main.formatPrice(completePayment.payment_amount_to_pay),
@@ -127,7 +129,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
                   transactionDetailsBtn.addEventListener('click', () =>
-                    customers.customerDetailsBtnFunction(findResult.dataset.id, 'Transaction Details', '🔏')
+                    customers.customerDetailsBtnFunction(customerIdSafe, 'Transaction Details', '🔏')
                   );
                 }
               );
@@ -364,6 +366,14 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
 
   main.openModal('yellow', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
+    const cashVal = Number(result.short[2].value) || 0;
+    const cashlessVal = Number(result.short[3].value) || 0;
+
+    // Show specific message when no amount entered at all
+    if (cashVal === 0 && cashlessVal === 0) {
+      main.toast('No amount tendered', 'error');
+      return;
+    }
     if (!main.isValidPaymentAmount(+result.short[2].value) && paymentMethod == 'cash') {
       main.toast(`Invalid payment amount (cash): ${result.short[2].value}`, 'error');
       return;
