@@ -153,7 +153,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                     ),
                     findResult.dataset.custom3,
-                    'custom_date_' + main.encodeDate(customer.created_at, 'long'),
+                    'custom_date_' +
+                      main.encodeDate(customer.created_at, 'long') +
+                      ' - ' +
+                      main.encodeTime(customer.created_at),
                   ],
                   2,
                   (createResult) => {
