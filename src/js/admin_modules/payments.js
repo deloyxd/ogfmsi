@@ -10,6 +10,9 @@ let activated = false,
   mainBtn,
   subBtn;
 
+// Cache of completed payments used for stats computation
+let completedPaymentsCache = [];
+
 document.addEventListener('ogfmsiAdminMainLoaded', async function () {
   if (main.sharedState.sectionName != SECTION_NAME) return;
 
@@ -96,6 +99,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const completePayments = await response.json();
+
+        // update cache and stats
+        completedPaymentsCache = Array.isArray(completePayments.result) ? completePayments.result : [];
+        computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
           main.findAtSectionOne(
@@ -469,6 +476,18 @@ function completePayment(type,id, image, customerId, purpose, fullName, amountTo
         }
 
         await response.json();
+
+        // Reflect the newly completed transaction in stats immediately
+        try {
+          const nowIso = new Date().toISOString();
+          completedPaymentsCache.push({
+            payment_amount_paid_cash: Number(result.short[2].value) || 0,
+            payment_amount_paid_cashless: Number(result.short[3].value) || 0,
+            payment_method: paymentMethod,
+            created_at: nowIso,
+          });
+          computeAndUpdatePaymentStats(completedPaymentsCache);
+        } catch (_) {}
       } catch (error) {
         console.error('Error creating complete payment:', error);
       }
@@ -599,6 +618,101 @@ export function findPendingTransaction(customerId, callback = () => {}) {
       callback(findResult.dataset.id);
     }
   });
+}
+
+// ===== Stats computation & display =====
+function computeAndUpdatePaymentStats(payments) {
+  if (!Array.isArray(payments)) return;
+
+  const toNumber = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const today = new Date();
+  const todayKey = [today.getFullYear(), today.getMonth(), today.getDate()].join('-');
+
+  let todaysCash = 0;
+  let todaysCashless = 0;
+
+  const dayTotals = new Map(); // key: YYYY-M-D -> sum
+  const weekTotals = new Map(); // key: YYYY-W -> sum (ISO week)
+  const monthTotals = new Map(); // key: YYYY-M -> sum
+
+  for (const p of payments) {
+    if (!p) continue;
+    const created = new Date(p.created_at || p.createdAt || Date.now());
+    const keyDay = [created.getFullYear(), created.getMonth(), created.getDate()].join('-');
+    const keyMonth = [created.getFullYear(), created.getMonth()].join('-');
+    const isoWeek = getIsoWeek(created);
+    const keyWeek = [created.getFullYear(), isoWeek].join('-');
+
+    const paidCash = toNumber(p.payment_amount_paid_cash);
+    const paidCashless = toNumber(p.payment_amount_paid_cashless);
+    const totalPaid = paidCash + paidCashless;
+
+    if (keyDay === todayKey) {
+      // Include both pure cash and the cash component of hybrid
+      todaysCash += paidCash;
+      // Include both pure cashless and the cashless component of hybrid
+      todaysCashless += paidCashless;
+    }
+
+    dayTotals.set(keyDay, (dayTotals.get(keyDay) || 0) + totalPaid);
+    weekTotals.set(keyWeek, (weekTotals.get(keyWeek) || 0) + totalPaid);
+    monthTotals.set(keyMonth, (monthTotals.get(keyMonth) || 0) + totalPaid);
+  }
+
+  const avg = (mapObj) => {
+    const values = Array.from(mapObj.values());
+    if (values.length === 0) return 0;
+    const sum = values.reduce((a, b) => a + b, 0);
+    return sum / values.length;
+  };
+
+  const stats = {
+    todays_cash: todaysCash,
+    todays_cashless: todaysCashless,
+    avg_daily: avg(dayTotals),
+    avg_weekly: avg(weekTotals),
+    avg_monthly: avg(monthTotals),
+  };
+
+  updatePaymentStatsDisplay(stats);
+}
+
+function updatePaymentStatsDisplay(stats) {
+  try {
+    const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+    if (!statElements || statElements.length < 1) return;
+
+    statElements.forEach((card) => {
+      const header = card.querySelector('.section-stats-h');
+      const valueEl = card.querySelector('.section-stats-c');
+      if (!header || !valueEl) return;
+      const label = (header.textContent || '').toLowerCase();
+      if (label.includes('cashless') && label.includes('today')) {
+        valueEl.textContent = main.encodePrice(stats.todays_cashless || 0);
+      } else if (label.includes('cash sales') || (label.includes('cash') && label.includes('today'))) {
+        valueEl.textContent = main.encodePrice(stats.todays_cash || 0);
+      } else if (label.includes('daily')) {
+        valueEl.textContent = main.encodePrice(stats.avg_daily || 0);
+      } else if (label.includes('weekly')) {
+        valueEl.textContent = main.encodePrice(stats.avg_weekly || 0);
+      } else if (label.includes('monthly')) {
+        valueEl.textContent = main.encodePrice(stats.avg_monthly || 0);
+      }
+    });
+  } catch (_) {}
+}
+
+function getIsoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return weekNo;
 }
 
 function openTransactionDetails(row) {
