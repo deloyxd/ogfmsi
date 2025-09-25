@@ -2076,6 +2076,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (checkIfJsShouldNotRun('admin_main')) return;
   setupSidebar();
   showLoadingAndPreloadSections();
+  setupLogoDashboardRedirect();
 });
 
 async function showLoadingAndPreloadSections() {
@@ -2162,4 +2163,24 @@ function createLoadingOverlay() {
   `;
 
   return overlay;
+}
+
+function setupLogoDashboardRedirect() {
+  document.addEventListener('click', function (e) {
+    const target = e.target.closest('img');
+    if (!target) return;
+    const srcAttr = target.getAttribute('src') || '';
+    const absoluteSrc = target.src || '';
+    // Match either attribute value or resolved absolute path
+    const isClientLogo =
+      srcAttr.endsWith('/src/images/client_logo.jpg') ||
+      srcAttr.endsWith('client_logo.jpg') ||
+      absoluteSrc.endsWith('/src/images/client_logo.jpg') ||
+      absoluteSrc.endsWith('client_logo.jpg');
+    if (!isClientLogo) return;
+    e.preventDefault();
+    try {
+      showSection('dashboard');
+    } catch (_e) {}
+  });
 }
