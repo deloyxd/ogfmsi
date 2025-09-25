@@ -1,4 +1,5 @@
 import main from '../admin_main.js';
+import { API_BASE_URL } from '../_global.js';
 import customers from './inquiry_customers.js';
 
 const SECTION_NAME = 'inquiry-checkins';
@@ -8,7 +9,7 @@ const SUBMODULE_NAME = 'Check-Ins';
 let activated = false,
   subBtn;
 
-document.addEventListener('ogfmsiAdminMainLoaded', () => {
+document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
   if (!activated) {
@@ -16,6 +17,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
     subBtn = document.querySelector(`.section-sub-btn[data-section="${SECTION_NAME}"]`);
     subBtn?.classList.remove('hidden');
     subBtn?.addEventListener('click', () => {});
+
+    await loadAllCheckins();
   }
 });
 
@@ -41,6 +44,22 @@ export function logCheckin(transactionId, customer, tabIndex, showSection) {
 
     const checkinArchiveBtn = createResult.querySelector(`#checkinArchiveBtn`);
     checkinArchiveBtn.addEventListener('click', () => checkinArchiveBtnFunction(createResult, tabIndex));
+
+    // Persist check-in to backend based on tab index
+    const payload = {
+      checkin_id: transactionId,
+      customer_id: customer.dataset.id,
+      customer_name_encoded: customer.dataset.text,
+      customer_contact: customer.dataset.contact,
+      customer_image_url: customer.dataset.image,
+      transaction_id: transactionId,
+    };
+
+    if (tabIndex === 1) {
+      postCheckin(`${API_BASE_URL}/inquiry/checkins/regular`, payload);
+    } else if (tabIndex === 2) {
+      postCheckin(`${API_BASE_URL}/inquiry/checkins/monthly`, payload);
+    }
 
     main.toast(`${firstName}, successfully checked-in!`, 'success');
 
@@ -70,6 +89,20 @@ function checkinArchiveBtnFunction(checkin, tabIndex) {
           checkinDetailsBtn.addEventListener('click', () =>
             customers.customerDetailsBtnFunction(checkin.dataset.id, 'Archive Details', '🧾')
           );
+
+          // Persist archive to backend
+          const sourceType = tabIndex === 1 ? 'regular' : 'monthly';
+          const archivePayload = {
+            archive_id: `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+            source_type: sourceType,
+            checkin_id: checkin.dataset.tid || checkin.dataset.id,
+            customer_id: checkin.dataset.id,
+            customer_name_encoded: checkin.dataset.text,
+            customer_contact: checkin.dataset.contact,
+            customer_image_url: checkin.dataset.image,
+            transaction_id: checkin.dataset.tid || '',
+          };
+          postCheckin(`${API_BASE_URL}/inquiry/checkins/archived`, archivePayload);
         });
       }
     });
@@ -96,3 +129,69 @@ export function findLogCheckin(id, tabIndex, callback) {
 }
 
 export default { logCheckin, findLogCheckin };
+
+async function loadAllCheckins() {
+  try {
+    const [regularResp, monthlyResp, archivedResp] = await Promise.all([
+      fetch(`${API_BASE_URL}/inquiry/checkins/regular`),
+      fetch(`${API_BASE_URL}/inquiry/checkins/monthly`),
+      fetch(`${API_BASE_URL}/inquiry/checkins/archived`),
+    ]);
+
+    if (regularResp.ok) {
+      const data = await regularResp.json();
+      data.result.forEach((r) => renderCheckinFromBackend(r, 1));
+    }
+    if (monthlyResp.ok) {
+      const data = await monthlyResp.json();
+      data.result.forEach((r) => renderCheckinFromBackend(r, 2));
+    }
+    if (archivedResp.ok) {
+      const data = await archivedResp.json();
+      data.result.forEach((r) => renderCheckinFromBackend(r, 3));
+    }
+  } catch (error) {
+    console.error('Failed to load check-ins:', error);
+  }
+}
+
+function renderCheckinFromBackend(record, tabIndex) {
+  const columnsData = [
+    'id_' + (record.customer_id || record.checkin_id),
+    {
+      type: 'object_contact',
+      data: [record.customer_image_url, record.customer_name_encoded, record.customer_contact],
+    },
+    'custom_datetime_today',
+  ];
+
+  main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
+    if (record.transaction_id) createResult.dataset.tid = record.transaction_id;
+
+    if (tabIndex === 3) {
+      const checkinDetailsBtn = createResult.querySelector(`#checkinDetailsBtn`);
+      checkinDetailsBtn?.addEventListener('click', () =>
+        customers.customerDetailsBtnFunction(createResult.dataset.id, 'Archive Details', '🧾')
+      );
+    } else {
+      const checkinArchiveBtn = createResult.querySelector(`#checkinArchiveBtn`);
+      checkinArchiveBtn?.addEventListener('click', () => checkinArchiveBtnFunction(createResult, tabIndex));
+    }
+  });
+}
+
+async function postCheckin(url, payload) {
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error('Check-in API error:', resp.status, err);
+    }
+  } catch (error) {
+    console.error('Check-in API request failed:', error);
+  }
+}
