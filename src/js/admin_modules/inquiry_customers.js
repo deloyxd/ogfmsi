@@ -148,8 +148,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                     },
                     main.encodeDate(customer.customer_start_date, 'long'),
                     main.encodeDate(customer.customer_end_date, 'long'),
-                    daysLeft,
-                    main.encodePrice(
+                    daysLeft + ' days',
+                    main.formatPrice(
                       customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                     ),
                     findResult.dataset.custom3,
@@ -600,7 +600,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
         );
         updateCustomerStats();
 
-        const [customer_id, customer_image_url, customer_contact, customerType, priceRate] = [
+        const [customer_id, customer_image_url, customer_contact, customerType, customerPriceRate] = [
           createResult.dataset.id,
           createResult.dataset.image,
           createResult.dataset.contact,
@@ -624,7 +624,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
               customer_type: customerType.includes('Monthly') ? 'monthly' : 'daily',
               customer_tid: '',
               customer_pending: customerType.includes('Pending') ? 1 : 0,
-              customer_rate: priceRate.toLowerCase(),
+              customer_rate: customerPriceRate.toLowerCase(),
             }),
           });
 
@@ -1106,7 +1106,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           updateCustomerStats();
         });
 
-        main.showSection(SECTION_NAME);
+        main.showSection(SECTION_NAME, 2);
       } else {
         findResult1.dataset.tid = '';
         checkins.logCheckin(transactionId, findResult1, 1, true);

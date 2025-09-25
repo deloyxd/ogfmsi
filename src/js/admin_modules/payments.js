@@ -58,7 +58,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const { firstName, lastName, fullName } = main.decodeName(findResult.dataset.text);
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
-                    completeCheckinPayment(
+                    completePayment(
+                      'customers',
                       createResult.dataset.id,
                       createResult.dataset.image,
                       createResult.dataset.text,
@@ -163,7 +164,8 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
-      completeCheckinPayment(
+      completePayment(
+                      'customers',
         createResult.dataset.id,
         createResult.dataset.image,
         createResult.dataset.text,
@@ -216,7 +218,8 @@ export function continueProcessCheckinPayment(transactionId, fullName) {
   main.showSection(SECTION_NAME);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
-      completeCheckinPayment(
+      completePayment(
+                      'customers',
         findResult.dataset.id,
         findResult.dataset.image,
         findResult.dataset.text,
@@ -323,7 +326,7 @@ function activeRadioListener(title, input, container, inputGroup) {
   attachSelectAll(cashlessInput);
 }
 
-function completeCheckinPayment(id, image, customerId, purpose, fullName, amountToPay, priceRate) {
+function completePayment(type,id, image, customerId, purpose, fullName, amountToPay, priceRate) {
   const inputs = {
     header: {
       title: `Transaction ID: ${id} ${getEmoji('🔏', 26)}`,
@@ -437,8 +440,14 @@ function completeCheckinPayment(id, image, customerId, purpose, fullName, amount
       transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
 
       main.closeModal(() => {
+        switch (type) {
+          case 'customers':
         customers.completeCheckinPayment(id, amountPaid, priceRate);
+        break;
+        case 'reservations':
         reservations.completeReservationPayment(id);
+        break;
+        }
       });
 
       try {
@@ -512,7 +521,8 @@ export function processReservationPayment(reservation, callback = () => {}) {
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
-      completeCheckinPayment(
+      completePayment(
+                      'reservations',
         createResult.dataset.id,
         createResult.dataset.image,
         createResult.dataset.text,
@@ -541,7 +551,8 @@ export function continueProcessReservationPayment(transactionId, fullName) {
   main.showSection(SECTION_NAME);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
-      completeCheckinPayment(
+      completePayment(
+                      'reservations',
         findResult.dataset.id,
         findResult.dataset.image,
         findResult.dataset.text,
