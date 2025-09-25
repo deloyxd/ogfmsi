@@ -167,3 +167,41 @@ CREATE TABLE IF NOT EXISTS payment_tbl (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Inquiry: Regular Check-Ins Logbook
+CREATE TABLE IF NOT EXISTS inquiry_checkins_regular_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    checkin_id VARCHAR(50) UNIQUE NOT NULL,
+    customer_id VARCHAR(50) NOT NULL,
+    customer_name_encoded LONGTEXT,
+    customer_contact VARCHAR(50),
+    customer_image_url LONGTEXT,
+    transaction_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Inquiry: Monthly Check-Ins Logbook
+CREATE TABLE IF NOT EXISTS inquiry_checkins_monthly_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    checkin_id VARCHAR(50) UNIQUE NOT NULL,
+    customer_id VARCHAR(50) NOT NULL,
+    customer_name_encoded LONGTEXT,
+    customer_contact VARCHAR(50),
+    customer_image_url LONGTEXT,
+    transaction_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Inquiry: Archived Check-Ins Logbook
+CREATE TABLE IF NOT EXISTS inquiry_checkins_archived_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    archive_id VARCHAR(50) UNIQUE NOT NULL,
+    source_type ENUM('regular','monthly') NOT NULL,
+    checkin_id VARCHAR(50) NOT NULL,
+    customer_id VARCHAR(50) NOT NULL,
+    customer_name_encoded LONGTEXT,
+    customer_contact VARCHAR(50),
+    customer_image_url LONGTEXT,
+    transaction_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
