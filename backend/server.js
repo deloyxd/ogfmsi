@@ -28,6 +28,7 @@ app.use((req, res, next) => {
 
 
 //API URL: (host):(port)/api
+
 app.use('/api',router);
 
 //Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing

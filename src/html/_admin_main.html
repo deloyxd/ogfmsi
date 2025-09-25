@@ -31,6 +31,10 @@
 
     <!-- charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- firebase (for database) -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
   </head>
   <body
     class="min-h-screen cursor-default overflow-y-auto overflow-x-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black"
@@ -557,6 +561,7 @@
     <!-- main js -->
     <script src="/src/js/admin_modules.js"></script>
     <script src="/src/js/admin_sidebar.js"></script>
+    <script type="module" src="/src/js/firebase.js"></script>
     <script type="module" src="/src/js/admin_main.js"></script>
     <script type="module" src="/src/js/admin_stats.js"></script>
     <script type="module" src="/src/js/admin_content.js"></script>

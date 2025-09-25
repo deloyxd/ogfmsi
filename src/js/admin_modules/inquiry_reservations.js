@@ -3,14 +3,15 @@ import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import payments from './payments.js';
 import accesscontrol from './maintenance_accesscontrol.js';
+import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'inquiry-reservations';
 const MODULE_NAME = 'Inquiry';
 const SUBMODULE_NAME = 'Reservations';
 
 const RESERVATION_TYPES = [
-  { value: 'basketball', label: 'basketball' },
-  { value: 'zumba', label: 'zumba' },
+  { value: 'basketball', label: 'Basketball' },
+  { value: 'zumba', label: 'Zumba' },
 ];
 
 const DURATION_OPTIONS = [
@@ -27,17 +28,104 @@ let mainBtn, sectionTwoMainBtn;
 let bindActivated = false;
 let autoselect = true;
 let existingReservations = [];
+let selectedDate = null;
+const today = new Date();
+const currentDate = new Date();
+
+const monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+// -------------------------
+// |    CRUD Functions     |
+// -------------------------
+import { db } from '../firebase.js';
+import {
+  collection,
+  onSnapshot,
+  query,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+function listenToReservationsFE(callback) {
+  const q = query(collection(db, 'reservations'));
+  return onSnapshot(q, (snapshot) => {
+    const reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    callback(reservations);
+  });
+}
+
+async function createReservation(reservation) {
+  const response = await fetch(`${API_BASE_URL}/inquiry/reservations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(reservation),
+  });
+  if (!response.ok) throw new Error('Failed to create reservation.');
+  return response.json();
+}
+
+async function createReservationFE(reservation) {
+  await setDoc(doc(db, 'reservations', reservation.id), reservation);
+}
+
+async function readReservations() {
+  const response = await fetch(`${API_BASE_URL}/inquiry/reservations`);
+  if (!response.ok) throw new Error('Failed to read reservations.');
+  return response.json();
+}
+
+async function updateReservation(reservationId, updatedData) {
+  const response = await fetch(`${API_BASE_URL}/inquiry/reservations/${reservationId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updatedData),
+  });
+  if (!response.ok) throw new Error('Failed to update reservation.');
+  return response.json();
+}
+
+async function updateReservationFE(reservationId, updatedData) {
+  await updateDoc(doc(db, 'reservations', reservationId), updatedData);
+}
+
+async function deleteReservation(reservationId) {
+  const response = await fetch(`${API_BASE_URL}/inquiry/reservations/${reservationId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete reservation.');
+}
+
+async function deleteReservationFE(reservationId) {
+  await deleteDoc(doc(db, 'reservations', reservationId));
+}
+
+// -------------------------
+// |  Generic Functions    |
+// -------------------------
 
 // Checks if the selected time is in the past
 function isTimeInPast(date, time) {
   const now = new Date();
   const [hours, minutes] = time.split(':').map(Number);
   const [month, day, year] = date.split('-').map(Number);
-
   const selectedDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
   const currentDateTime = new Date();
   currentDateTime.setMinutes(currentDateTime.getMinutes() - 1);
-
   return selectedDateTime < currentDateTime;
 }
 
@@ -78,8 +166,6 @@ function getHourlyRate(startTime) {
 
 // Updates the price display based on selected duration and start time
 function updatePriceDisplay(duration, startTime, container) {
-  const allInputs = container.querySelectorAll('input');
-
   const priceInput =
     container.querySelector('#input-short-2') ||
     container.querySelector('input[placeholder*="Amount to pay"]') ||
@@ -205,11 +291,6 @@ function getNextAvailableTime(newStartTime, newEndTime, newDate) {
   return null;
 }
 
-// Adds a new reservation to the in-memory tracking system
-function addReservation(reservation) {
-  existingReservations.push(reservation);
-}
-
 // Removes reservations that have already ended
 function removeExpiredReservations() {
   const now = new Date();
@@ -246,71 +327,68 @@ function cleanupExpiredReservations() {
   updateReservationStats();
 }
 
-// Loads existing reservations from the DOM into memory
-function loadExistingReservations() {
-  const selectors = [
-    `[data-section="${SECTION_NAME}"] .section-one-item`,
-    `.section-one-item`,
-    `#${SECTION_NAME}SectionOne .section-one-item`,
-    `[data-section="${SECTION_NAME}"] .item`,
-    `.item`,
-    `[data-section="${SECTION_NAME}"] div[data-id]`,
-    `div[data-id]`,
-    `[data-section="${SECTION_NAME}"] [data-id^="R"]`,
-    `[data-id^="R"]`,
-  ];
+async function loadExistingReservations() {
+  listenToReservationsFE((reservations) => {
+    existingReservations = reservations;
 
-  let reservationElements = [];
+    main.getAllSectionOne(SECTION_NAME, 2, (items) => {
+      items.forEach((item) => item.remove());
+    });
+    main.getAllSectionOne(SECTION_NAME, 3, (items) => {
+      items.forEach((item) => item.remove());
+    });
 
-  for (const selector of selectors) {
-    reservationElements = document.querySelectorAll(selector);
-    if (reservationElements.length > 0) {
-      break;
-    }
-  }
+    existingReservations.forEach((reservation) => {
+      const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
+      const { fullName } = main.decodeName(customerName);
 
-  if (reservationElements.length === 0) {
-    return;
-  }
+      const reservationEnd = new Date(`${date}T${endTime}`);
+      const isPast = reservationEnd <= new Date();
+      const tabIndex = isPast ? 3 : 2;
 
-  existingReservations = [];
+      const columnsData = [
+        id,
+        {
+          type: 'object_cid',
+          data: ['', fullName, customerId],
+        },
+        RESERVATION_TYPES[reservationType].label,
+        `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
+        `custom_datetime_${status}`,
+      ];
 
-  reservationElements.forEach((element, index) => {
-    const dateTimeText = element.children[3]?.textContent;
+      main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createdItem) => {
+        createdItem.dataset.tid = tid || '';
 
-    if (dateTimeText && dateTimeText.includes(' - ')) {
-      const [datePart, timePart] = dateTimeText.split(' - ');
-      const [startTime, endTime] = timePart.split(' to ');
+        const viewDetailsBtn = createdItem.querySelector('[id^="reservationViewDetailsBtn"]');
+        if (viewDetailsBtn) {
+          viewDetailsBtn.addEventListener('click', () => {
+            editReservation(reservation);
+          });
+        }
 
-      if (datePart && startTime && endTime) {
-        const reservationDate = main.encodeDate(new Date(datePart), '2-digit');
-
-        const parseTime = (timeStr) => {
-          const time = timeStr.trim();
-          if (time.includes('PM') || time.includes('AM')) {
-            const [timePart, ampm] = time.split(' ');
-            const [hours, minutes] = timePart.split(':');
-            let hour24 = parseInt(hours);
-            if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
-            if (ampm === 'AM' && hour24 === 12) hour24 = 0;
-            return `${hour24.toString().padStart(2, '0')}:${minutes}`;
-          } else {
-            return time;
-          }
-        };
-
-        const reservation = {
-          id: element.dataset.id,
-          date: reservationDate,
-          startTime: parseTime(startTime),
-          endTime: parseTime(endTime),
-          customerId: element.dataset.cid,
-          customerName: element.dataset.text,
-        };
-
-        existingReservations.push(reservation);
-      }
-    }
+        const voidBtn = createdItem.querySelector('[id^="reservationVoidBtn"]');
+        if (voidBtn) {
+          voidBtn.addEventListener('click', async () => {
+            main.openConfirmationModal('Are you sure you want to void this reservation?', async () => {
+              try {
+                await deleteReservationFE(id);
+                main.toast('Reservation voided successfully!', 'success');
+                main.closeConfirmationModal();
+                loadExistingReservations();
+              } catch (error) {
+                main.toast(`Error voiding reservation: ${error.message}`, 'error');
+              }
+            });
+          });
+        }
+      });
+    });
+    updateReservationStats();
+    render();
+    // } catch (error) {
+    //   main.toast(`Error loading reservations: ${error.message}`, 'error');
+    // }
   });
 }
 
@@ -322,9 +400,7 @@ function getReservationCountForDate(date) {
 
 // Refreshes the calendar display after reservation changes
 function refreshCalendar() {
-  loadExistingReservations();
   render();
-  updateReservationStats();
 }
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
@@ -338,13 +414,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (!bindActivated) {
     bindActivated = true;
     bindEvents();
+    loadExistingReservations();
 
     main.updateDateAndTime(SECTION_NAME);
     setInterval(main.updateDateAndTime, 10000);
 
     setInterval(cleanupExpiredReservations, 60000);
-
-    loadExistingReservations();
   }
   render();
   updateReservationStats();
@@ -366,7 +441,7 @@ function sectionTwoMainBtnFunction() {
 
   customers.getReserveCustomer((customer) => {
     if (customer) {
-      const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
+      const { fullName } = main.decodeName(customer.dataset.text);
 
       const inputs = {
         header: {
@@ -382,7 +457,10 @@ function sectionTwoMainBtnFunction() {
           },
           {
             placeholder: 'Reservation date (mm-dd-yyyy)',
-            value: `${main.encodeDate(new Date(selectedDate.dataset.year, selectedDate.dataset.month - 1, selectedDate.dataset.day), '2-digit')}`,
+            value: `${main.encodeDate(
+              new Date(selectedDate.dataset.year, selectedDate.dataset.month - 1, selectedDate.dataset.day),
+              '2-digit'
+            )}`,
             required: true,
             calendar: true,
           },
@@ -431,7 +509,7 @@ function sectionTwoMainBtnFunction() {
           {
             label: 'Time duration',
             placeholder: 'Select duration',
-            selected: 0,
+            selected: 1,
             required: true,
             options: DURATION_OPTIONS,
             listener: (selectedIndex, container) => {
@@ -476,7 +554,7 @@ function sectionTwoMainBtnFunction() {
         },
       };
 
-      main.openModal('orange', inputs, (result) => {
+      main.openModal('orange', inputs, async (result) => {
         const dateStart = result.short[2].value;
 
         try {
@@ -538,55 +616,15 @@ function sectionTwoMainBtnFunction() {
             throw new Error('Cannot book past time slots on the same day');
           }
 
-          loadExistingReservations();
-
-          if (existingReservations.length === 0) {
-            const allElements = document.querySelectorAll('[data-id^="R"]');
-            allElements.forEach((element) => {
-              const dateTimeText = element.children[3]?.textContent;
-              if (dateTimeText && dateTimeText.includes(' - ')) {
-                const [datePart, timePart] = dateTimeText.split(' - ');
-                const [startTime, endTime] = timePart.split(' to ');
-
-                if (datePart && startTime && endTime) {
-                  const reservationDate = main.encodeDate(new Date(datePart), '2-digit');
-
-                  const parseTime = (timeStr) => {
-                    const time = timeStr.trim();
-                    if (time.includes('PM') || time.includes('AM')) {
-                      const [timePart, ampm] = time.split(' ');
-                      const [hours, minutes] = timePart.split(':');
-                      let hour24 = parseInt(hours);
-                      if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
-                      if (ampm === 'AM' && hour24 === 12) hour24 = 0;
-                      return `${hour24.toString().padStart(2, '0')}:${minutes}`;
-                    } else {
-                      return time;
-                    }
-                  };
-
-                  const reservation = {
-                    id: element.dataset.id,
-                    date: reservationDate,
-                    startTime: parseTime(startTime),
-                    endTime: parseTime(endTime),
-                    customerId: element.dataset.cid,
-                    customerName: element.dataset.text,
-                  };
-
-                  existingReservations.push(reservation);
-                }
-              }
-            });
-          }
-
           if (hasTimeConflict(startTime, endTime, reservationDate)) {
             const conflictingReservation = getConflictingReservation(startTime, endTime, reservationDate);
             const conflictingCustomerName = conflictingReservation
               ? main.decodeName(conflictingReservation.customerName).fullName
               : 'Another customer';
             const conflictingTime = conflictingReservation
-              ? `${main.decodeTime(conflictingReservation.startTime)} to ${main.decodeTime(conflictingReservation.endTime)}`
+              ? `${main.decodeTime(conflictingReservation.startTime)} to ${main.decodeTime(
+                  conflictingReservation.endTime
+                )}`
               : 'the same time';
 
             throw new Error(`This time slot is already booked by ${conflictingCustomerName} (${conflictingTime})`);
@@ -624,50 +662,46 @@ function sectionTwoMainBtnFunction() {
         }
 
         main.openConfirmationModal(
-          `Reserve for<br><p class="text-lg">${fullName}</p>at ${main.decodeDate(result.short[2].value)}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
-          () => {
-            const columnsData = [
-              'id_R_random',
-              { type: 'object_cid', data: [customer.dataset.image, fullName, customer.dataset.id] },
-              main.fixText(main.getSelectedSpinner(result.spinner[1])),
-              `${main.decodeDate(result.short[2].value)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
-              'custom_datetime_Pending',
-            ];
+          `Reserve for<br><p class="text-lg">${fullName}</p>at ${main.decodeDate(
+            result.short[2].value
+          )}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
+          async () => {
+            const reservationId = 'R' + new Date().getTime();
+            const reservationData = {
+              id: reservationId,
+              customerId: customer.dataset.id,
+              customerName: customer.dataset.text,
+              reservationType: main.getSelectedSpinner(result.spinner[0]),
+              date: result.short[2].value,
+              startTime: startTime,
+              endTime: endTime,
+              status: 'Pending',
+              amount: main.decodePrice(result.short[1].value),
+            };
 
-            main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-              main.createNotifDot(SECTION_NAME, 2);
-
-              const reservationDate = result.short[2].value;
-              const newReservation = {
-                id: createResult.dataset.id,
-                date: reservationDate,
-                startTime: startTime,
-                endTime: endTime,
-                customerId: customer.dataset.id,
-                customerName: customer.dataset.text,
-              };
-              addReservation(newReservation);
-
-              main.toast('Successfully reserved facility!', 'success');
+            try {
+              await createReservationFE(reservationData);
+              main.toast('Reservation created successfully!', 'success');
               main.closeConfirmationModal();
-              main.closeModal(() => {
-                refreshCalendar();
-
-                const calculatedAmount = main.decodePrice(result.short[1].value);
-
-                const reservationData = {
-                  id: createResult.dataset.id,
-                  image: customer.dataset.image,
-                  name: customer.dataset.text,
-                  cid: customer.dataset.id,
-                  amount: calculatedAmount,
-                };
-
-                payments.processReservationPayment(reservationData, (transactionId) => {
-                  createResult.dataset.tid = transactionId;
-                });
+              main.closeModal(async () => {
+                payments.processReservationPayment(
+                  {
+                    id: reservationData.id,
+                    image: customer.dataset.image,
+                    name: customer.dataset.text,
+                    cid: customer.dataset.id,
+                    amount: reservationData.amount,
+                  },
+                  async (transactionId) => {
+                    await updateReservationFE(reservationData.id, { tid: transactionId });
+                    loadExistingReservations();
+                  }
+                );
               });
-            });
+              loadExistingReservations();
+            } catch (error) {
+              main.toast(`Error creating reservation: ${error.message}`, 'error');
+            }
           }
         );
       });
@@ -675,26 +709,6 @@ function sectionTwoMainBtnFunction() {
   });
 }
 
-const currentDate = new Date();
-const today = new Date();
-let selectedDate = null;
-
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-// Binds event listeners for calendar navigation and applies CSS animations
 function bindEvents() {
   if (!document.querySelector('#bookmark-styles')) {
     const style = document.createElement('style');
@@ -782,7 +796,7 @@ function renderCalendar() {
   }
 
   const totalCells = calendarGrid.children.length;
-  const remainingCells = 5 * 7 - totalCells;
+  const remainingCells = 42 - totalCells; // Ensure 6 rows
 
   for (let day = 1; day <= remainingCells; day++) {
     const dayElement = createDayElement(day, month + 1, year, false);
@@ -820,8 +834,12 @@ function createDayElement(day, month, year, isToday) {
 
   dayElement.innerHTML = `
       <div class="self-center">
-          <p class="${isPreviousDay ? 'text-xs font-bold opacity-50' : isToday ? 'text-xl font-black' : 'text-sm font-black'}">${day}</p>
-          <div id="bookmark" class="absolute top-1 right-1 ${isPreviousDay || reservedCount == 0 ? 'opacity-0' : ''} duration-300">
+          <p class="${
+            isPreviousDay ? 'text-xs font-bold opacity-50' : isToday ? 'text-xl font-black' : 'text-sm font-black'
+          }">${day}</p>
+          <div id="bookmark" class="absolute top-1 right-1 ${
+            isPreviousDay || reservedCount == 0 ? 'opacity-0' : ''
+          } duration-300">
               <div class="relative">
                   <div class="bookmark-body ${bookmarkColor} w-6 h-8 ${randomFoldDirection}-lg shadow-md shadow-black/50 duration-300 origin-top-right z-10">
                       <div class="absolute inset-0 flex items-center justify-center">
@@ -848,9 +866,11 @@ function createDayElement(day, month, year, isToday) {
       inquiryReservationQuick.children[1].classList.add('text-black', 'mt-2');
 
       if (customer) {
-        const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
+        const { fullName } = main.decodeName(customer.dataset.text);
 
-        inquiryReservationQuick.children[0].innerHTML = `Reserve for:<p class="text-lg">${fullName}</p><br>Reserve date:<p class="text-lg">${monthNames[month]} ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
+        inquiryReservationQuick.children[0].innerHTML = `Reserve for:<p class="text-lg">${fullName}</p><br>Reserve date:<p class="text-lg">${
+          monthNames[month]
+        } ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
         inquiryReservationQuick.children[0].classList.add('text-black');
 
         dayElement.classList.add('bg-blue-400');
@@ -858,7 +878,10 @@ function createDayElement(day, month, year, isToday) {
         selectedDate.dataset.day = day;
         selectedDate.dataset.month = month + 1;
         selectedDate.dataset.year = year;
-        inquiryReservationQuick.children[1].innerHTML = `<br>Click the button below ${getEmoji('👇', 12)} to reserve this date.`;
+        inquiryReservationQuick.children[1].innerHTML = `<br>Click the button below ${getEmoji(
+          '👇',
+          12
+        )} to reserve this date.`;
       } else {
         inquiryReservationQuick.children[0].innerHTML = `Reserve date:<p class="text-lg">${monthNames[month]} ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
         inquiryReservationQuick.children[0].classList.add('text-black');
@@ -888,6 +911,7 @@ function createDayElement(day, month, year, isToday) {
     selectedDate.dataset.day = day;
     selectedDate.dataset.month = month + 1;
     selectedDate.dataset.year = year;
+    dayElement.click();
   }
 
   return dayElement;
@@ -913,7 +937,7 @@ function updateReservationStats() {
     const statElements = Array.from(statElementsAll).filter((el) => !el.classList.contains('hidden'));
     if (!statElements || statElements.length < 2) return;
     const activeCount = getReservationCountForTab(2);
-    const totalCount = getReservationCountForTab(2);
+    const totalCount = activeCount + getReservationCountForTab(3);
     const activeEl = statElements[0]?.querySelector('.section-stats-c');
     const totalEl = statElements[1]?.querySelector('.section-stats-c');
     if (activeEl) activeEl.textContent = activeCount;
@@ -929,17 +953,129 @@ export function reserveCustomer() {
 }
 
 // Handles cancellation of pending payment transactions
-export function cancelPendingTransaction(transactionId) {}
+export async function cancelPendingTransaction(transactionId) {
+  await updateReservationFE(transactionId, { status: 'Canceled' });
+  loadExistingReservations();
+}
 
 // Completes the reservation payment process and updates status
-export function completeReservationPayment(transactionId) {
+export async function completeReservationPayment(transactionId) {
   main.showSection(SECTION_NAME, 2);
-  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, (findResult) => {
-    if (findResult) {
-      findResult.dataset.tid = '';
-      const { date, time, datetime } = main.getDateOrTimeOrBoth();
-      findResult.dataset.datetime = datetime;
-      findResult.children[4].innerHTML = datetime;
+  const { datetime } = main.getDateOrTimeOrBoth();
+  await updateReservationFE(transactionId, { status: 'Completed', tid: '', datetime });
+  loadExistingReservations();
+}
+
+function editReservation(reservation) {
+  const { id, customerId, customerName, reservationType, date, startTime, endTime, amount } = reservation;
+  const { fullName } = main.decodeName(customerName);
+
+  const inputs = {
+    header: {
+      title: `Edit Reservation ${getEmoji('📅', 26)}`,
+      subtitle: 'Update reservation details below',
+    },
+    short: [
+      { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
+      { placeholder: 'Amount to pay', value: main.encodePrice(amount), locked: true },
+      {
+        placeholder: 'Reservation date (mm-dd-yyyy)',
+        value: date,
+        required: true,
+        calendar: true,
+      },
+      {
+        placeholder: 'Start time',
+        value: startTime,
+        required: true,
+        type: 'time',
+        listener: (input, container) => {
+          try {
+            const start = input.value;
+            if (!/^\d{2}:\d{2}$/.test(start)) return;
+
+            const durationSelect = container.querySelector('select');
+            const selectedDuration = DURATION_OPTIONS[durationSelect.selectedIndex - 1]?.value || 1;
+            updatePriceDisplay(selectedDuration, start, container);
+          } catch (e) {
+            console.error(e);
+          }
+        },
+      },
+      {
+        placeholder: 'End time',
+        value: endTime,
+        required: true,
+        type: 'time',
+      },
+    ],
+    spinner: [
+      {
+        label: 'Time duration',
+        placeholder: 'Select duration',
+        selected:
+          DURATION_OPTIONS.findIndex((d) => {
+            const start = new Date(`1970-01-01T${startTime}`);
+            const end = new Date(`1970-01-01T${endTime}`);
+            return d.value === (end - start) / (1000 * 60 * 60);
+          }) + 1,
+        required: true,
+        options: DURATION_OPTIONS,
+        listener: (selectedIndex, container) => {
+          const selectedDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 1;
+          const startInput = container.querySelector('#input-short-3'); // Corrected a bug here
+          const startTimeValue = startInput?.value || '';
+
+          updatePriceDisplay(selectedDuration, startTimeValue, container);
+
+          if (!startInput || !startInput.value) return;
+
+          const start = startInput.value;
+          if (!/^\d{2}:\d{2}$/.test(start)) return;
+
+          const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+          const endMinutes = (h * 60 + m + selectedDuration * 60) % 1440;
+          const endH = Math.floor(endMinutes / 60)
+            .toString()
+            .padStart(2, '0');
+          const endM = (endMinutes % 60).toString().padStart(2, '0');
+
+          const endInput = container.querySelector('#input-short-4'); // Corrected a bug here
+          if (endInput) {
+            endInput.value = `${endH}:${endM}`;
+            endInput.dispatchEvent(new Event('input'));
+          }
+        },
+      },
+      {
+        label: 'Reservation type',
+        placeholder: 'Select reservation type',
+        selected: RESERVATION_TYPES.findIndex((type) => type.value === reservationType) + 1,
+        required: true,
+        options: RESERVATION_TYPES,
+      },
+    ],
+    footer: {
+      main: `Update ${getEmoji('📅')}`,
+    },
+  };
+
+  main.openModal('orange', async (result) => {
+    const updatedData = {
+      date: result.short[2].value,
+      startTime: result.short[3].value,
+      endTime: result.short[4].value,
+      reservationType: main.getSelectedSpinner(result.spinner[1]), // Corrected a bug here
+      amount: main.decodePrice(result.short[1].value),
+    };
+
+    try {
+      await updateReservationFE(id, updatedData);
+      main.toast('Reservation updated successfully!', 'success');
+      main.closeModal();
+      loadExistingReservations();
+    } catch (error) {
+      main.toast(`Error updating reservation: ${error.message}`, 'error');
     }
   });
 }

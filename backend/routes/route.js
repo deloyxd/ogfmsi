@@ -18,6 +18,7 @@ const ecommerceUtilsRoute = require('./ecommerce.utils.route');
 const inquiryCustomers = require('./inquiry.customer.route');
 const inquiryMonthly = require('./inquiry.monthly.route');
 const inquiryCheckins = require('./inquiry.checkins.route');
+const inquiryReservations = require('./inquiry.reservations.route');
 
 // For payment route
 const paymentPendingRoute = require('./payment.pending.route');
@@ -47,6 +48,7 @@ router.use('/ecommerce', ecommerceUtilsRoute);
 router.use('/inquiry', inquiryCustomers);
 router.use('/inquiry', inquiryMonthly);
 router.use('/inquiry', inquiryCheckins);
+router.use('/inquiry', inquiryReservations);
 
 // API URL: (host):(port)/api/payment
 router.use('/payment', paymentPendingRoute);
