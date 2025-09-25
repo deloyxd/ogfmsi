@@ -586,8 +586,8 @@ async function loadSectionSilently(sectionName) {
 
                 return order === 'ascending' ? comparison : -comparison;
               } else if (type === 'date') {
-                valueA = new Date(cellA.innerText.trim());
-                valueB = new Date(cellB.innerText.trim());
+                valueA = new Date(cellA.innerText.trim().replace(" - ", " "));
+                valueB = new Date(cellB.innerText.trim().replace(" - ", " "));
 
                 if (isNaN(valueA.getTime()) && isNaN(valueB.getTime())) return 0;
                 if (isNaN(valueA.getTime())) return 1;
