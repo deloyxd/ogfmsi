@@ -105,10 +105,77 @@ async function loadDynamicSidebar() {
   });
 
   document.getElementById('sidebar-body').appendChild(ul);
+
+  applyUserSidebarPreferences(ul);
+  // Re-apply on preferences change
+  document.addEventListener('ogfmsiPreferencesUpdated', () => applyUserSidebarPreferences(ul));
 }
 
 async function loadDynamicModal() {
   const response = await fetch('admin_modal.html');
   const html = await response.text();
   document.getElementById('admin_modal').innerHTML = html;
+}
+
+function getUserPrefs() {
+  try {
+    return (
+      JSON.parse(localStorage.getItem('ogfmsi_user_prefs')) || {
+        hiddenSections: [],
+        compactSidebar: false,
+        timeFormat: '12h',
+        dateFormat: 'MM-DD-YYYY',
+        baseFontSize: 'normal',
+        rememberLast: true,
+      }
+    );
+  } catch (_e) {
+    return { hiddenSections: [], compactSidebar: false, timeFormat: '12h', dateFormat: 'MM-DD-YYYY', baseFontSize: 'normal', rememberLast: true };
+  }
+}
+
+function applyUserSidebarPreferences(ulEl) {
+  const prefs = getUserPrefs();
+  const hidden = new Set(prefs.hiddenSections || []);
+
+  // Toggle visibility of main and sub buttons
+  const allButtons = document.querySelectorAll('.sidebar-main-btn, .sidebar-sub-btn');
+  allButtons.forEach((btn) => {
+    const key = btn.dataset.section;
+    if (!key) return;
+    if (key === 'settings' || key === 'dashboard') {
+      btn.classList.remove('hidden');
+      return;
+    }
+    if (hidden.has(key.split('-')[0]) || hidden.has(key)) {
+      btn.classList.add('hidden');
+    } else {
+      btn.classList.remove('hidden');
+    }
+  });
+
+  // Compact sidebar styling 
+  try {
+    if (prefs.compactSidebar) {
+      ulEl.classList.replace('space-y-2', 'space-y-1');
+      ulEl.classList.replace('px-4', 'px-2');
+      document.getElementById('sidebar-body')?.classList.add('text-sm');
+    } else {
+      ulEl.classList.replace('space-y-1', 'space-y-2');
+      ulEl.classList.replace('px-2', 'px-4');
+      document.getElementById('sidebar-body')?.classList.remove('text-sm');
+    }
+  } catch (_e) {}
+
+  // Base font size application
+  try {
+    const body = document.body;
+    body.classList.remove('text-base');
+    body.classList.remove('text-[17px]');
+    if (prefs.baseFontSize === 'large') {
+      body.classList.add('text-[17px]');
+    } else {
+      body.classList.add('text-base');
+    }
+  } catch (_e) {}
 }
