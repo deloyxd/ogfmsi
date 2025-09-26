@@ -2,6 +2,7 @@ import main from '../admin_main.js';
 import checkins from './inquiry_checkins.js';
 import reservations from './inquiry_reservations.js';
 import payments from './payments.js';
+import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'inquiry-customers';
@@ -602,6 +603,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
           customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
         );
         updateCustomerStats();
+        refreshDashboardStats();
 
         const [customer_id, customer_image_url, customer_contact, customerType, customerPriceRate] = [
           createResult.dataset.id,
@@ -712,6 +714,7 @@ async function updateCustomer(newData, oldData, tabIndex) {
     console.error('Error updating customer:', error);
   }
   updateCustomerStats();
+  refreshDashboardStats();
 }
 
 function autoChangeButtonText(title, button, text) {
@@ -1107,6 +1110,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
             console.error('Error updating customer:', error);
           }
           updateCustomerStats();
+          refreshDashboardStats();
         });
 
         main.showSection(SECTION_NAME, 2);
