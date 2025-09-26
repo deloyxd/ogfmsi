@@ -55,7 +55,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   pendingPayment.payment_purpose,
                   main.formatPrice(pendingPayment.payment_amount_to_pay),
                   main.fixText(pendingPayment.payment_rate),
-                  'custom_datetime_' + main.encodeDate(pendingPayment.created_at, 'long'),
+                  'custom_datetime_' + main.encodeDate(pendingPayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
                 ],
                 1,
                 (createResult) => {
@@ -131,10 +131,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       main.formatPrice(completePayment.payment_amount_change),
                       main.fixText(completePayment.payment_rate),
                       main.fixText(completePayment.payment_method),
-                      `${main.encodeDate(completePayment.created_at, 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                      `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                     ],
                   },
-                  `${main.encodeDate(completePayment.created_at, 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                  `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                 ],
                 3,
                 (createResult) => {

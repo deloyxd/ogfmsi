@@ -387,7 +387,7 @@ async function loadExistingReservations() {
       });
     });
     updateReservationStats();
-  refreshDashboardStats();
+    refreshDashboardStats();
     render();
     // } catch (error) {
     //   main.toast(`Error loading reservations: ${error.message}`, 'error');

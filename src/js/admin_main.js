@@ -1681,7 +1681,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
         const type = lowerColumn.split('_')[1];
         if (lowerColumn.includes('today')) {
           if (['date', 'time', 'datetime'].includes(type)) {
-            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateOptions = { year: 'numeric', month: getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long', day: 'numeric' };
             const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
 
             let value = '';
@@ -1954,7 +1954,7 @@ export function updateDateAndTime() {
   }
 }
 
-function getUserPrefs() {
+export function getUserPrefs() {
   try {
     return (
       JSON.parse(localStorage.getItem('ogfmsi_user_prefs')) || {
@@ -2079,6 +2079,7 @@ export default {
   deleteAllAtSectionTwo,
   createNotifDot,
   removeRedDot,
+  getUserPrefs,
 
   // inquiry-customer
   encodeName,
