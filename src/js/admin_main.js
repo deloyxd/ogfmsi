@@ -709,6 +709,14 @@ export async function showSection(sectionName, tabIndex = 1) {
 
   sharedState.activeTab = tabIndex;
 
+  // Remember last opened section/tab if enabled
+  try {
+    const prefs = getUserPrefs();
+    if (prefs.rememberLast) {
+      localStorage.setItem('ogfmsi_last_open', JSON.stringify({ sectionName, tabIndex }));
+    }
+  } catch (_e) {}
+
   const sections = document.querySelectorAll('.section');
   sections.forEach((section) => {
     section.classList.add('hidden');
@@ -1921,8 +1929,18 @@ export function decodeTime(time, offsetHours = 0) {
 
 export function getDateOrTimeOrBoth() {
   const now = new Date();
-  const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const prefs = getUserPrefs();
+
+  // Time format
+  const hour12 = prefs.timeFormat === '12h';
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12 });
+
+  // Date format
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const date = prefs.dateFormat === 'DD-MM-YYYY' ? `${dd}-${mm}-${yyyy}` : `${mm}-${dd}-${yyyy}`;
+
   return { date, time, datetime: `${date} - ${time}` };
 }
 
@@ -1933,6 +1951,23 @@ export function updateDateAndTime() {
   if (liveDate) {
     liveDate.classList.add('skew-x-12', 'text-white', 'emoji');
     liveDate.innerHTML = `${getEmoji('📅')} ${date} ${getEmoji('⌚')} ${time}`;
+  }
+}
+
+function getUserPrefs() {
+  try {
+    return (
+      JSON.parse(localStorage.getItem('ogfmsi_user_prefs')) || {
+        hiddenSections: [],
+        compactSidebar: false,
+        timeFormat: '12h',
+        dateFormat: 'MM-DD-YYYY',
+        baseFontSize: 'normal',
+        rememberLast: true,
+      }
+    );
+  } catch (_e) {
+    return { hiddenSections: [], compactSidebar: false, timeFormat: '12h', dateFormat: 'MM-DD-YYYY', baseFontSize: 'normal', rememberLast: true };
   }
 }
 
@@ -2120,14 +2155,36 @@ async function showLoadingAndPreloadSections() {
     setTimeout(() => {
       loadingOverlay.remove();
     }, 300);
-    showSection('dashboard');
+    // Restore last opened section/tab if enabled
+    try {
+      const prefs = getUserPrefs();
+      const saved = JSON.parse(localStorage.getItem('ogfmsi_last_open') || 'null');
+      if (prefs.rememberLast && saved && sectionNames.includes(saved.sectionName)) {
+        showSection(saved.sectionName, saved.tabIndex || 1);
+      } else {
+        showSection('dashboard');
+      }
+    } catch (_e) {
+      showSection('dashboard');
+    }
   } catch (error) {
     console.error('Error loading sections:', error);
     loadingOverlay.classList.add('opacity-0');
     setTimeout(() => {
       loadingOverlay.remove();
     }, 300);
-    showSection('dashboard');
+    // Fallback on error
+    try {
+      const prefs = getUserPrefs();
+      const saved = JSON.parse(localStorage.getItem('ogfmsi_last_open') || 'null');
+      if (prefs.rememberLast && saved && sectionNames.includes(saved.sectionName)) {
+        showSection(saved.sectionName, saved.tabIndex || 1);
+      } else {
+        showSection('dashboard');
+      }
+    } catch (_e) {
+      showSection('dashboard');
+    }
   }
 }
 

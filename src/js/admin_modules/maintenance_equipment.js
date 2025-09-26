@@ -32,6 +32,8 @@ window.saveEquipmentDetails = async () => {
   try {
     const equipmentName = document.getElementById('equipmentNameInput').value.trim();
     const equipmentNotes = document.getElementById('equipmentNotesInput').value.trim();
+    const equipmentTypeSelect = document.getElementById('equipmentTypeSelect');
+    const equipmentType = equipmentTypeSelect ? equipmentTypeSelect.value : (document.getElementById('individualItemsModal').dataset.equipmentType || 'machine');
 
     if (!equipmentName) {
       main.toast('Equipment name is required', 'error');
@@ -44,12 +46,14 @@ window.saveEquipmentDetails = async () => {
     const originalName = modal.dataset.originalName || '';
     const originalNotes = modal.dataset.originalNotes || '';
     const originalImageUrl = modal.dataset.currentImageUrl || '';
+    const originalType = modal.dataset.equipmentType || 'machine';
 
     const hasNameChange = equipmentName !== originalName;
     const hasNotesChange = equipmentNotes !== originalNotes;
     const hasImageChange = imageUrl !== originalImageUrl;
+    const hasTypeChange = equipmentType !== originalType;
 
-    if (!hasNameChange && !hasNotesChange && !hasImageChange) {
+    if (!hasNameChange && !hasNotesChange && !hasImageChange && !hasTypeChange) {
       main.toast('No changes detected. Please make changes before saving.', 'warning');
       return;
     }
@@ -58,7 +62,7 @@ window.saveEquipmentDetails = async () => {
       equipment_name: equipmentName,
       image_url: imageUrl,
       notes: equipmentNotes,
-      equipment_type: modal.dataset.equipmentType || 'machine',
+      equipment_type: equipmentType,
       total_quantity: parseInt(modal.dataset.totalQuantity) || 1,
       general_status: modal.dataset.generalStatus || 'All Available',
     };
@@ -91,12 +95,21 @@ window.saveEquipmentDetails = async () => {
         if (statusElement) {
           statusElement.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imageUrl || '/src/images/client_logo.jpg'}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName}')"><span>${equipmentName}</span></div>`;
         }
+        const typeCell = row.querySelector('td:nth-child(4)');
+        if (typeCell) {
+          typeCell.textContent = equipmentType;
+        }
       }
       refreshIndividualItemsSection(equipmentId, equipmentName);
 
       setTimeout(() => {
         window.closeIndividualItemsModal();
       }, 500);
+      // persist new originals for subsequent edits in same session
+      modal.dataset.originalName = equipmentName;
+      modal.dataset.originalNotes = equipmentNotes;
+      modal.dataset.currentImageUrl = imageUrl || '';
+      modal.dataset.equipmentType = equipmentType;
     } else {
       console.error('Update failed:', result);
       main.toast(`Error: ${result.error || 'Unknown server error'}`, 'error');
@@ -607,7 +620,19 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
                 </div>
               </div>
             </div>
-            
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Machine Type</label>
+                <select id="equipmentTypeSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <option value="machine" ${equipment.equipment_type === 'machine' ? 'selected' : ''}>Machine</option>
+                  <option value="non-machine" ${equipment.equipment_type === 'non-machine' ? 'selected' : ''}>Non-Machine</option>
+                  <option value="plates" ${equipment.equipment_type === 'plates' ? 'selected' : ''}>Plates</option>
+                  <option value="weights" ${equipment.equipment_type === 'weights' ? 'selected' : ''}>Weights</option>
+                </select>
+              </div>
+            </div>
+
             <div class="mt-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea id="equipmentNotesInput" rows="3" 
