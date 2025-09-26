@@ -3,6 +3,7 @@ import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import payments from './payments.js';
 import accesscontrol from './maintenance_accesscontrol.js';
+import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'inquiry-reservations';
@@ -325,6 +326,7 @@ function cleanupExpiredReservations() {
     return reservationEnd > now;
   });
   updateReservationStats();
+  refreshDashboardStats();
 }
 
 async function loadExistingReservations() {
@@ -385,6 +387,7 @@ async function loadExistingReservations() {
       });
     });
     updateReservationStats();
+  refreshDashboardStats();
     render();
     // } catch (error) {
     //   main.toast(`Error loading reservations: ${error.message}`, 'error');
@@ -423,6 +426,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   }
   render();
   updateReservationStats();
+  refreshDashboardStats();
 });
 
 // Main section button handler
@@ -760,6 +764,7 @@ function render() {
   renderHeader();
   renderCalendar();
   updateReservationStats();
+  refreshDashboardStats();
 }
 
 // Updates the calendar header with current month and year

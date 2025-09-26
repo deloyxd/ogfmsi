@@ -12,6 +12,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   subBtn.addEventListener('click', subBtnFunction);
   setupChartOne();
   setupChartTwo();
+  loadDashboardStats(); // Load dashboard stats
 });
 
 document.addEventListener('newTab', function () {
@@ -25,6 +26,8 @@ document.addEventListener('newTab', function () {
       loadMonthlyGrowthData();
     }
   }
+  // Refresh dashboard stats when switching tabs
+  refreshDashboardStats();
 });
 
 const maxAnnouncementCount = 3;
@@ -215,12 +218,12 @@ async function setupChartOne() {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
+    const response = await fetch(`${API_BASE_URL}/inquiry/monthly`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    const monthlyData = processCustomerDataForChart(data.result);
+    const monthlyData = processMonthlyDataForChart(data.result);
     
     setTimeout(() => {
       new Chart(context, {
@@ -365,16 +368,21 @@ async function setupChartTwo() {
   }
 }
 
-// Processes customer data into monthly counts
-function processCustomerDataForChart(customers) {
+// Processes monthly pass data into counts of ACTIVE passes per start month
+function processMonthlyDataForChart(monthlyPasses) {
   const monthlyCounts = {
     '01': 0, '02': 0, '03': 0, '04': 0, '05': 0, '06': 0,
     '07': 0, '08': 0, '09': 0, '10': 0, '11': 0, '12': 0
   };
   
-  customers.forEach(customer => {
-    const registrationDate = new Date(customer.created_at);
-    const month = String(registrationDate.getMonth() + 1).padStart(2, '0');
+  if (!Array.isArray(monthlyPasses)) return Object.values(monthlyCounts);
+  
+  monthlyPasses.forEach(pass => {
+    // Only count active passes
+    if (Number(pass.customer_pending) !== 0) return;
+    const startDate = new Date(pass.customer_start_date);
+    if (isNaN(startDate.getTime())) return;
+    const month = String(startDate.getMonth() + 1).padStart(2, '0');
     monthlyCounts[month]++;
   });
   
@@ -404,12 +412,12 @@ function processCustomerRateData(customers) {
 // Loads monthly customer growth data
 async function loadMonthlyGrowthData() {
   try {
-    const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
+    const response = await fetch(`${API_BASE_URL}/inquiry/monthly`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    const monthlyData = processCustomerDataForChart(data.result);
+    const monthlyData = processMonthlyDataForChart(data.result);
     
     const contentContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="1"]');
     if (contentContainer) {
@@ -576,4 +584,206 @@ async function loadUpcomingRenewals() {
 // Handles customer renewal actions
 function handleRenewal(customerId) {
   main.toast(`Renewal process initiated for customer ${customerId}`, 'info');
+}
+
+// ===== Dashboard Stats Calculation =====
+
+// Cache for dashboard stats data
+let dashboardStatsCache = {
+  payments: [],
+  monthlyCustomers: [],
+  reservations: []
+};
+
+// Fetches and processes all dashboard stats data
+async function loadDashboardStats() {
+  try {
+    // Fetch payment data for earnings calculations
+    const paymentsResponse = await fetch(`${API_BASE_URL}/payment/complete`);
+    
+    if (!paymentsResponse.ok) {
+      throw new Error(`HTTP error! status: ${paymentsResponse.status}`);
+    }
+
+    const paymentsData = await paymentsResponse.json();
+    dashboardStatsCache.payments = Array.isArray(paymentsData.result) ? paymentsData.result : [];
+
+    // Calculate and update stats
+    computeAndUpdateDashboardStats();
+  } catch (error) {
+    console.error('Failed to load dashboard stats:', error);
+    // Set default values on error
+    updateDashboardStatsDisplay({
+      avg_daily_earnings: 0,
+      avg_weekly_earnings: 0,
+      avg_monthly_earnings: 0,
+      active_monthly_customers: 0,
+      active_reservations: 0
+    });
+  }
+}
+
+// Computes dashboard stats from cached data
+function computeAndUpdateDashboardStats() {
+  const stats = {
+    avg_daily_earnings: calculateAverageDailyEarnings(dashboardStatsCache.payments),
+    avg_weekly_earnings: calculateAverageWeeklyEarnings(dashboardStatsCache.payments),
+    avg_monthly_earnings: calculateAverageMonthlyEarnings(dashboardStatsCache.payments),
+    active_monthly_customers: getActiveMonthlyCustomersCount(),
+    active_reservations: getActiveReservationsCount()
+  };
+
+  updateDashboardStatsDisplay(stats);
+}
+
+// Calculates average daily earnings from payment data
+function calculateAverageDailyEarnings(payments) {
+  if (!Array.isArray(payments) || payments.length === 0) return 0;
+
+  const dayTotals = new Map(); // key: YYYY-M-D -> sum
+
+  payments.forEach(payment => {
+    if (!payment) return;
+    const created = new Date(payment.created_at || payment.createdAt || Date.now());
+    const keyDay = [created.getFullYear(), created.getMonth(), created.getDate()].join('-');
+    
+    const paidCash = Number(payment.payment_amount_paid_cash) || 0;
+    const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
+    const totalPaid = paidCash + paidCashless;
+
+    dayTotals.set(keyDay, (dayTotals.get(keyDay) || 0) + totalPaid);
+  });
+
+  const values = Array.from(dayTotals.values());
+  if (values.length === 0) return 0;
+  const sum = values.reduce((a, b) => a + b, 0);
+  return sum / values.length;
+}
+
+// Calculates average weekly earnings from payment data
+function calculateAverageWeeklyEarnings(payments) {
+  if (!Array.isArray(payments) || payments.length === 0) return 0;
+
+  const weekTotals = new Map(); // key: YYYY-W -> sum (ISO week)
+
+  payments.forEach(payment => {
+    if (!payment) return;
+    const created = new Date(payment.created_at || payment.createdAt || Date.now());
+    const isoWeek = getIsoWeek(created);
+    const keyWeek = [created.getFullYear(), isoWeek].join('-');
+    
+    const paidCash = Number(payment.payment_amount_paid_cash) || 0;
+    const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
+    const totalPaid = paidCash + paidCashless;
+
+    weekTotals.set(keyWeek, (weekTotals.get(keyWeek) || 0) + totalPaid);
+  });
+
+  const values = Array.from(weekTotals.values());
+  if (values.length === 0) return 0;
+  const sum = values.reduce((a, b) => a + b, 0);
+  return sum / values.length;
+}
+
+// Calculates average monthly earnings from payment data
+function calculateAverageMonthlyEarnings(payments) {
+  if (!Array.isArray(payments) || payments.length === 0) return 0;
+
+  const monthTotals = new Map(); // key: YYYY-M -> sum
+
+  payments.forEach(payment => {
+    if (!payment) return;
+    const created = new Date(payment.created_at || payment.createdAt || Date.now());
+    const keyMonth = [created.getFullYear(), created.getMonth()].join('-');
+    
+    const paidCash = Number(payment.payment_amount_paid_cash) || 0;
+    const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
+    const totalPaid = paidCash + paidCashless;
+
+    monthTotals.set(keyMonth, (monthTotals.get(keyMonth) || 0) + totalPaid);
+  });
+
+  const values = Array.from(monthTotals.values());
+  if (values.length === 0) return 0;
+  const sum = values.reduce((a, b) => a + b, 0);
+  return sum / values.length;
+}
+
+// Gets active monthly customers count from DOM (same logic as inquiry_customers.js)
+function getActiveMonthlyCustomersCount() {
+  try {
+    const emptyText = document.getElementById('inquiry-customersSectionOneListEmpty2');
+    if (!emptyText) return 0;
+    const items = emptyText.parentElement.parentElement.children;
+    return Math.max(0, items.length - 1);
+  } catch (error) {
+    console.error('Error counting active monthly customers:', error);
+    return 0;
+  }
+}
+
+// Gets active reservations count from DOM (same logic as inquiry_customers.js)
+function getActiveReservationsCount() {
+  try {
+    const emptyText = document.getElementById('inquiry-reservationsSectionOneListEmpty2');
+    if (!emptyText) return 0;
+    const items = emptyText.parentElement.parentElement.children;
+    return Math.max(0, items.length - 1);
+  } catch (error) {
+    console.error('Error counting active reservations:', error);
+    return 0;
+  }
+}
+
+// Updates dashboard stats display
+function updateDashboardStatsDisplay(stats) {
+  try {
+    const statElements = document.querySelectorAll('#dashboardSectionStats');
+    if (!statElements || statElements.length < 1) return;
+
+    statElements.forEach((card) => {
+      const header = card.querySelector('.section-stats-h');
+      const valueEl = card.querySelector('.section-stats-c');
+      if (!header || !valueEl) return;
+      
+      const label = (header.textContent || '').toLowerCase();
+      
+      if (label.includes('daily') && label.includes('earning')) {
+        valueEl.textContent = main.encodePrice(stats.avg_daily_earnings || 0);
+      } else if (label.includes('weekly') && label.includes('earning')) {
+        valueEl.textContent = main.encodePrice(stats.avg_weekly_earnings || 0);
+      } else if (label.includes('monthly') && label.includes('earning')) {
+        valueEl.textContent = main.encodePrice(stats.avg_monthly_earnings || 0);
+      } else if (label.includes('monthly') && label.includes('customer')) {
+        valueEl.textContent = stats.active_monthly_customers || 0;
+      } else if (label.includes('reservation')) {
+        valueEl.textContent = stats.active_reservations || 0;
+      }
+    });
+  } catch (error) {
+    console.error('Error updating dashboard stats display:', error);
+  }
+}
+
+// Helper function to get ISO week number
+function getIsoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return weekNo;
+}
+
+// Refreshes dashboard stats (called when new payments are added)
+export function refreshDashboardStats() {
+  const stats = {
+    avg_daily_earnings: calculateAverageDailyEarnings(dashboardStatsCache.payments),
+    avg_weekly_earnings: calculateAverageWeeklyEarnings(dashboardStatsCache.payments),
+    avg_monthly_earnings: calculateAverageMonthlyEarnings(dashboardStatsCache.payments),
+    active_monthly_customers: getActiveMonthlyCustomersCount(),
+    active_reservations: getActiveReservationsCount()
+  };
+
+  updateDashboardStatsDisplay(stats);
 }

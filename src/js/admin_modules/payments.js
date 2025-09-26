@@ -1,6 +1,7 @@
 import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import reservations from './inquiry_reservations.js';
+import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'payments';
@@ -487,6 +488,8 @@ function completePayment(type,id, image, customerId, purpose, fullName, amountTo
             created_at: nowIso,
           });
           computeAndUpdatePaymentStats(completedPaymentsCache);
+          // Refresh dashboard stats when new payment is completed
+          refreshDashboardStats();
         } catch (_) {}
       } catch (error) {
         console.error('Error creating complete payment:', error);
