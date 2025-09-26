@@ -586,8 +586,8 @@ async function loadSectionSilently(sectionName) {
 
                 return order === 'ascending' ? comparison : -comparison;
               } else if (type === 'date') {
-                valueA = new Date(cellA.innerText.trim().replace(" - ", " "));
-                valueB = new Date(cellB.innerText.trim().replace(" - ", " "));
+                valueA = new Date(cellA.innerText.trim().replace(' - ', ' '));
+                valueB = new Date(cellB.innerText.trim().replace(' - ', ' '));
 
                 if (isNaN(valueA.getTime()) && isNaN(valueB.getTime())) return 0;
                 if (isNaN(valueA.getTime())) return 1;
@@ -1681,7 +1681,11 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
         const type = lowerColumn.split('_')[1];
         if (lowerColumn.includes('today')) {
           if (['date', 'time', 'datetime'].includes(type)) {
-            const dateOptions = { year: 'numeric', month: getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long', day: 'numeric' };
+            const dateOptions = {
+              year: 'numeric',
+              month: getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long',
+              day: 'numeric',
+            };
             const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
 
             let value = '';
@@ -1836,6 +1840,15 @@ export function deleteAtSectionTwo(sectionName, id) {
   }
 }
 
+export function deleteAllAtSectionOne(sectionName, tabIndex) {
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  emptyText.parentElement.classList.remove('hidden');
+  const items = emptyText.parentElement.parentElement.children;
+  for (let i = 1; i < items.length; i++) {
+    items[i].remove();
+  }
+}
+
 export function deleteAllAtSectionTwo(sectionName) {
   const emptyText = document.getElementById(`${sectionName}SectionTwoListEmpty`);
   emptyText.classList.remove('hidden');
@@ -1967,7 +1980,14 @@ export function getUserPrefs() {
       }
     );
   } catch (_e) {
-    return { hiddenSections: [], compactSidebar: false, timeFormat: '12h', dateFormat: 'MM-DD-YYYY', baseFontSize: 'normal', rememberLast: true };
+    return {
+      hiddenSections: [],
+      compactSidebar: false,
+      timeFormat: '12h',
+      dateFormat: 'MM-DD-YYYY',
+      baseFontSize: 'normal',
+      rememberLast: true,
+    };
   }
 }
 
@@ -1994,7 +2014,11 @@ export function encodePrice(price) {
 }
 
 export function decodePrice(price) {
-  return Number(String(price).replace(/<[^>]*>/g, '').replace(/[^\d.-]/g, '')).toString();
+  return Number(
+    String(price)
+      .replace(/<[^>]*>/g, '')
+      .replace(/[^\d.-]/g, '')
+  ).toString();
 }
 
 export function formatPrice(price) {
@@ -2076,6 +2100,7 @@ export default {
   updateAtSectionOne,
   deleteAtSectionOne,
   deleteAtSectionTwo,
+  deleteAllAtSectionOne,
   deleteAllAtSectionTwo,
   createNotifDot,
   removeRedDot,

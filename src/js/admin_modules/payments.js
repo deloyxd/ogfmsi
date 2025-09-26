@@ -55,7 +55,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   pendingPayment.payment_purpose,
                   main.formatPrice(pendingPayment.payment_amount_to_pay),
                   main.fixText(pendingPayment.payment_rate),
-                  'custom_datetime_' + main.encodeDate(pendingPayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
+                  'custom_datetime_' +
+                    main.encodeDate(
+                      pendingPayment.created_at,
+                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                    ),
                 ],
                 1,
                 (createResult) => {
@@ -119,8 +123,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 [
                   'id_' + completePayment.payment_id,
                   {
-                    type:
-                      'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                     data: [
                       customerImage,
                       customerIdSafe,
@@ -173,7 +176,7 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(
-                      'customers',
+        'customers',
         createResult.dataset.id,
         createResult.dataset.image,
         createResult.dataset.text,
@@ -227,7 +230,7 @@ export function continueProcessCheckinPayment(transactionId, fullName) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
       completePayment(
-                      'customers',
+        'customers',
         findResult.dataset.id,
         findResult.dataset.image,
         findResult.dataset.text,
@@ -334,7 +337,7 @@ function activeRadioListener(title, input, container, inputGroup) {
   attachSelectAll(cashlessInput);
 }
 
-function completePayment(type,id, image, customerId, purpose, fullName, amountToPay, priceRate) {
+function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate) {
   const inputs = {
     header: {
       title: `Transaction ID: ${id} ${getEmoji('🔏', 26)}`,
@@ -418,8 +421,7 @@ function completePayment(type,id, image, customerId, purpose, fullName, amountTo
     const columnsData = [
       'id_' + id,
       {
-        type:
-          'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+        type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
         data: [
           image,
           customerId,
@@ -450,11 +452,11 @@ function completePayment(type,id, image, customerId, purpose, fullName, amountTo
       main.closeModal(() => {
         switch (type) {
           case 'customers':
-        customers.completeCheckinPayment(id, amountPaid, priceRate);
-        break;
-        case 'reservations':
-        reservations.completeReservationPayment(id);
-        break;
+            customers.completeCheckinPayment(id, amountPaid, priceRate);
+            break;
+          case 'reservations':
+            reservations.completeReservationPayment(id);
+            break;
         }
       });
 
@@ -527,7 +529,7 @@ export function cancelCheckinPayment(transactionId) {
 }
 
 export function processReservationPayment(reservation, callback = () => {}) {
-  const { firstName, lastName, fullName} = main.decodeName(reservation.name);
+  const { firstName, lastName, fullName } = main.decodeName(reservation.name);
   const purpose = `Reservation fee`;
   const columnsData = [
     'id_T_random',
@@ -540,11 +542,11 @@ export function processReservationPayment(reservation, callback = () => {}) {
     'Regular',
     'custom_datetime_today',
   ];
-  main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+  main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(
-                      'reservations',
+        'reservations',
         createResult.dataset.id,
         createResult.dataset.image,
         createResult.dataset.text,
@@ -566,6 +568,30 @@ export function processReservationPayment(reservation, callback = () => {}) {
     });
     continueProcessReservationPayment(createResult.dataset.id, fullName);
     callback(createResult.dataset.id);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/pending`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_id: createResult.dataset.id,
+          payment_customer_id: createResult.dataset.text,
+          payment_purpose: purpose,
+          payment_amount_to_pay: reservation.amount,
+          payment_rate: 'Regular',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      await response.json();
+    } catch (error) {
+      console.error('Error creating pending payment:', error);
+    }
   });
 }
 
@@ -574,7 +600,7 @@ export function continueProcessReservationPayment(transactionId, fullName) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
       completePayment(
-                      'reservations',
+        'reservations',
         findResult.dataset.id,
         findResult.dataset.image,
         findResult.dataset.text,

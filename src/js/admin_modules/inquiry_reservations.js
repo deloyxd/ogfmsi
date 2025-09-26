@@ -333,26 +333,28 @@ async function loadExistingReservations() {
   listenToReservationsFE((reservations) => {
     existingReservations = reservations;
 
-    main.getAllSectionOne(SECTION_NAME, 2, (items) => {
-      items.forEach((item) => item.remove());
-    });
-    main.getAllSectionOne(SECTION_NAME, 3, (items) => {
-      items.forEach((item) => item.remove());
-    });
+    main.deleteAllAtSectionOne(SECTION_NAME, 2);
 
     existingReservations.forEach((reservation) => {
       const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
       const { fullName } = main.decodeName(customerName);
+      let customerImage;
+
+      main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (findResult) => {
+        if (findResult) {
+          customerImage = findResult.dataset.image;
+        }
+      });
 
       const reservationEnd = new Date(`${date}T${endTime}`);
       const isPast = reservationEnd <= new Date();
       const tabIndex = isPast ? 3 : 2;
 
       const columnsData = [
-        id,
+        'id_' + id,
         {
           type: 'object_cid',
-          data: ['', fullName, customerId],
+          data: [customerImage, fullName, customerId],
         },
         RESERVATION_TYPES[reservationType].label,
         `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
@@ -684,25 +686,23 @@ function sectionTwoMainBtnFunction() {
             };
 
             try {
-              await createReservationFE(reservationData);
-              main.toast('Reservation created successfully!', 'success');
+              main.toast('Reservation is now ready for payment!', 'success');
               main.closeConfirmationModal();
-              main.closeModal(async () => {
-                payments.processReservationPayment(
-                  {
-                    id: reservationData.id,
-                    image: customer.dataset.image,
-                    name: customer.dataset.text,
-                    cid: customer.dataset.id,
-                    amount: reservationData.amount,
-                  },
-                  async (transactionId) => {
-                    await updateReservationFE(reservationData.id, { tid: transactionId });
-                    loadExistingReservations();
-                  }
-                );
-              });
-              loadExistingReservations();
+              main.closeModal();
+              await createReservationFE(reservationData);
+              payments.processReservationPayment(
+                {
+                  id: reservationData.id,
+                  image: customer.dataset.image,
+                  name: customer.dataset.text,
+                  cid: customer.dataset.id,
+                  amount: reservationData.amount,
+                },
+                async (transactionId) => {
+                  await updateReservationFE(reservationData.id, { tid: transactionId });
+                  loadExistingReservations();
+                }
+              );
             } catch (error) {
               main.toast(`Error creating reservation: ${error.message}`, 'error');
             }
@@ -959,16 +959,24 @@ export function reserveCustomer() {
 
 // Handles cancellation of pending payment transactions
 export async function cancelPendingTransaction(transactionId) {
-  await updateReservationFE(transactionId, { status: 'Canceled' });
-  loadExistingReservations();
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, async (findResult) => {
+    if (findResult) {
+      await updateReservationFE(findResult.dataset.id, { status: 'Canceled', tid: '' });
+      loadExistingReservations();
+    }
+  });
 }
 
 // Completes the reservation payment process and updates status
 export async function completeReservationPayment(transactionId) {
   main.showSection(SECTION_NAME, 2);
-  const { datetime } = main.getDateOrTimeOrBoth();
-  await updateReservationFE(transactionId, { status: 'Completed', tid: '', datetime });
-  loadExistingReservations();
+  const { date, time, datetime } = main.getDateOrTimeOrBoth();
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, async (findResult) => {
+    if (findResult) {
+      await updateReservationFE(findResult.dataset.id, { status: datetime, tid: '' });
+      loadExistingReservations();
+    }
+  });
 }
 
 function editReservation(reservation) {
