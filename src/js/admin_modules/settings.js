@@ -68,8 +68,6 @@ function renderPreferencesUI() {
   panel.innerHTML = `
     <div class="mb-5 flex items-center justify-between gap-2 font-bold">
       <div class="flex flex-col gap-1">
-        <p class="text-base font-bold">User Preferences</p>
-        <p class="text-xs text-gray-500">Choose modules and basic options</p>
       </div>
     </div>
     <div class="grid gap-3 lg:grid-cols-2">
