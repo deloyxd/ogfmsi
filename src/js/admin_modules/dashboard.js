@@ -218,12 +218,12 @@ async function setupChartOne() {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
+    const response = await fetch(`${API_BASE_URL}/inquiry/monthly`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    const monthlyData = processCustomerDataForChart(data.result);
+    const monthlyData = processMonthlyDataForChart(data.result);
     
     setTimeout(() => {
       new Chart(context, {
@@ -368,16 +368,21 @@ async function setupChartTwo() {
   }
 }
 
-// Processes customer data into monthly counts
-function processCustomerDataForChart(customers) {
+// Processes monthly pass data into counts of ACTIVE passes per start month
+function processMonthlyDataForChart(monthlyPasses) {
   const monthlyCounts = {
     '01': 0, '02': 0, '03': 0, '04': 0, '05': 0, '06': 0,
     '07': 0, '08': 0, '09': 0, '10': 0, '11': 0, '12': 0
   };
   
-  customers.forEach(customer => {
-    const registrationDate = new Date(customer.created_at);
-    const month = String(registrationDate.getMonth() + 1).padStart(2, '0');
+  if (!Array.isArray(monthlyPasses)) return Object.values(monthlyCounts);
+  
+  monthlyPasses.forEach(pass => {
+    // Only count active passes
+    if (Number(pass.customer_pending) !== 0) return;
+    const startDate = new Date(pass.customer_start_date);
+    if (isNaN(startDate.getTime())) return;
+    const month = String(startDate.getMonth() + 1).padStart(2, '0');
     monthlyCounts[month]++;
   });
   
@@ -407,12 +412,12 @@ function processCustomerRateData(customers) {
 // Loads monthly customer growth data
 async function loadMonthlyGrowthData() {
   try {
-    const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
+    const response = await fetch(`${API_BASE_URL}/inquiry/monthly`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    const monthlyData = processCustomerDataForChart(data.result);
+    const monthlyData = processMonthlyDataForChart(data.result);
     
     const contentContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="1"]');
     if (contentContainer) {
