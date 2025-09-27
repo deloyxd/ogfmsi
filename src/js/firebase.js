@@ -1,5 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+require('dotenv').config({ path: '../.env' });
 
 const firebaseConfig = {
   apiKey: process.env.API_KEY,
