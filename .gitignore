@@ -7,7 +7,6 @@ backend/node_modules/
 .env.local
 *.env*
 backend/serviceAccountKey.json
-/src/js/firebase.js
 
 # Logs
 logs/
