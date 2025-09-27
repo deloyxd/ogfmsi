@@ -181,6 +181,8 @@ function renderCheckinFromBackend(record, tabIndex) {
 }
 
 async function postCheckin(url, payload) {
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
   try {
     const resp = await fetch(url, {
       method: 'POST',
@@ -193,5 +195,7 @@ async function postCheckin(url, payload) {
     }
   } catch (error) {
     console.error('Check-in API request failed:', error);
+  } finally {
+    window.hideGlobalLoading?.();
   }
 }

@@ -432,6 +432,8 @@ async function updateProduct(result, newResult, name) {
     image_url: newResult.image.src,
   };
 
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
   try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/products/${result.dataset.id}`, {
       method: 'PUT',
@@ -473,11 +475,15 @@ async function updateProduct(result, newResult, name) {
   } catch (error) {
     console.error('Error updating product:', error);
     main.toast('Error: Failed to update product', 'error');
+  } finally {
+    window.hideGlobalLoading?.();
   }
 }
 
 async function deleteProduct(result) {
   main.openConfirmationModal(`Delete product: ${main.decodeText(result.dataset.text)}`, async () => {
+  main.sharedState.moduleLoad = SECTION_NAME;
+    window.showGlobalLoading?.();
     try {
       const response = await fetch(`${API_BASE_URL}/ecommerce/products/${result.dataset.id}`, {
         method: 'DELETE',
@@ -519,6 +525,8 @@ async function deleteProduct(result) {
     } catch (error) {
       console.error('Error deleting product:', error);
       main.toast('Error: Failed to delete product', 'error');
+    } finally {
+      window.hideGlobalLoading?.();
     }
   });
 }

@@ -1,12 +1,120 @@
 const sharedState = {
   sectionName: '',
   activeTab: 1,
+  moduleLoad: '',
   intervalId: null,
   reserveCustomerId: '',
 };
+ 
+export let { sectionName, activeTab, moduleLoad } = sharedState;
 
-export let { sectionName, activeTab } = sharedState;
+// Global loading overlay (admin modules use window.showGlobalLoading/window.hideGlobalLoading)
+let __globalLoadingCount = 0;
 
+function ensureGlobalLoadingOverlay() {
+  let overlay = document.getElementById('global-loading-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'global-loading-overlay';
+    overlay.setAttribute('aria-busy', 'true');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.display = 'none'; // hidden by default
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.background = 'rgba(0,0,0,0.35)';
+    overlay.style.backdropFilter = 'blur(2px)';
+    overlay.style.zIndex = '99999';
+    overlay.style.pointerEvents = 'all';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '12px';
+    wrapper.style.color = '#fff';
+    wrapper.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+    wrapper.style.fontWeight = '600';
+    wrapper.style.fontSize = '14px';
+
+    const spinner = document.createElement('div');
+    spinner.style.width = '40px';
+    spinner.style.height = '40px';
+    spinner.style.borderRadius = '50%';
+    spinner.style.border = '4px solid rgba(255,255,255,0.35)';
+    spinner.style.borderTopColor = '#fff';
+    spinner.style.animation = 'ogfmsi-gl-spin 1s linear infinite';
+
+    const text = document.createElement('div');
+    text.textContent = 'Loading...';
+
+    wrapper.appendChild(spinner);
+    wrapper.appendChild(text);
+    overlay.appendChild(wrapper);
+
+    // keyframes injection (once)
+    if (!document.getElementById('ogfmsi-global-loading-style')) {
+      const style = document.createElement('style');
+      style.id = 'ogfmsi-global-loading-style';
+      style.textContent = '@keyframes ogfmsi-gl-spin { to { transform: rotate(360deg); } }';
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(overlay);
+  }
+  return overlay;
+}
+
+export function showGlobalLoading() {
+  if (sharedState.moduleLoad === '') return
+  console.log('loading at:', sharedState.moduleLoad);
+  try {
+    const overlay = ensureGlobalLoadingOverlay();
+    __globalLoadingCount = Math.max(0, __globalLoadingCount) + 1;
+    if (__globalLoadingCount === 1) {
+      overlay.style.display = 'flex';
+    }
+  } catch (_e) {}
+}
+
+export function hideGlobalLoading() {
+  try {
+    const overlay = ensureGlobalLoadingOverlay();
+    __globalLoadingCount = Math.max(0, __globalLoadingCount - 1);
+    if (__globalLoadingCount === 0) {
+      overlay.style.display = 'none';
+    }
+  } catch (_e) {}
+}
+
+// attach to window for global fallback to avoid circular imports
+if (typeof window !== 'undefined') {
+  // Preserve existing if already defined
+  window.showGlobalLoading = window.showGlobalLoading || showGlobalLoading;
+  window.hideGlobalLoading = window.hideGlobalLoading || hideGlobalLoading;
+
+  // Patch fetch globally on admin pages to ensure every request bumps the counter
+  if (!window.__ogfmsiFetchPatched) {
+    const originalFetch = window.fetch?.bind(window);
+    if (originalFetch) {
+      window.fetch = (...args) => {
+        try {
+          window.showGlobalLoading?.();
+        } catch (_e) {}
+        return originalFetch(...args).finally(() => {
+          try {
+            window.hideGlobalLoading?.();
+          } catch (_e) {}
+        });
+      };
+      window.__ogfmsiFetchPatched = true;
+    }
+  }
+}
+ 
 function checkIfJsShouldNotRun(id) {
   let result = false;
   result = document.getElementById(id) == null;
@@ -2131,6 +2239,8 @@ export default {
   getSelectedSpinner,
   getSelectedOption,
   getSelectedRadio,
+  showGlobalLoading,
+  hideGlobalLoading,
 };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -2185,11 +2295,11 @@ async function showLoadingAndPreloadSections() {
     try {
       const prefs = getUserPrefs();
       const saved = JSON.parse(localStorage.getItem('ogfmsi_last_open') || 'null');
-      if (prefs.rememberLast && saved && sectionNames.includes(saved.sectionName)) {
-        showSection(saved.sectionName, saved.tabIndex || 1);
-      } else {
+      // if (prefs.rememberLast && saved && sectionNames.includes(saved.sectionName)) {
+      //   showSection(saved.sectionName, saved.tabIndex || 1);
+      // } else {
+      // }
         showSection('dashboard');
-      }
     } catch (_e) {
       showSection('dashboard');
     }

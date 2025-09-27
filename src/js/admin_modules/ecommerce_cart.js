@@ -104,6 +104,8 @@ function canAddToCart(productId, additionalQuantity) {
 }
 
 async function loadCartFromServer() {
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
   try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${sessionId}`);
     const data = await response.json();
@@ -127,6 +129,8 @@ async function loadCartFromServer() {
     }
   } catch (error) {
     console.error('Error loading cart:', error);
+  } finally {
+    window.hideGlobalLoading?.();
   }
 }
 
@@ -364,6 +368,8 @@ async function addToCart(product, quantity) {
 }
 
 async function updateCartItemQuantity(cartId, quantity) {
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
   try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
       method: 'PUT',
@@ -378,12 +384,16 @@ async function updateCartItemQuantity(cartId, quantity) {
     }
   } catch (error) {
     console.error('Error updating cart quantity:', error);
+  } finally {
+    window.hideGlobalLoading?.();
   }
 }
 
 function removeCartItem(cartId) {
   main.openConfirmationModal('Remove item added to cart.', () => {
     main.closeConfirmationModal(async () => {
+  main.sharedState.moduleLoad = SECTION_NAME;
+      window.showGlobalLoading?.();
       try {
         const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
           method: 'DELETE',
@@ -399,6 +409,8 @@ function removeCartItem(cartId) {
         }
       } catch (error) {
         console.error('Error removing cart item:', error);
+      } finally {
+        window.hideGlobalLoading?.();
       }
     });
   });
@@ -667,6 +679,8 @@ function cartPaymentRadioListener(title, input, container, inputGroup) {
 }
 
 async function updateProductStock(productId, soldQuantity) {
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
   try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}/stock`, {
       method: 'PUT',
@@ -687,6 +701,8 @@ async function updateProductStock(productId, soldQuantity) {
   } catch (error) {
     console.error('Error updating product stock:', error);
     throw error;
+  } finally {
+    window.hideGlobalLoading?.();
   }
 }
 
@@ -740,6 +756,8 @@ async function processCheckout() {
 
     const change = Number(main.decodePrice(result.short[3].value));
 
+  main.sharedState.moduleLoad = SECTION_NAME;
+    window.showGlobalLoading?.();
     try {
       // Create order
       const orderData = {
@@ -840,6 +858,8 @@ async function processCheckout() {
     } catch (error) {
       console.error('Error processing checkout:', error);
       main.toast('Error: Failed to process checkout', 'error');
+    } finally {
+      window.hideGlobalLoading?.();
     }
   });
 
