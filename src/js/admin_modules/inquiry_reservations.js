@@ -81,7 +81,14 @@ async function createReservation(reservation) {
 }
 
 async function createReservationFE(reservation) {
-  await setDoc(doc(db, 'reservations', reservation.id), reservation);
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
+  try {
+    await setDoc(doc(db, 'reservations', reservation.id), reservation);
+  } catch (e) {
+  } finally {
+    window.hideGlobalLoading?.();
+  }
 }
 
 async function readReservations() {
@@ -101,7 +108,14 @@ async function updateReservation(reservationId, updatedData) {
 }
 
 async function updateReservationFE(reservationId, updatedData) {
-  await updateDoc(doc(db, 'reservations', reservationId), updatedData);
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
+  try {
+    await updateDoc(doc(db, 'reservations', reservationId), updatedData);
+  } catch (e) {
+  } finally {
+    window.hideGlobalLoading?.();
+  }
 }
 
 async function deleteReservation(reservationId) {
@@ -112,7 +126,14 @@ async function deleteReservation(reservationId) {
 }
 
 async function deleteReservationFE(reservationId) {
-  await deleteDoc(doc(db, 'reservations', reservationId));
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
+  try {
+    await deleteDoc(doc(db, 'reservations', reservationId));
+  } catch (e) {
+  } finally {
+    window.hideGlobalLoading?.();
+  }
 }
 
 // -------------------------
