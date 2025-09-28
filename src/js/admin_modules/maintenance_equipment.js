@@ -1218,17 +1218,16 @@ function confirmDisposeItem(item) {
           <p class="text-xs">This action cannot be undone</p>
         </div>
         <div class="p-6">
-          <div class="mb-4">
-            <p class="text-gray-700 mb-2">Type <span class="font-bold text-red-600">"confirm"</span> to dispose:</p>
+          <div class="mb-6">
+            <p class="text-gray-700 mb-4 text-center">Are you sure you want to dispose this item?</p>
             <div class="bg-gray-100 p-3 rounded-md">
               <p class="font-semibold text-gray-900">${item.item_code}</p>
               <p class="text-sm text-gray-600">${item.equipment_name}</p>
             </div>
           </div>
-          <input type="text" id="disposeConfirmInput" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Type 'confirm' here">
-          <div class="flex gap-3 mt-4">
-            <button type="button" id="disposeCancelBtn" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
-            <button type="button" id="disposeProceedBtn" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Dispose Item</button>
+          <div class="flex gap-3">
+            <button type="button" id="disposeCancelBtn" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">No</button>
+            <button type="button" id="disposeProceedBtn" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">Yes, Dispose</button>
           </div>
         </div>
       </div>
@@ -1244,12 +1243,9 @@ function confirmDisposeItem(item) {
     modal.children[0].classList.add('scale-100');
   }, 10);
 
-  const input = document.getElementById('disposeConfirmInput');
   const proceed = document.getElementById('disposeProceedBtn');
   const cancel = document.getElementById('disposeCancelBtn');
-  input.addEventListener('input', (e) => {
-    proceed.disabled = e.target.value.trim().toLowerCase() !== 'confirm';
-  });
+  
   cancel.addEventListener('click', () => closeDisposeModal());
   proceed.addEventListener('click', async () => {
     try {
@@ -1270,7 +1266,6 @@ function confirmDisposeItem(item) {
     }
   });
 }
-
 function closeDisposeModal() {
   const modal = document.getElementById('disposeItemModal');
   if (!modal) return;
