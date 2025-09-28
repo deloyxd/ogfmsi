@@ -158,7 +158,10 @@ function displayProductsForTab(products, tabIndex) {
     productCard.id = `${product.id}_${tabIndex}`;
     productCard.dataset.category = product.category;
 
-    productCard.querySelector('img').src = product.image;
+    const productImage = productCard.querySelector('img');
+    productImage.src = product.image;
+    productImage.classList.add('cursor-pointer', 'hover:opacity-80', 'transition-opacity');
+    productImage.onclick = () => showImageModal(product.image, fullName);
 
     // Get available stock considering items already in cart
     let availableStock = getAvailableStock(product.id);
@@ -433,7 +436,7 @@ function updateCartDisplay() {
       result.innerHTML += `
         <!-- Column 1: Image -->
         <div class="w-24 h-24 flex-shrink-0">
-            <img src="${item.image}" class="w-full h-full object-cover rounded-lg">
+            <img src="${item.image}" class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${main.decodeText(item.name).replace(/'/g, "&#39;")}')">
         </div>
 
         <!-- Column 2: Name and Category -->
