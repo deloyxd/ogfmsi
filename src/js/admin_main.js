@@ -1094,6 +1094,8 @@ function setupModalBase(defaultData, inputs, callback) {
   setupRenderInput('spinner', inputs.spinner, 4);
   setupRenderInput('short', inputs.short2, 24);
   setupRenderInput('spinner', inputs.spinner2, 24);
+  setupRenderInput('short', inputs.short3, 34);
+  setupRenderInput('spinner', inputs.spinner3, 34);
   setupRenderInput('large', inputs.large, 1);
 
   if (inputs.radio) {

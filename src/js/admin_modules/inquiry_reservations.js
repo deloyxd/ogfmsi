@@ -489,11 +489,6 @@ function sectionTwoMainBtnFunction() {
         ],
         short2: [
           {
-            placeholder: 'Amount to pay',
-            value: main.encodePrice(180),
-            locked: true,
-          },
-          {
             placeholder: 'Reservation date (mm-dd-yyyy)',
             value: `${main.encodeDate(
               new Date(selectedDate.dataset.year, selectedDate.dataset.month - 1, selectedDate.dataset.day),
@@ -578,6 +573,13 @@ function sectionTwoMainBtnFunction() {
                 }
               } catch (e) {}
             },
+          },
+        ],
+        short3: [
+          {
+            placeholder: 'Amount to pay',
+            value: main.encodePrice(180),
+            locked: true,
           },
         ],
         footer: {
