@@ -562,7 +562,7 @@ function createPaymentModalInputs(totalAmount) {
     },
     short: [
       { placeholder: 'Amount to pay', value: main.encodePrice(totalAmount), locked: true }, // id: #input-short-5
-      { placeholder: 'Payment amount', value: totalAmount, required: true, autoformat: 'price' }, // cash, id: #input-short-6
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price' }, // cash, id: #input-short-6
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true }, // cashless, id: #input-short-7
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' }, // id: #input-short-8
       { placeholder: 'Reference number', value: 'N/A', required: true, hidden: true }, // id: #input-short-9
@@ -651,7 +651,7 @@ function cartPaymentRadioListener(title, input, container, inputGroup) {
     } else {
       cashInput.previousElementSibling.innerHTML =
         inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
-      cashInput.value = main.encodePrice(amountToPay);
+      cashInput.value = main.encodePrice(0);
     }
   }
 
@@ -667,7 +667,7 @@ function cartPaymentRadioListener(title, input, container, inputGroup) {
       cashlessInput.previousElementSibling.innerHTML =
         inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
     }
-    cashlessInput.value = main.encodePrice(amountToPay);
+    cashlessInput.value = main.encodePrice(0);
   }
 
   cashInput.dispatchEvent(new Event('input'));

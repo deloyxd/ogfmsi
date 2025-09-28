@@ -312,7 +312,7 @@ function activeRadioListener(title, input, container, inputGroup) {
     } else {
       cashInput.previousElementSibling.innerHTML =
         inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
-      cashInput.value = main.encodePrice(amountToPay);
+      cashInput.value = main.encodePrice(0);
     }
   }
   if (inputGroup.short[3].hidden) {
@@ -327,7 +327,7 @@ function activeRadioListener(title, input, container, inputGroup) {
       cashlessInput.previousElementSibling.innerHTML =
         inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     }
-    cashlessInput.value = main.encodePrice(amountToPay);
+    cashlessInput.value = main.encodePrice(0);
   }
   cashInput.dispatchEvent(new Event('input'));
   cashlessInput.dispatchEvent(new Event('input'));
@@ -346,7 +346,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     short: [
       { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
-      { placeholder: 'Payment amount', value: amountToPay, required: true, autoformat: 'price' },
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price' },
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true },
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
