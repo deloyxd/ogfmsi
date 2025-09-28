@@ -158,7 +158,10 @@ function displayProductsForTab(products, tabIndex) {
     productCard.id = `${product.id}_${tabIndex}`;
     productCard.dataset.category = product.category;
 
-    productCard.querySelector('img').src = product.image;
+    const productImage = productCard.querySelector('img');
+    productImage.src = product.image;
+    productImage.classList.add('cursor-pointer', 'hover:opacity-80', 'transition-opacity');
+    productImage.onclick = () => showImageModal(product.image, fullName);
 
     // Get available stock considering items already in cart
     let availableStock = getAvailableStock(product.id);
@@ -433,7 +436,7 @@ function updateCartDisplay() {
       result.innerHTML += `
         <!-- Column 1: Image -->
         <div class="w-24 h-24 flex-shrink-0">
-            <img src="${item.image}" class="w-full h-full object-cover rounded-lg">
+            <img src="${item.image}" class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${main.decodeText(item.name).replace(/'/g, "&#39;")}')">
         </div>
 
         <!-- Column 2: Name and Category -->
@@ -562,7 +565,7 @@ function createPaymentModalInputs(totalAmount) {
     },
     short: [
       { placeholder: 'Amount to pay', value: main.encodePrice(totalAmount), locked: true }, // id: #input-short-5
-      { placeholder: 'Payment amount', value: totalAmount, required: true, autoformat: 'price' }, // cash, id: #input-short-6
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price' }, // cash, id: #input-short-6
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true }, // cashless, id: #input-short-7
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' }, // id: #input-short-8
       { placeholder: 'Reference number', value: 'N/A', required: true, hidden: true }, // id: #input-short-9
@@ -651,7 +654,7 @@ function cartPaymentRadioListener(title, input, container, inputGroup) {
     } else {
       cashInput.previousElementSibling.innerHTML =
         inputGroup.short[1].placeholder + (inputGroup.short[1].required ? ' *' : '');
-      cashInput.value = main.encodePrice(amountToPay);
+      cashInput.value = main.encodePrice(0);
     }
   }
 
@@ -667,7 +670,7 @@ function cartPaymentRadioListener(title, input, container, inputGroup) {
       cashlessInput.previousElementSibling.innerHTML =
         inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
     }
-    cashlessInput.value = main.encodePrice(amountToPay);
+    cashlessInput.value = main.encodePrice(0);
   }
 
   cashInput.dispatchEvent(new Event('input'));

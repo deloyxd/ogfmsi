@@ -9,6 +9,10 @@ const SECTION_NAME = 'inquiry-customers';
 
 const PENDING_TRANSACTION_MESSAGE = 'Please complete pending transaction first at Payments module:';
 
+function getEmoji(emoji, size = 16) {
+  return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
+}
+
 const PRICE_RATE = [
   {
     value: 'regular',
@@ -190,6 +194,16 @@ function toTitleCaseName(str = '') {
   return lower.replace(/(^|[\s\-\'])([a-z\u00C0-\u017F])/g, (m, p1, p2) => p1 + p2.toUpperCase());
 }
 
+// Utility: Normalize customer name for comparison (similar to equipment validation)
+function normalizeCustomerName(firstName, lastName) {
+  const fullName = `${firstName || ''} ${lastName || ''}`.trim();
+  return fullName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // Listener for modal inputs: auto-correct casing on every input change
 function nameAutoCaseListener(inputEl) {
   const corrected = toTitleCaseName(inputEl.value);
@@ -198,6 +212,107 @@ function nameAutoCaseListener(inputEl) {
     // Trigger input to sync bound data structures; guard ensures no infinite loop
     inputEl.dispatchEvent(new Event('input'));
   }
+}
+
+// Validate customer registration for similar names
+async function validateCustomerRegistration(firstName, lastName, customerId = null) {
+  try {
+    const newNameNorm = normalizeCustomerName(firstName, lastName);
+    if (newNameNorm.length < 3) {
+      return { isValid: true, similarCustomer: null };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
+    const data = await response.json();
+    const customers = response.ok ? data.result || [] : [];
+    
+    const similarCustomer = customers.find((customer) => {
+      // Skip if it's the same customer being edited
+      if (customerId && customer.customer_id === customerId) {
+        return false;
+      }
+      
+      const existingNameNorm = normalizeCustomerName(customer.customer_first_name, customer.customer_last_name);
+      if (!existingNameNorm) return false;
+      
+      return existingNameNorm === newNameNorm || 
+             existingNameNorm.includes(newNameNorm) || 
+             newNameNorm.includes(existingNameNorm);
+    });
+
+    if (similarCustomer) {
+      return { isValid: false, similarCustomer };
+    }
+
+    return { isValid: true, similarCustomer: null };
+  } catch (error) {
+    console.error('Error validating customer registration:', error);
+    // If there's an error, allow registration to proceed
+    return { isValid: true, similarCustomer: null };
+  }
+}
+
+// Show similar customer found modal
+function showSimilarCustomerModal(similarCustomer, attemptedFirstName, attemptedLastName) {
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-40 hidden" id="similarCustomerModal">
+      <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-red-500 to-red-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Similar Customer Found ${getEmoji('⚠️', 26)}</p>
+          <p class="text-xs">A customer with similar name already exists</p>
+        </div>
+        <div class="p-6 text-sm text-gray-700">
+          <p class="mb-3">Attempted name: <span class="font-semibold">${attemptedFirstName} ${attemptedLastName}</span></p>
+          <div class="bg-gray-50 p-3 rounded border">
+            <p class="text-gray-600 mb-1">Existing customer:</p>
+            <p class="font-semibold text-gray-900">${similarCustomer.customer_first_name} ${similarCustomer.customer_last_name}</p>
+            <p class="text-xs text-gray-500 mt-1">ID: ${similarCustomer.customer_id}</p>
+            <p class="text-xs text-gray-500">Contact: ${similarCustomer.customer_contact || 'N/A'}</p>
+            <p class="text-xs text-gray-500">Type: ${similarCustomer.customer_type} - ${similarCustomer.customer_rate}</p>
+          </div>
+          <p class="mt-4 text-red-600 font-medium">Registration blocked to prevent duplicates.</p>
+          <p class="text-sm text-gray-600 mt-2">Please use a different name or contact the existing customer.</p>
+          <div class="flex gap-3 mt-5">
+            <button type="button" id="similarCustomerOkBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('similarCustomerModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const close = () => {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  };
+
+  document.getElementById('similarCustomerOkBtn').addEventListener('click', close);
+  
+  // Close on escape key
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
 }
 
 function mainBtnFunction(
@@ -266,7 +381,7 @@ function mainBtnFunction(
     main.openModal(
       mainBtn,
       inputs,
-      (result) => {
+      async (result) => {
         if (!isCreating && checkIfSameData(result, customer)) {
           main.toast('You must change anything!', 'error');
           return;
@@ -282,6 +397,13 @@ function mainBtnFunction(
         const name = main.encodeName(firstName, lastName);
         const customerType = main.getSelectedSpinner(result.spinner[0]);
         const priceRate = main.getSelectedSpinner(result.spinner[1]);
+
+        // Validate for similar customers before proceeding
+        const validation = await validateCustomerRegistration(firstName, lastName, customer?.id);
+        if (!validation.isValid) {
+          showSimilarCustomerModal(validation.similarCustomer, firstName, lastName);
+          return;
+        }
 
         const columnsData = [
           'id_' + (isCreating ? 'U_random' : customer.id),

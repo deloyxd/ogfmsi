@@ -452,6 +452,59 @@ function setupFAQandFeedbackComponent() {
   }
 }
 
+// Global Image Modal Functions
+window.showImageModal = function (imageSrc, imageName) {
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/75 opacity-0 duration-300 z-50 hidden" id="imageModal">
+      <div class="m-auto w-full max-w-3xl -translate-y-6 scale-95 p-4 duration-300" onclick="event.stopPropagation()">
+        <div class="relative">
+          <img src="${imageSrc}" alt="${imageName}" class="w-full h-auto rounded-lg shadow-2xl">
+        </div>
+        <p class="text-center text-white mt-4 text-lg font-medium">${imageName}</p>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('imageModal');
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeImageModal();
+    }
+  });
+
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closeImageModal();
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
+};
+
+window.closeImageModal = function () {
+  const modal = document.getElementById('imageModal');
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  }
+};
+
 /* add new functions above 👆 */
 
 document.addEventListener('DOMContentLoaded', function () {
