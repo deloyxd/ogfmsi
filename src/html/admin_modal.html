@@ -140,6 +140,85 @@
           </div>
         </div>
 
+        <div class="relative flex hidden flex-col gap-2 font-medium">
+          <label class="text-xs text-gray-600"></label>
+          <input
+            id="input-short-24"
+            autocomplete="off"
+            class="rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+            placeholder="Input"
+          />
+          <div
+            id="input-calendar"
+            class="absolute left-0 top-16 z-10 flex hidden flex-col overflow-hidden rounded-lg border-2 border-amber-500 bg-white shadow-lg shadow-black/50"
+          >
+            <div class="flex items-center justify-between gap-1 border-b p-1">
+              <button
+                type="button"
+                id="input-calendar-month-prev"
+                class="rounded-lg p-1 transition-colors hover:bg-gray-100"
+              >
+                <i class="fas fa-chevron-left w-5"></i>
+              </button>
+
+              <div class="flex items-center justify-center gap-4">
+                <div id="input-calendar-month" class="min-w-[75px] text-center text-sm font-semibold"></div>
+                <div class="flex items-center">
+                  <button
+                    type="button"
+                    id="input-calendar-year-prev"
+                    class="rounded-r px-2 py-1 text-gray-600 hover:bg-gray-100"
+                  >
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <span
+                    id="input-calendar-year"
+                    class="min-w-[55px] bg-gray-100 px-2 py-1 text-center text-sm font-semibold"
+                  ></span>
+                  <button
+                    type="button"
+                    id="input-calendar-year-next"
+                    class="rounded-l px-2 py-1 text-gray-600 hover:bg-gray-100"
+                  >
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="input-calendar-month-next"
+                class="rounded-lg p-1 transition-colors hover:bg-gray-100"
+              >
+                <i class="fas fa-chevron-right w-5"></i>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-7 border-b bg-gray-50 p-2 text-center text-sm font-medium text-gray-600">
+              <p>Su</p>
+              <p>M</p>
+              <p>T</p>
+              <p>W</p>
+              <p>Th</p>
+              <p>F</p>
+              <p>Sa</p>
+            </div>
+
+            <div id="input-calendar-grid" class="grid flex-1 grid-cols-7"></div>
+          </div>
+        </div>
+
+        <div class="flex hidden flex-col gap-2 font-medium">
+          <label class="text-xs text-gray-600"></label>
+          <div class="relative cursor-pointer">
+            <select
+              id="input-spinner-24"
+              class="w-full cursor-pointer appearance-none rounded-md border-2 border-gray-300 bg-gray-100 px-2 py-1 text-sm duration-300 focus:outline-amber-500 focus:ring-2 focus:ring-amber-200"
+            ></select>
+            <p class="absolute right-0 top-0 m-2 text-xs text-gray-400">▼</p>
+          </div>
+        </div>
+
         <div class="flex hidden flex-col gap-2 font-medium">
           <label class="text-xs text-gray-600"></label>
           <textarea

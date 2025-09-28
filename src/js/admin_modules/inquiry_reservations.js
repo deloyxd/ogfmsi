@@ -477,6 +477,17 @@ function sectionTwoMainBtnFunction() {
         },
         short: [
           { placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true },
+        ],
+        spinner: [
+          {
+            label: 'Reservation type',
+            placeholder: 'Select reservation type',
+            selected: 0,
+            required: true,
+            options: RESERVATION_TYPES,
+          },
+        ],
+        short2: [
           {
             placeholder: 'Amount to pay',
             value: main.encodePrice(180),
@@ -532,7 +543,7 @@ function sectionTwoMainBtnFunction() {
             offset: 60,
           },
         ],
-        spinner: [
+        spinner2: [
           {
             label: 'Time duration',
             placeholder: 'Select duration',
@@ -567,13 +578,6 @@ function sectionTwoMainBtnFunction() {
                 }
               } catch (e) {}
             },
-          },
-          {
-            label: 'Reservation type',
-            placeholder: 'Select reservation type',
-            selected: 0,
-            required: true,
-            options: RESERVATION_TYPES,
           },
         ],
         footer: {

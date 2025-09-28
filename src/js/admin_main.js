@@ -1091,8 +1091,10 @@ function setupModalBase(defaultData, inputs, callback) {
   }
 
   setupRenderInput('short', inputs.short, 4);
-  setupRenderInput('large', inputs.large, 1);
   setupRenderInput('spinner', inputs.spinner, 4);
+  setupRenderInput('short', inputs.short2, 24);
+  setupRenderInput('spinner', inputs.spinner2, 24);
+  setupRenderInput('large', inputs.large, 1);
 
   if (inputs.radio) {
     const type = 'radio';
