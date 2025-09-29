@@ -26,7 +26,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 export function logCheckin(transactionId, customer, tabIndex, showSection) {
   const { firstName } = main.decodeName(customer.dataset.text);
   if (showSection) {
-    main.showSection(SECTION_NAME);
+    // Navigate directly to the appropriate tab (1 = Regular, 2 = Monthly)
+    main.showSection(SECTION_NAME, tabIndex);
   } else {
     main.createNotifDot(SECTION_NAME, 'sub');
   }
