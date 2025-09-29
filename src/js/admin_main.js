@@ -2382,6 +2382,7 @@ function setupLogoDashboardRedirect() {
       absoluteSrc.endsWith('client_logo.jpg');
     if (!isClientLogo) return;
     e.preventDefault();
+    if (target.getAttribute("onclick").split("(")[0].trim() === 'showImageModal') return;
     try {
       showSection('dashboard');
     } catch (_e) {}
