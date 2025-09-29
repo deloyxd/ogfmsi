@@ -425,7 +425,7 @@ async function loadMonthlyGrowthData() {
       setupChartOneWithRealData(monthlyData);
     }
     
-    console.log('Monthly growth data loaded:', monthlyData);
+    // console.log('Monthly growth data loaded:', monthlyData);
   } catch (error) {
     console.error('Failed to load monthly growth data:', error);
     const contentContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="1"]');

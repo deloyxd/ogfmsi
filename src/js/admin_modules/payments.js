@@ -44,51 +44,53 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             (findResult) => {
-              main.createAtSectionOne(
-                SECTION_NAME,
-                [
-                  'id_' + pendingPayment.payment_id,
-                  {
-                    type: 'object',
-                    data: [findResult.dataset.image, findResult.dataset.id],
-                  },
-                  pendingPayment.payment_purpose,
-                  main.formatPrice(pendingPayment.payment_amount_to_pay),
-                  main.fixText(pendingPayment.payment_rate),
-                  'custom_datetime_' +
-                    main.encodeDate(
-                      pendingPayment.created_at,
-                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                    ),
-                ],
-                1,
-                (createResult) => {
-                  const { firstName, lastName, fullName } = main.decodeName(findResult.dataset.text);
-                  const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
-                  transactionProcessBtn.addEventListener('click', () => {
-                    completePayment(
-                      'customers',
-                      createResult.dataset.id,
-                      createResult.dataset.image,
-                      createResult.dataset.text,
-                      createResult.dataset.custom2,
-                      fullName,
-                      pendingPayment.payment_amount_to_pay,
-                      pendingPayment.payment_rate
-                    );
-                  });
-                  const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
-                  transactionCancelBtn.addEventListener('click', () => {
-                    main.openConfirmationModal(
-                      'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
-                      () => {
-                        cancelCheckinPayment(createResult.dataset.id);
-                        main.closeConfirmationModal();
-                      }
-                    );
-                  });
-                }
-              );
+              if (findResult) {
+                main.createAtSectionOne(
+                  SECTION_NAME,
+                  [
+                    'id_' + pendingPayment.payment_id,
+                    {
+                      type: 'object',
+                      data: [findResult.dataset.image, findResult.dataset.id],
+                    },
+                    pendingPayment.payment_purpose,
+                    main.formatPrice(pendingPayment.payment_amount_to_pay),
+                    main.fixText(pendingPayment.payment_rate),
+                    'custom_datetime_' +
+                      main.encodeDate(
+                        pendingPayment.created_at,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                  ],
+                  1,
+                  (createResult) => {
+                    const { firstName, lastName, fullName } = main.decodeName(findResult.dataset.text);
+                    const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
+                    transactionProcessBtn.addEventListener('click', () => {
+                      completePayment(
+                        'customers',
+                        createResult.dataset.id,
+                        createResult.dataset.image,
+                        createResult.dataset.text,
+                        createResult.dataset.custom2,
+                        fullName,
+                        pendingPayment.payment_amount_to_pay,
+                        pendingPayment.payment_rate
+                      );
+                    });
+                    const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
+                    transactionCancelBtn.addEventListener('click', () => {
+                      main.openConfirmationModal(
+                        'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
+                        () => {
+                          cancelCheckinPayment(createResult.dataset.id);
+                          main.closeConfirmationModal();
+                        }
+                      );
+                    });
+                  }
+                );
+              }
             }
           );
         });
