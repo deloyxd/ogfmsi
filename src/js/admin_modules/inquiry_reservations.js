@@ -356,20 +356,25 @@ async function loadExistingReservations() {
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
 
-    existingReservations.forEach((reservation) => {
+    existingReservations.forEach(async (reservation) => {
       const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
       const { fullName } = main.decodeName(customerName);
-      let customerImage;
-
-      main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (findResult) => {
-        if (findResult) {
-          customerImage = findResult.dataset.image;
-        }
+      const customerImage = await new Promise((resolve) => {
+        main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (findResult) => {
+          if (findResult && findResult.dataset.image) {
+            resolve(findResult.dataset.image);
+          } else {
+            resolve('');
+          }
+        });
       });
 
       const reservationEnd = new Date(`${date}T${endTime}`);
       const isPast = reservationEnd <= new Date();
       const tabIndex = isPast ? 3 : 2;
+
+      const reservationTypeText =
+        typeof reservationType === 'number' ? RESERVATION_TYPES[reservationType].label : main.fixText(reservationType);
 
       const columnsData = [
         'id_' + id,
@@ -377,7 +382,7 @@ async function loadExistingReservations() {
           type: 'object_cid',
           data: [customerImage, fullName, customerId],
         },
-        main.fixText(reservationType),
+        reservationTypeText,
         `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
         `custom_datetime_${status}`,
       ];
@@ -895,9 +900,9 @@ function createDayElement(day, month, year, isToday) {
       selectedDate.querySelector(`#bookmark`).classList.add('opacity-0');
     }
 
+    main.deleteAllAtSectionTwo(SECTION_NAME);
     const reservationsAtTargetDate = getReservationsForDate(dateString);
     reservationsAtTargetDate.forEach((reservationAtTargetDate) => {
-      console.log(reservationAtTargetDate);
       const data = {
         id: reservationAtTargetDate.id,
         action: {
@@ -908,7 +913,7 @@ function createDayElement(day, month, year, isToday) {
       };
       main.findAtSectionOne('inquiry-customers', reservationAtTargetDate.customerId, 'equal_id', 1, (findResult) => {
         if (findResult) {
-          const {firstName, lastName, fullName} = main.decodeName(reservationAtTargetDate.customerName);
+          const { firstName, lastName, fullName } = main.decodeName(reservationAtTargetDate.customerName);
           main.createAtSectionTwo(SECTION_NAME, data, (createResult) => {
             createResult.classList.add('grid-cols-2');
             createResult.innerHTML += `
