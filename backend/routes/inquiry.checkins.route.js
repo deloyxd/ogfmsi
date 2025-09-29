@@ -86,10 +86,24 @@ router.delete('/checkins/regular/:checkinId', async (req, res) => {
   });
 });
 
+// Clear All Regular Check-Ins older than today (for midnight reset)
+router.delete('/checkins/regular/clear', async (req, res) => {
+  const query = 'DELETE FROM inquiry_checkins_regular_tbl WHERE DATE(created_at) < CURDATE()';
+
+  mysqlConnection.query(query, (error) => {
+    if (error) {
+      console.error('Clearing regular check-ins error:', error);
+      return res.status(500).json({ error: 'Clearing regular check-ins failed' });
+    }
+    res.status(200).json({ message: 'Regular check-ins cleared successfully' });
+  });
+});
+
 // Clear All Monthly Check-Ins (for midnight reset)
 router.delete('/checkins/monthly/clear', async (req, res) => {
-  const query = 'DELETE FROM inquiry_checkins_monthly_tbl';
-  
+  // Only clear monthly check-ins from previous days; keep today's records
+  const query = 'DELETE FROM inquiry_checkins_monthly_tbl WHERE DATE(created_at) < CURDATE()';
+
   mysqlConnection.query(query, (error) => {
     if (error) {
       console.error('Clearing monthly check-ins error:', error);

@@ -53,14 +53,35 @@ router.post('/cart', async (req, res) => {
 // GET cart items by session
 router.get('/cart/:session_id', async (req, res) => {
   const { session_id } = req.params;
-  const query = 'SELECT * FROM ecommerce_cart_tbl WHERE session_id = ? ORDER BY created_at DESC';
   
-  mysqlConnection.query(query, [session_id], (error, result) => {
-    if (error) {
-      console.error('Fetching cart error:', error);
-      return res.status(500).json({ error: 'Fetching cart failed' });
+  // First, clean up any disposed products from the cart
+  const cleanupQuery = `
+    DELETE c FROM ecommerce_cart_tbl c
+    LEFT JOIN ecommerce_products_tbl p ON c.product_id = p.product_id
+    WHERE c.session_id = ? AND p.disposal_status = 'Disposed'
+  `;
+  
+  mysqlConnection.query(cleanupQuery, [session_id], (cleanupError) => {
+    if (cleanupError) {
+      console.error('Cleanup disposed products error:', cleanupError);
     }
-    res.status(200).json({ message: 'Fetching cart successful', result: result });
+    
+    // Then fetch the remaining cart items
+    const query = `
+      SELECT c.*, p.disposal_status 
+      FROM ecommerce_cart_tbl c
+      LEFT JOIN ecommerce_products_tbl p ON c.product_id = p.product_id
+      WHERE c.session_id = ? AND (p.disposal_status IS NULL OR p.disposal_status != 'Disposed')
+      ORDER BY c.created_at DESC
+    `;
+    
+    mysqlConnection.query(query, [session_id], (error, result) => {
+      if (error) {
+        console.error('Fetching cart error:', error);
+        return res.status(500).json({ error: 'Fetching cart failed' });
+      }
+      res.status(200).json({ message: 'Fetching cart successful', result: result });
+    });
   });
 });
 

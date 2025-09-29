@@ -186,6 +186,30 @@ function getHourlyRate(startTime) {
   return timeInMinutes >= sixPMInMinutes ? 200 : 180;
 }
 
+// Calculates dynamic pricing per-hour bucket relative to 6:00 PM cutoff
+// Each hour slot is priced based on the slot's starting time
+function calculateDynamicPrice(duration, startTime) {
+  try {
+    const safeDuration = Number.isFinite(duration) ? Math.max(1, Math.round(duration)) : 1;
+    if (!startTime || !/^\d{2}:\d{2}$/.test(startTime)) {
+      return safeDuration * 180;
+    }
+
+    const [startHour, startMinute] = startTime.split(':').map((n) => parseInt(n, 10));
+    // Use a fixed date baseline; only time-of-day matters
+    const baseline = new Date(1970, 0, 1, startHour, startMinute, 0, 0);
+    let total = 0;
+    for (let i = 0; i < safeDuration; i++) {
+      const slotStart = new Date(baseline.getTime() + i * 60 * 60 * 1000);
+      const slotStartMinutes = slotStart.getHours() * 60 + slotStart.getMinutes();
+      total += slotStartMinutes >= 18 * 60 ? 200 : 180;
+    }
+    return total;
+  } catch (e) {
+    return Math.max(1, Math.round(duration || 1)) * 180;
+  }
+}
+
 // Updates the price display based on selected duration and start time
 function updatePriceDisplay(duration, startTime, container) {
   const priceInput =
@@ -194,8 +218,7 @@ function updatePriceDisplay(duration, startTime, container) {
     container.querySelector('input[placeholder*="Amount"]');
 
   if (priceInput) {
-    const hourlyRate = getHourlyRate(startTime);
-    const totalAmount = duration * hourlyRate;
+    const totalAmount = calculateDynamicPrice(duration, startTime);
     priceInput.value = main.encodePrice(totalAmount);
     priceInput.dispatchEvent(new Event('input'));
   }
@@ -515,7 +538,12 @@ function sectionTwoMainBtnFunction() {
                 const start = input.value;
                 if (!/^\d{2}:\d{2}$/.test(start)) return;
 
-                const durationSelect = container.querySelector('#input-spinner-5');
+                // Reset duration to 1 hour when start time changes
+                const durationSelect =
+                  container.querySelector('select[placeholder="Select duration"]') ||
+                  container.querySelector('#input-spinner-5') ||
+                  container.querySelectorAll('select')[1] ||
+                  container.querySelector('select');
                 if (durationSelect) {
                   durationSelect.selectedIndex = 1;
                   durationSelect.dispatchEvent(new Event('change'));
@@ -528,7 +556,10 @@ function sectionTwoMainBtnFunction() {
                   .padStart(2, '0');
                 const endM = (endMinutes % 60).toString().padStart(2, '0');
 
-                const endInput = container.querySelector('#input-short-9');
+                const endInput =
+                  container.querySelector('input[placeholder="End time"]') ||
+                  container.querySelector('#input-short-9') ||
+                  container.querySelectorAll('input[type="time"]')[1];
                 if (endInput) {
                   endInput.value = `${endH}:${endM}`;
                   endInput.dispatchEvent(new Event('input'));
@@ -557,7 +588,10 @@ function sectionTwoMainBtnFunction() {
               try {
                 const selectedDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 1;
 
-                const startInput = container.querySelector('#input-short-8');
+                const startInput =
+                  container.querySelector('input[placeholder="Start time"]') ||
+                  container.querySelector('#input-short-8') ||
+                  container.querySelector('input[type="time"]');
                 const startTime = startInput?.value || '';
 
                 updatePriceDisplay(selectedDuration, startTime, container);
@@ -574,7 +608,10 @@ function sectionTwoMainBtnFunction() {
                   .padStart(2, '0');
                 const endM = (endMinutes % 60).toString().padStart(2, '0');
 
-                const endInput = container.querySelector('#input-short-9');
+                const endInput =
+                  container.querySelector('input[placeholder="End time"]') ||
+                  container.querySelector('#input-short-9') ||
+                  container.querySelectorAll('input[type="time"]')[1];
                 if (endInput) {
                   endInput.value = `${endH}:${endM}`;
                   endInput.dispatchEvent(new Event('input'));
@@ -1112,7 +1149,10 @@ function editReservation(reservation) {
         options: DURATION_OPTIONS,
         listener: (selectedIndex, container) => {
           const selectedDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 1;
-          const startInput = container.querySelector('#input-short-3'); // Corrected a bug here
+          const startInput =
+            container.querySelector('input[placeholder="Start time"]') ||
+            container.querySelector('#input-short-3') ||
+            container.querySelector('input[type="time"]');
           const startTimeValue = startInput?.value || '';
 
           updatePriceDisplay(selectedDuration, startTimeValue, container);
