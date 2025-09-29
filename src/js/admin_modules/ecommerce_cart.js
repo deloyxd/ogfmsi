@@ -45,7 +45,13 @@ async function getInventoryItemsFromSystem() {
     const data = await response.json();
 
     if (response.ok) {
-      inventoryItems = data.result.map((product) => ({
+      // Filter out disposed products from inventory
+      const activeProducts = data.result.filter(product => 
+        product.disposal_status !== 'Disposed' && 
+        !(product.product_name && product.product_name.toLowerCase().includes('disposed'))
+      );
+
+      inventoryItems = activeProducts.map((product) => ({
         id: product.product_id,
         image: product.image_url,
         name: product.product_name_encoded,
