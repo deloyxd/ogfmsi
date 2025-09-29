@@ -1902,8 +1902,8 @@ export function createAtSectionTwo(sectionName, data, callback) {
   result.innerHTML = `
     <div class="absolute left-2 top-2">
       <div class="relative h-2 w-2">
-        <div class="h-full w-full absolute scale-105 animate-ping rounded-full bg-red-500 opacity-75"></div>
-        <div class="absolute h-2 w-2 rounded-full bg-red-500"></div>
+        <div class="h-full w-full absolute scale-105 animate-ping rounded-full bg-green-500 opacity-75"></div>
+        <div class="absolute h-2 w-2 rounded-full bg-green-500"></div>
       </div>
     </div>
   `;

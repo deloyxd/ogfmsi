@@ -377,7 +377,7 @@ async function loadExistingReservations() {
           type: 'object_cid',
           data: [customerImage, fullName, customerId],
         },
-        RESERVATION_TYPES[reservationType].label,
+        main.fixText(reservationType),
         `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
         `custom_datetime_${status}`,
       ];
@@ -422,6 +422,11 @@ async function loadExistingReservations() {
 function getReservationCountForDate(date) {
   const targetDate = main.encodeDate(new Date(date), '2-digit');
   return existingReservations.filter((reservation) => reservation.date === targetDate).length;
+}
+
+function getReservationsForDate(date) {
+  const targetDate = main.encodeDate(new Date(date), '2-digit');
+  return existingReservations.filter((reservation) => reservation.date === targetDate);
 }
 
 // Refreshes the calendar display after reservation changes
@@ -475,9 +480,7 @@ function sectionTwoMainBtnFunction() {
           title: `Reserve Facility ${getEmoji('📅', 26)}`,
           subtitle: 'Reservation form',
         },
-        short: [
-          { placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true },
-        ],
+        short: [{ placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true }],
         spinner: [
           {
             label: 'Reservation type',
@@ -588,10 +591,10 @@ function sectionTwoMainBtnFunction() {
       };
 
       main.openModal('orange', inputs, async (result) => {
-        const dateStart = result.short[2].value;
+        const reservationDate = result.short2[0].value;
 
         try {
-          const [month, day, year] = dateStart.split('-').map(Number);
+          const [month, day, year] = reservationDate.split('-').map(Number);
           const selectedDate = new Date(year, month - 1, day);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -603,10 +606,9 @@ function sectionTwoMainBtnFunction() {
           return;
         }
 
-        const startTime = result.short[3].value;
-        const endTime = result.short[4].value;
-        const reservationDate = result.short[2].value;
-        const selectedDuration = DURATION_OPTIONS[result.spinner[0].selected - 1]?.value || 1;
+        const startTime = result.short2[1].value;
+        const endTime = result.short2[2].value;
+        const selectedDuration = DURATION_OPTIONS[result.spinner2[0].selected - 1]?.value || 1;
 
         try {
           const start = new Date(`1970-01-01T${startTime}`);
@@ -696,7 +698,7 @@ function sectionTwoMainBtnFunction() {
 
         main.openConfirmationModal(
           `Reserve for<br><p class="text-lg">${fullName}</p>at ${main.decodeDate(
-            result.short[2].value
+            reservationDate
           )}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
           async () => {
             const reservationId = 'R' + new Date().getTime();
@@ -705,11 +707,11 @@ function sectionTwoMainBtnFunction() {
               customerId: customer.dataset.id,
               customerName: customer.dataset.text,
               reservationType: main.getSelectedSpinner(result.spinner[0]),
-              date: result.short[2].value,
+              date: reservationDate,
               startTime: startTime,
               endTime: endTime,
               status: 'Pending',
-              amount: main.decodePrice(result.short[1].value),
+              amount: main.decodePrice(result.short3[0].value),
             };
 
             try {
@@ -890,38 +892,80 @@ function createDayElement(day, month, year, isToday) {
   dayElement.addEventListener('click', () => {
     if (selectedDate) {
       selectedDate.classList.remove('bg-blue-400');
+      selectedDate.querySelector(`#bookmark`).classList.add('opacity-0');
     }
 
+    const reservationsAtTargetDate = getReservationsForDate(dateString);
+    reservationsAtTargetDate.forEach((reservationAtTargetDate) => {
+      console.log(reservationAtTargetDate);
+      const data = {
+        id: reservationAtTargetDate.id,
+        action: {
+          module: MODULE_NAME,
+          submodule: SUBMODULE_NAME,
+          description: 'Reservation details',
+        },
+      };
+      main.findAtSectionOne('inquiry-customers', reservationAtTargetDate.customerId, 'equal_id', 1, (findResult) => {
+        if (findResult) {
+          const {firstName, lastName, fullName} = main.decodeName(reservationAtTargetDate.customerName);
+          main.createAtSectionTwo(SECTION_NAME, data, (createResult) => {
+            createResult.classList.add('grid-cols-2');
+            createResult.innerHTML += `
+              <!-- Column 1: Image -->
+              <div class="w-24 h-24 flex-shrink-0">
+                  <img src="${findResult.dataset.image}" class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${fullName}')">
+              </div>
+      
+              <!-- Column 2: Name and Category -->
+              <div class="flex-1 min-w-0">
+                  <h3 class="font-bold text-wrap text-lg">${fullName}</h3>
+                  <p class="text-sm text-gray-500">Date: ${reservationAtTargetDate.date}</p>
+                  <p class="text-sm text-gray-500">Start time: ${reservationAtTargetDate.startTime}</p>
+                  <p class="text-sm text-gray-500">End time: ${reservationAtTargetDate.endTime}</p>
+                  <p class="text-sm text-gray-500">Type: ${main.fixText(reservationAtTargetDate.reservationType)}</p>
+              </div>
+        `;
+          });
+        }
+      });
+    });
+
     customers.getReserveCustomer((customer) => {
-      const inquiryReservationQuick = document.getElementById(`inquiryReservationQuick`).children[0];
-      inquiryReservationQuick.children[1].classList.remove('hidden');
-      inquiryReservationQuick.children[1].classList.add('text-black', 'mt-2');
+      const emptyText = document.getElementById(`${SECTION_NAME}SectionTwoListEmpty`).children[0];
+      if (emptyText.children[0]) {
+        emptyText.children[0].remove();
+      }
+      emptyText.innerText = '';
+      emptyText.classList.add('text-black');
+      const emptyTextDescription = document.createElement('p');
 
       if (customer) {
         const { fullName } = main.decodeName(customer.dataset.text);
 
-        inquiryReservationQuick.children[0].innerHTML = `Reserve for:<p class="text-lg">${fullName}</p><br>Reserve date:<p class="text-lg">${
+        emptyText.innerHTML = `Reserve for:<p class="text-lg">${fullName}</p><br>Reserve date:<p class="text-lg">${
           monthNames[month]
         } ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
-        inquiryReservationQuick.children[0].classList.add('text-black');
 
         dayElement.classList.add('bg-blue-400');
         selectedDate = dayElement;
         selectedDate.dataset.day = day;
         selectedDate.dataset.month = month + 1;
         selectedDate.dataset.year = year;
-        inquiryReservationQuick.children[1].innerHTML = `<br>Click the button below ${getEmoji(
-          '👇',
-          12
-        )} to reserve this date.`;
+        emptyText.appendChild(emptyTextDescription);
+        emptyTextDescription.classList.add('text-black', 'mt-2');
+        emptyTextDescription.innerHTML = `<br>Click the button below ${getEmoji('👇', 12)} to reserve this date.`;
       } else {
-        inquiryReservationQuick.children[0].innerHTML = `Reserve date:<p class="text-lg">${monthNames[month]} ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
-        inquiryReservationQuick.children[0].classList.add('text-black');
-        inquiryReservationQuick.children[1].innerHTML = `<br>${getEmoji('⚠️', 12)} There's no selected customer yet.`;
+        emptyText.innerHTML = `Reserve date:<p class="text-lg">${monthNames[month]} ${day}, ${year}</p>Reserved slots: ${reservedCount}/10`;
+        emptyText.appendChild(emptyTextDescription);
+        emptyTextDescription.classList.add('text-black', 'mt-2');
+        emptyTextDescription.innerHTML = `<br>${getEmoji('⚠️', 12)} There's no selected customer yet.`;
       }
 
       if (isPreviousDay) {
-        inquiryReservationQuick.children[1].innerHTML = `<br>${getEmoji('⚠️', 12)} Past dates cannot be reserved anymore.`;
+        emptyText.appendChild(emptyTextDescription);
+        emptyTextDescription.classList.add('text-black', 'mt-2');
+        emptyTextDescription.innerHTML = `<br>${getEmoji('⚠️', 12)} Past dates cannot be reserved anymore.`;
       }
     });
   });
