@@ -25,6 +25,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     sectionTwoMainBtn.addEventListener('click', processCheckout);
   }
 
+  // Add clear all button
+  addClearAllButton();
+
   getInventoryItemsFromSystem();
   loadCartFromServer();
   setupSearch();
@@ -469,6 +472,9 @@ function updateCartDisplay() {
       accesscontrol.log(data.action, item);
     });
   });
+  
+  // Ensure clear all button is added after cart display is updated
+  addClearAllButton();
 }
 
 // Global functions for cart operations (called from HTML onclick)
@@ -877,3 +883,61 @@ async function processCheckout() {
 
 // Make processCheckout available globally
 window.processCheckout = processCheckout;
+
+// Add clear all button to the cart section
+function addClearAllButton() {
+  const sectionTwoContent = document.querySelector(`#${SECTION_NAME}-section .section-content-base .flex.flex-col.items-center.gap-4`);
+  if (!sectionTwoContent) return;
+
+  // Check if clear all button already exists
+  if (document.getElementById(`${SECTION_NAME}ClearAllBtn`)) return;
+
+  const clearAllBtn = document.createElement('button');
+  clearAllBtn.id = `${SECTION_NAME}ClearAllBtn`;
+  clearAllBtn.className = 'section-content-submit bg-red-500 hover:bg-red-600 hover:shadow-red-400 active:scale-95 active:bg-red-700';
+  clearAllBtn.innerHTML = 'Clear All Items 🗑️';
+  clearAllBtn.addEventListener('click', clearAllCartItems);
+
+  sectionTwoContent.appendChild(clearAllBtn);
+}
+
+// Clear all cart items with confirmation
+function clearAllCartItems() {
+  if (cart.length === 0) {
+    main.toast('Cart is already empty!', 'warning');
+    return;
+  }
+
+  main.openConfirmationModal(
+    'Are you sure?\n\nPlease double check or review any details you may have provided before proceeding with the action stated below:\n\nRemove item added to cart.',
+    () => {
+      main.closeConfirmationModal(async () => {
+        main.sharedState.moduleLoad = SECTION_NAME;
+        window.showGlobalLoading?.();
+        
+        try {
+          // Clear cart from server
+          const response = await fetch(`${API_BASE_URL}/ecommerce/cart/session/${sessionId}`, {
+            method: 'DELETE',
+          });
+
+          if (response.ok) {
+            // Clear local cart
+            cart = [];
+            updateCartDisplay();
+            refreshProductDisplays();
+            main.toast('All items cleared from cart!', 'success');
+          } else {
+            console.error('Error clearing cart');
+            main.toast('Error: Failed to clear cart', 'error');
+          }
+        } catch (error) {
+          console.error('Error clearing cart:', error);
+          main.toast('Error: Failed to clear cart', 'error');
+        } finally {
+          window.hideGlobalLoading?.();
+        }
+      });
+    }
+  );
+}

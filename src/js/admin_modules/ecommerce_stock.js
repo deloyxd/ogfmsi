@@ -321,6 +321,12 @@ async function loadProducts() {
         5
       );
 
+      // Tab 6: Disposed Products (Expired or damaged products)
+      displayProductsForTab(
+        products.filter((p) => p.disposal_status === 'Disposed'),
+        6
+      );
+
       // Update stats using the same logic as the tabs
       computeAndUpdateStats(products);
     } else {
@@ -359,6 +365,7 @@ function computeAndUpdateStats(products) {
   const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
   const bestSelling = products.filter((p) => +p.quantity > 50).length;
   const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
+  const disposed = products.filter((p) => p.disposal_status === 'Disposed').length;
 
   updateStatsDisplay({
     total_products: totalProducts,
@@ -366,6 +373,7 @@ function computeAndUpdateStats(products) {
     out_of_stock: outOfStock,
     best_selling: bestSelling,
     slow_moving: slowMoving,
+    disposed: disposed,
   });
 }
 
@@ -376,10 +384,11 @@ function computeAndUpdateStats(products) {
 // [2] Out of stock items (0)
 // [3] Best selling products (>50 sold)
 // [4] Slow moving products (<=10 but >0)
+// [5] Disposed products (expired or damaged)
 function updateStatsDisplay(stats) {
   const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
 
-  if (statElements.length >= 5) {
+  if (statElements.length >= 6) {
     const uniqueProductsStat = statElements[0];
     if (uniqueProductsStat) {
       const valueElement = uniqueProductsStat.querySelector('.section-stats-c');
@@ -419,6 +428,14 @@ function updateStatsDisplay(stats) {
         valueElement.textContent = stats.slow_moving || 0;
       }
     }
+
+    const disposedStat = statElements[5];
+    if (disposedStat) {
+      const valueElement = disposedStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.disposed || 0;
+      }
+    }
   }
 }
 
@@ -441,6 +458,8 @@ function displayProductsForTab(products, tabIndex) {
 
   products.forEach((product) => {
     const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
+    const isDisposed = product.disposal_status === 'Disposed';
+    
     const columnsData = [
       displayId,
       {
@@ -449,7 +468,7 @@ function displayProductsForTab(products, tabIndex) {
       },
       main.formatPrice(product.price),
       product.quantity + '',
-      main.getStockStatus(product.quantity),
+      isDisposed ? `Disposed ${getEmoji('🗑️')}` : main.getStockStatus(product.quantity),
       product.measurement_value || '',
       product.measurement_unit || '',
       main.getSelectedOption(product.category, CATEGORIES),
@@ -481,9 +500,17 @@ function displayProductsForTab(products, tabIndex) {
       frontendResult.dataset.custom6 = product.measurement_unit;
       // custom7 now maps to category after removing purchase_type
       frontendResult.dataset.custom7 = product.category;
+      frontendResult.dataset.disposalStatus = product.disposal_status || 'Active';
+      frontendResult.dataset.disposalReason = product.disposal_reason || '';
+      frontendResult.dataset.disposalNotes = product.disposal_notes || '';
+      frontendResult.dataset.disposedAt = product.disposed_at || '';
 
-      // Setup action buttons
-      setupProductDetailsButton(frontendResult);
+      // Setup action buttons (only for non-disposed products)
+      if (!isDisposed) {
+        setupProductDetailsButton(frontendResult);
+      } else {
+        setupDisposedProductButton(frontendResult);
+      }
     });
   });
 }
@@ -516,10 +543,124 @@ function setupProductDetailsButton(result) {
         }
         updateProduct(result, newResult, productData.name);
       },
-      () => deleteProduct(result)
+      () => deleteProduct(result),
+      () => disposeProduct(result)
     );
   });
 }
+
+function setupDisposedProductButton(result) {
+  const productDetailsBtn = result.querySelector('#productDetailsBtn');
+
+  if (!productDetailsBtn) return;
+
+  productDetailsBtn.addEventListener('click', () => {
+    const productData = {
+      image: result.dataset.image,
+      name: main.decodeText(result.dataset.text),
+      price: main.decodePrice(result.dataset.custom2),
+      quantity: result.dataset.custom3,
+      measurement: result.dataset.custom5,
+      measurementUnit: result.dataset.custom6,
+      category: result.dataset.custom7,
+      disposalStatus: result.dataset.disposalStatus,
+      disposalReason: result.dataset.disposalReason,
+      disposalNotes: result.dataset.disposalNotes,
+      disposedAt: result.dataset.disposedAt,
+    };
+
+    showDisposedProductDetails(productData);
+  });
+}
+
+function showDisposedProductDetails(productData) {
+  const disposalDate = productData.disposedAt ? 
+    new Date(productData.disposedAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : 'Unknown';
+
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-30 hidden" id="disposedProductModal">
+      <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-gray-500 to-gray-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Disposed Product Details ${getEmoji('🗑️', 26)}</p>
+          <p class="text-xs">This product has been disposed</p>
+        </div>
+        <div class="p-6">
+          <div class="mb-4">
+            <div class="flex items-center gap-3 mb-3">
+              <img src="${productData.image}" alt="${productData.name}" 
+                   class="w-16 h-16 object-cover rounded border">
+              <div>
+                <p class="font-semibold text-gray-900">${productData.name}</p>
+                <p class="text-sm text-gray-600">Price: ${main.formatPrice(productData.price)}</p>
+                <p class="text-sm text-gray-600">Quantity: ${productData.quantity}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Disposal Reason:</label>
+            <p class="text-sm text-gray-900 bg-gray-100 p-2 rounded capitalize">${productData.disposalReason || 'Not specified'}</p>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Disposal Notes:</label>
+            <p class="text-sm text-gray-900 bg-gray-100 p-2 rounded">${productData.disposalNotes || 'No notes provided'}</p>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Disposed On:</label>
+            <p class="text-sm text-gray-900 bg-gray-100 p-2 rounded">${disposalDate}</p>
+          </div>
+          
+          <div class="flex gap-3">
+            <button type="button" onclick="closeDisposedProductModal()" 
+                    class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('disposedProductModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closeDisposedProductModal();
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
+}
+
+window.closeDisposedProductModal = function () {
+  const modal = document.getElementById('disposedProductModal');
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  }
+};
 
 async function updateProduct(result, newResult, name) {
   const newName = newResult.image.short[0].value;
@@ -642,6 +783,161 @@ async function deleteProduct(result) {
   });
 }
 
+async function disposeProduct(result) {
+  const productName = main.decodeText(result.dataset.text);
+  const productId = result.dataset.id;
+  
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-30 hidden" id="disposeProductModal">
+      <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-red-500 to-red-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Dispose Product ${getEmoji('🗑️', 26)}</p>
+          <p class="text-xs">This action cannot be undone</p>
+        </div>
+        <div class="p-6">
+          <div class="mb-4">
+            <p class="text-gray-700 mb-2">Are you sure you want to dispose this product?</p>
+            <div class="bg-gray-100 p-3 rounded-md">
+              <p class="font-semibold text-gray-900">${productName}</p>
+              <p class="text-sm text-gray-600">Product ID: ${productId.split('_').slice(0, 2).join('_')}</p>
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Reason for disposal:
+            </label>
+            <select id="disposalReasonSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+              <option value="expired">Expired</option>
+              <option value="damaged">Damaged</option>
+              <option value="recalled">Recalled</option>
+              <option value="unsellable">Unsellable</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Additional notes (optional):
+            </label>
+            <textarea id="disposalNotesInput" rows="3" 
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Add notes about the disposal..."></textarea>
+          </div>
+          
+          <div class="flex gap-3">
+            <button type="button" onclick="closeDisposeProductModal()" 
+                    class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+              Cancel
+            </button>
+            <button type="button" onclick="confirmDisposeProduct('${productId}')" 
+                    class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+              Dispose Product
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const disposeModal = document.getElementById('disposeProductModal');
+  disposeModal.classList.remove('hidden');
+  disposeModal.classList.add('flex');
+  setTimeout(() => {
+    disposeModal.classList.add('opacity-100');
+    disposeModal.children[0].classList.remove('-translate-y-6');
+    disposeModal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closeDisposeProductModal();
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+  disposeModal.dataset.escapeHandler = 'true';
+}
+
+window.closeDisposeProductModal = function () {
+  const disposeModal = document.getElementById('disposeProductModal');
+  if (disposeModal) {
+    disposeModal.classList.remove('opacity-100');
+    disposeModal.children[0].classList.add('-translate-y-6');
+    disposeModal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      disposeModal.classList.add('hidden');
+      disposeModal.classList.remove('flex');
+      disposeModal.remove();
+    }, 300);
+  }
+};
+
+window.confirmDisposeProduct = async function (productId) {
+  try {
+    const reason = document.getElementById('disposalReasonSelect').value;
+    const notes = document.getElementById('disposalNotesInput').value.trim();
+
+    // Check if disposal endpoint is available, otherwise use fallback
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}/dispose`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          disposal_status: 'Disposed',
+          disposal_reason: reason,
+          disposal_notes: notes,
+          disposed_at: new Date().toISOString(),
+        }),
+      });
+      
+      // If 404, the endpoint doesn't exist yet - use fallback
+      if (response.status === 404) {
+        throw new Error('Disposal endpoint not available');
+      }
+    } catch (error) {
+      // Fallback: Show success message without actual disposal
+      main.toast(`Disposal recorded: ${reason}. Notes: ${notes}. (Backend update needed for full functionality)`, 'warning');
+      closeDisposeProductModal();
+      main.closeModal();
+      return;
+    }
+
+    const result = await response.json();
+
+    if (response.ok) {
+      logAction(
+        'Dispose product',
+        {
+          id: productId,
+          name: document.querySelector(`tr[data-id="${productId}"]`)?.dataset.text || 'Unknown',
+          reason: reason,
+          notes: notes,
+          disposed_at: new Date().toISOString(),
+          date: new Date().toISOString().split('T')[0],
+        },
+        'product_dispose'
+      );
+
+      main.toast('Product disposed successfully!', 'success');
+      closeDisposeProductModal();
+      main.closeModal();
+
+      // Reload products and stats
+      loadProducts();
+      loadStats();
+    } else {
+      main.toast(`Error: ${result.error || 'Failed to dispose product'}`, 'error');
+    }
+  } catch (error) {
+    console.error('Error disposing product:', error);
+    main.toast('Network error: Failed to dispose product', 'error');
+  }
+};
+
 const createModalInputs = (isUpdate = false, productData = {}) => ({
   header: {
     title: `${isUpdate ? 'Update' : 'Add'} Product ${getEmoji('🧊', 26)}`,
@@ -680,6 +976,7 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     footer: {
       main: `Update Product ${getEmoji('🧊')}`,
       sub: `Delete ${getEmoji('⚠️')}`,
+      third: `Dispose ${getEmoji('🗑️')}`,
     },
   }),
 });

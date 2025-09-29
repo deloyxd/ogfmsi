@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS ecommerce_products_tbl (
     purchase_type VARCHAR(100) NOT NULL,
     category VARCHAR(100) NOT NULL,
     image_url LONGTEXT,
+    disposal_status ENUM('Active', 'Disposed') DEFAULT 'Active',
+    disposal_reason VARCHAR(100),
+    disposal_notes TEXT,
+    disposed_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
