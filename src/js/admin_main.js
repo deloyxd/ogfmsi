@@ -1002,6 +1002,7 @@ function setupModalBase(defaultData, inputs, callback) {
     button: {
       main: inputs.footer ? inputs.footer.main?.trim() || defaultData.innerHTML : defaultData.innerHTML,
       sub: inputs.footer ? inputs.footer.sub?.trim() || '' : '',
+      third: inputs.footer ? inputs.footer.third?.trim() || '' : '',
     },
   };
 
@@ -1009,11 +1010,13 @@ function setupModalBase(defaultData, inputs, callback) {
   const modalSubtitle = tempModalContainer.querySelector('#modalSubtitle');
   const modalMainBtn = tempModalContainer.querySelector('#modalMainBtn');
   const modalSubBtn = tempModalContainer.querySelector('#modalSubBtn');
+  const modalThirdBtn = tempModalContainer.querySelector('#modalThirdBtn');
 
   modalTitle.innerHTML = data.title;
   modalSubtitle.innerHTML = data.subtitle;
   modalMainBtn.innerHTML = data.button.main;
   modalSubBtn.innerHTML = data.button.sub;
+  modalThirdBtn.innerHTML = data.button.third;
 
   if (data.subtitle != '') modalSubtitle.classList.remove('hidden');
   modalMainBtn.onclick = () => {
@@ -1023,6 +1026,10 @@ function setupModalBase(defaultData, inputs, callback) {
   if (data.button.sub != '') {
     modalSubBtn.classList.remove('hidden');
     modalSubBtn.onclick = callback[1];
+  }
+  if (data.button.third != '') {
+    modalThirdBtn.classList.remove('hidden');
+    modalThirdBtn.onclick = callback[2];
   }
 
   if (inputs.image) {

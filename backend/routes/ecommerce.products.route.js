@@ -250,4 +250,41 @@ router.put('/products/:id/stock', async (req, res) => {
   });
 });
 
+// PUT dispose product
+router.put('/products/:id/dispose', async (req, res) => {
+  const { id } = req.params;
+  const { disposal_status, disposal_reason, disposal_notes, disposed_at } = req.body;
+
+  const query = `
+    UPDATE ecommerce_products_tbl 
+    SET disposal_status = ?, disposal_reason = ?, disposal_notes = ?, disposed_at = ? 
+    WHERE product_id = ?
+  `;
+
+  mysqlConnection.query(
+    query,
+    [disposal_status, disposal_reason, disposal_notes, disposed_at, id],
+    (error, result) => {
+      if (error) {
+        console.error('Disposing product error:', error);
+        return res.status(500).json({ error: 'Disposing product failed' });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Product not found' });
+      } else {
+        res.status(200).json({ 
+          message: 'Product disposed successfully',
+          result: {
+            product_id: id,
+            disposal_status,
+            disposal_reason,
+            disposal_notes,
+            disposed_at
+          }
+        });
+      }
+    }
+  );
+});
+
 module.exports = router;
