@@ -1850,7 +1850,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
 
     const cellContent = `
       <div class="flex items-center gap-3">
-        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 rounded-full object-cover" />
+        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${(data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]).replace(/'/g, "&#39;")}')" />
         <p>${data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]}</p>
       </div>
     `;

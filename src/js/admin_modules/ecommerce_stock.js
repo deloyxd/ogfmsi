@@ -11,6 +11,15 @@ function getEmoji(emoji, size = 16) {
   return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
 }
 
+// Utility: Normalize product name for comparison (similar to equipment validation)
+function normalizeProductName(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
   { value: 'food-meals', label: 'Food & Meals' },
@@ -85,31 +94,133 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   mainBtn?.removeEventListener('click', mainBtnFunction);
   mainBtn?.addEventListener('click', mainBtnFunction);
 
-  // Load products and stats on page load
   loadProducts();
 });
 
 // Listen for section changes to refresh stats when this section becomes active
 document.addEventListener('DOMContentLoaded', () => {
-  // Check if we're on the ecommerce-stock section
   const currentSection = document.querySelector(`#${SECTION_NAME}-section`);
   if (currentSection && !currentSection.classList.contains('hidden')) {
-    // Section is already active, load stats
     setTimeout(() => {
       loadProducts();
     }, 100);
   }
 });
 
+// Validate product registration for similar names
+async function validateProductRegistration(name) {
+  try {
+    const newNameNorm = normalizeProductName(name);
+    if (newNameNorm.length < 3) {
+      return { isValid: true, similarProduct: null };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
+    const data = await response.json();
+    const products = response.ok ? data.result || [] : [];
+    
+    const similarProduct = products.find((product) => {
+      const existingNameNorm = normalizeProductName(product.product_name);
+      if (!existingNameNorm) return false;
+      
+      return existingNameNorm === newNameNorm || 
+             existingNameNorm.includes(newNameNorm) || 
+             newNameNorm.includes(existingNameNorm);
+    });
+
+    if (similarProduct) {
+      return { isValid: false, similarProduct };
+    }
+
+    return { isValid: true, similarProduct: null };
+  } catch (error) {
+    console.error('Error validating product registration:', error);
+    // If there's an error, allow registration to proceed
+    return { isValid: true, similarProduct: null };
+  }
+}
+
+// Show similar product found modal (restriction)
+function showSimilarProductModal(similarProduct, attemptedName) {
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-40 hidden" id="similarProductModal">
+      <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-red-500 to-red-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Similar Product Found ${getEmoji('⚠️', 26)}</p>
+          <p class="text-xs">A product with similar name already exists</p>
+        </div>
+        <div class="p-6 text-sm text-gray-700">
+          <p class="mb-3">Attempted name: <span class="font-semibold">${attemptedName}</span></p>
+          <div class="bg-gray-50 p-3 rounded border">
+            <p class="text-gray-600 mb-1">Existing product:</p>
+            <p class="font-semibold text-gray-900">${similarProduct.product_name}</p>
+            <p class="text-xs text-gray-500 mt-1">ID: ${similarProduct.product_id.split('_').slice(0, 2).join('_')}</p>
+            <p class="text-xs text-gray-500">Current quantity: ${similarProduct.quantity}</p>
+            <p class="text-xs text-gray-500">Price: ${main.formatPrice(similarProduct.price)}</p>
+            <p class="text-xs text-gray-500">Category: ${main.getSelectedOption(similarProduct.category, CATEGORIES)}</p>
+          </div>
+          <p class="mt-4 text-red-600 font-medium">Product registration blocked to prevent duplicates.</p>
+          <p class="text-sm text-gray-600 mt-2">Please use a different name or contact the existing product.</p>
+          <div class="flex gap-3 mt-5">
+            <button type="button" id="similarProductOkBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('similarProductModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const close = () => {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  };
+
+  document.getElementById('similarProductOkBtn').addEventListener('click', close);
+  
+  // Close on escape key
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
+}
+
+
 function mainBtnFunction() {
   const inputs = createModalInputs();
 
-  main.openModal(mainBtn, inputs, (result) => {
+  main.openModal(mainBtn, inputs, async (result) => {
     const name = result.image.short[0].value;
     const [price, quantity] = result.short.map((item) => item.value);
     const measurement = result.image.short[1].value?.trim() || '';
 
     if (!main.validateStockInputs(price, quantity, measurement)) return;
+
+    // Validate for similar products before proceeding
+    const validation = await validateProductRegistration(name);
+    if (!validation.isValid) {
+      showSimilarProductModal(validation.similarProduct, name);
+      return;
+    }
 
     addProduct(result, name, +price, +quantity, measurement);
   });

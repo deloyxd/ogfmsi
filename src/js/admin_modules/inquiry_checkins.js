@@ -19,6 +19,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     subBtn?.addEventListener('click', () => {});
 
     await loadAllCheckins();
+    setupMidnightClear();
   }
 });
 
@@ -42,8 +43,7 @@ export function logCheckin(transactionId, customer, tabIndex, showSection) {
   main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
     createResult.dataset.tid = transactionId;
 
-    const checkinArchiveBtn = createResult.querySelector(`#checkinArchiveBtn`);
-    checkinArchiveBtn.addEventListener('click', () => checkinArchiveBtnFunction(createResult, tabIndex));
+    // No action buttons needed for check-ins
 
     // Persist check-in to backend based on tab index
     const payload = {
@@ -69,58 +69,8 @@ export function logCheckin(transactionId, customer, tabIndex, showSection) {
   });
 }
 
-function checkinArchiveBtnFunction(checkin, tabIndex) {
-  main.openConfirmationModal('Archive check-in log. Cannot be undone.<br><br>ID: ' + checkin.dataset.id, () => {
-    main.findAtSectionOne(SECTION_NAME, checkin.dataset.id, 'equal_id', tabIndex, (findResult) => {
-      if (findResult) {
-        const columnsData = [
-          'id_' + checkin.dataset.id,
-          {
-            type: 'object_contact',
-            data: [checkin.dataset.image, checkin.dataset.text, checkin.dataset.contact],
-          },
-          'custom_datetime_today',
-        ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
-          main.createNotifDot(SECTION_NAME, 3);
-          main.deleteAtSectionOne(SECTION_NAME, tabIndex, checkin.dataset.id);
-
-          const checkinDetailsBtn = createResult.querySelector(`#checkinDetailsBtn`);
-          checkinDetailsBtn.addEventListener('click', () =>
-            customers.customerDetailsBtnFunction(checkin.dataset.id, 'Archive Details', '🧾')
-          );
-
-          // Persist archive to backend
-          const sourceType = tabIndex === 1 ? 'regular' : 'monthly';
-          const archivePayload = {
-            archive_id: `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-            source_type: sourceType,
-            checkin_id: checkin.dataset.tid || checkin.dataset.id,
-            customer_id: checkin.dataset.id,
-            customer_name_encoded: checkin.dataset.text,
-            customer_contact: checkin.dataset.contact,
-            customer_image_url: checkin.dataset.image,
-            transaction_id: checkin.dataset.tid || '',
-          };
-          postCheckin(`${API_BASE_URL}/inquiry/checkins/archived`, archivePayload);
-        });
-      }
-    });
-    // archiveLoop(checkin.dataset.id);
-    main.toast(`Successfully archived check-in log!`, 'error');
-    main.closeConfirmationModal();
-    main.closeModal();
-
-    // function archiveLoop(checkinId) {
-    //   main.findAtSectionOne(SECTION_NAME, checkinId, 'equal_id', tabIndex, (deleteResult) => {
-    //     if (deleteResult) {
-    //       deleteResult.remove();
-    //       archiveLoop(checkinId);
-    //     }
-    //   });
-    // }
-  });
-}
+// ngayon read only nalang yung check-ins natin since attendance lang naman siya
+// mag c-clear yung mga tabs nayan kada pag tapos ng 12am
 
 export function findLogCheckin(id, tabIndex, callback) {
   main.findAtSectionOne(SECTION_NAME, id, 'equal_id', tabIndex, (findResult) => {
@@ -132,10 +82,9 @@ export default { logCheckin, findLogCheckin };
 
 async function loadAllCheckins() {
   try {
-    const [regularResp, monthlyResp, archivedResp] = await Promise.all([
+    const [regularResp, monthlyResp] = await Promise.all([
       fetch(`${API_BASE_URL}/inquiry/checkins/regular`),
       fetch(`${API_BASE_URL}/inquiry/checkins/monthly`),
-      fetch(`${API_BASE_URL}/inquiry/checkins/archived`),
     ]);
 
     if (regularResp.ok) {
@@ -145,10 +94,6 @@ async function loadAllCheckins() {
     if (monthlyResp.ok) {
       const data = await monthlyResp.json();
       data.result.forEach((r) => renderCheckinFromBackend(r, 2));
-    }
-    if (archivedResp.ok) {
-      const data = await archivedResp.json();
-      data.result.forEach((r) => renderCheckinFromBackend(r, 3));
     }
   } catch (error) {
     console.error('Failed to load check-ins:', error);
@@ -167,16 +112,6 @@ function renderCheckinFromBackend(record, tabIndex) {
 
   main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
     if (record.transaction_id) createResult.dataset.tid = record.transaction_id;
-
-    if (tabIndex === 3) {
-      const checkinDetailsBtn = createResult.querySelector(`#checkinDetailsBtn`);
-      checkinDetailsBtn?.addEventListener('click', () =>
-        customers.customerDetailsBtnFunction(createResult.dataset.id, 'Archive Details', '🧾')
-      );
-    } else {
-      const checkinArchiveBtn = createResult.querySelector(`#checkinArchiveBtn`);
-      checkinArchiveBtn?.addEventListener('click', () => checkinArchiveBtnFunction(createResult, tabIndex));
-    }
   });
 }
 
@@ -197,5 +132,47 @@ async function postCheckin(url, payload) {
     console.error('Check-in API request failed:', error);
   } finally {
     window.hideGlobalLoading?.();
+  }
+}
+
+function setupMidnightClear() {
+  const now = new Date();
+  const lastClearDate = localStorage.getItem('monthlyCheckinsLastCleared');
+  const today = now.toDateString();
+  
+  if (lastClearDate !== today) {
+    clearMonthlyCheckins();
+    localStorage.setItem('monthlyCheckinsLastCleared', today);
+  }
+
+  setInterval(() => {
+    const currentTime = new Date();
+    const currentDate = currentTime.toDateString();
+    
+    if (lastClearDate !== currentDate) {
+      clearMonthlyCheckins();
+      localStorage.setItem('monthlyCheckinsLastCleared', currentDate);
+    }
+  }, 60000); // 1 minute interval
+}
+
+async function clearMonthlyCheckins() {
+  try {
+    const resp = await fetch(`${API_BASE_URL}/inquiry/checkins/monthly/clear`, {
+      method: 'DELETE',
+    });
+  
+    if (resp.ok) {
+      const monthlyTab = document.querySelector(`#${SECTION_NAME}-section .tab-content[data-tab="2"]`);
+      if (monthlyTab) {
+        const listContainer = monthlyTab.querySelector('.list-container');
+        if (listContainer) {
+          listContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No monthly customer check-ins yet</p>';
+        }
+      }
+      console.log('Monthly check-ins cleared for new day');
+    }
+  } catch (error) {
+    console.error('Failed to clear monthly check-ins:', error);
   }
 }
