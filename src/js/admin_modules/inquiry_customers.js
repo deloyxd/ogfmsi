@@ -952,7 +952,12 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
                   function continueCheckinProcess() {
                     if (isMonthlyCustomer && !isPending) {
-                      checkins.logCheckin(customer.dataset.tid, customer, 2, true);
+                      checkins.logCheckin(
+                        customer.dataset.tid || `CI_${customer.dataset.id}_${Date.now()}`,
+                        customer,
+                        2,
+                        true
+                      );
                       return;
                     } else {
                       processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
@@ -1027,7 +1032,12 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
             function continueCheckinProcess() {
               if (isMonthlyCustomer && !isPending) {
-                checkins.logCheckin(customer.dataset.tid, customer, 2, true);
+                checkins.logCheckin(
+                  customer.dataset.tid || `CI_${customer.dataset.id}_${Date.now()}`,
+                  customer,
+                  2,
+                  true
+                );
                 return;
               } else {
                 processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
