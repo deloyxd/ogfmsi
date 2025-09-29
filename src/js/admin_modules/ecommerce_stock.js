@@ -119,7 +119,15 @@ async function validateProductRegistration(name) {
     const data = await response.json();
     const products = response.ok ? data.result || [] : [];
     
+    const isProductDisposed = (product) => {
+      return (
+        product?.disposal_status === 'Disposed' ||
+        (product?.product_name && product.product_name.includes('[DISPOSED'))
+      );
+    };
+
     const similarProduct = products.find((product) => {
+      if (isProductDisposed(product)) return false; // allow duplicates of disposed products
       const existingNameNorm = normalizeProductName(product.product_name);
       if (!existingNameNorm) return false;
       
@@ -294,8 +302,11 @@ async function loadProducts() {
     if (response.ok) {
       const products = data.result || [];
 
-      // Tab 1: Unique Products (All stocks)
-      displayProductsForTab(products, 1);
+      // Tab 1: Unique Products (All stocks) — exclude disposed products
+      const activeProducts = products.filter(
+        (p) => !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+      );
+      displayProductsForTab(activeProducts, 1);
 
       // Tab 2: Low Stock Products (About to be out of stock)
       displayProductsForTab(
