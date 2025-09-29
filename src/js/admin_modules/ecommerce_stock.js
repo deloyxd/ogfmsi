@@ -276,7 +276,7 @@ async function addProduct(result, name, price, quantity, measurement) {
 
       // Reload products and stats
       loadProducts();
-      loadStats();
+      // loadStats(); // Commented out - using client-side calculation instead
     } else {
       main.toast(`Error: ${data.error}`, 'error');
     }
@@ -323,7 +323,7 @@ async function loadProducts() {
 
       // Tab 6: Disposed Products (Expired or damaged products)
       displayProductsForTab(
-        products.filter((p) => p.disposal_status === 'Disposed'),
+        products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))),
         6
       );
 
@@ -365,7 +365,7 @@ function computeAndUpdateStats(products) {
   const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
   const bestSelling = products.filter((p) => +p.quantity > 50).length;
   const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
-  const disposed = products.filter((p) => p.disposal_status === 'Disposed').length;
+  const disposed = products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))).length;
 
   updateStatsDisplay({
     total_products: totalProducts,
@@ -384,11 +384,11 @@ function computeAndUpdateStats(products) {
 // [2] Out of stock items (0)
 // [3] Best selling products (>50 sold)
 // [4] Slow moving products (<=10 but >0)
-// [5] Disposed products (expired or damaged)
+// Note: Disposed products stat is calculated but not displayed
 function updateStatsDisplay(stats) {
   const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
 
-  if (statElements.length >= 6) {
+  if (statElements.length >= 5) {
     const uniqueProductsStat = statElements[0];
     if (uniqueProductsStat) {
       const valueElement = uniqueProductsStat.querySelector('.section-stats-c');
@@ -429,13 +429,7 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const disposedStat = statElements[5];
-    if (disposedStat) {
-      const valueElement = disposedStat.querySelector('.section-stats-c');
-      if (valueElement) {
-        valueElement.textContent = stats.disposed || 0;
-      }
-    }
+
   }
 }
 
@@ -452,13 +446,16 @@ function displayProductsForTab(products, tabIndex) {
     emptyCell.parentElement.classList.remove('hidden');
   }
 
+  // Update tab title with count for disposed products (tab 6)
+  updateTabTitleWithCount(tabIndex, products.length);
+
   if (!products || products.length === 0) {
     return;
   }
 
   products.forEach((product) => {
     const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
-    const isDisposed = product.disposal_status === 'Disposed';
+    const isDisposed = product.disposal_status === 'Disposed' || (product.product_name && product.product_name.toLowerCase().includes('disposed'));
     
     const columnsData = [
       displayId,
@@ -468,7 +465,7 @@ function displayProductsForTab(products, tabIndex) {
       },
       main.formatPrice(product.price),
       product.quantity + '',
-      isDisposed ? `Disposed ${getEmoji('🗑️')}` : main.getStockStatus(product.quantity),
+      isDisposed ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>` : main.getStockStatus(product.quantity),
       product.measurement_value || '',
       product.measurement_unit || '',
       main.getSelectedOption(product.category, CATEGORIES),
@@ -513,6 +510,29 @@ function displayProductsForTab(products, tabIndex) {
       }
     });
   });
+}
+
+// Function to update tab title with count badge
+function updateTabTitleWithCount(tabIndex, count) {
+  // Only update tab 6 (Disposed Products)
+  if (tabIndex !== 6) return;
+  
+  const tabElement = document.getElementById(`${SECTION_NAME}_tab${tabIndex}`);
+  if (!tabElement) return;
+  
+  const tabTitleElement = tabElement.children[0]; // First child contains the title
+  if (!tabTitleElement) return;
+  
+  // Extract the base title (remove any existing count)
+  const currentTitle = tabTitleElement.textContent.trim();
+  const baseTitle = currentTitle.replace(/\s*\(\d+\)\s*$/, '');
+  
+  // Update the title with the count
+  if (count > 0) {
+    tabTitleElement.textContent = `${baseTitle} (${count})`;
+  } else {
+    tabTitleElement.textContent = baseTitle;
+  }
 }
 
 function setupProductDetailsButton(result) {
@@ -563,14 +583,25 @@ function setupDisposedProductButton(result) {
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
       category: result.dataset.custom7,
-      disposalStatus: result.dataset.disposalStatus,
-      disposalReason: result.dataset.disposalReason,
-      disposalNotes: result.dataset.disposalNotes,
-      disposedAt: result.dataset.disposedAt,
+      disposalStatus: result.dataset.disposalStatus || (result.dataset.text && result.dataset.text.includes('[DISPOSED') ? 'Disposed' : 'Active'),
+      disposalReason: result.dataset.disposalReason || (result.dataset.text ? extractDisposalReason(result.dataset.text) : ''),
+      disposalNotes: result.dataset.disposalNotes || (result.dataset.custom5 ? extractDisposalNotes(result.dataset.custom5) : ''),
+      disposedAt: result.dataset.disposedAt || '',
     };
 
     showDisposedProductDetails(productData);
   });
+}
+
+// Helper functions to extract disposal information from fallback format
+function extractDisposalReason(productName) {
+  const match = productName.match(/\[DISPOSED: (.+?)\]/);
+  return match ? match[1] : '';
+}
+
+function extractDisposalNotes(measurement) {
+  const match = measurement.match(/\| Disposal Notes: (.+)$/);
+  return match ? match[1] : '';
 }
 
 function showDisposedProductDetails(productData) {
@@ -581,7 +612,7 @@ function showDisposedProductDetails(productData) {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }) : 'Unknown';
+    }) : (productData.disposalStatus === 'Disposed' ? 'Recently disposed' : 'Unknown');
 
   const modalHTML = `
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-30 hidden" id="disposedProductModal">
@@ -720,7 +751,7 @@ async function updateProduct(result, newResult, name) {
 
       // Reload products and stats
       loadProducts();
-      loadStats();
+      // loadStats(); // Commented out - using client-side calculation instead
     } else {
       main.toast(`Error: ${data.error}`, 'error');
     }
@@ -770,7 +801,7 @@ async function deleteProduct(result) {
 
         // Reload products and stats
         loadProducts();
-        loadStats();
+        // loadStats(); // Commented out - using client-side calculation instead
       } else {
         main.toast(`Error: ${data.error}`, 'error');
       }
@@ -878,8 +909,10 @@ window.confirmDisposeProduct = async function (productId) {
     const reason = document.getElementById('disposalReasonSelect').value;
     const notes = document.getElementById('disposalNotesInput').value.trim();
 
-    // Check if disposal endpoint is available, otherwise use fallback
+    // Try disposal endpoint, fallback to regular update if not available
     let response;
+    let isDisposalEndpoint = false;
+    
     try {
       response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}/dispose`, {
         method: 'PUT',
@@ -894,16 +927,61 @@ window.confirmDisposeProduct = async function (productId) {
         }),
       });
       
-      // If 404, the endpoint doesn't exist yet - use fallback
       if (response.status === 404) {
         throw new Error('Disposal endpoint not available');
       }
+      isDisposalEndpoint = true;
     } catch (error) {
-      // Fallback: Show success message without actual disposal
-      main.toast(`Disposal recorded: ${reason}. Notes: ${notes}. (Backend update needed for full functionality)`, 'warning');
-      closeDisposeProductModal();
-      main.closeModal();
-      return;
+      // Fallback: Use regular update endpoint and modify product name to indicate disposal
+      const productRow = document.querySelector(`tr[data-id="${productId}"]`);
+      if (!productRow) {
+        throw new Error('Product not found');
+      }
+      
+      const originalName = main.decodeText(productRow.dataset.text);
+      const disposedName = `[DISPOSED: ${reason}] ${originalName}`;
+      
+      const response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_name: disposedName,
+          product_name_encoded: main.encodeText(disposedName),
+          price: main.decodePrice(productRow.dataset.custom2),
+          price_encoded: productRow.dataset.custom2,
+          quantity: productRow.dataset.custom3,
+          measurement_value: productRow.dataset.custom5 + (notes ? ` | Disposal Notes: ${notes}` : ''),
+          measurement_unit: productRow.dataset.custom6,
+          category: productRow.dataset.custom7,
+          image_url: productRow.dataset.image,
+        }),
+      });
+      
+      if (response.ok) {
+        logAction(
+          'Dispose product',
+          {
+            id: productId,
+            name: originalName,
+            reason: reason,
+            notes: notes,
+            disposed_at: new Date().toISOString(),
+            date: new Date().toISOString().split('T')[0],
+          },
+          'product_dispose'
+        );
+
+        main.toast(`Product marked as disposed: ${reason}`, 'success');
+        closeDisposeProductModal();
+        main.closeModal();
+        loadProducts();
+        // loadStats(); // Commented out - using client-side calculation instead
+        return;
+      } else {
+        throw new Error('Failed to update product');
+      }
     }
 
     const result = await response.json();
@@ -928,7 +1006,7 @@ window.confirmDisposeProduct = async function (productId) {
 
       // Reload products and stats
       loadProducts();
-      loadStats();
+      // loadStats(); // Commented out - using client-side calculation instead
     } else {
       main.toast(`Error: ${result.error || 'Failed to dispose product'}`, 'error');
     }
@@ -999,5 +1077,5 @@ function checkIfSameData(newData, oldData) {
 
 function refreshAllTabs() {
   loadProducts();
-  loadStats();
+  // loadStats(); // Commented out - using client-side calculation instead
 }
