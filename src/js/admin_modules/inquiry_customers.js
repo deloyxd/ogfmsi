@@ -1027,7 +1027,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
             if (findLogResult) {
               const logDate = findLogResult.dataset.datetime
                 ? findLogResult.dataset.datetime.split(' - ')[0]
-                : findLogResult.dataset.date;
+                : findLogResult.dataset.date
+                  ? findLogResult.dataset.date
+                  : findLogResult.dataset.custom2.split(' - ')[0];
               const logDateObj = new Date(logDate);
               const today = new Date();
               const isToday =
