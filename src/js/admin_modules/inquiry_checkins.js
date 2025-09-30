@@ -108,17 +108,27 @@ function renderCheckinFromBackend(record, tabIndex) {
   );
   const logTime = main.encodeTime(record.created_at, 'long');
 
-  const columnsData = [
-    'id_' + (record.customer_id || record.checkin_id),
-    {
-      type: 'object_contact',
-      data: [record.customer_image_url, record.customer_name_encoded, record.customer_contact],
-    },
-    `${logDate} - ${logTime}`,
-  ];
+  main.findAtSectionOne('inquiry-customers', record.customer_id || record.checkin_id, 'equal_id', 1, (findResult) => {
+    let imageSrc = '';
+    if (findResult) {
+      imageSrc = findResult.dataset.image;
+    }
+    if (imageSrc === '') {
+      imageSrc = record.customer_image_url;
+    }
 
-  main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
-    if (record.transaction_id) createResult.dataset.tid = record.transaction_id;
+    const columnsData = [
+      'id_' + (record.customer_id || record.checkin_id),
+      {
+        type: 'object_contact',
+        data: [imageSrc, record.customer_name_encoded, record.customer_contact],
+      },
+      `${logDate} - ${logTime}`,
+    ];
+
+    main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createResult) => {
+      if (record.transaction_id) createResult.dataset.tid = record.transaction_id;
+    });
   });
 }
 
@@ -146,7 +156,7 @@ function setupMidnightClear() {
   const now = new Date();
   let lastClearDate = localStorage.getItem('monthlyCheckinsLastCleared');
   const today = now.toDateString();
-  
+
   if (lastClearDate !== today) {
     clearAllCheckins();
     localStorage.setItem('monthlyCheckinsLastCleared', today);
@@ -155,7 +165,7 @@ function setupMidnightClear() {
   setInterval(() => {
     const currentTime = new Date();
     const currentDate = currentTime.toDateString();
-    
+
     // refresh lastClearDate from storage to avoid stale closure value
     lastClearDate = localStorage.getItem('monthlyCheckinsLastCleared');
     if (lastClearDate !== currentDate) {
@@ -170,13 +180,14 @@ async function clearMonthlyCheckins() {
     const resp = await fetch(`${API_BASE_URL}/inquiry/checkins/monthly/clear`, {
       method: 'DELETE',
     });
-  
+
     if (resp.ok) {
       const monthlyTab = document.querySelector(`#${SECTION_NAME}-section .tab-content[data-tab="2"]`);
       if (monthlyTab) {
         const listContainer = monthlyTab.querySelector('.list-container');
         if (listContainer) {
-          listContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No monthly customer check-ins yet</p>';
+          listContainer.innerHTML =
+            '<p class="text-sm text-gray-400 text-center py-4">No monthly customer check-ins yet</p>';
         }
       }
       console.log('Monthly check-ins cleared for new day');
@@ -191,13 +202,14 @@ async function clearRegularCheckins() {
     const resp = await fetch(`${API_BASE_URL}/inquiry/checkins/regular/clear`, {
       method: 'DELETE',
     });
-  
+
     if (resp.ok) {
       const regularTab = document.querySelector(`#${SECTION_NAME}-section .tab-content[data-tab="1"]`);
       if (regularTab) {
         const listContainer = regularTab.querySelector('.list-container');
         if (listContainer) {
-          listContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No regular customer check-ins yet</p>';
+          listContainer.innerHTML =
+            '<p class="text-sm text-gray-400 text-center py-4">No regular customer check-ins yet</p>';
         }
       }
       console.log('Regular check-ins cleared for new day');
