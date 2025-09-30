@@ -85,6 +85,17 @@ const MEASUREMENT_UNITS = [
   { value: '3x large', label: 'Clothing Size: XXXL' },
 ];
 
+// Clothing size unit values for quick checks
+const CLOTHING_SIZE_UNITS = new Set([
+  'extra small',
+  'small',
+  'medium',
+  'large',
+  'extra large',
+  '2x large',
+  '3x large',
+]);
+
 let mainBtn;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
@@ -1034,7 +1045,15 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     type: 'normal',
     short: [
       { placeholder: 'Product name', value: productData.name || '', required: true },
-      { placeholder: 'Product measurement value', value: productData.measurement || '' },
+      {
+        placeholder: 'Product measurement value',
+        value: productData.measurement || '',
+        // Lock initially if the selected unit is a clothing size
+        locked:
+          productData && productData.measurementUnit
+            ? CLOTHING_SIZE_UNITS.has(String(productData.measurementUnit).toLowerCase())
+            : false,
+      },
     ],
     spinner: [
       {
@@ -1042,6 +1061,25 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
         placeholder: 'Select product measurement unit',
         selected: productData.measurementUnit || 0,
         options: MEASUREMENT_UNITS,
+        // Toggle measurement value editability when clothing size is chosen
+        listener: (_selectedIndex, container) => {
+          try {
+            const unitSelect = container.querySelector('#input-spinner-1');
+            const measurementInput = container.querySelector('#input-short-2');
+            if (!unitSelect || !measurementInput) return;
+
+            const selectedUnit = String(unitSelect.value || '').toLowerCase();
+            const shouldLock = CLOTHING_SIZE_UNITS.has(selectedUnit);
+
+            measurementInput.readOnly = shouldLock;
+            measurementInput.classList.toggle('bg-gray-200', shouldLock);
+            measurementInput.classList.toggle('text-gray-500', shouldLock);
+            if (shouldLock) {
+              measurementInput.value = '';
+              measurementInput.dispatchEvent(new Event('input'));
+            }
+          } catch (_e) {}
+        },
       },
     ],
   },
