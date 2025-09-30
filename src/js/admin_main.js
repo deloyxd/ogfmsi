@@ -49,7 +49,7 @@ function ensureGlobalLoadingOverlay() {
     spinner.style.animation = 'ogfmsi-gl-spin 1s linear infinite';
 
     const text = document.createElement('div');
-    text.textContent = 'Loading...';
+    text.textContent = 'Fetching database...';
 
     wrapper.appendChild(spinner);
     wrapper.appendChild(text);

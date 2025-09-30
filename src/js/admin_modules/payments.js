@@ -254,7 +254,7 @@ export function continueProcessCheckoutPayment(transactionId, fullName) {
         'cart',
         findResult.dataset.id,
         findResult.dataset.image,
-        findResult.dataset.text,
+        findResult.dataset.text + ' ' + findResult.dataset.custom2,
         findResult.dataset.custom2,
         fullName,
         main.deformatPrice(findResult.dataset.custom3),
@@ -365,7 +365,11 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       subtitle: `Purpose: ${purpose}`,
     },
     short: [
-      { placeholder: type === 'cart' ? 'Service details' : 'Customer details', value: type === 'cart' ? `${fullName}` : `${fullName} (${customerId})`, locked: true },
+      {
+        placeholder: type === 'cart' ? 'Purchase details' : 'Service details',
+        value: type === 'cart' ? `${fullName}` : `for customer ${fullName} (${customerId})`,
+        locked: true,
+      },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price' },
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true },
@@ -459,16 +463,16 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       dateTimeText,
     ];
 
-    main.createAtSectionOne(SECTION_NAME, columnsData, 3, async (createResult) => {
+    main.createAtSectionOne(SECTION_NAME, columnsData, type === 'cart' ? 4 : 3, async (createResult) => {
       createResult.dataset.refnum = refNum;
 
       main.toast(`Transaction successfully completed!`, 'success');
       main.createNotifDot(SECTION_NAME, 'main');
-      main.createNotifDot(SECTION_NAME, 3);
+      main.createNotifDot(SECTION_NAME, type === 'cart' ? 4 : 3);
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
 
       const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-      transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
+      transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
 
       main.closeModal(() => {
         switch (type) {
@@ -780,7 +784,7 @@ function getIsoWeek(date) {
   return weekNo;
 }
 
-function openTransactionDetails(row) {
+function openTransactionDetails(type, row) {
   const transactionId = row.dataset.id;
   const customerId = row.dataset.text;
   const purpose = row.dataset.purpose || row.dataset.custom2 || 'N/A';
@@ -798,7 +802,11 @@ function openTransactionDetails(row) {
       subtitle: `Transaction ID: ${transactionId}`,
     },
     short: [
-      { placeholder: 'Customer', value: customerId, locked: true },
+      {
+        placeholder: type === 'cart' ? 'Sales' : 'Customer',
+        value: customerId.split(':')[1].split('Purchasing')[0].trim(),
+        locked: true,
+      },
       { placeholder: 'Purpose', value: purpose, locked: true },
       { placeholder: 'Amount to Pay', value: amountToPay, locked: true },
       { placeholder: 'Amount Paid: Cash', value: paidCash, locked: true },
@@ -821,7 +829,7 @@ export function processCheckoutPayment(purpose, amountToPay) {
     'id_T_random',
     {
       type: 'object',
-      data: ['', 'Service: Cart Checkout'],
+      data: ['', 'Sales: Cart Checkout'],
     },
     purpose,
     main.formatPrice(amountToPay),
@@ -835,7 +843,7 @@ export function processCheckoutPayment(purpose, amountToPay) {
         'cart',
         createResult.dataset.id,
         createResult.dataset.image,
-        createResult.dataset.text,
+        createResult.dataset.text + ' ' + createResult.dataset.custom2,
         createResult.dataset.custom2,
         createResult.dataset.text,
         amountToPay,
@@ -862,7 +870,7 @@ export function processCheckoutPayment(purpose, amountToPay) {
         },
         body: JSON.stringify({
           payment_id: createResult.dataset.id,
-          payment_customer_id: createResult.dataset.text,
+          payment_customer_id: 'Sales: Cart Checkout',
           payment_purpose: purpose,
           payment_amount_to_pay: amountToPay,
           payment_rate: priceRate,

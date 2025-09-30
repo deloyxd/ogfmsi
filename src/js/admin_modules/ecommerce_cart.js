@@ -289,7 +289,7 @@ function displayProductsForTab(products, tabIndex) {
         availableStock = getAvailableStock(product.id);
         quantity = Math.min(1, availableStock);
         updateAddToCartButton();
-        main.toast(`${fullName}, added to cart!`, 'success');
+        main.toast(`${fullName} is being added to cart, please wait`, 'info');
       } else if (quantity > 0) {
         main.toast(`Cannot add ${quantity} items. Only ${getAvailableStock(product.id)} available.`, 'error');
       }
@@ -365,6 +365,7 @@ async function addToCart(product, quantity) {
       if (response.ok) {
         // Reload cart from server to get the cart_id
         await loadCartFromServer();
+        main.toast(`${product.name.replace(/::\/\//g, ' ').trim()} successfully added to cart!`, 'success');
       } else {
         console.error('Error adding to cart:', data.error);
         main.toast('Error: Failed to add item to cart', 'error');
@@ -731,11 +732,11 @@ function processCheckout() {
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const purpose =
-    'Purchasing: ' +
+    'Purchasing ' +
     cart
       .map(
         (item) =>
-          `${item.quantity}x ${item.name.replace(/::\/\//g, ' ')} ${item.measurementUnit !== '' ? item.measurement + item.measurementUnit + ' ' : ' '}${main.encodePrice(item.price)}`
+          `${item.quantity}x <b>${item.name.replace(/::\/\//g, ' ')} ${item.measurementUnit !== '' ? item.measurement + item.measurementUnit + ' ' : ' '}</b>${main.encodePrice(item.price)}`
       )
       .join(', ');
 
@@ -880,6 +881,8 @@ function addClearAllButton() {
       .split('px')[0] -
     (48 + 16);
   clearAllBtn.parentElement.children[0].classList.add(`h-[${totalHeight}px]`);
+
+  clearAllBtn.parentElement.children[1].classList.add('cursor-pointer');
 }
 
 // Clear all cart items with confirmation
