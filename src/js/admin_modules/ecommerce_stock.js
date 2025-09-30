@@ -130,10 +130,7 @@ async function validateProductRegistration(name) {
       if (isProductDisposed(product)) return false; // allow duplicates of disposed products
       const existingNameNorm = normalizeProductName(product.product_name);
       if (!existingNameNorm) return false;
-      
-      return existingNameNorm === newNameNorm || 
-             existingNameNorm.includes(newNameNorm) || 
-             newNameNorm.includes(existingNameNorm);
+      return existingNameNorm === newNameNorm;
     });
 
     if (similarProduct) {
