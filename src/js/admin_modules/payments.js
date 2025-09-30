@@ -1,6 +1,7 @@
 import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import reservations from './inquiry_reservations.js';
+import cart from './ecommerce_cart.js';
 import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
@@ -245,6 +246,24 @@ export function continueProcessCheckinPayment(transactionId, fullName) {
   });
 }
 
+export function continueProcessCheckoutPayment(transactionId, fullName) {
+  main.showSection(SECTION_NAME);
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
+    if (findResult) {
+      completePayment(
+        'cart',
+        findResult.dataset.id,
+        findResult.dataset.image,
+        findResult.dataset.text,
+        findResult.dataset.custom2,
+        fullName,
+        main.deformatPrice(findResult.dataset.custom3),
+        findResult.dataset.custom4
+      );
+    }
+  });
+}
+
 export function pendingTransaction(transactionId, callback) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => callback(findResult));
 }
@@ -346,7 +365,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       subtitle: `Purpose: ${purpose}`,
     },
     short: [
-      { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
+      { placeholder: type === 'cart' ? 'Service details' : 'Customer details', value: type === 'cart' ? `${fullName}` : `${fullName} (${customerId})`, locked: true },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price' },
       { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true },
@@ -459,6 +478,14 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           case 'reservations':
             reservations.completeReservationPayment(id);
             break;
+          case 'cart':
+            cart.completeProcessCheckout(
+              amountToPay,
+              main.fixText(paymentMethod),
+              result.short[2].value + result.short[3].value,
+              main.decodePrice(change),
+              refNum
+            );
         }
       });
 
@@ -500,6 +527,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       }
     });
   });
+
+  setTimeout(() => {
+    const cashInput = document.querySelector('#input-short-6');
+    const cashlessInput = document.querySelector('#input-short-7');
+    attachSelectAll(cashInput);
+    attachSelectAll(cashlessInput);
+  }, 0);
 }
 
 export function cancelCheckinPayment(transactionId) {
@@ -781,6 +815,71 @@ function openTransactionDetails(row) {
   main.openModal('gray', inputs, () => main.closeModal());
 }
 
+export function processCheckoutPayment(purpose, amountToPay) {
+  const priceRate = 'Regular';
+  const columnsData = [
+    'id_T_random',
+    {
+      type: 'object',
+      data: ['', 'Service: Cart Checkout'],
+    },
+    purpose,
+    main.formatPrice(amountToPay),
+    priceRate,
+    'custom_datetime_today',
+  ];
+  main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+    const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
+    transactionProcessBtn.addEventListener('click', () => {
+      completePayment(
+        'cart',
+        createResult.dataset.id,
+        createResult.dataset.image,
+        createResult.dataset.text,
+        createResult.dataset.custom2,
+        createResult.dataset.text,
+        amountToPay,
+        priceRate
+      );
+    });
+    const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
+    transactionCancelBtn.addEventListener('click', () => {
+      main.openConfirmationModal(
+        'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
+        () => {
+          cancelCheckinPayment(createResult.dataset.id);
+          main.closeConfirmationModal();
+        }
+      );
+    });
+    continueProcessCheckoutPayment(createResult.dataset.id, createResult.dataset.text);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/pending`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_id: createResult.dataset.id,
+          payment_customer_id: createResult.dataset.text,
+          payment_purpose: purpose,
+          payment_amount_to_pay: amountToPay,
+          payment_rate: priceRate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      await response.json();
+    } catch (error) {
+      console.error('Error creating pending payment:', error);
+    }
+  });
+}
+
 export default {
   processCheckinPayment,
   continueProcessCheckinPayment,
@@ -790,4 +889,6 @@ export default {
   cancelReservationPayment,
   pendingTransaction,
   findPendingTransaction,
+  processCheckoutPayment,
+  continueProcessCheckoutPayment,
 };

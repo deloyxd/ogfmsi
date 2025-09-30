@@ -2,6 +2,7 @@ import main from '../admin_main.js';
 import stock from './ecommerce_stock.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 import datasync from './maintenance_datasync.js';
+import payments from './payments.js';
 import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'ecommerce-cart';
@@ -46,9 +47,10 @@ async function getInventoryItemsFromSystem() {
 
     if (response.ok) {
       // Filter out disposed products from inventory
-      const activeProducts = data.result.filter(product => 
-        product.disposal_status !== 'Disposed' && 
-        !(product.product_name && product.product_name.toLowerCase().includes('disposed'))
+      const activeProducts = data.result.filter(
+        (product) =>
+          product.disposal_status !== 'Disposed' &&
+          !(product.product_name && product.product_name.toLowerCase().includes('disposed'))
       );
 
       inventoryItems = activeProducts.map((product) => ({
@@ -162,7 +164,7 @@ function displayProductsForTab(products, tabIndex) {
   productsGrid.innerHTML = '';
 
   Array.from(products).forEach((product) => {
-    const { firstName, lastName, fullName } = main.decodeName(product.name);
+    const fullName = main.fixText(product.name.trim().replace(/::\/\//g, ' '));
     const productCard = document.getElementById('ecommerceCartProduct').cloneNode(true);
     productCard.id = `${product.id}_${tabIndex}`;
     productCard.dataset.category = product.category;
@@ -404,7 +406,7 @@ async function updateCartItemQuantity(cartId, quantity) {
 function removeCartItem(cartId) {
   main.openConfirmationModal('Remove item added to cart.', () => {
     main.closeConfirmationModal(async () => {
-  main.sharedState.moduleLoad = SECTION_NAME;
+      main.sharedState.moduleLoad = SECTION_NAME;
       window.showGlobalLoading?.();
       try {
         const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${cartId}`, {
@@ -445,7 +447,7 @@ function updateCartDisplay() {
       result.innerHTML += `
         <!-- Column 1: Image -->
         <div class="w-24 h-24 flex-shrink-0">
-            <img src="${item.image}" class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${main.decodeText(item.name).replace(/'/g, "&#39;")}')">
+            <img src="${item.image}" class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${main.decodeText(item.name).replace(/'/g, '&#39;')}')">
         </div>
 
         <!-- Column 2: Name and Category -->
@@ -478,7 +480,7 @@ function updateCartDisplay() {
       accesscontrol.log(data.action, item);
     });
   });
-  
+
   // Ensure clear all button is added after cart display is updated
   addClearAllButton();
 }
@@ -721,178 +723,143 @@ async function updateProductStock(productId, soldQuantity) {
   }
 }
 
-async function processCheckout() {
+function processCheckout() {
   if (cart.length === 0) {
     main.toast('Your cart is empty!', 'error');
     return;
   }
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const purpose =
+    'Purchasing: ' +
+    cart
+      .map(
+        (item) =>
+          `${item.quantity}x ${item.name.replace(/::\/\//g, ' ')} ${item.measurementUnit !== '' ? item.measurement + item.measurementUnit + ' ' : ' '}${main.encodePrice(item.price)}`
+      )
+      .join(', ');
 
-  // Show payment modal
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const paymentInputs = createPaymentModalInputs(totalAmount, totalItems);
+  payments.processCheckoutPayment(purpose, totalAmount);
+}
 
-  main.openModal('green', paymentInputs, async (result) => {
-    const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
-    const amountToPay = Number(main.decodePrice(result.short[0].value));
-    const cashAmount = Number(result.short[1].value) || 0;
-    const cashlessAmount = Number(result.short[2].value) || 0;
-    const refNum = result.short[4].value;
-
-    if (paymentMethod === 'cash') {
-      if (!main.isValidPaymentAmount(+cashAmount)) {
-        main.toast(`Invalid payment amount (cash): ${cashAmount}`, 'error');
-        return;
-      }
-    }
-    if (paymentMethod === 'cashless' || paymentMethod === 'hybrid') {
-      if (!main.isValidPaymentAmount(+cashlessAmount)) {
-        main.toast(`Invalid payment amount (cashless): ${cashlessAmount}`, 'error');
-        return;
-      }
-      // Validate reference number is provided and numeric-only
-      if ((refNum !== 'N/A' && /[^0-9]/.test(refNum)) || refNum === 'N/A' || refNum.trim() === '') {
-        main.toast(`Invalid reference number: ${refNum}`, 'error');
-        return;
-      }
-    }
-    // For cash, reference number should remain 'N/A'
-    if (paymentMethod === 'cash' && refNum !== 'N/A') {
-      main.toast(`Cash payment method doesn't need reference number: ${refNum}`, 'error');
-      return;
-    }
-
-    const customerPayment = cashAmount + (paymentMethod === 'cash' ? 0 : cashlessAmount);
-    if (!main.isValidPaymentAmount(+customerPayment) || +customerPayment < +amountToPay) {
-      main.toast(`Payment amount is insufficient!`, 'error');
-      return;
-    }
-
-    const change = Number(main.decodePrice(result.short[3].value));
-
+export async function completeProcessCheckout(totalAmount, paymentMethod, customerPayment, change, refNum) {
   main.sharedState.moduleLoad = SECTION_NAME;
-    window.showGlobalLoading?.();
-    try {
-      // Create order
-      const orderData = {
-        session_id: sessionId,
-        total_amount: totalAmount,
-        payment_method: paymentMethod,
-        customer_payment: customerPayment,
-        change_amount: change,
-        reference_number: refNum,
-        processed_by: 'admin',
-      };
+  window.showGlobalLoading?.();
+  try {
+    // Create order
+    const orderData = {
+      session_id: sessionId,
+      total_amount: totalAmount,
+      payment_method: paymentMethod,
+      customer_payment: customerPayment,
+      change_amount: change,
+      reference_number: refNum,
+      processed_by: 'admin',
+    };
 
-      const orderResponse = await fetch(`${API_BASE_URL}/ecommerce/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
+    const orderResponse = await fetch(`${API_BASE_URL}/ecommerce/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    const orderResult = await orderResponse.json();
+
+    if (orderResponse.ok) {
+      const orderId = orderResult.result.order_id;
+
+      // Add order items and update stock
+      for (const item of cart) {
+        const itemData = {
+          product_id: item.id,
+          product_name: item.name,
+          unit_price: item.price,
+          quantity: item.quantity,
+          total_price: item.price * item.quantity,
+        };
+
+        // Add order item
+        await fetch(`${API_BASE_URL}/ecommerce/orders/${orderId}/items`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(itemData),
+        });
+
+        // Update product stock
+        await updateProductStock(item.id, item.quantity);
+      }
+
+      // Process each item in cart for data sync
+      cart.forEach((item) => {
+        const action = {
+          module: 'Store',
+          submodule: 'Selling',
+          description: 'Process sale',
+        };
+        const data = {
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+          customerPayment: customerPayment,
+          change: change,
+          date: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
+        };
+        datasync.enqueue(action, data);
       });
 
-      const orderResult = await orderResponse.json();
+      // Show success message with payment details
+      main.toast(
+        `Checkout successful! Total: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} | Payment: ₱${customerPayment.toLocaleString('en-PH', { minimumFractionDigits: 2 })} | Change: ₱${change.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        'success',
+        10000
+      );
 
-      if (orderResponse.ok) {
-        const orderId = orderResult.result.order_id;
+      // Clear cart
+      await fetch(`${API_BASE_URL}/ecommerce/cart/session/${sessionId}`, {
+        method: 'DELETE',
+      });
 
-        // Add order items and update stock
-        for (const item of cart) {
-          const itemData = {
-            product_id: item.id,
-            product_name: item.name,
-            unit_price: item.price,
-            quantity: item.quantity,
-            total_price: item.price * item.quantity,
-          };
+      cart = [];
+      updateCartDisplay();
 
-          // Add order item
-          await fetch(`${API_BASE_URL}/ecommerce/orders/${orderId}/items`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(itemData),
-          });
+      // Close payment modal
+      main.closeModal();
 
-          // Update product stock
-          await updateProductStock(item.id, item.quantity);
-        }
-
-        // Process each item in cart for data sync
-        cart.forEach((item) => {
-          const action = {
-            module: 'Store',
-            submodule: 'Selling',
-            description: 'Process sale',
-          };
-          const data = {
-            productId: item.id,
-            productName: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            total: item.price * item.quantity,
-            customerPayment: customerPayment,
-            change: change,
-            date: new Date().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            }),
-          };
-          datasync.enqueue(action, data);
-        });
-
-        // Show success message with payment details
-        main.toast(
-          `Checkout successful! Total: ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} | Payment: ₱${customerPayment.toLocaleString('en-PH', { minimumFractionDigits: 2 })} | Change: ₱${change.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
-          'success',
-          10000
-        );
-
-        // Clear cart
-        await fetch(`${API_BASE_URL}/ecommerce/cart/session/${sessionId}`, {
-          method: 'DELETE',
-        });
-
-        cart = [];
-        updateCartDisplay();
-
-        // Close payment modal
-        main.closeModal();
-
-        // Refresh inventory display
-        setTimeout(() => {
-          getInventoryItemsFromSystem();
-        }, 1000);
-      } else {
-        main.toast('Error: Failed to process checkout', 'error');
-      }
-    } catch (error) {
-      console.error('Error processing checkout:', error);
+      // Refresh inventory display
+      setTimeout(() => {
+        getInventoryItemsFromSystem();
+      }, 1000);
+    } else {
       main.toast('Error: Failed to process checkout', 'error');
-    } finally {
-      window.hideGlobalLoading?.();
     }
-  });
-
-  // Bind select-all on amount inputs right after modal renders
-  setTimeout(() => {
-    const cashInput = document.querySelector('#input-short-6');
-    const cashlessInput = document.querySelector('#input-short-7');
-    attachSelectAll(cashInput);
-    attachSelectAll(cashlessInput);
-  }, 0);
+  } catch (error) {
+    console.error('Error processing checkout:', error);
+    main.toast('Error: Failed to process checkout', 'error');
+  } finally {
+    window.hideGlobalLoading?.();
+  }
 }
+
+export default { completeProcessCheckout };
 
 // Make processCheckout available globally
 window.processCheckout = processCheckout;
 
 // Add clear all button to the cart section
 function addClearAllButton() {
-  const sectionTwoContent = document.querySelector(`#${SECTION_NAME}-section .section-content-base .flex.flex-col.items-center.gap-4`);
+  const sectionTwoContent = document.querySelector(
+    `#${SECTION_NAME}-section .section-content-base .flex.flex-col.items-center.gap-4`
+  );
   if (!sectionTwoContent) return;
 
   // Check if clear all button already exists
@@ -900,11 +867,19 @@ function addClearAllButton() {
 
   const clearAllBtn = document.createElement('button');
   clearAllBtn.id = `${SECTION_NAME}ClearAllBtn`;
-  clearAllBtn.className = 'section-content-submit bg-red-500 hover:bg-red-600 hover:shadow-red-400 active:scale-95 active:bg-red-700';
+  clearAllBtn.className =
+    'section-content-submit bg-red-500 hover:bg-red-600 hover:shadow-red-400 active:scale-95 active:bg-red-700';
   clearAllBtn.innerHTML = 'Clear All Items 🗑️';
   clearAllBtn.addEventListener('click', clearAllCartItems);
 
   sectionTwoContent.appendChild(clearAllBtn);
+
+  const totalHeight =
+    +clearAllBtn.parentElement.children[0].classList[clearAllBtn.parentElement.children[0].classList.length - 1]
+      .split('[')[1]
+      .split('px')[0] -
+    (48 + 16);
+  clearAllBtn.parentElement.children[0].classList.add(`h-[${totalHeight}px]`);
 }
 
 // Clear all cart items with confirmation
@@ -920,7 +895,7 @@ function clearAllCartItems() {
       main.closeConfirmationModal(async () => {
         main.sharedState.moduleLoad = SECTION_NAME;
         window.showGlobalLoading?.();
-        
+
         try {
           // Clear cart from server
           const response = await fetch(`${API_BASE_URL}/ecommerce/cart/session/${sessionId}`, {
