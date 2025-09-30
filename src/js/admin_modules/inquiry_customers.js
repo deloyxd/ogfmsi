@@ -85,7 +85,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               },
               main.fixText(customer.customer_type),
               main.fixText(customer.customer_rate),
-              'custom_date_' + main.encodeDate(customer.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
+              'custom_date_' +
+                main.encodeDate(
+                  customer.created_at,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                ),
             ],
             1,
             (createResult) => {
@@ -151,15 +155,24 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       type: 'object_contact',
                       data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
                     },
-                    main.encodeDate(customer.customer_start_date, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
-                    main.encodeDate(customer.customer_end_date, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
+                    main.encodeDate(
+                      customer.customer_start_date,
+                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                    ),
+                    main.encodeDate(
+                      customer.customer_end_date,
+                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                    ),
                     daysLeft + ' days',
                     main.formatPrice(
                       customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                     ),
                     findResult.dataset.custom3,
                     'custom_date_' +
-                      main.encodeDate(customer.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long') +
+                      main.encodeDate(
+                        customer.created_at,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ) +
                       ' - ' +
                       main.encodeTime(customer.created_at),
                   ],
@@ -225,19 +238,21 @@ async function validateCustomerRegistration(firstName, lastName, customerId = nu
     const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
     const data = await response.json();
     const customers = response.ok ? data.result || [] : [];
-    
+
     const similarCustomer = customers.find((customer) => {
       // Skip if it's the same customer being edited
       if (customerId && customer.customer_id === customerId) {
         return false;
       }
-      
+
       const existingNameNorm = normalizeCustomerName(customer.customer_first_name, customer.customer_last_name);
       if (!existingNameNorm) return false;
-      
-      return existingNameNorm === newNameNorm || 
-             existingNameNorm.includes(newNameNorm) || 
-             newNameNorm.includes(existingNameNorm);
+
+      return (
+        existingNameNorm === newNameNorm ||
+        existingNameNorm.includes(newNameNorm) ||
+        newNameNorm.includes(existingNameNorm)
+      );
     });
 
     if (similarCustomer) {
@@ -304,7 +319,7 @@ function showSimilarCustomerModal(similarCustomer, attemptedFirstName, attempted
   };
 
   document.getElementById('similarCustomerOkBtn').addEventListener('click', close);
-  
+
   // Close on escape key
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
@@ -1010,7 +1025,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
         if (selectedProcess.includes('check-in')) {
           checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
             if (findLogResult) {
-              const logDate = findLogResult.dataset.datetime.split(' - ')[0];
+              const logDate = findLogResult.dataset.datetime
+                ? findLogResult.dataset.datetime.split(' - ')[0]
+                : findLogResult.dataset.date;
               const logDateObj = new Date(logDate);
               const today = new Date();
               const isToday =
@@ -1179,8 +1196,14 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
             type: 'object_contact',
             data: [findResult1.dataset.image, findResult1.dataset.text, findResult1.dataset.contact],
           },
-          main.encodeDate(findResult1.dataset.startdate, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
-          main.encodeDate(findResult1.dataset.enddate, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'),
+          main.encodeDate(
+            findResult1.dataset.startdate,
+            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+          ),
+          main.encodeDate(
+            findResult1.dataset.enddate,
+            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+          ),
           findResult1.dataset.days + ' day' + (+findResult1.dataset.days > 1 ? 's' : ''),
           main.formatPrice(amountPaid),
           main.fixText(priceRate),
