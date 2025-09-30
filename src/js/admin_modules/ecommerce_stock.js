@@ -118,8 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Validate product registration for similar names
-async function validateProductRegistration(name) {
+// Validate product registration for similar names with same measurement unit
+async function validateProductRegistration(name, measurementUnit) {
   try {
     const newNameNorm = normalizeProductName(name);
     if (newNameNorm.length < 3) {
@@ -141,7 +141,10 @@ async function validateProductRegistration(name) {
       if (isProductDisposed(product)) return false; // allow duplicates of disposed products
       const existingNameNorm = normalizeProductName(product.product_name);
       if (!existingNameNorm) return false;
-      return existingNameNorm === newNameNorm;
+      const existingUnit = String(product.measurement_unit || '').toLowerCase();
+      const incomingUnit = String(measurementUnit || '').toLowerCase();
+      // Consider duplicate only when BOTH name and measurement unit match
+      return existingNameNorm === newNameNorm && existingUnit === incomingUnit;
     });
 
     if (similarProduct) {
@@ -228,11 +231,12 @@ function mainBtnFunction() {
     const name = result.image.short[0].value;
     const [price, quantity] = result.short.map((item) => item.value);
     const measurement = result.image.short[1].value?.trim() || '';
+    const measurementUnit = main.getSelectedSpinner(result.image.spinner[0]);
 
     if (!main.validateStockInputs(price, quantity, measurement)) return;
 
     // Validate for similar products before proceeding
-    const validation = await validateProductRegistration(name);
+    const validation = await validateProductRegistration(name, measurementUnit);
     if (!validation.isValid) {
       showSimilarProductModal(validation.similarProduct, name);
       return;
