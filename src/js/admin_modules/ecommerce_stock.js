@@ -85,6 +85,17 @@ const MEASUREMENT_UNITS = [
   { value: '3x large', label: 'Clothing Size: XXXL' },
 ];
 
+// Clothing size unit values for quick checks
+const CLOTHING_SIZE_UNITS = new Set([
+  'extra small',
+  'small',
+  'medium',
+  'large',
+  'extra large',
+  '2x large',
+  '3x large',
+]);
+
 let mainBtn;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
@@ -107,8 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Validate product registration for similar names
-async function validateProductRegistration(name) {
+// Validate product registration for similar names with same measurement unit
+async function validateProductRegistration(name, measurementUnit) {
   try {
     const newNameNorm = normalizeProductName(name);
     if (newNameNorm.length < 3) {
@@ -130,10 +141,10 @@ async function validateProductRegistration(name) {
       if (isProductDisposed(product)) return false; // allow duplicates of disposed products
       const existingNameNorm = normalizeProductName(product.product_name);
       if (!existingNameNorm) return false;
-      
-      return existingNameNorm === newNameNorm || 
-             existingNameNorm.includes(newNameNorm) || 
-             newNameNorm.includes(existingNameNorm);
+      const existingUnit = String(product.measurement_unit || '').toLowerCase();
+      const incomingUnit = String(measurementUnit || '').toLowerCase();
+      // Consider duplicate only when BOTH name and measurement unit match
+      return existingNameNorm === newNameNorm && existingUnit === incomingUnit;
     });
 
     if (similarProduct) {
@@ -220,11 +231,12 @@ function mainBtnFunction() {
     const name = result.image.short[0].value;
     const [price, quantity] = result.short.map((item) => item.value);
     const measurement = result.image.short[1].value?.trim() || '';
+    const measurementUnit = main.getSelectedSpinner(result.image.spinner[0]);
 
     if (!main.validateStockInputs(price, quantity, measurement)) return;
 
     // Validate for similar products before proceeding
-    const validation = await validateProductRegistration(name);
+    const validation = await validateProductRegistration(name, measurementUnit);
     if (!validation.isValid) {
       showSimilarProductModal(validation.similarProduct, name);
       return;
@@ -1037,7 +1049,15 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
     type: 'normal',
     short: [
       { placeholder: 'Product name', value: productData.name || '', required: true },
-      { placeholder: 'Product measurement value', value: productData.measurement || '' },
+      {
+        placeholder: 'Product measurement value',
+        value: productData.measurement || '',
+        // Lock initially if the selected unit is a clothing size
+        locked:
+          productData && productData.measurementUnit
+            ? CLOTHING_SIZE_UNITS.has(String(productData.measurementUnit).toLowerCase())
+            : false,
+      },
     ],
     spinner: [
       {
@@ -1045,6 +1065,25 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
         placeholder: 'Select product measurement unit',
         selected: productData.measurementUnit || 0,
         options: MEASUREMENT_UNITS,
+        // Toggle measurement value editability when clothing size is chosen
+        listener: (_selectedIndex, container) => {
+          try {
+            const unitSelect = container.querySelector('#input-spinner-1');
+            const measurementInput = container.querySelector('#input-short-2');
+            if (!unitSelect || !measurementInput) return;
+
+            const selectedUnit = String(unitSelect.value || '').toLowerCase();
+            const shouldLock = CLOTHING_SIZE_UNITS.has(selectedUnit);
+
+            measurementInput.readOnly = shouldLock;
+            measurementInput.classList.toggle('bg-gray-200', shouldLock);
+            measurementInput.classList.toggle('text-gray-500', shouldLock);
+            if (shouldLock) {
+              measurementInput.value = '';
+              measurementInput.dispatchEvent(new Event('input'));
+            }
+          } catch (_e) {}
+        },
       },
     ],
   },
