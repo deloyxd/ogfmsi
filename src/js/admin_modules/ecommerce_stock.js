@@ -334,13 +334,13 @@ async function loadProducts() {
 
       // Tab 4: Best Selling Products (Fast moving stocks)
       displayProductsForTab(
-        products.filter((p) => +p.quantity > 50),
+        products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
         4
       );
 
       // Tab 5: Least Selling Products (Slow moving stocks)
       displayProductsForTab(
-        products.filter((p) => +p.quantity > 0 && +p.quantity <= 10),
+        products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
         5
       );
 
@@ -386,8 +386,8 @@ function computeAndUpdateStats(products) {
     (p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock'
   ).length;
   const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
-  const bestSelling = products.filter((p) => +p.quantity > 50).length;
-  const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
+  const bestSelling = products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
+  const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
   const disposed = products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))).length;
 
   updateStatsDisplay({
