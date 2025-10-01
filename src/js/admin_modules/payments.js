@@ -551,7 +551,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       });
 
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/service/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
