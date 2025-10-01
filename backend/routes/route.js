@@ -24,6 +24,7 @@ const inquiryReservations = require('./inquiry.reservations.route');
 const paymentPendingRoute = require('./payment.pending.route');
 const paymentServiceRoute = require('./payment.service.route');
 const paymentSalesRoute = require('./payment.sales.route');
+const paymentCompleteRoute = require('./payment.sales.route');
 
 const router = Router();
 
@@ -55,6 +56,7 @@ router.use('/inquiry', inquiryReservations);
 router.use('/payment', paymentPendingRoute);
 router.use('/payment', paymentServiceRoute);
 router.use('/payment', paymentSalesRoute);
+router.use('/payment', paymentCompleteRoute);
 
 // Add routes declaration here:
 
