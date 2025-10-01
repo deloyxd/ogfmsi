@@ -28,7 +28,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     subBtn.addEventListener('click', subBtnFunction);
 
     await fetchAllPendingPayments();
-    await fetchAllCompletePayments();
+    await fetchAllServicePayments();
+    await fetchAllSalesPayments();
 
     async function fetchAllPendingPayments() {
       try {
@@ -100,9 +101,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
       }
     }
 
-    async function fetchAllCompletePayments() {
+    async function fetchAllServicePayments() {
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/complete`);
+        const response = await fetch(`${API_BASE_URL}/payment/service`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -152,7 +153,63 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           );
         });
       } catch (error) {
-        console.error('Error fetching pending payments:', error);
+        console.error('Error fetching service payments:', error);
+      }
+    }
+
+    async function fetchAllSalesPayments() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/sales`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const completePayments = await response.json();
+
+        // update cache and stats
+        completedPaymentsCache = Array.isArray(completePayments.result) ? completePayments.result : [];
+        computeAndUpdatePaymentStats(completedPaymentsCache);
+
+        completePayments.result.forEach((completePayment) => {
+          main.findAtSectionOne(
+            'inquiry-customers',
+            completePayment.payment_customer_id,
+            'equal_id',
+            1,
+            (findResult) => {
+              const customerImage = findResult ? findResult.dataset.image : '';
+              const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + completePayment.payment_id,
+                  {
+                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    data: [
+                      customerImage,
+                      customerIdSafe,
+                      completePayment.payment_purpose,
+                      main.formatPrice(completePayment.payment_amount_to_pay),
+                      main.formatPrice(completePayment.payment_amount_paid_cash),
+                      main.formatPrice(completePayment.payment_amount_paid_cashless),
+                      main.formatPrice(completePayment.payment_amount_change),
+                      main.fixText(completePayment.payment_rate),
+                      main.fixText(completePayment.payment_method),
+                      `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                    ],
+                  },
+                  `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                ],
+                4,
+                (createResult) => {
+                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
+                }
+              );
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching sales payments:', error);
       }
     }
   }
@@ -494,7 +551,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       });
 
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/complete/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/payment/service/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

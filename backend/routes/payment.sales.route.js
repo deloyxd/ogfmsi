@@ -3,8 +3,8 @@ const mysqlConnection = require('../database/mysql');
 const router = Router();
 
 // GET all payments
-router.get('/complete', async (req, res) => {
-  const query = `SELECT * FROM payment_tbl WHERE payment_type = 'complete' ORDER BY created_at DESC`;
+router.get('/sales', async (req, res) => {
+  const query = `SELECT * FROM payment_tbl WHERE payment_type = 'sales' ORDER BY created_at DESC`;
   mysqlConnection.query(query, (error, result) => {
     if (error) {
       console.error('Fetching payments error:', error);
@@ -14,14 +14,14 @@ router.get('/complete', async (req, res) => {
   });
 });
 
-// PUT new complete payment
-router.put('/complete/:id', async (req, res) => {
+// PUT new sales payment
+router.put('/sales/:id', async (req, res) => {
   const { id } = req.params;
   const { payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method } = req.body;
 
   const query = `
     UPDATE payment_tbl 
-    SET payment_amount_paid_cash = ?, payment_amount_paid_cashless = ?, payment_amount_change = ?, payment_method = ?, payment_type = 'complete'
+    SET payment_amount_paid_cash = ?, payment_amount_paid_cashless = ?, payment_amount_change = ?, payment_method = ?, payment_type = 'sales'
     WHERE payment_id = ?
   `;
 

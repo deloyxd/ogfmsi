@@ -22,7 +22,8 @@ const inquiryReservations = require('./inquiry.reservations.route');
 
 // For payment route
 const paymentPendingRoute = require('./payment.pending.route');
-const paymentCompleteRoute = require('./payment.complete.route');
+const paymentServiceRoute = require('./payment.service.route');
+const paymentSalesRoute = require('./payment.sales.route');
 
 const router = Router();
 
@@ -52,7 +53,8 @@ router.use('/inquiry', inquiryReservations);
 
 // API URL: (host):(port)/api/payment
 router.use('/payment', paymentPendingRoute);
-router.use('/payment', paymentCompleteRoute);
+router.use('/payment', paymentServiceRoute);
+router.use('/payment', paymentSalesRoute);
 
 // Add routes declaration here:
 
