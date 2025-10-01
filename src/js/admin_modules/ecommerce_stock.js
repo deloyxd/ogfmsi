@@ -322,7 +322,7 @@ async function loadProducts() {
 
       // Tab 2: Low Stock Products (About to be out of stock)
       displayProductsForTab(
-        products.filter((p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock'),
+        products.filter((p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
         2
       );
 
@@ -334,20 +334,26 @@ async function loadProducts() {
 
       // Tab 4: Best Selling Products (Fast moving stocks)
       displayProductsForTab(
-        products.filter((p) => +p.quantity > 50),
+        products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
         4
       );
 
       // Tab 5: Least Selling Products (Slow moving stocks)
       displayProductsForTab(
-        products.filter((p) => +p.quantity > 0 && +p.quantity <= 10),
+        products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
         5
       );
 
-      // Tab 6: Disposed Products (Expired or damaged products)
+      // Tab 6: Super Low Stock Products (Critical stock levels)
+      displayProductsForTab(
+        products.filter((p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock'),
+        6
+      );
+
+      // Tab 7: Disposed Products (Expired or damaged products)
       displayProductsForTab(
         products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))),
-        6
+        7
       );
 
       // Update stats using the same logic as the tabs
@@ -383,16 +389,20 @@ function computeAndUpdateStats(products) {
 
   const totalProducts = products.length;
   const lowStock = products.filter(
-    (p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Low Stock'
+    (p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+  ).length;
+  const superLowStock = products.filter(
+    (p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock'
   ).length;
   const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
-  const bestSelling = products.filter((p) => +p.quantity > 50).length;
-  const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10).length;
+  const bestSelling = products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
+  const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
   const disposed = products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))).length;
 
   updateStatsDisplay({
     total_products: totalProducts,
     low_stock: lowStock,
+    super_low_stock: superLowStock,
     out_of_stock: outOfStock,
     best_selling: bestSelling,
     slow_moving: slowMoving,
@@ -411,7 +421,7 @@ function computeAndUpdateStats(products) {
 function updateStatsDisplay(stats) {
   const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
 
-  if (statElements.length >= 5) {
+  if (statElements.length >= 6) {
     const uniqueProductsStat = statElements[0];
     if (uniqueProductsStat) {
       const valueElement = uniqueProductsStat.querySelector('.section-stats-c');
@@ -428,7 +438,15 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const outOfStockStat = statElements[2];
+    const superLowStockStat = statElements[2];
+    if (superLowStockStat) {
+      const valueElement = superLowStockStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.super_low_stock || 0;
+      }
+    }
+
+    const outOfStockStat = statElements[3];
     if (outOfStockStat) {
       const valueElement = outOfStockStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -436,7 +454,7 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const bestSellingStat = statElements[3];
+    const bestSellingStat = statElements[4];
     if (bestSellingStat) {
       const valueElement = bestSellingStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -444,7 +462,7 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const slowMovingStat = statElements[4];
+    const slowMovingStat = statElements[5];
     if (slowMovingStat) {
       const valueElement = slowMovingStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -537,8 +555,8 @@ function displayProductsForTab(products, tabIndex) {
 
 // Function to update tab title with count badge
 function updateTabTitleWithCount(tabIndex, count) {
-  // Only update tab 6 (Disposed Products)
-  if (tabIndex !== 6) return;
+  // Only update tab 7 (Disposed Products)
+  if (tabIndex !== 7) return;
   
   const tabElement = document.getElementById(`${SECTION_NAME}_tab${tabIndex}`);
   if (!tabElement) return;
