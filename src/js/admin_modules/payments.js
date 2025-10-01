@@ -349,10 +349,13 @@ function activeRadioListener(title, input, container, inputGroup) {
         refInput.parentElement.classList.add('hidden');
         refInput.value = 'N/A';
       }
+      // Focus cash amount on cash method
+      requestAnimationFrame(() => {
+        if (cashInput) cashInput.focus();
+      });
       break;
     case 'cashless':
       if (input.value == 'N/A') input.value = '';
-      input.focus();
       cashInput.parentElement.classList.add('hidden');
       cashlessInput.parentElement.classList.remove('hidden');
       // Show reference number for cashless
@@ -360,10 +363,13 @@ function activeRadioListener(title, input, container, inputGroup) {
         refInput.parentElement.classList.remove('hidden');
         if (refInput.value == 'N/A') refInput.value = '';
       }
+      // Focus cashless amount on cashless method
+      requestAnimationFrame(() => {
+        if (cashlessInput) cashlessInput.focus();
+      });
       break;
     case 'hybrid':
       if (input.value == 'N/A') input.value = '';
-      input.focus();
       cashInput.parentElement.classList.remove('hidden');
       cashlessInput.parentElement.classList.remove('hidden');
       // Show reference number for hybrid
@@ -371,6 +377,10 @@ function activeRadioListener(title, input, container, inputGroup) {
         refInput.parentElement.classList.remove('hidden');
         if (refInput.value == 'N/A') refInput.value = '';
       }
+      // Prefer focusing cash amount first on hybrid
+      requestAnimationFrame(() => {
+        if (cashInput) cashInput.focus();
+      });
       break;
   }
   inputGroup.short[2].hidden = cashInput.parentElement.classList.contains('hidden');
@@ -590,10 +600,16 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   });
 
   setTimeout(() => {
-    const cashInput = document.querySelector('#input-short-6');
-    const cashlessInput = document.querySelector('#input-short-7');
+    const cashInput = document.querySelector('#input-short-7');
+    const cashlessInput = document.querySelector('#input-short-8');
     attachSelectAll(cashInput);
     attachSelectAll(cashlessInput);
+    // Auto-focus visible payment field on open (default cash)
+    if (cashInput && !cashInput.parentElement.classList.contains('hidden')) {
+      cashInput.focus();
+    } else if (cashlessInput && !cashlessInput.parentElement.classList.contains('hidden')) {
+      cashlessInput.focus();
+    }
   }, 0);
 }
 
