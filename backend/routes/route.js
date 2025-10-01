@@ -24,7 +24,7 @@ const inquiryReservations = require('./inquiry.reservations.route');
 const paymentPendingRoute = require('./payment.pending.route');
 const paymentServiceRoute = require('./payment.service.route');
 const paymentSalesRoute = require('./payment.sales.route');
-const paymentCompleteRoute = require('./payment.sales.route');
+const paymentCompleteRoute = require('./payment.complete.route');
 
 const router = Router();
 
