@@ -146,7 +146,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 3,
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
+                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
                 }
               );
             }
@@ -202,7 +202,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 4,
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
+                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
                 }
               );
             }
@@ -877,7 +877,9 @@ function openTransactionDetails(type, row) {
     short: [
       {
         placeholder: type === 'cart' ? 'Sales' : 'Customer',
-        value: customerId.split(':')[1].split('Purchasing')[0].trim(),
+        value: customerId && typeof customerId === 'string' && customerId.includes(':') 
+          ? customerId.split(':')[1].split('Purchasing')[0].trim() 
+          : customerId || 'N/A',
         locked: true,
       },
       { placeholder: 'Purpose', value: purpose, locked: true },
