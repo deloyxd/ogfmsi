@@ -739,8 +739,8 @@ function processCheckout() {
           `${item.quantity}x <b>${item.name.replace(/::\/\//g, ' ')} ${item.measurementUnit !== '' ? item.measurement + item.measurementUnit + ' ' : ' '}</b>${main.encodePrice(item.price)}`
       )
       .join(', ');
-
-  payments.processCheckoutPayment(purpose, totalAmount);
+  const firstProductImage = cart.length > 0 ? cart[0].image : '';
+  payments.processCheckoutPayment(purpose, totalAmount, firstProductImage);
 }
 
 export async function completeProcessCheckout(totalAmount, paymentMethod, customerPayment, change, refNum) {

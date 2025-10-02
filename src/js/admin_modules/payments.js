@@ -109,8 +109,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         }
         const completePayments = await response.json();
 
-        // update cache and stats
-        completedPaymentsCache = Array.isArray(completePayments.result) ? completePayments.result : [];
+        const servicePayments = Array.isArray(completePayments.result) ? completePayments.result : [];
+        completedPaymentsCache = [
+          ...completedPaymentsCache.filter(
+            (p) => !p.payment_id || !servicePayments.find((sp) => sp.payment_id === p.payment_id)
+          ),
+          ...servicePayments,
+        ];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
@@ -146,7 +151,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 3,
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
+                  transactionDetailsBtn.addEventListener('click', () =>
+                    openTransactionDetails('services', createResult)
+                  );
                 }
               );
             }
@@ -165,8 +172,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         }
         const completePayments = await response.json();
 
-        // update cache and stats
-        completedPaymentsCache = Array.isArray(completePayments.result) ? completePayments.result : [];
+        const salesPayments = Array.isArray(completePayments.result) ? completePayments.result : [];
+        completedPaymentsCache = [
+          ...completedPaymentsCache.filter(
+            (p) => !p.payment_id || !salesPayments.find((sp) => sp.payment_id === p.payment_id)
+          ),
+          ...salesPayments,
+        ];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
@@ -176,7 +188,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             (findResult) => {
-              const customerImage = findResult ? findResult.dataset.image : '';
+              const customerImage =
+                completePayment.payment_customer_id === 'Sales: Cart Checkout'
+                  ? '/src/images/🛒.png'
+                  : findResult
+                    ? findResult.dataset.image
+                    : '';
               const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
               main.createAtSectionOne(
                 SECTION_NAME,
@@ -202,7 +219,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 4,
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(createResult));
+                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
                 }
               );
             }
@@ -584,13 +601,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         try {
           const nowIso = new Date().toISOString();
           completedPaymentsCache.push({
+            payment_id: id,
             payment_amount_paid_cash: Number(result.short[2].value) || 0,
             payment_amount_paid_cashless: Number(result.short[3].value) || 0,
             payment_method: paymentMethod,
             created_at: nowIso,
           });
           computeAndUpdatePaymentStats(completedPaymentsCache);
-          // Refresh dashboard stats when new payment is completed
           refreshDashboardStats();
         } catch (_) {}
       } catch (error) {
@@ -877,10 +894,13 @@ function openTransactionDetails(type, row) {
     short: [
       {
         placeholder: type === 'cart' ? 'Sales' : 'Customer',
-        value: customerId.split(':')[1].split('Purchasing')[0].trim(),
+        value:
+          customerId && typeof customerId === 'string' && customerId.includes(':')
+            ? customerId.split(':')[1].split('Purchasing')[0].trim()
+            : customerId || 'N/A',
         locked: true,
       },
-      { placeholder: 'Purpose', value: purpose, locked: true },
+      { placeholder: 'Purpose', value: purpose.replace(/<b>/g, '').replace(/<\/b>/g, ''), locked: true },
       { placeholder: 'Amount to Pay', value: amountToPay, locked: true },
       { placeholder: 'Amount Paid: Cash', value: paidCash, locked: true },
       { placeholder: 'Amount Paid: Cashless', value: paidCashless, locked: true },
@@ -896,13 +916,13 @@ function openTransactionDetails(type, row) {
   main.openModal('gray', inputs, () => main.closeModal());
 }
 
-export function processCheckoutPayment(purpose, amountToPay) {
+export function processCheckoutPayment(purpose, amountToPay, productImage = '') {
   const priceRate = 'Regular';
   const columnsData = [
     'id_T_random',
     {
       type: 'object',
-      data: ['', 'Sales: Cart Checkout'],
+      data: [productImage, 'Sales: Cart Checkout'],
     },
     purpose,
     main.formatPrice(amountToPay),
@@ -915,7 +935,7 @@ export function processCheckoutPayment(purpose, amountToPay) {
       completePayment(
         'cart',
         createResult.dataset.id,
-        createResult.dataset.image,
+        productImage,
         createResult.dataset.text + ' ' + createResult.dataset.custom2,
         createResult.dataset.custom2,
         createResult.dataset.text,
