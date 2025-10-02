@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS payment_tbl (
     payment_amount_refund VARCHAR(255),
     payment_method VARCHAR(255),
     payment_rate VARCHAR(255),
-    payment_type ENUM('pending', 'canceled', 'complete', 'refund') DEFAULT 'pending',
+    payment_type ENUM('pending', 'canceled', 'service', 'sales', 'refund') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS payment_tbl (
 -- Inquiry: Regular Check-Ins Logbook
 CREATE TABLE IF NOT EXISTS inquiry_checkins_regular_tbl (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    checkin_id VARCHAR(50) UNIQUE NOT NULL,
+    checkin_id VARCHAR(50) NOT NULL,
     customer_id VARCHAR(50) NOT NULL,
     customer_name_encoded LONGTEXT,
     customer_contact VARCHAR(50),
@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS inquiry_checkins_regular_tbl (
 -- Inquiry: Monthly Check-Ins Logbook
 CREATE TABLE IF NOT EXISTS inquiry_checkins_monthly_tbl (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    checkin_id VARCHAR(50) UNIQUE NOT NULL,
+    checkin_id VARCHAR(50) NOT NULL,
     customer_id VARCHAR(50) NOT NULL,
     customer_name_encoded LONGTEXT,
     customer_contact VARCHAR(50),
