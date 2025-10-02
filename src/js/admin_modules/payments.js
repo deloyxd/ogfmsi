@@ -109,8 +109,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         }
         const completePayments = await response.json();
 
-        // update cache and stats
-        completedPaymentsCache = Array.isArray(completePayments.result) ? completePayments.result : [];
+        const servicePayments = Array.isArray(completePayments.result) ? completePayments.result : [];
+        completedPaymentsCache = [...completedPaymentsCache.filter(p => !p.payment_id || !servicePayments.find(sp => sp.payment_id === p.payment_id)), ...servicePayments];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
@@ -165,8 +165,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         }
         const completePayments = await response.json();
 
-        // update cache and stats
-        completedPaymentsCache = Array.isArray(completePayments.result) ? completePayments.result : [];
+        const salesPayments = Array.isArray(completePayments.result) ? completePayments.result : [];
+        completedPaymentsCache = [...completedPaymentsCache.filter(p => !p.payment_id || !salesPayments.find(sp => sp.payment_id === p.payment_id)), ...salesPayments];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
@@ -584,13 +584,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         try {
           const nowIso = new Date().toISOString();
           completedPaymentsCache.push({
+            payment_id: id,
             payment_amount_paid_cash: Number(result.short[2].value) || 0,
             payment_amount_paid_cashless: Number(result.short[3].value) || 0,
             payment_method: paymentMethod,
             created_at: nowIso,
           });
           computeAndUpdatePaymentStats(completedPaymentsCache);
-          // Refresh dashboard stats when new payment is completed
           refreshDashboardStats();
         } catch (_) {}
       } catch (error) {
@@ -882,7 +882,7 @@ function openTransactionDetails(type, row) {
           : customerId || 'N/A',
         locked: true,
       },
-      { placeholder: 'Purpose', value: purpose, locked: true },
+      { placeholder: 'Purpose', value: purpose.replace(/<b>/g, '').replace(/<\/b>/g, ''), locked: true },
       { placeholder: 'Amount to Pay', value: amountToPay, locked: true },
       { placeholder: 'Amount Paid: Cash', value: paidCash, locked: true },
       { placeholder: 'Amount Paid: Cashless', value: paidCashless, locked: true },
