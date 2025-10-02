@@ -110,7 +110,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         const completePayments = await response.json();
 
         const servicePayments = Array.isArray(completePayments.result) ? completePayments.result : [];
-        completedPaymentsCache = [...completedPaymentsCache.filter(p => !p.payment_id || !servicePayments.find(sp => sp.payment_id === p.payment_id)), ...servicePayments];
+        completedPaymentsCache = [
+          ...completedPaymentsCache.filter(
+            (p) => !p.payment_id || !servicePayments.find((sp) => sp.payment_id === p.payment_id)
+          ),
+          ...servicePayments,
+        ];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
@@ -146,7 +151,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 3,
                 (createResult) => {
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
+                  transactionDetailsBtn.addEventListener('click', () =>
+                    openTransactionDetails('services', createResult)
+                  );
                 }
               );
             }
@@ -166,7 +173,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         const completePayments = await response.json();
 
         const salesPayments = Array.isArray(completePayments.result) ? completePayments.result : [];
-        completedPaymentsCache = [...completedPaymentsCache.filter(p => !p.payment_id || !salesPayments.find(sp => sp.payment_id === p.payment_id)), ...salesPayments];
+        completedPaymentsCache = [
+          ...completedPaymentsCache.filter(
+            (p) => !p.payment_id || !salesPayments.find((sp) => sp.payment_id === p.payment_id)
+          ),
+          ...salesPayments,
+        ];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
         completePayments.result.forEach((completePayment) => {
@@ -176,7 +188,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             (findResult) => {
-              const customerImage = findResult ? findResult.dataset.image : '';
+              const customerImage =
+                completePayment.payment_customer_id === 'Sales: Cart Checkout'
+                  ? '/src/images/🛒.png'
+                  : findResult
+                    ? findResult.dataset.image
+                    : '';
               const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
               main.createAtSectionOne(
                 SECTION_NAME,
@@ -877,9 +894,10 @@ function openTransactionDetails(type, row) {
     short: [
       {
         placeholder: type === 'cart' ? 'Sales' : 'Customer',
-        value: customerId && typeof customerId === 'string' && customerId.includes(':') 
-          ? customerId.split(':')[1].split('Purchasing')[0].trim() 
-          : customerId || 'N/A',
+        value:
+          customerId && typeof customerId === 'string' && customerId.includes(':')
+            ? customerId.split(':')[1].split('Purchasing')[0].trim()
+            : customerId || 'N/A',
         locked: true,
       },
       { placeholder: 'Purpose', value: purpose.replace(/<b>/g, '').replace(/<\/b>/g, ''), locked: true },
@@ -898,13 +916,13 @@ function openTransactionDetails(type, row) {
   main.openModal('gray', inputs, () => main.closeModal());
 }
 
-export function processCheckoutPayment(purpose, amountToPay) {
+export function processCheckoutPayment(purpose, amountToPay, productImage = '') {
   const priceRate = 'Regular';
   const columnsData = [
     'id_T_random',
     {
       type: 'object',
-      data: ['', 'Sales: Cart Checkout'],
+      data: [productImage, 'Sales: Cart Checkout'],
     },
     purpose,
     main.formatPrice(amountToPay),
@@ -917,7 +935,7 @@ export function processCheckoutPayment(purpose, amountToPay) {
       completePayment(
         'cart',
         createResult.dataset.id,
-        createResult.dataset.image,
+        productImage,
         createResult.dataset.text + ' ' + createResult.dataset.custom2,
         createResult.dataset.custom2,
         createResult.dataset.text,
