@@ -346,7 +346,11 @@ async function loadProducts() {
 
       // Tab 6: Super Low Stock Products (Critical stock levels)
       displayProductsForTab(
-        products.filter((p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock'),
+        products.filter(
+          (p) =>
+            ((+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock') &&
+            !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+        ),
         6
       );
 
@@ -392,7 +396,8 @@ function computeAndUpdateStats(products) {
     (p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
   ).length;
   const superLowStock = products.filter(
-    (p) => (+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock'
+    (p) => ((+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock') &&
+      !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
   ).length;
   const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
   const bestSelling = products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
