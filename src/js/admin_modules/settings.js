@@ -103,15 +103,6 @@ function renderPreferencesUI() {
         </select>
       </label>
       <label class="flex items-center gap-2 text-sm">
-        <span class="w-28">Base font</span>
-        <select id="ogfmsi-base-font" class="rounded border border-gray-300 p-1 text-sm">
-          <option value="normal" ${prefs.baseFontSize === 'normal' ? 'selected' : ''}>Normal</option>
-          <option value="large" ${prefs.baseFontSize === 'large' ? 'selected' : ''}>Large</option>
-        </select>
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" id="ogfmsi-remember-last" ${prefs.rememberLast ? 'checked' : ''} />
-        Remember last opened section/tab
       </label>
     </div>
   `;
