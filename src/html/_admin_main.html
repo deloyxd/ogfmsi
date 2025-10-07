@@ -32,6 +32,13 @@
     <!-- charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- html2canvas + jsPDF (for PDF export, no html2pdf) -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- ExcelJS (for native .xlsx export with styling) -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+
     <!-- firebase (for database) -->
     <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
@@ -409,6 +416,7 @@
           data-title="Data Control"
           data-subtitle="System Data Management"
           data-mainbtntext="Export to PDF [-📄-]"
+          data-subbtntext="Export to Excel [-💾-]"
         ></div>
         <div id="section-stats"></div>
         <div
