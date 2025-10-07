@@ -1431,9 +1431,17 @@ function setupModalBase(defaultData, inputs, callback) {
       if (placeholderText.includes('reference number')) {
         try { input.maxLength = 13; } catch (_) {}
         input.setAttribute('inputmode', 'numeric');
-        input.addEventListener('input', () => {
-          const digitsOnly = String(input.value).replace(/\D/g, '');
-          if (digitsOnly.length > 13) {
+        input.addEventListener('input', (e) => {
+          const currentVal = String(input.value || '');
+          const isSynthetic = e && e.isTrusted === false;
+          // Preserve sentinel N/A and ignore programmatic initial input event
+          if (isSynthetic && currentVal.toUpperCase() === 'N/A') {
+            data.value = currentVal;
+            return;
+          }
+          // Enforce digits only on real user edits
+          const digitsOnly = currentVal.replace(/\D/g, '');
+          if (digitsOnly.length > 13 && e && e.isTrusted) {
             try { toast('Reference number max is 13 digits', 'warning'); } catch (_) {}
           }
           input.value = digitsOnly.slice(0, 13);

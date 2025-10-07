@@ -957,8 +957,12 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                       logDateObj.getMonth() === today.getMonth() &&
                       logDateObj.getDate() === today.getDate();
                     if (isToday) {
+                      const displayDatetime =
+                        findLogResult.dataset.datetime ||
+                        findLogResult.dataset.date ||
+                        findLogResult.dataset.custom2;
                       main.openConfirmationModal(
-                        `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${findLogResult.dataset.datetime}`,
+                        `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${displayDatetime}`,
                         () => {
                           continueCheckinProcess();
                           main.closeConfirmationModal();
@@ -1041,8 +1045,12 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                 logDateObj.getMonth() === today.getMonth() &&
                 logDateObj.getDate() === today.getDate();
               if (isToday) {
+                const displayDatetime =
+                  findLogResult.dataset.datetime ||
+                  findLogResult.dataset.date ||
+                  findLogResult.dataset.custom2;
                 main.openConfirmationModal(
-                  `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${findLogResult.dataset.datetime}`,
+                  `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${displayDatetime}`,
                   () => {
                     continueCheckinProcess();
                     main.closeConfirmationModal();
