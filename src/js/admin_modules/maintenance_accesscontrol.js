@@ -1,5 +1,4 @@
 import main from '../admin_main.js';
-import datasync from './maintenance_datasync.js';
 
 const SECTION_NAME = 'maintenance-accesscontrol';
 
@@ -15,7 +14,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 function mainBtnFunction() {}
 
 export function log(action, data) {
-  datasync.enqueue(action, data);
   const columnsData = [
     'id_U288343611137',
     {
