@@ -127,6 +127,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             (findResult) => {
               const customerImage = findResult ? findResult.dataset.image : '';
               const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
+              const customerName = findResult ? main.decodeName(findResult.dataset.text).fullName : '';
               main.createAtSectionOne(
                 SECTION_NAME,
                 [
@@ -135,6 +136,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                     data: [
                       customerImage,
+                      // Column 2: show Customer ID
                       customerIdSafe,
                       completePayment.payment_purpose,
                       main.formatPrice(completePayment.payment_amount_to_pay),
@@ -146,6 +148,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                     ],
                   },
+                  // Column 3: Customer Name
+                  customerName,
                   `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                 ],
                 3,
@@ -195,6 +199,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     ? findResult.dataset.image
                     : '';
               const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
+              // For normal customer-linked sales, show "Name | ID"; keep as-is for cart checkout
+              const customerDisplay =
+                completePayment.payment_customer_id === 'Sales: Cart Checkout'
+                  ? customerIdSafe
+                  : findResult
+                    ? `${main.decodeName(findResult.dataset.text).fullName} | ${customerIdSafe}`
+                    : customerIdSafe;
               main.createAtSectionOne(
                 SECTION_NAME,
                 [
@@ -203,7 +214,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                     data: [
                       customerImage,
-                      customerIdSafe,
+                      customerDisplay,
                       completePayment.payment_purpose,
                       main.formatPrice(completePayment.payment_amount_to_pay),
                       main.formatPrice(completePayment.payment_amount_paid_cash),
@@ -542,8 +553,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           main.fixText(priceRate),
           main.fixText(paymentMethod),
           dateTimeText,
-        ],
+        ],  
       },
+      // For service transactions (non-cart), insert Customer Name column before date/time
+      ...(type === 'cart' ? [] : [fullName]),
       dateTimeText,
     ];
 
