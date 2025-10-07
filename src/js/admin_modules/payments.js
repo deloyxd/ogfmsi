@@ -648,26 +648,9 @@ export function cancelCheckinPayment(transactionId) {
   customers.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
-      const columnsData = [
-        'id_' + findResult.dataset.id,
-        {
-          type: 'object',
-          data: [findResult.dataset.image, findResult.dataset.text],
-        },
-        findResult.dataset.custom2,
-        'custom_datetime_today',
-      ];
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-        transactionDetailsBtn.addEventListener('click', () =>
-          customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
-        );
-
-        main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-        main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
-        main.createNotifDot(SECTION_NAME, 2);
-      });
+      // Remove refund transaction log population: just delete pending and notify
+      main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+      main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
     }
   });
 }
@@ -761,26 +744,9 @@ export function cancelReservationPayment(transactionId) {
   reservations.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
-      const columnsData = [
-        'id_' + findResult.dataset.id,
-        {
-          type: 'object',
-          data: [findResult.dataset.image, findResult.dataset.text],
-        },
-        findResult.dataset.custom2,
-        'custom_datetime_today',
-      ];
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-        transactionDetailsBtn.addEventListener('click', () =>
-          customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
-        );
-
-        main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-        main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
-        main.createNotifDot(SECTION_NAME, 2);
-      });
+      // Remove refund transaction log population: just delete pending and notify
+      main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+      main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
     }
   });
 }
