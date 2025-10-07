@@ -49,7 +49,7 @@ function ensureGlobalLoadingOverlay() {
     spinner.style.animation = 'ogfmsi-gl-spin 1s linear infinite';
 
     const text = document.createElement('div');
-    text.textContent = 'Fetching database...';
+    text.textContent = 'Loading...';
 
     wrapper.appendChild(spinner);
     wrapper.appendChild(text);
@@ -1423,6 +1423,29 @@ function setupModalBase(defaultData, inputs, callback) {
       if (data.listener) {
         input.addEventListener('input', () => {
           data.listener(input, tempModalContainer);
+        });
+      }
+
+      // 13-digit limit for any input labeled "Reference number"
+      const placeholderText = (data.placeholder || '').toLowerCase();
+      if (placeholderText.includes('reference number')) {
+        try { input.maxLength = 13; } catch (_) {}
+        input.setAttribute('inputmode', 'numeric');
+        input.addEventListener('input', (e) => {
+          const currentVal = String(input.value || '');
+          const isSynthetic = e && e.isTrusted === false;
+          // Preserve sentinel N/A and ignore programmatic initial input event
+          if (isSynthetic && currentVal.toUpperCase() === 'N/A') {
+            data.value = currentVal;
+            return;
+          }
+          // Enforce digits only on real user edits
+          const digitsOnly = currentVal.replace(/\D/g, '');
+          if (digitsOnly.length > 13 && e && e.isTrusted) {
+            try { toast('Reference number max is 13 digits', 'warning'); } catch (_) {}
+          }
+          input.value = digitsOnly.slice(0, 13);
+          data.value = input.value;
         });
       }
     }

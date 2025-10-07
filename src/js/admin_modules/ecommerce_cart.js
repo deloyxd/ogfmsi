@@ -1,7 +1,6 @@
 import main from '../admin_main.js';
 import stock from './ecommerce_stock.js';
 import accesscontrol from './maintenance_accesscontrol.js';
-import datasync from './maintenance_datasync.js';
 import payments from './payments.js';
 import { API_BASE_URL } from '../_global.js';
 
@@ -794,29 +793,6 @@ export async function completeProcessCheckout(totalAmount, paymentMethod, custom
         await updateProductStock(item.id, item.quantity);
       }
 
-      // Process each item in cart for data sync
-      cart.forEach((item) => {
-        const action = {
-          module: 'Store',
-          submodule: 'Selling',
-          description: 'Process sale',
-        };
-        const data = {
-          productId: item.id,
-          productName: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity,
-          customerPayment: customerPayment,
-          change: change,
-          date: new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }),
-        };
-        datasync.enqueue(action, data);
-      });
 
       // Show success message with payment details
       main.toast(

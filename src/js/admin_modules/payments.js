@@ -127,6 +127,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             (findResult) => {
               const customerImage = findResult ? findResult.dataset.image : '';
               const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
+              const customerName = findResult ? main.decodeName(findResult.dataset.text).fullName : '';
               main.createAtSectionOne(
                 SECTION_NAME,
                 [
@@ -135,6 +136,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                     data: [
                       customerImage,
+                      // Column 2: show Customer ID
                       customerIdSafe,
                       completePayment.payment_purpose,
                       main.formatPrice(completePayment.payment_amount_to_pay),
@@ -146,6 +148,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                     ],
                   },
+                  // Column 3: Customer Name
+                  customerName,
                   `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                 ],
                 3,
@@ -195,6 +199,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     ? findResult.dataset.image
                     : '';
               const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
+              // For normal customer-linked sales, show "Name | ID"; keep as-is for cart checkout
+              const customerDisplay =
+                completePayment.payment_customer_id === 'Sales: Cart Checkout'
+                  ? customerIdSafe
+                  : findResult
+                    ? `${main.decodeName(findResult.dataset.text).fullName} | ${customerIdSafe}`
+                    : customerIdSafe;
               main.createAtSectionOne(
                 SECTION_NAME,
                 [
@@ -203,7 +214,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                     data: [
                       customerImage,
-                      customerIdSafe,
+                      customerDisplay,
                       completePayment.payment_purpose,
                       main.formatPrice(completePayment.payment_amount_to_pay),
                       main.formatPrice(completePayment.payment_amount_paid_cash),
@@ -517,8 +528,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
     const refNum = result.short[6].value;
     if (result.radio[0].selected > 1) {
-      if ((refNum != 'N/A' && /[^0-9]/.test(refNum)) || refNum == 'N/A') {
-        main.toast(`Invalid reference number: ${refNum}`, 'error');
+      const refDigits = String(refNum || '').replace(/\D/g, '');
+      if (refNum == 'N/A' || refDigits.length !== 13) {
+        main.toast('Reference number must be exactly 13 digits', 'error');
         return;
       }
     } else if (refNum != 'N/A') {
@@ -542,8 +554,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           main.fixText(priceRate),
           main.fixText(paymentMethod),
           dateTimeText,
-        ],
+        ],  
       },
+      // For service transactions (non-cart), insert Customer Name column before date/time
+      ...(type === 'cart' ? [] : [fullName]),
       dateTimeText,
     ];
 
@@ -634,26 +648,9 @@ export function cancelCheckinPayment(transactionId) {
   customers.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
-      const columnsData = [
-        'id_' + findResult.dataset.id,
-        {
-          type: 'object',
-          data: [findResult.dataset.image, findResult.dataset.text],
-        },
-        findResult.dataset.custom2,
-        'custom_datetime_today',
-      ];
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-        transactionDetailsBtn.addEventListener('click', () =>
-          customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
-        );
-
-        main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-        main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
-        main.createNotifDot(SECTION_NAME, 2);
-      });
+      // Remove refund transaction log population: just delete pending and notify
+      main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+      main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
     }
   });
 }
@@ -747,26 +744,9 @@ export function cancelReservationPayment(transactionId) {
   reservations.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
     if (findResult) {
-      const columnsData = [
-        'id_' + findResult.dataset.id,
-        {
-          type: 'object',
-          data: [findResult.dataset.image, findResult.dataset.text],
-        },
-        findResult.dataset.custom2,
-        'custom_datetime_today',
-      ];
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-        transactionDetailsBtn.addEventListener('click', () =>
-          customers.customerDetailsBtnFunction(createResult.dataset.text, 'Transaction Details', '🔏')
-        );
-
-        main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-        main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
-        main.createNotifDot(SECTION_NAME, 2);
-      });
+      // Remove refund transaction log population: just delete pending and notify
+      main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+      main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
     }
   });
 }
