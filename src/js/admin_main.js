@@ -1425,6 +1425,21 @@ function setupModalBase(defaultData, inputs, callback) {
           data.listener(input, tempModalContainer);
         });
       }
+
+      // 13-digit limit for any input labeled "Reference number"
+      const placeholderText = (data.placeholder || '').toLowerCase();
+      if (placeholderText.includes('reference number')) {
+        try { input.maxLength = 13; } catch (_) {}
+        input.setAttribute('inputmode', 'numeric');
+        input.addEventListener('input', () => {
+          const digitsOnly = String(input.value).replace(/\D/g, '');
+          if (digitsOnly.length > 13) {
+            try { toast('Reference number max is 13 digits', 'warning'); } catch (_) {}
+          }
+          input.value = digitsOnly.slice(0, 13);
+          data.value = input.value;
+        });
+      }
     }
 
     if (type.includes('spinner')) {

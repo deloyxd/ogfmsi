@@ -528,8 +528,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
     const refNum = result.short[6].value;
     if (result.radio[0].selected > 1) {
-      if ((refNum != 'N/A' && /[^0-9]/.test(refNum)) || refNum == 'N/A') {
-        main.toast(`Invalid reference number: ${refNum}`, 'error');
+      const refDigits = String(refNum || '').replace(/\D/g, '');
+      if (refNum == 'N/A' || refDigits.length !== 13) {
+        main.toast('Reference number must be exactly 13 digits', 'error');
         return;
       }
     } else if (refNum != 'N/A') {

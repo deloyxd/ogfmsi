@@ -284,6 +284,25 @@ function openPaymentModal(preparedRegistrationData) {
     modal.children[0].classList.add('scale-100');
   }, 10);
 
+  // 13-digit limit for GCash Reference Number
+  const gcashRefInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashRef'));
+  if (gcashRefInput) {
+    try { gcashRefInput.maxLength = 13; } catch (_) {}
+    gcashRefInput.setAttribute('inputmode', 'numeric');
+    gcashRefInput.addEventListener('input', () => {
+      const digitsOnly = String(gcashRefInput.value).replace(/\D/g, '');
+      if (digitsOnly.length > 13) {
+        try {
+          // Prefer toast if available
+          if (typeof Toastify === 'function') {
+            Toastify({ text: 'Reference number max is 13 digits', duration: 3000, gravity: 'top', position: 'right', close: true }).showToast();
+          }
+        } catch (_) {}
+      }
+      gcashRefInput.value = digitsOnly.slice(0, 13);
+    });
+  }
+
   const close = () => {
     modal.classList.remove('opacity-100');
     modal.children[0].classList.add('-translate-y-6');
@@ -309,6 +328,17 @@ function openPaymentModal(preparedRegistrationData) {
 
     if (!gcashRef || !gcashName || !gcashAmountRaw) {
       msg.textContent = 'Please fill in all payment details.';
+      return;
+    }
+
+    const refDigits = String(gcashRef).replace(/\D/g, '');
+    if (refDigits.length !== 13) {
+      msg.textContent = 'Reference number must be exactly 13 digits.';
+      try {
+        if (typeof Toastify === 'function') {
+          Toastify({ text: 'Reference number must be exactly 13 digits', duration: 3000, gravity: 'top', position: 'right', close: true }).showToast();
+        }
+      } catch (_) {}
       return;
     }
 
