@@ -547,9 +547,16 @@ function validateCustomer(
     if (customerType.toLowerCase().includes('monthly')) {
       main.closeModal(() => {
         const startDate = main.encodeDate(new Date(), '2-digit');
-        let renewalStartDate = new Date(renewalData?.endDate);
-        renewalStartDate.setDate(renewalStartDate.getDate() + 1);
-        if (renewalData) renewalStartDate = main.encodeDate(renewalStartDate, '2-digit');
+        let renewalStartDate = startDate;
+        if (renewalData && renewalData.endDate) {
+          const raw = String(renewalData.endDate).trim();
+          const normalized = /^(\d{2})-(\d{2})-(\d{4})$/.test(raw) ? raw.replace(/-/g, '/') : raw;
+          const parsed = new Date(normalized);
+          if (!isNaN(parsed.getTime())) {
+            parsed.setDate(parsed.getDate() + 1);
+            renewalStartDate = main.encodeDate(parsed, '2-digit');
+          }
+        }
         const inputs = {
           header: {
             title: `${renewalData ? 'Renew' : 'Register New'} Monthly Customer ${getEmoji('🎫', 26)}`,
@@ -613,14 +620,15 @@ function validateCustomer(
               year: 'numeric',
             });
             const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
+            const startDateNormalized = String(startDate).replace(/-/g, '/');
             main.openConfirmationModal(
-              `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDate)}<br>to ${main.decodeDate(endDate)}<br>lasts ${months * 30} days<br>total price: ${main.encodePrice(price)}`,
+              `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDateNormalized)}<br>to ${main.decodeDate(endDate)}<br>lasts ${months * 30} days<br>total price: ${main.encodePrice(price)}`,
               () => {
                 main.closeConfirmationModal();
                 columnsData[2] += ' - Pending';
                 registerNewCustomer(columnsData, true, price, priceRate, async (createResult) => {
-                  createResult.dataset.startdate = main.encodeDate(startDate, 'long');
-                  createResult.dataset.enddate = main.encodeDate(endDate.replace(/\//g, '-'), 'long');
+                  createResult.dataset.startdate = main.decodeDate(startDateNormalized);
+                  createResult.dataset.enddate = main.decodeDate(endDate);
                   createResult.dataset.days = months * 30;
                   createResult.dataset.status = 'pending';
 
@@ -783,7 +791,11 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
     } else {
       updateCustomer(columnsData, findResult, 1);
       if (isMonthlyCustomer) {
-        if (!findResult.dataset.status || findResult.dataset.status === 'pending') {
+        if (
+          !findResult.dataset.status ||
+          findResult.dataset.status === 'pending' ||
+          (findResult.dataset.custom2 || '').toLowerCase().includes('pending')
+        ) {
           callback(findResult);
           processCheckinPayment(findResult, true, amount, priceRate);
         } else {
@@ -1006,8 +1018,8 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                   continueCustomerProcessBtnFunction,
                   selectedProcess.includes('renew')
                     ? {
-                        startDate: main.encodeDate(customer.dataset.startdate, 'long'),
-                        endDate: main.encodeDate(customer.dataset.enddate, 'long'),
+                        startDate: customer.dataset.startdate,
+                        endDate: customer.dataset.enddate,
                         days: customer.dataset.days,
                       }
                     : null,
@@ -1094,8 +1106,8 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
             continueCustomerProcessBtnFunction,
             selectedProcess.includes('renew')
               ? {
-                  startDate: main.encodeDate(customer.dataset.startdate, 'long'),
-                  endDate: main.encodeDate(customer.dataset.enddate, 'long'),
+                  startDate: customer.dataset.startdate,
+                  endDate: customer.dataset.enddate,
                   days: customer.dataset.days,
                 }
               : null,
