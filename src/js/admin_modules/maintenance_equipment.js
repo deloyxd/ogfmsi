@@ -1350,6 +1350,9 @@ async function renderDisposedList() {
           const timeCell = frontendResult.children[3];
           if (dateCell) dateCell.textContent = disposedDateDisp;
           if (timeCell) timeCell.textContent = disposedTimeDisp;
+          
+          // Setup Details button for disposed items
+          setupDisposedItemButtons(frontendResult, item);
         });
       });
     }
@@ -1357,6 +1360,165 @@ async function renderDisposedList() {
     console.error('Error loading disposed list:', error);
   }
 }
+
+function setupDisposedItemButtons(frontendResult, item) {
+  const detailsBtn = frontendResult.querySelector('#disposedDetailsBtn');
+  if (detailsBtn) {
+    detailsBtn.addEventListener('click', () => showDisposedItemDetails(item));
+  }
+}
+
+async function showDisposedItemDetails(item) {
+  try {
+    // Fetch the parent equipment details
+    const equipmentResponse = await fetch(`${API_BASE_URL}/maintenance/equipment/${item.equipment_id}`);
+    const equipmentResult = await equipmentResponse.json();
+    
+    const equipment = equipmentResponse.ok ? equipmentResult.result : null;
+    
+    // Create modal for disposed item details
+    const modalHTML = `
+      <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-20 hidden" id="disposedItemModal">
+        <div class="m-auto w-full max-w-2xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+          <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-gray-500 to-gray-800 p-4 text-center text-white">
+            <p class="text-xl font-medium">Disposed Item Details ${getEmoji('🗑️', 26)}</p>
+            <p class="text-xs">${item.item_code} - ${item.equipment_name}</p>
+          </div>
+          <div class="flex flex-col p-6">
+            <div class="mb-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono">
+                    ${item.item_code}
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Name</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                    ${item.equipment_name}
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Type</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                    ${equipment ? equipment.equipment_type || 'Unknown' : 'Unknown'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                    <span class="inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full font-medium bg-gray-200 text-gray-800">🗑️ Disposed</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Image</label>
+                <div class="flex items-center gap-3">
+                  <img src="${equipment ? (equipment.image_url || '/src/images/client_logo.jpg') : '/src/images/client_logo.jpg'}" 
+                       alt="${item.equipment_name}" 
+                       class="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                       onclick="showImageModal(this.src, '${item.equipment_name.replace(/'/g, "&#39;")}')">
+                  <span class="text-sm text-gray-500">Click image to view full size</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Disposed Date</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                    ${item.disposed_at ? new Date(item.disposed_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'Unknown'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Disposed Time</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                    ${item.disposed_at ? new Date(item.disposed_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true
+                    }) : 'Unknown'}
+                  </div>
+                </div>
+              </div>
+
+              ${equipment && equipment.notes ? `
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Notes</label>
+                  <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                    ${equipment.notes}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div class="flex gap-3">
+              <button type="button" onclick="closeDisposedItemModal()" 
+                      class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('disposedItemModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => {
+      modal.classList.add('opacity-100');
+      modal.children[0].classList.remove('-translate-y-6');
+      modal.children[0].classList.add('scale-100');
+    }, 0);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeDisposedItemModal();
+      }
+    });
+
+    // Add escape key handler
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        closeDisposedItemModal();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    modal.dataset.escapeHandler = 'true';
+
+  } catch (error) {
+    console.error('Error loading disposed item details:', error);
+    main.toast('Network error: Failed to load disposed item details', 'error');
+  }
+}
+
+window.closeDisposedItemModal = function () {
+  const modal = document.getElementById('disposedItemModal');
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  }
+};
 
 async function updateEquipment(equipmentId, updateData) {
   try {
