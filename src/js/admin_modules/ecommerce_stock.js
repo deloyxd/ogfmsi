@@ -296,7 +296,6 @@ async function addProduct(result, name, price, quantity, measurement) {
 
       // Reload products and stats
       loadProducts();
-      // loadStats(); // Commented out - using client-side calculation instead
     } else {
       main.toast(`Error: ${data.error}`, 'error');
     }
@@ -361,7 +360,7 @@ async function loadProducts() {
       );
 
       // Update stats using the same logic as the tabs
-      // computeAndUpdateStats(products);
+      computeAndUpdateStats(products);
     } else {
       console.error('Error loading products:', data.error);
     }
@@ -385,48 +384,75 @@ async function loadStats() {
   }
 }
 
-// Computes stats client-side using the same logic as the tabs and updates the UI
-// function computeAndUpdateStats(products) {
-//   if (!Array.isArray(products)) {
-//     return;
-//   }
+// Computes stats client-side using the exact same logic as the tabs and updates the UI
+function computeAndUpdateStats(products) {
+  if (!Array.isArray(products)) {
+    return;
+  }
 
-//   const totalProducts = products.length;
-//   const lowStock = products.filter(
-//     (p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
-//   ).length;
-//   const superLowStock = products.filter(
-//     (p) => ((+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock') &&
-//       !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
-//   ).length;
-//   const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
-//   const bestSelling = products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
-//   const slowMoving = products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))).length;
-//   const disposed = products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))).length;
+  // Use the exact same filtering logic as the tabs to ensure stats match tab counts
+  
+  // Tab 1: Unique Products (All stocks) — exclude disposed products
+  const uniqueProducts = products.filter(
+    (p) => !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+  ).length;
 
-//   updateStatsDisplay({
-//     total_products: totalProducts,
-//     low_stock: lowStock,
-//     super_low_stock: superLowStock,
-//     out_of_stock: outOfStock,
-//     best_selling: bestSelling,
-//     slow_moving: slowMoving,
-//     disposed: disposed,
-//   });
-// }
+  // Tab 2: Low Stock Products (About to be out of stock)
+  const lowStock = products.filter(
+    (p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+  ).length;
 
-// current logic:
+  // Tab 3: Out of Stock Products (Dead stocks)
+  const outOfStock = products.filter(
+    (p) => +p.quantity === 0 || p.stock_status === 'Out of Stock'
+  ).length;
+
+  // Tab 4: Best Selling Products (Fast moving stocks)
+  const bestSelling = products.filter(
+    (p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+  ).length;
+
+  // Tab 5: Least Selling Products (Slow moving stocks)
+  const slowMoving = products.filter(
+    (p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+  ).length;
+
+  // Tab 6: Super Low Stock Products (Critical stock levels)
+  const superLowStock = products.filter(
+    (p) =>
+      ((+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock') &&
+      !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+  ).length;
+
+  // Tab 7: Disposed Products (Expired or damaged products)
+  const disposed = products.filter(
+    (p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))
+  ).length;
+
+  updateStatsDisplay({
+    total_products: uniqueProducts,
+    low_stock: lowStock,
+    super_low_stock: superLowStock,
+    out_of_stock: outOfStock,
+    best_selling: bestSelling,
+    slow_moving: slowMoving,
+    disposed: disposed,
+  });
+}
+
 // Updates the section stats display
-// [0] Total unique products
-// [1] Low stock items (<=5)
-// [2] Out of stock items (0)
-// [3] Best selling products (>50 sold)
-// [4] Slow moving products (<=10 but >0)
-// Note: Disposed products stat is calculated but not displayed
+// [0] Unique Products (All active stocks)
+// [1] Low Stock Products (About to be out of stock)
+// [2] Out of Stock Products (Dead stocks)
+// [3] Best Selling Products (Fast moving stocks)
+// [4] Least Selling Products (Slow moving stocks)
+// [5] Super Low Stock Products (Critical stock levels)
+// Note: Disposed products stat is calculated but not displayed in the main stats
 function updateStatsDisplay(stats) {
   const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
 
   if (statElements.length >= 6) {
+    // Unique Products: All active stocks
     const uniqueProductsStat = statElements[0];
     if (uniqueProductsStat) {
       const valueElement = uniqueProductsStat.querySelector('.section-stats-c');
@@ -435,6 +461,7 @@ function updateStatsDisplay(stats) {
       }
     }
 
+    // Low Stock Products: About to be out of stock
     const lowStockStat = statElements[1];
     if (lowStockStat) {
       const valueElement = lowStockStat.querySelector('.section-stats-c');
@@ -443,15 +470,8 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const superLowStockStat = statElements[2];
-    if (superLowStockStat) {
-      const valueElement = superLowStockStat.querySelector('.section-stats-c');
-      if (valueElement) {
-        valueElement.textContent = stats.super_low_stock || 0;
-      }
-    }
-
-    const outOfStockStat = statElements[3];
+    // Out of Stock Products: Dead stocks
+    const outOfStockStat = statElements[2];
     if (outOfStockStat) {
       const valueElement = outOfStockStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -459,7 +479,8 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const bestSellingStat = statElements[4];
+    // Best Selling Products: Fast moving stocks
+    const bestSellingStat = statElements[3];
     if (bestSellingStat) {
       const valueElement = bestSellingStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -467,7 +488,8 @@ function updateStatsDisplay(stats) {
       }
     }
 
-    const slowMovingStat = statElements[5];
+    // Least Selling Products: Slow moving stocks
+    const slowMovingStat = statElements[4];
     if (slowMovingStat) {
       const valueElement = slowMovingStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -475,7 +497,14 @@ function updateStatsDisplay(stats) {
       }
     }
 
-
+    // Super Low Stock Products: Critical stock levels
+    const superLowStockStat = statElements[5];
+    if (superLowStockStat) {
+      const valueElement = superLowStockStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.super_low_stock || 0;
+      }
+    }
   }
 }
 
@@ -797,7 +826,6 @@ async function updateProduct(result, newResult, name) {
 
       // Reload products and stats
       loadProducts();
-      // loadStats(); // Commented out - using client-side calculation instead
     } else {
       main.toast(`Error: ${data.error}`, 'error');
     }
@@ -847,7 +875,6 @@ async function deleteProduct(result) {
 
         // Reload products and stats
         loadProducts();
-        // loadStats(); // Commented out - using client-side calculation instead
       } else {
         main.toast(`Error: ${data.error}`, 'error');
       }
@@ -1023,7 +1050,6 @@ window.confirmDisposeProduct = async function (productId) {
         closeDisposeProductModal();
         main.closeModal();
         loadProducts();
-        // loadStats(); // Commented out - using client-side calculation instead
         return;
       } else {
         throw new Error('Failed to update product');
@@ -1052,7 +1078,6 @@ window.confirmDisposeProduct = async function (productId) {
 
       // Reload products and stats
       loadProducts();
-      // loadStats(); // Commented out - using client-side calculation instead
     } else {
       main.toast(`Error: ${result.error || 'Failed to dispose product'}`, 'error');
     }
@@ -1150,5 +1175,4 @@ function checkIfSameData(newData, oldData) {
 
 function refreshAllTabs() {
   loadProducts();
-  // loadStats(); // Commented out - using client-side calculation instead
 }
