@@ -121,6 +121,7 @@ function ensureGlobalLoadingOverlay() {
 
 export function showGlobalLoading() {
   if (sharedState.moduleLoad === '') return
+  console.log('loading:', sharedState.moduleLoad);
   try {
     const overlay = ensureGlobalLoadingOverlay();
     __globalLoadingCount = Math.max(0, __globalLoadingCount) + 1;
