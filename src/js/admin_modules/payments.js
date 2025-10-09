@@ -30,6 +30,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     await fetchAllPendingPayments();
     await fetchAllServicePayments();
     await fetchAllSalesPayments();
+    await fetchAllCanceledPayments();
 
     async function fetchAllPendingPayments() {
       try {
@@ -238,6 +239,59 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         });
       } catch (error) {
         console.error('Error fetching sales payments:', error);
+      }
+    }
+
+    async function fetchAllCanceledPayments() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/canceled`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const canceledPayments = await response.json();
+
+        const list = Array.isArray(canceledPayments.result) ? canceledPayments.result : [];
+        list.forEach((payment) => {
+          main.findAtSectionOne(
+            'inquiry-customers',
+            payment.payment_customer_id,
+            'equal_id',
+            1,
+            (findResult) => {
+              const customerImage = findResult ? findResult.dataset.image : '';
+              const customerIdSafe = findResult ? findResult.dataset.id : payment.payment_customer_id;
+              const customerName = findResult ? main.decodeName(findResult.dataset.text).fullName : '';
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + payment.payment_id,
+                  {
+                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    data: [
+                      customerImage,
+                      customerIdSafe,
+                      payment.payment_purpose || 'N/A',
+                      main.formatPrice(payment.payment_amount_to_pay || 0),
+                      main.formatPrice(0),
+                      main.formatPrice(0),
+                      main.formatPrice(0),
+                      main.fixText(payment.payment_rate || 'N/A'),
+                      'canceled',
+                      `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
+                    ],
+                  },
+                  // Column 3: Customer Name for service-style tables
+                  customerName,
+                  `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
+                ],
+                2,
+                () => {}
+              );
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching canceled payments:', error);
       }
     }
   }
@@ -646,12 +700,46 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
 export function cancelCheckinPayment(transactionId) {
   customers.cancelPendingTransaction(transactionId);
-  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
-    if (findResult) {
-      // Remove refund transaction log population: just delete pending and notify
-      main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-      main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, async (findResult) => {
+    if (!findResult) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/payment/canceled/${transactionId}`, { method: 'PUT' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    } catch (e) {
+      console.error('Error marking payment as canceled:', e);
     }
+
+    // Reflect in UI: move to Canceled Transactions Log (tab index 2)
+    const columnsData = [
+      'id_' + transactionId,
+      {
+        type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+        data: [
+          findResult.dataset.image || '',
+          findResult.dataset.text || '',
+          findResult.dataset.custom2 || 'N/A',
+          main.formatPrice(main.deformatPrice(findResult.dataset.custom3 || 0)),
+          main.formatPrice(0),
+          main.formatPrice(0),
+          main.formatPrice(0),
+          main.fixText(findResult.dataset.custom4 || 'N/A'),
+          'canceled',
+          `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
+        ],
+      },
+      // Insert Customer Name column before date/time
+      (() => {
+        const r = main.findAtSectionOne('inquiry-customers', findResult.dataset.text, 'equal_id', 1, () => {});
+        return '';
+      })(),
+      `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
+    ];
+    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
+
+    // Remove from pending list
+    main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+    main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
   });
 }
 
@@ -742,12 +830,41 @@ export function continueProcessReservationPayment(transactionId, fullName) {
 
 export function cancelReservationPayment(transactionId) {
   reservations.cancelPendingTransaction(transactionId);
-  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, (findResult) => {
-    if (findResult) {
-      // Remove refund transaction log population: just delete pending and notify
-      main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-      main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
+  main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, async (findResult) => {
+    if (!findResult) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/payment/canceled/${transactionId}`, { method: 'PUT' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    } catch (e) {
+      console.error('Error marking reservation payment as canceled:', e);
     }
+
+    const columnsData = [
+      'id_' + transactionId,
+      {
+        type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+        data: [
+          findResult.dataset.image || '',
+          findResult.dataset.text || '',
+          findResult.dataset.custom2 || 'Reservation fee',
+          main.formatPrice(main.deformatPrice(findResult.dataset.custom3 || 0)),
+          main.formatPrice(0),
+          main.formatPrice(0),
+          main.formatPrice(0),
+          'Regular',
+          'canceled',
+          `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
+        ],
+      },
+      // Insert Customer Name column before date/time
+      '',
+      `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
+    ];
+    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
+
+    main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+    main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
   });
 }
 
