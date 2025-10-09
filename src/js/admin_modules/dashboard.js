@@ -17,6 +17,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
 document.addEventListener('newTab', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
+  console.log('test')
   if (main.sharedState.activeTab == 2) {
     document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.remove('hidden');
     loadUpcomingRenewals();
