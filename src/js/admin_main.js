@@ -25,41 +25,91 @@ function ensureGlobalLoadingOverlay() {
     overlay.style.display = 'none'; // hidden by default
     overlay.style.alignItems = 'center';
     overlay.style.justifyContent = 'center';
-    overlay.style.background = 'rgba(0,0,0,0.35)';
-    overlay.style.backdropFilter = 'blur(2px)';
+    overlay.style.background = 'rgba(0,0,0,0.35)'; // keep original
+    overlay.style.backdropFilter = 'blur(2px)';    // keep original blur
     overlay.style.zIndex = '99999';
     overlay.style.pointerEvents = 'all';
 
+    // Wrapper
     const wrapper = document.createElement('div');
     wrapper.style.display = 'flex';
     wrapper.style.flexDirection = 'column';
     wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '12px';
+    wrapper.style.gap = '14px';
     wrapper.style.color = '#fff';
     wrapper.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
-    wrapper.style.fontWeight = '600';
-    wrapper.style.fontSize = '14px';
+    wrapper.style.fontWeight = '700';
+    wrapper.style.fontSize = '16px';
+    wrapper.style.letterSpacing = '0.5px';
+    wrapper.style.textTransform = 'uppercase';
+    wrapper.style.animation = 'gl-fade-in 0.5s ease-out';
 
+    // Dumbbell-inspired spinner
     const spinner = document.createElement('div');
-    spinner.style.width = '40px';
-    spinner.style.height = '40px';
-    spinner.style.borderRadius = '50%';
-    spinner.style.border = '4px solid rgba(255,255,255,0.35)';
-    spinner.style.borderTopColor = '#fff';
-    spinner.style.animation = 'ogfmsi-gl-spin 1s linear infinite';
+    spinner.style.width = '50px';
+    spinner.style.height = '50px';
+    spinner.style.position = 'relative';
+    spinner.style.display = 'flex';
+    spinner.style.alignItems = 'center';
+    spinner.style.justifyContent = 'center';
+    spinner.style.animation = 'gl-rotate 1s linear infinite';
+
+    const bar = document.createElement('div');
+    bar.style.width = '40px';
+    bar.style.height = '6px';
+    bar.style.background = '#fff';
+    bar.style.borderRadius = '3px';
+
+    const plateLeft = document.createElement('div');
+    plateLeft.style.width = '10px';
+    plateLeft.style.height = '20px';
+    plateLeft.style.background = '#fff';
+    plateLeft.style.borderRadius = '2px';
+    plateLeft.style.position = 'absolute';
+    plateLeft.style.left = '0';
+
+    const plateRight = document.createElement('div');
+    plateRight.style.width = '10px';
+    plateRight.style.height = '20px';
+    plateRight.style.background = '#fff';
+    plateRight.style.borderRadius = '2px';
+    plateRight.style.position = 'absolute';
+    plateRight.style.right = '0';
+
+    spinner.appendChild(bar);
+    spinner.appendChild(plateLeft);
+    spinner.appendChild(plateRight);
 
     const text = document.createElement('div');
     text.textContent = 'Loading...';
+    text.style.fontSize = '15px';
+    text.style.opacity = '0.9';
+    text.style.animation = 'gl-text-pulse 1.5s ease-in-out infinite';
 
     wrapper.appendChild(spinner);
     wrapper.appendChild(text);
     overlay.appendChild(wrapper);
 
-    // keyframes injection (once)
+    // Keyframes
     if (!document.getElementById('ogfmsi-global-loading-style')) {
       const style = document.createElement('style');
       style.id = 'ogfmsi-global-loading-style';
-      style.textContent = '@keyframes ogfmsi-gl-spin { to { transform: rotate(360deg); } }';
+      style.textContent = `
+        @keyframes gl-rotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @keyframes gl-fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes gl-text-pulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; }
+        }
+      `;
       document.head.appendChild(style);
     }
 
@@ -67,6 +117,7 @@ function ensureGlobalLoadingOverlay() {
   }
   return overlay;
 }
+
 
 export function showGlobalLoading() {
   if (sharedState.moduleLoad === '') return
