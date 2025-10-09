@@ -10,8 +10,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
   subBtn.addEventListener('click', subBtnFunction);
-  setupChartOne();
-  setupChartTwo();
+  // setupChartOne();
+  // setupChartTwo();
   loadDashboardStats(); // Load dashboard stats
 });
 
