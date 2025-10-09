@@ -114,9 +114,6 @@ function canAddToCart(productId, additionalQuantity) {
 }
 
 async function loadCartFromServer() {
-  main.sharedState.moduleLoad = SECTION_NAME;
-  window.showGlobalLoading?.();
-  try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${sessionId}`);
     const data = await response.json();
 
@@ -137,11 +134,6 @@ async function loadCartFromServer() {
     } else {
       console.error('Error loading cart:', data.error);
     }
-  } catch (error) {
-    console.error('Error loading cart:', error);
-  } finally {
-    window.hideGlobalLoading?.();
-  }
 }
 
 function displayProductsForTab(products, tabIndex) {
