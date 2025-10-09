@@ -10,14 +10,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   mainBtn.addEventListener('click', mainBtnFunction);
   subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
   subBtn.addEventListener('click', subBtnFunction);
-  // setupChartOne();
-  // setupChartTwo();
+  setupChartOne();
+  setupChartTwo();
   loadDashboardStats(); // Load dashboard stats
 });
 
 document.addEventListener('newTab', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
-  console.log('test')
   if (main.sharedState.activeTab == 2) {
     document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.remove('hidden');
     loadUpcomingRenewals();
