@@ -313,7 +313,7 @@ async function loadSupplements() {
       seenProducts.add(product.product_id);
 
       // Align columns with HTML listtitletexts for Supplements tab:
-      // [Product ID, Product Name, Quantity, Price, Quantity Sold, Total Sales, Date]
+      // [Product ID, Product Name, Quantity, Price, Measurement, Measurement Unit, Quantity Sold, Total Sales, Date]
       const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
       const displayId =
         String(product.product_id || '')
@@ -325,6 +325,8 @@ async function loadSupplements() {
         { type: 'object', data: [product.image_url || '/src/images/client_logo.jpg', product.product_name || ''] },
         String(product.quantity),
         main.encodePrice(product.price),
+        String(product.measurement_value || ''),
+        String(product.measurement_unit || ''),
         String(aggregate.quantity || 0),
         main.encodePrice(aggregate.total || 0),
         'custom_date_' +
