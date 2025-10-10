@@ -4,7 +4,21 @@ const router = Router();
 
 // GET all customers
 router.get('/monthly', async (req, res) => {
-  const query = 'SELECT * FROM customer_monthly_tbl ORDER BY created_at DESC';
+  // Get only the most recent active monthly subscription for each customer
+  const query = `
+    SELECT m1.* 
+    FROM customer_monthly_tbl m1
+    INNER JOIN (
+      SELECT customer_id, MAX(created_at) as max_created_at
+      FROM customer_monthly_tbl
+      WHERE customer_end_date >= CURDATE()
+      AND customer_pending = 0
+      GROUP BY customer_id
+    ) m2 ON m1.customer_id = m2.customer_id AND m1.created_at = m2.max_created_at
+    WHERE m1.customer_end_date >= CURDATE()
+    AND m1.customer_pending = 0
+    ORDER BY m1.created_at DESC
+  `;
   mysqlConnection.query(query, (error, result) => {
     if (error) {
       console.error('Fetching customers error:', error);
