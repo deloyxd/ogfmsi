@@ -1,10 +1,12 @@
 const { Router } = require('express');
-const mysqlConnection = require('../database/mysql');
+const db = require('../database/mysql');
+const { parsePageParams } = require('../utils/pagination');
 const router = Router();
 
 // GET all past monthly customers (expired monthly pass)
 router.get('/pastmonthly', async (req, res) => {
-  const query = `
+  const { useLimit, limit, offset } = parsePageParams(req);
+  let sql = `
     SELECT DISTINCT c.customer_id, c.customer_first_name, c.customer_last_name, 
            c.customer_image_url, c.customer_contact, c.customer_rate,
            m.customer_start_date, m.customer_end_date, m.customer_months,
@@ -15,20 +17,25 @@ router.get('/pastmonthly', async (req, res) => {
     AND m.customer_pending = 0
     ORDER BY m.customer_end_date DESC
   `;
-  
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching past monthly customers error:', error);
-      return res.status(500).json({ error: 'Fetching past monthly customers failed' });
-    }
-    res.status(200).json({ message: 'Fetching past monthly customers successful', result: result });
-  });
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching past monthly customers successful', result: rows });
+  } catch (error) {
+    console.error('Fetching customers error:', error);
+    return res.status(500).json({ error: 'Fetching past monthly customers failed' });
+  }
 });
 
 // POST move expired monthly customers to past monthly
 router.post('/pastmonthly/auto-move', async (req, res) => {
+  const { useLimit, limit, offset } = parsePageParams(req);
   const today = new Date().toISOString().split('T')[0];
-  
+
   // Find expired monthly customers
   const findExpiredQuery = `
     SELECT DISTINCT c.customer_id, c.customer_first_name, c.customer_last_name, 
@@ -40,20 +47,19 @@ router.post('/pastmonthly/auto-move', async (req, res) => {
     WHERE m.customer_end_date < ?
     AND m.customer_pending = 0
   `;
-  
-  mysqlConnection.query(findExpiredQuery, [today], (error, result) => {
-    if (error) {
-      console.error('Finding expired monthly customers error:', error);
-      return res.status(500).json({ error: 'Finding expired monthly customers failed' });
-    }
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const expiredCustomers = await db.query(findExpiredQuery, params);
 
-    const expiredCustomers = result;
-    
     if (expiredCustomers.length === 0) {
-      return res.status(200).json({ 
-        message: 'No expired monthly customers found', 
+      return res.status(200).json({
+        message: 'No expired monthly customers found',
         result: [],
-        moved_count: 0 
+        moved_count: 0,
       });
     }
 
@@ -62,9 +68,12 @@ router.post('/pastmonthly/auto-move', async (req, res) => {
     res.status(200).json({
       message: `Found ${expiredCustomers.length} expired monthly customers`,
       result: expiredCustomers,
-      moved_count: expiredCustomers.length
+      moved_count: expiredCustomers.length,
     });
-  });
+  } catch (error) {
+    console.error('Finding expired monthly customers error:', error);
+    return res.status(500).json({ error: 'Finding expired monthly customers failed' });
+  }
 });
 
 module.exports = router;
