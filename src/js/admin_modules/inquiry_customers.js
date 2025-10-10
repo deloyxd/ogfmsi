@@ -60,7 +60,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
+    await fetchAllPastMonthlyCustomers();
     await fetchAllArchivedCustomers();
+    await autoArchiveInactiveCustomers();
     updateCustomerStats();
 
     async function fetchAllCustomers() {
@@ -148,54 +150,154 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               if (customer.customer_pending == 1) {
                 findResult.dataset.tid = customer.customer_tid;
               } else {
-                main.createAtSectionOne(
-                  SECTION_NAME,
-                  [
-                    'id_' + customer.customer_id,
-                    {
-                      type: 'object_contact',
-                      data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
-                    },
-                    main.encodeDate(
-                      customer.customer_start_date,
-                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                    ),
-                    main.encodeDate(
-                      customer.customer_end_date,
-                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                    ),
-                    daysLeft + ' days',
-                    main.formatPrice(
-                      customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
-                    ),
-                    findResult.dataset.custom3,
-                    'custom_date_' +
+                // Check if monthly subscription has expired
+                if (daysLeft <= 0) {
+                  // Move to Past Monthly Customers tab (tab 3)
+                  main.createAtSectionOne(
+                    SECTION_NAME,
+                    [
+                      'id_' + customer.customer_id,
+                      {
+                        type: 'object_contact',
+                        data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+                      },
                       main.encodeDate(
-                        customer.created_at,
+                        customer.customer_start_date,
                         main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                      ) +
-                      ' - ' +
-                      main.encodeTime(customer.created_at),
-                  ],
-                  2,
-                  (createResult) => {
-                    const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-                    customerProcessBtn.addEventListener('click', () =>
-                      customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                    );
-                    const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-                    customerEditDetailsBtn.addEventListener('click', () =>
-                      customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                    );
-                    updateCustomerStats();
-                  }
-                );
+                      ),
+                      main.encodeDate(
+                        customer.customer_end_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                      main.formatPrice(
+                        customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                      ),
+                      findResult.dataset.custom3,
+                      'custom_date_' +
+                        main.encodeDate(
+                          customer.created_at,
+                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                        ) +
+                        ' - ' +
+                        main.encodeTime(customer.created_at),
+                    ],
+                    3,
+                    (createResult) => {
+                      const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
+                      customerDetailsBtn.addEventListener('click', () =>
+                        customerDetailsBtnFunction(createResult.dataset.id, 'Past Monthly Details', '📅')
+                      );
+                      updateCustomerStats();
+                    }
+                  );
+                } else {
+                  // Active monthly customer - show in Active Monthly Customers tab (tab 2)
+                  main.createAtSectionOne(
+                    SECTION_NAME,
+                    [
+                      'id_' + customer.customer_id,
+                      {
+                        type: 'object_contact',
+                        data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+                      },
+                      main.encodeDate(
+                        customer.customer_start_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                      main.encodeDate(
+                        customer.customer_end_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                      daysLeft + ' days',
+                      main.formatPrice(
+                        customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                      ),
+                      findResult.dataset.custom3,
+                      'custom_date_' +
+                        main.encodeDate(
+                          customer.created_at,
+                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                        ) +
+                        ' - ' +
+                        main.encodeTime(customer.created_at),
+                    ],
+                    2,
+                    (createResult) => {
+                      const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+                      customerProcessBtn.addEventListener('click', () =>
+                        customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                      );
+                      const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+                      customerEditDetailsBtn.addEventListener('click', () =>
+                        customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                      );
+                      updateCustomerStats();
+                    }
+                  );
+                }
               }
             }
           });
         });
       } catch (error) {
         console.error('Error fetching customers:', error);
+      }
+    }
+
+    async function fetchAllPastMonthlyCustomers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/pastmonthly`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const pastMonthlyCustomers = await response.json();
+
+        pastMonthlyCustomers.result.forEach((customer) => {
+          main.createAtSectionOne(
+            SECTION_NAME,
+            [
+              'id_' + customer.customer_id,
+              {
+                type: 'object_contact',
+                data: [
+                  customer.customer_image_url,
+                  customer.customer_first_name + ' ' + customer.customer_last_name,
+                  customer.customer_contact,
+                ],
+              },
+              main.encodeDate(
+                customer.customer_start_date,
+                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+              ),
+              main.encodeDate(
+                customer.customer_end_date,
+                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+              ),
+              main.formatPrice(
+                customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]
+              ),
+              main.fixText(customer.customer_rate),
+              'custom_date_' +
+                main.encodeDate(
+                  customer.created_at,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                ) +
+                ' - ' +
+                main.encodeTime(customer.created_at),
+            ],
+            3,
+            (createResult) => {
+              createResult.dataset.text = customer.customer_first_name + ':://' + customer.customer_last_name;
+              const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
+              customerDetailsBtn.addEventListener('click', () =>
+                customerDetailsBtnFunction(createResult.dataset.id, 'Past Monthly Details', '📅')
+              );
+              updateCustomerStats();
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching past monthly customers:', error);
       }
     }
 
@@ -239,6 +341,34 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         });
       } catch (error) {
         console.error('Error fetching archived customers:', error);
+      }
+    }
+
+    async function autoArchiveInactiveCustomers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/auto-archive`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.archived_count > 0) {
+          console.log(`Auto-archived ${result.archived_count} inactive customers`);
+          main.toast(`Auto-archived ${result.archived_count} inactive customers (3+ months)`, 'success');
+          
+          // Refresh the archived customers list to show newly archived customers
+          await fetchAllArchivedCustomers();
+          updateCustomerStats();
+        }
+      } catch (error) {
+        console.error('Error auto-archiving inactive customers:', error);
       }
     }
   }
