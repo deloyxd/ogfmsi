@@ -1,4 +1,5 @@
 /* Server-Timing middleware: exposes total app time per request */
+const { getDbDuration } = require('../utils/request-context');
 
 module.exports = function serverTiming() {
   return function serverTimingMiddleware(req, res, next) {
@@ -13,19 +14,33 @@ module.exports = function serverTiming() {
 
     res.end = function endOverride(chunk, encoding, cb) {
       try {
-        if (start != null && typeof process.hrtime.bigint === 'function') {
+        const hasHr = start != null && typeof process.hrtime.bigint === 'function';
+        const segments = [];
+
+        if (hasHr) {
           const durNs = process.hrtime.bigint() - start;
           const durMs = Number(durNs) / 1e6;
-          const segment = `app;dur=${durMs.toFixed(1)}`;
+          segments.push(`app;dur=${durMs.toFixed(1)}`);
+        }
+
+        // Append DB duration if available from request context
+        try {
+          const dbMs = Number(getDbDuration());
+          if (Number.isFinite(dbMs) && dbMs >= 0) {
+            segments.push(`db;dur=${dbMs.toFixed(1)}`);
+          }
+        } catch (_) {
+          // ignore context errors
+        }
+
+        if (segments.length > 0) {
           const existing = res.getHeader('Server-Timing');
-          res.setHeader('Server-Timing', existing ? String(existing) + ', ' + segment : segment);
-          if (!res.getHeader('Timing-Allow-Origin')) {
-            res.setHeader('Timing-Allow-Origin', '*');
-          }
-        } else {
-          if (!res.getHeader('Timing-Allow-Origin')) {
-            res.setHeader('Timing-Allow-Origin', '*');
-          }
+          const value = existing ? String(existing) + ', ' + segments.join(', ') : segments.join(', ');
+          res.setHeader('Server-Timing', value);
+        }
+
+        if (!res.getHeader('Timing-Allow-Origin')) {
+          res.setHeader('Timing-Allow-Origin', '*');
         }
       } catch (_) {
         try {
