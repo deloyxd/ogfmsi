@@ -47,7 +47,7 @@ router.post('/pastmonthly/auto-move', async (req, res) => {
     WHERE m.customer_end_date < ?
     AND m.customer_pending = 0
   `;
-  const params = [];
+  const params = [today];
   if (useLimit) {
     sql += ' LIMIT ? OFFSET ?';
     params.push(limit, offset);
