@@ -83,7 +83,7 @@ async function switchToTab(tabIndex) {
     activeTab.classList.add('bg-gray-300', 'text-gray-800');
   }
 
-  await loadTabData(tabIndex);
+  // await loadTabData(tabIndex);
 }
 
 // Load data for specified tab with throttle guard
