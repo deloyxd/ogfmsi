@@ -1590,7 +1590,7 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
         { placeholder: 'Actor role', value: 'Admin', locked: true },
       ],
       footer: {
-        main: isArchivedCustomer ? `Unarchive Customer ${getEmoji('🔄')}` : `Exit View`,
+        main: isArchivedCustomer ? `Unarchive Customer` : `Exit View`,
         sub: isArchivedCustomer ? `Exit View` : undefined,
       },
     };

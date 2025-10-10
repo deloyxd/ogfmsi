@@ -609,14 +609,15 @@ async function loadDashboardStats() {
     dashboardStatsCache.payments = Array.isArray(paymentsData.result) ? paymentsData.result : [];
 
     // Calculate and update stats
-    computeAndUpdateDashboardStats();
+    await computeAndUpdateDashboardStats();
   } catch (error) {
     console.error('Failed to load dashboard stats:', error);
     // Set default values on error
     updateDashboardStatsDisplay({
-      avg_daily_earnings: 0,
-      avg_weekly_earnings: 0,
-      avg_monthly_earnings: 0,
+      gym_revenue: 0,
+      product_sales: 0,
+      reservation_revenue: 0,
+      overall_total_sales: 0,
       active_monthly_customers: 0,
       active_reservations: 0
     });
@@ -624,11 +625,12 @@ async function loadDashboardStats() {
 }
 
 // Computes dashboard stats from cached data
-function computeAndUpdateDashboardStats() {
+async function computeAndUpdateDashboardStats() {
   const stats = {
-    avg_daily_earnings: calculateAverageDailyEarnings(dashboardStatsCache.payments),
-    avg_weekly_earnings: calculateAverageWeeklyEarnings(dashboardStatsCache.payments),
-    avg_monthly_earnings: calculateAverageMonthlyEarnings(dashboardStatsCache.payments),
+    gym_revenue: calculateGymRevenue(dashboardStatsCache.payments),
+    product_sales: await calculateProductSales(dashboardStatsCache.payments),
+    reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
+    overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
     active_monthly_customers: getActiveMonthlyCustomersCount(),
     active_reservations: getActiveReservationsCount()
   };
@@ -636,77 +638,103 @@ function computeAndUpdateDashboardStats() {
   updateDashboardStatsDisplay(stats);
 }
 
-// Calculates average daily earnings from payment data
-function calculateAverageDailyEarnings(payments) {
+// Calculates gym revenue from payment data (membership fees, gym services)
+function calculateGymRevenue(payments) {
   if (!Array.isArray(payments) || payments.length === 0) return 0;
 
-  const dayTotals = new Map(); // key: YYYY-M-D -> sum
+  let totalGymRevenue = 0;
 
   payments.forEach(payment => {
     if (!payment) return;
-    const created = new Date(payment.created_at || payment.createdAt || Date.now());
-    const keyDay = [created.getFullYear(), created.getMonth(), created.getDate()].join('-');
     
-    const paidCash = Number(payment.payment_amount_paid_cash) || 0;
-    const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
-    const totalPaid = paidCash + paidCashless;
-
-    dayTotals.set(keyDay, (dayTotals.get(keyDay) || 0) + totalPaid);
+    // Check if payment is related to gym services (membership, monthly pass, etc.)
+    const purpose = (payment.payment_purpose || '').toLowerCase();
+    const isGymService = purpose.includes('monthly') || 
+                        purpose.includes('membership') || 
+                        purpose.includes('gym') ||
+                        purpose.includes('pass') ||
+                        purpose.includes('subscription');
+    
+    if (isGymService) {
+      const paidCash = Number(payment.payment_amount_paid_cash) || 0;
+      const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
+      totalGymRevenue += paidCash + paidCashless;
+    }
   });
 
-  const values = Array.from(dayTotals.values());
-  if (values.length === 0) return 0;
-  const sum = values.reduce((a, b) => a + b, 0);
-  return sum / values.length;
+  return totalGymRevenue;
 }
 
-// Calculates average weekly earnings from payment data
-function calculateAverageWeeklyEarnings(payments) {
-  if (!Array.isArray(payments) || payments.length === 0) return 0;
+// Calculates product sales from Sales Transactions Log data
+async function calculateProductSales(payments) {
+  try {
+    // Fetch sales transactions from the Sales Transactions Log
+    const response = await fetch(`${API_BASE_URL}/payment/sales`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const salesData = await response.json();
+    const salesPayments = Array.isArray(salesData.result) ? salesData.result : [];
 
-  const weekTotals = new Map(); // key: YYYY-W -> sum (ISO week)
+    let totalProductSales = 0;
 
-  payments.forEach(payment => {
-    if (!payment) return;
-    const created = new Date(payment.created_at || payment.createdAt || Date.now());
-    const isoWeek = getIsoWeek(created);
-    const keyWeek = [created.getFullYear(), isoWeek].join('-');
-    
-    const paidCash = Number(payment.payment_amount_paid_cash) || 0;
-    const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
-    const totalPaid = paidCash + paidCashless;
+    salesPayments.forEach(payment => {
+      if (!payment) return;
+      
+      const paidCash = Number(payment.payment_amount_paid_cash) || 0;
+      const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
+      totalProductSales += paidCash + paidCashless;
+    });
 
-    weekTotals.set(keyWeek, (weekTotals.get(keyWeek) || 0) + totalPaid);
-  });
-
-  const values = Array.from(weekTotals.values());
-  if (values.length === 0) return 0;
-  const sum = values.reduce((a, b) => a + b, 0);
-  return sum / values.length;
+    return totalProductSales;
+  } catch (error) {
+    console.error('Failed to fetch sales transactions for product sales calculation:', error);
+    return 0;
+  }
 }
 
-// Calculates average monthly earnings from payment data
-function calculateAverageMonthlyEarnings(payments) {
+// Calculates reservation revenue from payment data (facility bookings, classes, etc.)
+function calculateReservationRevenue(payments) {
   if (!Array.isArray(payments) || payments.length === 0) return 0;
 
-  const monthTotals = new Map(); // key: YYYY-M -> sum
+  let totalReservationRevenue = 0;
 
   payments.forEach(payment => {
     if (!payment) return;
-    const created = new Date(payment.created_at || payment.createdAt || Date.now());
-    const keyMonth = [created.getFullYear(), created.getMonth()].join('-');
+    
+    // Check if payment is related to reservations
+    const purpose = (payment.payment_purpose || '').toLowerCase();
+    const isReservation = purpose.includes('reservation') || 
+                         purpose.includes('booking') || 
+                         purpose.includes('facility') ||
+                         purpose.includes('class') ||
+                         purpose.includes('session');
+    
+    if (isReservation) {
+      const paidCash = Number(payment.payment_amount_paid_cash) || 0;
+      const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
+      totalReservationRevenue += paidCash + paidCashless;
+    }
+  });
+
+  return totalReservationRevenue;
+}
+
+// Calculates overall total sales from all payment data
+function calculateOverallTotalSales(payments) {
+  if (!Array.isArray(payments) || payments.length === 0) return 0;
+
+  let totalSales = 0;
+
+  payments.forEach(payment => {
+    if (!payment) return;
     
     const paidCash = Number(payment.payment_amount_paid_cash) || 0;
     const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
-    const totalPaid = paidCash + paidCashless;
-
-    monthTotals.set(keyMonth, (monthTotals.get(keyMonth) || 0) + totalPaid);
+    totalSales += paidCash + paidCashless;
   });
 
-  const values = Array.from(monthTotals.values());
-  if (values.length === 0) return 0;
-  const sum = values.reduce((a, b) => a + b, 0);
-  return sum / values.length;
+  return totalSales;
 }
 
 // Gets active monthly customers count from DOM (same logic as inquiry_customers.js)
@@ -748,16 +776,24 @@ function updateDashboardStatsDisplay(stats) {
       
       const label = (header.textContent || '').toLowerCase();
       
-      if (label.includes('daily') && label.includes('earning')) {
-        valueEl.textContent = main.encodePrice(stats.avg_daily_earnings || 0);
-      } else if (label.includes('weekly') && label.includes('earning')) {
-        valueEl.textContent = main.encodePrice(stats.avg_weekly_earnings || 0);
-      } else if (label.includes('monthly') && label.includes('earning')) {
-        valueEl.textContent = main.encodePrice(stats.avg_monthly_earnings || 0);
+      // Debug: log the label to see what we're matching against
+      console.log('Dashboard stat label:', label);
+      
+      if (label.includes('overall') && label.includes('total') && label.includes('sales')) {
+        valueEl.textContent = main.encodePrice(stats.overall_total_sales || 0);
+      } else if (label.includes('gym') && label.includes('revenue')) {
+        valueEl.textContent = main.encodePrice(stats.gym_revenue || 0);
+      } else if (label.includes('reservation') && label.includes('revenue')) {
+        valueEl.textContent = main.encodePrice(stats.reservation_revenue || 0);
+      } else if (label.includes('product') && label.includes('sales')) {
+        valueEl.textContent = main.encodePrice(stats.product_sales || 0);
       } else if (label.includes('monthly') && label.includes('customer')) {
         valueEl.textContent = stats.active_monthly_customers || 0;
-      } else if (label.includes('reservation')) {
+      } else if (label.includes('reservation') && !label.includes('revenue')) {
         valueEl.textContent = stats.active_reservations || 0;
+      } else {
+        // Fallback: if no match found, log it for debugging
+        console.log('No match found for label:', label);
       }
     });
   } catch (error) {
@@ -776,11 +812,12 @@ function getIsoWeek(date) {
 }
 
 // Refreshes dashboard stats (called when new payments are added)
-export function refreshDashboardStats() {
+export async function refreshDashboardStats() {
   const stats = {
-    avg_daily_earnings: calculateAverageDailyEarnings(dashboardStatsCache.payments),
-    avg_weekly_earnings: calculateAverageWeeklyEarnings(dashboardStatsCache.payments),
-    avg_monthly_earnings: calculateAverageMonthlyEarnings(dashboardStatsCache.payments),
+    gym_revenue: calculateGymRevenue(dashboardStatsCache.payments),
+    product_sales: await calculateProductSales(dashboardStatsCache.payments),
+    reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
+    overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
     active_monthly_customers: getActiveMonthlyCustomersCount(),
     active_reservations: getActiveReservationsCount()
   };
