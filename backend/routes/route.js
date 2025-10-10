@@ -20,6 +20,7 @@ const inquiryMonthly = require('./inquiry.monthly.route');
 const inquiryCheckins = require('./inquiry.checkins.route');
 const inquiryReservations = require('./inquiry.reservations.route');
 const inquiryArchived = require('./inquiry.archived.route');
+const inquiryPastMonthly = require('./inquiry.pastmonthly.route');
 
 // For payment route
 const paymentPendingRoute = require('./payment.pending.route');
@@ -54,6 +55,7 @@ router.use('/inquiry', inquiryMonthly);
 router.use('/inquiry', inquiryCheckins);
 router.use('/inquiry', inquiryReservations);
 router.use('/inquiry', inquiryArchived);
+router.use('/inquiry', inquiryPastMonthly);
 
 // API URL: (host):(port)/api/payment
 router.use('/payment', paymentPendingRoute);
