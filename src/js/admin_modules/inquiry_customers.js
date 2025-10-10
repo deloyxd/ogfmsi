@@ -61,6 +61,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
     await fetchAllArchivedCustomers();
+    await autoArchiveInactiveCustomers();
     updateCustomerStats();
 
     async function fetchAllCustomers() {
@@ -239,6 +240,34 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         });
       } catch (error) {
         console.error('Error fetching archived customers:', error);
+      }
+    }
+
+    async function autoArchiveInactiveCustomers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/auto-archive`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.archived_count > 0) {
+          console.log(`Auto-archived ${result.archived_count} inactive customers`);
+          main.toast(`Auto-archived ${result.archived_count} inactive customers (3+ months)`, 'success');
+          
+          // Refresh the archived customers list to show newly archived customers
+          await fetchAllArchivedCustomers();
+          updateCustomerStats();
+        }
+      } catch (error) {
+        console.error('Error auto-archiving inactive customers:', error);
       }
     }
   }
