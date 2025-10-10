@@ -1,17 +1,24 @@
 const { Router } = require('express');
-const mysqlConnection = require('../database/mysql');
+const db = require('../database/mysql');
+const { parsePageParams } = require('../utils/pagination');
 const router = Router();
 
 // GET all canceled payments
 router.get('/canceled', async (req, res) => {
-  const query = `SELECT * FROM payment_tbl WHERE payment_type = 'canceled' ORDER BY created_at DESC`;
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching canceled payments error:', error);
-      return res.status(500).json({ error: 'Fetching payments failed' });
-    }
-    res.status(200).json({ message: 'Fetching payments successful', result: result });
-  });
+  const { useLimit, limit, offset } = parsePageParams(req);
+  let sql = `SELECT * FROM payment_tbl WHERE payment_type = 'canceled' ORDER BY created_at DESC`;
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    return res.status(200).json({ message: 'Fetching payments successful', result: rows });
+  } catch (error) {
+    console.error('Fetching canceled payments error:', error);
+    return res.status(500).json({ error: 'Fetching payments failed' });
+  }
 });
 
 // Mark a pending payment as canceled
@@ -24,18 +31,16 @@ router.put('/canceled/:id', async (req, res) => {
     WHERE payment_id = ?
   `;
 
-  mysqlConnection.query(query, [id], (error, result) => {
-    if (error) {
-      console.error('Updating payment to canceled error:', error);
-      return res.status(500).json({ error: 'Updating payment failed' });
-    }
-    res.status(200).json({
+  try {
+    await db.query(query, [id]);
+    return res.status(200).json({
       message: 'Payment marked as canceled',
       result: { payment_id: id, payment_type: 'canceled' },
     });
-  });
+  } catch (error) {
+    console.error('Updating payment to canceled error:', error);
+    return res.status(500).json({ error: 'Updating payment failed' });
+  }
 });
 
 module.exports = router;
-
-

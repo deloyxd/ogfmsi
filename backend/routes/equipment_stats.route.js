@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const mysqlConnection = require('../database/mysql');
+const db = require('../database/mysql');
 const router = Router();
 
 /* 🔥 EQUIPMENT INVENTORY STATISTICS ROUTES 🔥 */
@@ -17,14 +17,13 @@ router.get('/overview', async (req, res) => {
       AVG(cost) as average_cost
     FROM equipment_maintenance_tbl
   `;
-  
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching maintenance stats error:', error);
-      res.status(500).json({ error: 'Fetching maintenance stats failed' });
-    }
-    res.status(200).json({ message: 'Fetching maintenance stats successful', result: result[0] });
-  });
+  try {
+    const rows = await db.query(query);
+    return res.status(200).json({ message: 'Fetching maintenance stats successful', result: rows[0] });
+  } catch (error) {
+    console.error('Fetching maintenance stats error:', error);
+    return res.status(500).json({ error: 'Fetching maintenance stats failed' });
+  }
 });
 
 // GET maintenance by type statistics
@@ -38,14 +37,13 @@ router.get('/by-type', async (req, res) => {
     FROM equipment_maintenance_tbl
     GROUP BY maintenance_type
   `;
-  
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching maintenance by type stats error:', error);
-      res.status(500).json({ error: 'Fetching maintenance by type stats failed' });
-    }
-    res.status(200).json({ message: 'Fetching maintenance by type stats successful', result: result });
-  });
+  try {
+    const rows = await db.query(query);
+    return res.status(200).json({ message: 'Fetching maintenance by type stats successful', result: rows });
+  } catch (error) {
+    console.error('Fetching maintenance by type stats error:', error);
+    return res.status(500).json({ error: 'Fetching maintenance by type stats failed' });
+  }
 });
 
 // GET upcoming maintenance (next 30 days)
@@ -56,14 +54,13 @@ router.get('/upcoming', async (req, res) => {
     AND scheduled_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
     ORDER BY scheduled_date ASC
   `;
-  
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching upcoming maintenance error:', error);
-      res.status(500).json({ error: 'Fetching upcoming maintenance failed' });
-    }
-    res.status(200).json({ message: 'Fetching upcoming maintenance successful', result: result });
-  });
+  try {
+    const rows = await db.query(query);
+    return res.status(200).json({ message: 'Fetching upcoming maintenance successful', result: rows });
+  } catch (error) {
+    console.error('Fetching upcoming maintenance error:', error);
+    return res.status(500).json({ error: 'Fetching upcoming maintenance failed' });
+  }
 });
 
 module.exports = router;

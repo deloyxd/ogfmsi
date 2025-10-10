@@ -1,5 +1,6 @@
 const { Router } = require('express');
-const mysqlConnection = require('../database/mysql');
+const db = require('../database/mysql');
+const { parsePageParams } = require('../utils/pagination');
 const router = Router();
 
 /* 🔥 E-COMMERCE PRODUCTS ROUTES 🔥 */
@@ -35,9 +36,8 @@ router.post('/products', async (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  mysqlConnection.query(
-    query,
-    [
+  try {
+    await db.query(query, [
       product_id,
       product_name,
       product_name_encoded,
@@ -50,70 +50,80 @@ router.post('/products', async (req, res) => {
       'retail',
       category,
       image_url,
-    ],
-    (error, result) => {
-      if (error) {
-        console.error('Creating product error:', error);
-        return res.status(500).json({ error: 'Creating product failed' });
-      }
-      res.status(201).json({
-        message: 'Product created successfully',
-        result: {
-          product_id,
-          product_name,
-          price,
-          quantity,
-          stock_status,
-          measurement_value,
-          measurement_unit,
-          category,
-          image_url,
-        },
-      });
-    }
-  );
+    ]);
+
+    res.status(201).json({
+      message: 'Product created successfully',
+      result: {
+        product_id,
+        product_name,
+        price,
+        quantity,
+        stock_status,
+        measurement_value,
+        measurement_unit,
+        category,
+        image_url,
+      },
+    });
+  } catch (error) {
+    console.error('Creating product error:', error);
+    return res.status(500).json({ error: 'Creating product failed' });
+  }
 });
 
 // GET all products
 router.get('/products', async (req, res) => {
-  const query = 'SELECT * FROM ecommerce_products_tbl ORDER BY created_at DESC';
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching products error:', error);
-      return res.status(500).json({ error: 'Fetching products failed' });
-    }
-    res.status(200).json({ message: 'Fetching products successful', result: result });
-  });
+  const { useLimit, limit, offset } = parsePageParams(req);
+  let sql = 'SELECT * FROM ecommerce_products_tbl ORDER BY created_at DESC';
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching products successful', result: rows });
+  } catch (error) {
+    console.error('Fetching products error:', error);
+    return res.status(500).json({ error: 'Fetching products failed' });
+  }
 });
 
 // GET products by category
 router.get('/products/category/:category', async (req, res) => {
   const { category } = req.params;
-  const query = 'SELECT * FROM ecommerce_products_tbl WHERE category = ? ORDER BY created_at DESC';
-  mysqlConnection.query(query, [category], (error, result) => {
-    if (error) {
-      console.error('Fetching products by category error:', error);
-      return res.status(500).json({ error: 'Fetching products by category failed' });
-    }
-    res.status(200).json({ message: 'Fetching products by category successful', result: result });
-  });
+  const { useLimit, limit, offset } = parsePageParams(req);
+  let sql = 'SELECT * FROM ecommerce_products_tbl WHERE category = ? ORDER BY created_at DESC';
+  const params = [category];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching products by category successful', result: rows });
+  } catch (error) {
+    console.error('Fetching products by category error:', error);
+    return res.status(500).json({ error: 'Fetching products by category failed' });
+  }
 });
 
 // GET single product
 router.get('/products/:id', async (req, res) => {
   const { id } = req.params;
   const query = 'SELECT * FROM ecommerce_products_tbl WHERE product_id = ?';
-  mysqlConnection.query(query, [id], (error, result) => {
-    if (error) {
-      console.error('Fetching product error:', error);
-      return res.status(500).json({ error: 'Fetching product failed' });
-    }
-    if (!result || result.length === 0) {
+  try {
+    const rows = await db.query(query, [id]);
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
     } else {
-      res.status(200).json({ message: 'Fetching product successful', result: result[0] });
+      res.status(200).json({ message: 'Fetching product successful', result: rows[0] });
     }
-  });
+  } catch (error) {
+    console.error('Fetching product error:', error);
+    return res.status(500).json({ error: 'Fetching product failed' });
+  }
 });
 
 // PUT update product
@@ -147,9 +157,8 @@ router.put('/products/:id', async (req, res) => {
     WHERE product_id = ?
   `;
 
-  mysqlConnection.query(
-    query,
-    [
+  try {
+    const result = await db.query(query, [
       product_name,
       product_name_encoded,
       price,
@@ -161,19 +170,17 @@ router.put('/products/:id', async (req, res) => {
       category,
       image_url,
       id,
-    ],
-    (error, result) => {
-      if (error) {
-        console.error('Updating product error:', error);
-        return res.status(500).json({ error: 'Updating product failed' });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Product not found' });
-      } else {
-        res.status(200).json({ message: 'Product updated successfully' });
-      }
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    } else {
+      res.status(200).json({ message: 'Product updated successfully' });
     }
-  );
+  } catch (error) {
+    console.error('Updating product error:', error);
+    return res.status(500).json({ error: 'Updating product failed' });
+  }
 });
 
 // DELETE product
@@ -181,23 +188,24 @@ router.delete('/products/:id', async (req, res) => {
   const { id } = req.params;
   const query = 'DELETE FROM ecommerce_products_tbl WHERE product_id = ?';
 
-  mysqlConnection.query(query, [id], (error, result) => {
-    if (error) {
-      console.error('Deleting product error:', error);
-      // Handle FK constraint errors clearly
-      if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-        return res.status(409).json({
-          error: 'Cannot delete product because it is referenced by existing order items. Consider archiving instead.',
-        });
-      }
-      return res.status(500).json({ error: 'Deleting product failed' });
-    }
+  try {
+    const result = await db.query(query, [id]);
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Product not found' });
     } else {
       res.status(200).json({ message: 'Product deleted successfully' });
     }
-  });
+  } catch (error) {
+    console.error('Deleting product error:', error);
+    // Handle FK constraint errors clearly
+    if (error && error.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({
+        error: 'Cannot delete product because it is referenced by existing order items. Consider archiving instead.',
+      });
+    }
+    return res.status(500).json({ error: 'Deleting product failed' });
+  }
 });
 
 // PUT update product stock (for sales)
@@ -207,17 +215,14 @@ router.put('/products/:id/stock', async (req, res) => {
 
   // First get current product quantity
   const getQuery = 'SELECT quantity FROM ecommerce_products_tbl WHERE product_id = ?';
-  mysqlConnection.query(getQuery, [id], (getError, getResult) => {
-    if (getError) {
-      console.error('Getting product quantity error:', getError);
-      return res.status(500).json({ error: 'Getting product quantity failed' });
-    }
 
-    if (!getResult || getResult.length === 0) {
+  try {
+    const rows = await db.query(getQuery, [id]);
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const currentQuantity = getResult[0].quantity;
+    const currentQuantity = rows[0].quantity;
     const newQuantity = Math.max(0, currentQuantity - sold_quantity);
 
     // Determine stock status based on new quantity
@@ -229,25 +234,25 @@ router.put('/products/:id/stock', async (req, res) => {
     }
 
     // Update product quantity and stock status
-    const updateQuery = 'UPDATE ecommerce_products_tbl SET quantity = ?, stock_status = ? WHERE product_id = ?';
-    mysqlConnection.query(updateQuery, [newQuantity, stock_status, id], (updateError, updateResult) => {
-      if (updateError) {
-        console.error('Updating product stock error:', updateError);
-        return res.status(500).json({ error: 'Updating product stock failed' });
-      }
+    const updateQuery =
+      'UPDATE ecommerce_products_tbl SET quantity = ?, stock_status = ? WHERE product_id = ?';
 
-      res.status(200).json({
-        message: 'Product stock updated successfully',
-        result: {
-          product_id: id,
-          previous_quantity: currentQuantity,
-          sold_quantity: sold_quantity,
-          new_quantity: newQuantity,
-          stock_status: stock_status,
-        },
-      });
+    await db.query(updateQuery, [newQuantity, stock_status, id]);
+
+    res.status(200).json({
+      message: 'Product stock updated successfully',
+      result: {
+        product_id: id,
+        previous_quantity: currentQuantity,
+        sold_quantity: sold_quantity,
+        new_quantity: newQuantity,
+        stock_status: stock_status,
+      },
     });
-  });
+  } catch (error) {
+    console.error('Updating product stock error:', error);
+    return res.status(500).json({ error: 'Updating product stock failed' });
+  }
 });
 
 // PUT dispose product
@@ -261,30 +266,33 @@ router.put('/products/:id/dispose', async (req, res) => {
     WHERE product_id = ?
   `;
 
-  mysqlConnection.query(
-    query,
-    [disposal_status, disposal_reason, disposal_notes, disposed_at, id],
-    (error, result) => {
-      if (error) {
-        console.error('Disposing product error:', error);
-        return res.status(500).json({ error: 'Disposing product failed' });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Product not found' });
-      } else {
-        res.status(200).json({ 
-          message: 'Product disposed successfully',
-          result: {
-            product_id: id,
-            disposal_status,
-            disposal_reason,
-            disposal_notes,
-            disposed_at
-          }
-        });
-      }
+  try {
+    const result = await db.query(query, [
+      disposal_status,
+      disposal_reason,
+      disposal_notes,
+      disposed_at,
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    } else {
+      res.status(200).json({
+        message: 'Product disposed successfully',
+        result: {
+          product_id: id,
+          disposal_status,
+          disposal_reason,
+          disposal_notes,
+          disposed_at,
+        },
+      });
     }
-  );
+  } catch (error) {
+    console.error('Disposing product error:', error);
+    return res.status(500).json({ error: 'Disposing product failed' });
+  }
 });
 
 module.exports = router;
