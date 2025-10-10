@@ -60,6 +60,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
+    await fetchAllArchivedCustomers();
     updateCustomerStats();
 
     async function fetchAllCustomers() {
@@ -195,6 +196,49 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         });
       } catch (error) {
         console.error('Error fetching customers:', error);
+      }
+    }
+
+    async function fetchAllArchivedCustomers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/archived`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const archivedCustomers = await response.json();
+
+        archivedCustomers.result.forEach((customer) => {
+          main.createAtSectionOne(
+            SECTION_NAME,
+            [
+              'id_' + customer.customer_id,
+              {
+                type: 'object_contact',
+                data: [
+                  customer.customer_image_url,
+                  customer.customer_first_name + ' ' + customer.customer_last_name,
+                  customer.customer_contact,
+                ],
+              },
+              'custom_datetime_' +
+                main.encodeDate(
+                  customer.created_at,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                ),
+            ],
+            4,
+            (createResult) => {
+              createResult.dataset.text = customer.customer_first_name + ':://' + customer.customer_last_name;
+              const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
+              customerDetailsBtn.addEventListener('click', () =>
+                customerDetailsBtnFunction(createResult.dataset.id, 'Archive Details', '🧾')
+              );
+              updateCustomerStats();
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching archived customers:', error);
       }
     }
   }
@@ -469,10 +513,29 @@ function mainBtnFunction(
         });
       },
       () => {
-        main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>ID: ' + customer.id, () => {
-          main.findAtSectionOne(SECTION_NAME, customer.id, 'equal_id', 1, (findResult) => {
+        main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>ID: ' + customer.id, async () => {
+          main.findAtSectionOne(SECTION_NAME, customer.id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
               if (findResult.dataset.tid) payments.cancelCheckinPayment(findResult.dataset.tid);
+              
+              // Persist archive to backend
+              try {
+                const response = await fetch(`${API_BASE_URL}/inquiry/archived/${customer.id}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                await response.json();
+              } catch (error) {
+                console.error('Error archiving customer:', error);
+              }
+
               const columnsData = [
                 'id_' + customer.id,
                 {

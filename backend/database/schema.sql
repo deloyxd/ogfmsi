@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS customer_tbl (
     customer_first_name VARCHAR(255) NOT NULL,
     customer_last_name VARCHAR(255) NOT NULL,
     customer_contact VARCHAR(50),
-    customer_type ENUM('daily', 'monthly') DEFAULT 'daily',
+    customer_type ENUM('daily', 'monthly', 'archived') DEFAULT 'daily',
     customer_tid VARCHAR(255),
     customer_pending INT,
     customer_rate ENUM('regular', 'student') DEFAULT 'regular',
