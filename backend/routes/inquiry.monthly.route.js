@@ -1,11 +1,13 @@
 const { Router } = require('express');
 const db = require('../database/mysql');
+const { parsePageParams } = require('../utils/pagination');
 const router = Router();
 
 // GET all customers
 router.get('/monthly', async (req, res) => {
+  const { useLimit, limit, offset } = parsePageParams(req);
   // Get only the most recent active monthly subscription for each customer
-  const query = `
+  let sql = `
     SELECT m1.* 
     FROM customer_monthly_tbl m1
     INNER JOIN (
@@ -19,13 +21,18 @@ router.get('/monthly', async (req, res) => {
     AND m1.customer_pending = 0
     ORDER BY m1.created_at DESC
   `;
-  db.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching customers error:', error);
-      return res.status(500).json({ error: 'Fetching customers failed' });
-    }
-    res.status(200).json({ message: 'Fetching customers successful', result: result });
-  });
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching customers successful', result: rows });
+  } catch (error) {
+    console.error('Fetching customers error:', error);
+    return res.status(500).json({ error: 'Fetching customers failed' });
+  }
 });
 
 // GET all expired customers
@@ -52,10 +59,14 @@ router.post('/monthly', async (req, res) => {
   `;
 
   try {
-    await db.query(
-      query,
-      [customer_id, customer_start_date, customer_end_date, customer_months, customer_tid, customer_pending]
-    );
+    await db.query(query, [
+      customer_id,
+      customer_start_date,
+      customer_end_date,
+      customer_months,
+      customer_tid,
+      customer_pending,
+    ]);
 
     res.status(201).json({
       message: 'Customer created successfully',
