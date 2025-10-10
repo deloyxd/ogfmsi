@@ -1,3 +1,5 @@
+import { db } from '../firebase.js';
+import { collection, onSnapshot, query, doc, setDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const CONTAINER_ID = 'customerCalendar';
 
 const monthNames = [
@@ -22,12 +24,15 @@ const RESERVATION_DURATION = [
   { value: '4', label: '4 hours' },
   { value: '5', label: '5 hours' },
   { value: '6', label: '6 hours' },
+  { value: '7', label: '7 hours' },
 ];
 
 const today = new Date();
 const state = {
   currentDate: new Date(),
   selectedDate: null,
+  reservations: [],
+  unsubscribe: null,
 };
 
 function isToday(year, month, day) {
@@ -38,6 +43,233 @@ function renderHeader(container) {
   container.querySelector('[data-cal="month"]').textContent = monthNames[state.currentDate.getMonth()];
   container.querySelector('[data-cal="year"]').textContent = state.currentDate.getFullYear();
 }
+
+// -------------------------
+// Firestore-backed state and helpers (customer-facing)
+// -------------------------
+
+function requestRender() {
+  const container = document.getElementById(CONTAINER_ID);
+  if (container) render(container);
+}
+
+function listenToReservationsFE() {
+  const q = query(collection(db, 'reservations'));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    state.reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    requestRender();
+  });
+  return unsubscribe;
+}
+
+// Count reservations for a given mm-dd-yyyy date
+function getReservationCountForDate(mmddyyyy) {
+  try {
+    return state.reservations.filter((r) => r?.date === mmddyyyy).length;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// -------------------------
+// Firestore CRUD wrappers with loading overlay
+// -------------------------
+async function createReservationFE(reservation) {
+  window.showGlobalLoading?.();
+  try {
+    await setDoc(doc(db, 'reservations', reservation.id), reservation);
+  } finally {
+    window.hideGlobalLoading?.();
+  }
+}
+
+async function updateReservationFE(reservationId, updated) {
+  window.showGlobalLoading?.();
+  try {
+    await updateDoc(doc(db, 'reservations', reservationId), updated);
+  } finally {
+    window.hideGlobalLoading?.();
+  }
+}
+
+async function deleteReservationFE(reservationId) {
+  window.showGlobalLoading?.();
+  try {
+    await deleteDoc(doc(db, 'reservations', reservationId));
+  } finally {
+    window.hideGlobalLoading?.();
+  }
+}
+
+// -------------------------
+// Validation and pricing helpers
+// -------------------------
+function parseDateTime(dateMMDDYYYY, hhmm) {
+  const [mm, dd, yyyy] = (dateMMDDYYYY || '').split('-').map((n) => parseInt(n, 10));
+  const [h, m] = (hhmm || '00:00').split(':').map((n) => parseInt(n, 10));
+  return new Date(yyyy, (mm || 1) - 1, dd || 1, h || 0, m || 0, 0, 0);
+}
+
+function parseHumanDateToMMDDYYYY(human) {
+  try {
+    const d = new Date(human);
+    if (isNaN(d.getTime())) return '';
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${mm}-${dd}-${yyyy}`;
+  } catch {
+    return '';
+  }
+}
+
+function isTimeInPast(dateMMDDYYYY, startHHMM) {
+  const selected = parseDateTime(dateMMDDYYYY, startHHMM);
+  const current = new Date();
+  current.setMinutes(current.getMinutes() - 1);
+  return selected < current;
+}
+
+function hasTimeConflict(dateMMDDYYYY, startHHMM, endHHMM, excludeId = null) {
+  const newStart = parseDateTime(dateMMDDYYYY, startHHMM);
+  const newEnd = parseDateTime(dateMMDDYYYY, endHHMM);
+  return state.reservations.some((r) => {
+    if (excludeId && r.id === excludeId) return false;
+    if (r.date !== dateMMDDYYYY) return false;
+    const existingStart = parseDateTime(r.date, r.startTime);
+    const existingEnd = parseDateTime(r.date, r.endTime);
+    return newStart < existingEnd && newEnd > existingStart;
+  });
+}
+
+function getConflictingReservation(dateMMDDYYYY, startHHMM, endHHMM, excludeId = null) {
+  const newStart = parseDateTime(dateMMDDYYYY, startHHMM);
+  const newEnd = parseDateTime(dateMMDDYYYY, endHHMM);
+  return (
+    state.reservations.find((r) => {
+      if (excludeId && r.id === excludeId) return false;
+      if (r.date !== dateMMDDYYYY) return false;
+      const existingStart = parseDateTime(r.date, r.startTime);
+      const existingEnd = parseDateTime(r.date, r.endTime);
+      return newStart < existingEnd && newEnd > existingStart;
+    }) || null
+  );
+}
+
+function hasMinimumGap(dateMMDDYYYY, startHHMM, endHHMM, excludeId = null) {
+  const newStart = parseDateTime(dateMMDDYYYY, startHHMM);
+  const newEnd = parseDateTime(dateMMDDYYYY, endHHMM);
+  return state.reservations.some((r) => {
+    if (excludeId && r.id === excludeId) return false;
+    if (r.date !== dateMMDDYYYY) return false;
+    const existingStart = parseDateTime(r.date, r.startTime);
+    const existingEnd = parseDateTime(r.date, r.endTime);
+    const gapAfter = newStart - existingEnd >= 60000;
+    const gapBefore = existingStart - newEnd >= 60000;
+    return !gapAfter && !gapBefore;
+  });
+}
+
+function getConflictingReservationForGap(dateMMDDYYYY, startHHMM, endHHMM, excludeId = null) {
+  const newStart = parseDateTime(dateMMDDYYYY, startHHMM);
+  const newEnd = parseDateTime(dateMMDDYYYY, endHHMM);
+  return (
+    state.reservations.find((r) => {
+      if (excludeId && r.id === excludeId) return false;
+      if (r.date !== dateMMDDYYYY) return false;
+      const existingStart = parseDateTime(r.date, r.startTime);
+      const existingEnd = parseDateTime(r.date, r.endTime);
+      const gapAfter = newStart - existingEnd >= 60000;
+      const gapBefore = existingStart - newEnd >= 60000;
+      return !gapAfter && !gapBefore;
+    }) || null
+  );
+}
+
+function getNextAvailableTime(dateMMDDYYYY, startHHMM, durationHours = 1) {
+  const newStart = parseDateTime(dateMMDDYYYY, startHHMM);
+  const sameDate = state.reservations.filter((r) => r.date === dateMMDDYYYY);
+  if (sameDate.length === 0) return null;
+  let closest = null;
+  let minDiff = Infinity;
+  sameDate.forEach((r) => {
+    const existingEnd = parseDateTime(r.date, r.endTime);
+    const diff = newStart - existingEnd;
+    if (diff >= 0 && diff < minDiff) {
+      minDiff = diff;
+      closest = existingEnd;
+    }
+  });
+  if (!closest) return null;
+  const next = new Date(closest.getTime() + 60000);
+  const h = String(next.getHours()).padStart(2, '0');
+  const m = String(next.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+// Pricing parity with admin
+function getHourlyRate(hour0to23) {
+  return hour0to23 >= 18 ? 200 : 180;
+}
+
+function calculateDynamicPrice(startHHMM, durationHours) {
+  const safeDuration = Number.isFinite(Number(durationHours)) ? Math.max(1, Math.round(Number(durationHours))) : 1;
+  const [h, m] = (startHHMM || '00:00').split(':').map((n) => parseInt(n, 10));
+  const baseline = new Date(1970, 0, 1, h || 0, m || 0, 0, 0);
+  let total = 0;
+  for (let i = 0; i < safeDuration; i++) {
+    const slot = new Date(baseline.getTime() + i * 60 * 60 * 1000);
+    total += getHourlyRate(slot.getHours());
+  }
+  return total;
+}
+
+function updatePriceDisplay(amountNumber) {
+  try {
+    const priceInput =
+      document.querySelector('#priceAmount') ||
+      document.querySelector('input[placeholder*="Amount to pay"]') ||
+      document.querySelector('input[placeholder*="Amount"]');
+    if (!priceInput) return;
+    if ('value' in priceInput) {
+      priceInput.value = String(amountNumber);
+      priceInput.dispatchEvent(new Event('input'));
+    } else {
+      priceInput.textContent = String(amountNumber);
+    }
+  } catch (e) {}
+}
+
+// Payment hooks exposed for external integration
+function formatTodayDateTimeMMDDYYYY_HHMM() {
+  const now = new Date();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const HH = String(now.getHours()).padStart(2, '0');
+  const MM = String(now.getMinutes()).padStart(2, '0');
+  return `${mm}-${dd}-${yyyy} ${HH}:${MM}`;
+}
+
+async function cancelPendingTransaction(transactionId) {
+  const res = state.reservations.find((r) => r.tid === transactionId);
+  if (res) {
+    await updateReservationFE(res.id, { status: 'Canceled', tid: '' });
+  }
+}
+
+async function completeReservationPayment(transactionId) {
+  const res = state.reservations.find((r) => r.tid === transactionId);
+  if (res) {
+    const datetime = formatTodayDateTimeMMDDYYYY_HHMM();
+    await updateReservationFE(res.id, { status: datetime, tid: '' });
+  }
+}
+
+window.customerPayments = {
+  cancelPendingTransaction,
+  completeReservationPayment,
+};
 
 // Returns pseudo-random reservation count for each date
 function getReservedCount(year, month, day) {
@@ -54,7 +286,10 @@ function createDayElement(day, month, year) {
   const isPrevDay = dateKey < todayKey;
 
   // Get reservation count for this date
-  const reservedCount = getReservedCount(year, month, day);
+  const mm = String(month + 1).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  const dateStr = `${mm}-${dd}-${year}`;
+  const reservedCount = getReservationCountForDate(dateStr);
 
   const el = document.createElement('div');
   el.className = [
@@ -120,6 +355,11 @@ function createDayElement(day, month, year) {
     el.classList.add('bg-orange-300');
     state.selectedDate = el;
     state.selectedDate.setAttribute('aria-pressed', 'true');
+
+    // Persist selected date details for submission
+    state.selectedDate.dataset.day = String(day);
+    state.selectedDate.dataset.month = String(month + 1);
+    state.selectedDate.dataset.year = String(year);
 
     // Update booking form date field if it exists
     const bookingDateInput = document.getElementById('bookingDate');
@@ -265,6 +505,13 @@ function mount() {
   bindEvents(mountPoint);
   render(mountPoint);
 
+  // Start Firestore listener and setup cleanup
+  try {
+    state.unsubscribe?.();
+  } catch (e) {}
+  state.unsubscribe = listenToReservationsFE();
+  window.addEventListener('beforeunload', () => state.unsubscribe?.());
+  
   // Enhance service selection UI highlighting
   const serviceRadios = document.querySelectorAll('input[name="service"]');
   if (serviceRadios.length) {
@@ -329,17 +576,158 @@ function mount() {
 
     endInput?.addEventListener('change', clearError);
 
-    bookingForm.addEventListener('submit', (e) => {
+    bookingForm.addEventListener('submit', async (e) => {
       const startVal = startInput?.value || '';
       const endVal = endInput?.value || '';
-      if (startVal && endVal && toMinutes(endVal) <= toMinutes(startVal)) {
-        e.preventDefault();
+
+      const showError = (msg) => {
         if (timeError) {
-          timeError.textContent = 'Please select an end time later than the start time.';
+          timeError.textContent = msg;
           timeError.classList.remove('hidden');
           timeError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          alert(msg);
         }
+      };
+
+      // Basic end > start enforcement
+      if (startVal && endVal && toMinutes(endVal) <= toMinutes(startVal)) {
+        e.preventDefault();
+        showError('Please select an end time later than the start time.');
         endInput?.focus();
+        return;
+      }
+
+      // Resolve selected date in mm-dd-yyyy
+      const bookingDateInput = document.getElementById('bookingDate');
+      let dateMMDDYYYY = '';
+      if (state.selectedDate?.dataset?.day && state.selectedDate?.dataset?.month && state.selectedDate?.dataset?.year) {
+        const mm = String(parseInt(state.selectedDate.dataset.month, 10)).padStart(2, '0');
+        const dd = String(parseInt(state.selectedDate.dataset.day, 10)).padStart(2, '0');
+        const yyyy = state.selectedDate.dataset.year;
+        dateMMDDYYYY = `${mm}-${dd}-${yyyy}`;
+      } else if (bookingDateInput?.value) {
+        dateMMDDYYYY = parseHumanDateToMMDDYYYY(bookingDateInput.value);
+      }
+
+      if (!dateMMDDYYYY) {
+        e.preventDefault();
+        showError('Please select a valid reservation date.');
+        return;
+      }
+
+      // Past date check
+      const [mm, dd, yyyy] = dateMMDDYYYY.split('-').map((n) => parseInt(n, 10));
+      const selectedMidnight = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      if (selectedMidnight < todayMidnight) {
+        e.preventDefault();
+        showError('Selected date cannot be in the past.');
+        return;
+      }
+
+      // Facility hours constraints and duration
+      const startMins = toMinutes(startVal || '00:00');
+      const endMins = toMinutes(endVal || '00:00');
+      const durationHours = (endMins - startMins) / 60;
+
+      if (startMins < 9 * 60) {
+        e.preventDefault();
+        showError('Reservation cannot start before 09:00.');
+        return;
+      }
+      if (endMins > 23 * 60 + 59) {
+        e.preventDefault();
+        showError('Reservation cannot end after 23:59.');
+        return;
+      }
+      if (!Number.isFinite(durationHours) || durationHours < 1) {
+        e.preventDefault();
+        showError('Reservation must be at least 1 hour.');
+        return;
+      }
+      if (durationHours > 7) {
+        e.preventDefault();
+        showError('Reservation cannot exceed 7 hours.');
+        return;
+      }
+
+      // Same-day past time check
+      const now = new Date();
+      const todayMM = String(now.getMonth() + 1).padStart(2, '0');
+      const todayDD = String(now.getDate()).padStart(2, '0');
+      const todayYYYY = now.getFullYear();
+      const todayStr = `${todayMM}-${todayDD}-${todayYYYY}`;
+      if (dateMMDDYYYY === todayStr && isTimeInPast(dateMMDDYYYY, startVal)) {
+        e.preventDefault();
+        showError('Cannot book past time slots on the same day.');
+        return;
+      }
+
+      // Conflicts and minimum gap
+      if (hasTimeConflict(dateMMDDYYYY, startVal, endVal)) {
+        e.preventDefault();
+        const conflict = getConflictingReservation(dateMMDDYYYY, startVal, endVal);
+        const conflictName = conflict?.customerName || 'Another customer';
+        const conflictTime = conflict ? `${conflict.startTime} to ${conflict.endTime}` : 'this time';
+        showError(`This time slot is already booked by ${conflictName} (${conflictTime}).`);
+        return;
+      }
+
+      if (hasMinimumGap(dateMMDDYYYY, startVal, endVal)) {
+        e.preventDefault();
+        const conflict = getConflictingReservationForGap(dateMMDDYYYY, startVal, endVal);
+        const conflictName = conflict?.customerName || 'Another customer';
+        const nextTime = getNextAvailableTime(dateMMDDYYYY, startVal, durationHours) || 'later';
+        showError(`This hour is booked by ${conflictName}. Next booking is available at ${nextTime}.`);
+        return;
+      }
+
+      // Build reservation object (admin parity fields)
+      const id = 'R' + Date.now();
+
+      const serviceChecked = document.querySelector('input[name="service"]:checked');
+      let reservationType = 'basketball';
+      if (serviceChecked) {
+        const labelText = serviceChecked.closest('label')?.innerText?.trim();
+        reservationType = labelText || serviceChecked.value || 'basketball';
+      }
+
+      const customerIdEl = document.getElementById('customerId');
+      const customerNameEl = document.getElementById('customerName');
+      const customerId = (customerIdEl?.value || customerIdEl?.textContent || '').trim() || 'anonymous-id';
+      const customerName = (customerNameEl?.value || customerNameEl?.textContent || '').trim() || 'anonymous';
+
+      const amount = calculateDynamicPrice(startVal, durationHours);
+
+      const reservation = {
+        id,
+        customerId,
+        customerName,
+        reservationType,
+        date: dateMMDDYYYY,
+        startTime: startVal,
+        endTime: endVal,
+        status: 'Pending',
+        amount,
+        tid: '',
+      };
+
+      try {
+        e.preventDefault();
+        await createReservationFE(reservation);
+        // Clear previous error if any and optionally update any price UI
+        if (timeError) {
+          timeError.textContent = '';
+          timeError.classList.add('hidden');
+        }
+        updatePriceDisplay(amount);
+        // Optionally set tid via updateReservationFE once you get a transactionId
+        // await updateReservationFE(reservation.id, { tid: transactionId });
+      } catch (err) {
+        e.preventDefault();
+        showError('Error creating reservation. Please try again.');
       }
     });
   }
