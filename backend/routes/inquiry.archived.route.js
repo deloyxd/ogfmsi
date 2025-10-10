@@ -39,6 +39,31 @@ router.put('/archived/:id', async (req, res) => {
   });
 });
 
+// PUT unarchive customer (restore to daily type)
+router.put('/unarchive/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    UPDATE customer_tbl 
+    SET customer_type = 'daily'
+    WHERE customer_id = ?
+  `;
+
+  mysqlConnection.query(query, [id], (error, result) => {
+    if (error) {
+      console.error('Unarchiving customer error:', error);
+      return res.status(500).json({ error: 'Unarchiving customer failed' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    res.status(200).json({
+      message: 'Customer unarchived successfully',
+      result: { customer_id: id, customer_type: 'daily' },
+    });
+  });
+});
+
 // POST auto-archive inactive customers (3+ months inactive)
 router.post('/auto-archive', async (req, res) => {
   const threeMonthsAgo = new Date();
