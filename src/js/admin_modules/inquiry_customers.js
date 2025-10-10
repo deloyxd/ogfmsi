@@ -1567,6 +1567,8 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
 
   function continueCustomerDetailsBtnFunction(customer) {
     const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
+    const isArchivedCustomer = title.includes('Archive');
+    
     const inputs = {
       header: {
         title: `${title} ${getEmoji(emoji, 26)}`,
@@ -1588,11 +1590,70 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
         { placeholder: 'Actor role', value: 'Admin', locked: true },
       ],
       footer: {
-        main: `Exit View`,
+        main: isArchivedCustomer ? `Unarchive Customer ${getEmoji('🔄')}` : `Exit View`,
+        sub: isArchivedCustomer ? `Exit View` : undefined,
       },
     };
-    main.openModal('gray', inputs, (result) => {
-      main.closeModal();
+    
+    main.openModal('gray', inputs, async (result) => {
+      if (isArchivedCustomer) {
+        // Unarchive the customer
+        try {
+          const response = await fetch(`${API_BASE_URL}/inquiry/unarchive/${customerId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          await response.json();
+          
+          // Remove from archived tab and add to main customers tab
+          main.deleteAtSectionOne(SECTION_NAME, 4, customerId);
+          
+          // Add back to main customers tab
+          const columnsData = [
+            'id_' + customerId,
+            {
+              type: 'object_contact',
+              data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
+            },
+            'Daily',
+            'Regular',
+            'custom_date_today',
+          ];
+          
+          main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+            const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+            customerProcessBtn.addEventListener('click', () =>
+              customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+            );
+            const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+            customerEditDetailsBtn.addEventListener('click', () =>
+              customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+            );
+            updateCustomerStats();
+          });
+          
+          main.toast(`${fullName} has been unarchived successfully!`, 'success');
+          main.closeModal();
+          
+        } catch (error) {
+          console.error('Error unarchiving customer:', error);
+          main.toast('Failed to unarchive customer', 'error');
+        }
+      } else {
+        main.closeModal();
+      }
+    }, () => {
+      // Sub button (Exit View) - only for archived customers
+      if (isArchivedCustomer) {
+        main.closeModal();
+      }
     });
   }
 }
