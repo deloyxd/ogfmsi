@@ -63,6 +63,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await fetchAllPastMonthlyCustomers();
     await fetchAllArchivedCustomers();
     await autoArchiveInactiveCustomers();
+    await clearDuplicateMonthlyEntries();
     updateCustomerStats();
 
     async function fetchAllCustomers() {
@@ -138,7 +139,15 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
         const customers = await response.json();
 
+        // Track processed customers to avoid duplicates
+        const processedCustomers = new Set();
+        
         customers.result.forEach((customer) => {
+          // Skip if we've already processed this customer
+          if (processedCustomers.has(customer.customer_id)) {
+            return;
+          }
+          
           main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
               const endDate = new Date(customer.customer_end_date);
@@ -147,6 +156,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               today.setHours(0, 0, 0, 0);
               const diffTime = endDate - today;
               const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              
               if (customer.customer_pending == 1) {
                 findResult.dataset.tid = customer.customer_tid;
               } else {
@@ -191,51 +201,59 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                     }
                   );
                 } else {
-                  // Active monthly customer - show in Active Monthly Customers tab (tab 2)
-                  main.createAtSectionOne(
-                    SECTION_NAME,
-                    [
-                      'id_' + customer.customer_id,
-                      {
-                        type: 'object_contact',
-                        data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
-                      },
-                      main.encodeDate(
-                        customer.customer_start_date,
-                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                      ),
-                      main.encodeDate(
-                        customer.customer_end_date,
-                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                      ),
-                      daysLeft + ' days',
-                      main.formatPrice(
-                        customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
-                      ),
-                      findResult.dataset.custom3,
-                      'custom_date_' +
-                        main.encodeDate(
-                          customer.created_at,
-                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                        ) +
-                        ' - ' +
-                        main.encodeTime(customer.created_at),
-                    ],
-                    2,
-                    (createResult) => {
-                      const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-                      customerProcessBtn.addEventListener('click', () =>
-                        customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                  // Check if customer already exists in tab 2 to avoid duplicates
+                  main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 2, (existingResult) => {
+                    if (!existingResult) {
+                      // Active monthly customer - show in Active Monthly Customers tab (tab 2)
+                      main.createAtSectionOne(
+                        SECTION_NAME,
+                        [
+                          'id_' + customer.customer_id,
+                          {
+                            type: 'object_contact',
+                            data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+                          },
+                          main.encodeDate(
+                            customer.customer_start_date,
+                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                          ),
+                          main.encodeDate(
+                            customer.customer_end_date,
+                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                          ),
+                          daysLeft + ' days',
+                          main.formatPrice(
+                            customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                          ),
+                          findResult.dataset.custom3,
+                          'custom_date_' +
+                            main.encodeDate(
+                              customer.created_at,
+                              main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                            ) +
+                            ' - ' +
+                            main.encodeTime(customer.created_at),
+                        ],
+                        2,
+                        (createResult) => {
+                          const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+                          customerProcessBtn.addEventListener('click', () =>
+                            customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                          );
+                          const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+                          customerEditDetailsBtn.addEventListener('click', () =>
+                            customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                          );
+                          updateCustomerStats();
+                        }
                       );
-                      const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-                      customerEditDetailsBtn.addEventListener('click', () =>
-                        customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                      );
-                      updateCustomerStats();
                     }
-                  );
+                  });
                 }
               }
+              
+              // Mark this customer as processed
+              processedCustomers.add(customer.customer_id);
             }
           });
         });
@@ -369,6 +387,42 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
       } catch (error) {
         console.error('Error auto-archiving inactive customers:', error);
+      }
+    }
+
+    async function clearDuplicateMonthlyEntries() {
+      try {
+        // Clear any existing duplicate entries in tab 2 (Active Monthly Customers)
+        const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty2`);
+        if (emptyText) {
+          const tbody = emptyText.parentElement.parentElement;
+          const seenCustomers = new Set();
+          const rowsToRemove = [];
+          
+          // Find duplicate entries
+          for (let i = 1; i < tbody.children.length; i++) {
+            const row = tbody.children[i];
+            const customerId = row.dataset.id;
+            
+            if (seenCustomers.has(customerId)) {
+              rowsToRemove.push(row);
+            } else {
+              seenCustomers.add(customerId);
+            }
+          }
+          
+          // Remove duplicate entries
+          rowsToRemove.forEach(row => {
+            row.remove();
+          });
+          
+          if (rowsToRemove.length > 0) {
+            console.log(`Cleared ${rowsToRemove.length} duplicate monthly customer entries`);
+            updateCustomerStats();
+          }
+        }
+      } catch (error) {
+        console.error('Error clearing duplicate monthly entries:', error);
       }
     }
   }
@@ -1639,6 +1693,9 @@ function updateCustomerStats() {
     // Active monthly customers are rows in tab 2
     const activeMonthly = getCountFromTab(2);
 
+    // Archived customers are rows in tab 4
+    const totalArchived = getCountFromTab(4);
+
     // Active reservations are rows in inquiry-reservations tab 2
     const activeReservations = (() => {
       const emptyTextRes = document.getElementById(`inquiry-reservationsSectionOneListEmpty2`);
@@ -1657,6 +1714,7 @@ function updateCustomerStats() {
       else if (label.includes('student')) valueEl.textContent = totalStudent;
       else if (label.includes('monthly')) valueEl.textContent = activeMonthly;
       else if (label.includes('reservations')) valueEl.textContent = activeReservations;
+      else if (label.includes('archived')) valueEl.textContent = totalArchived;
     });
   } catch (e) {}
 }
