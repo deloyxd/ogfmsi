@@ -676,7 +676,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             created_at: nowIso,
           });
           computeAndUpdatePaymentStats(completedPaymentsCache);
-          refreshDashboardStats();
+          await refreshDashboardStats();
         } catch (_) {}
       } catch (error) {
         console.error('Error creating complete payment:', error);
