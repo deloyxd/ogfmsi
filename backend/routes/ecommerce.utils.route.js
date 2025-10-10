@@ -1,5 +1,5 @@
-const { Router } = require("express");
-const mysqlConnection = require('../database/mysql');
+const { Router } = require('express');
+const db = require('../database/mysql');
 const router = Router();
 
 /* 🔥 E-COMMERCE UTILITY ROUTES 🔥 */
@@ -13,9 +13,9 @@ router.get('/categories', async (req, res) => {
     { value: 'fitness-equipment', label: 'Fitness Equipment' },
     { value: 'apparel', label: 'Apparel' },
     { value: 'merchandise', label: 'Merchandise' },
-    { value: 'other', label: 'Other' }
+    { value: 'other', label: 'Other' },
   ];
-  
+
   res.status(200).json({ message: 'Categories fetched successfully', result: categories });
 });
 
@@ -63,16 +63,16 @@ router.get('/measurement-units', async (req, res) => {
     { value: 'cm', label: 'Size: cm' },
     { value: 'mm', label: 'Size: mm' },
     { value: 'size', label: 'Size: size(s)' },
-    { value: 'level', label: 'Size: level(s)' }
+    { value: 'level', label: 'Size: level(s)' },
   ];
-  
+
   res.status(200).json({ message: 'Measurement units fetched successfully', result: units });
 });
 
 // GET stock statistics
 router.get('/stock/stats', async (req, res) => {
   const query = `
-    SELECT 
+    SELECT
       COUNT(*) as total_products,
       SUM(CASE WHEN stock_status = 'In Stock' THEN 1 ELSE 0 END) as in_stock,
       SUM(CASE WHEN stock_status = 'Low Stock' THEN 1 ELSE 0 END) as low_stock,
@@ -82,20 +82,19 @@ router.get('/stock/stats', async (req, res) => {
       SUM(CASE WHEN quantity <= 10 AND quantity > 0 THEN 1 ELSE 0 END) as slow_moving
     FROM ecommerce_products_tbl
   `;
-  
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching stock stats error:', error);
-      return res.status(500).json({ error: 'Fetching stock stats failed' });
-    }
-    res.status(200).json({ message: 'Stock stats fetched successfully', result: result[0] });
-  });
+  try {
+    const rows = await db.query(query);
+    res.status(200).json({ message: 'Stock stats fetched successfully', result: rows[0] });
+  } catch (error) {
+    console.error('Fetching stock stats error:', error);
+    return res.status(500).json({ error: 'Fetching stock stats failed' });
+  }
 });
 
 // GET cart statistics (sales performance)
 router.get('/cart/stats', async (req, res) => {
   const query = `
-    SELECT 
+    SELECT
       COUNT(DISTINCT oi.product_id) as best_selling,
       SUM(CASE WHEN oi.quantity >= 10 THEN 1 ELSE 0 END) as fast_moving,
       SUM(CASE WHEN oi.quantity <= 2 THEN 1 ELSE 0 END) as least_selling
@@ -103,27 +102,21 @@ router.get('/cart/stats', async (req, res) => {
     INNER JOIN ecommerce_orders_tbl o ON oi.order_id = o.order_id
     WHERE o.status = 'completed'
   `;
-  
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching cart stats error:', error);
-      return res.status(500).json({ error: 'Fetching cart stats failed' });
-    }
-    
+  try {
+    const rows = await db.query(query);
     // If no orders exist yet, return default values
-    const stats = result[0] || { best_selling: 0, fast_moving: 0, least_selling: 0 };
-    
+    const stats = rows[0] || { best_selling: 0, fast_moving: 0, least_selling: 0 };
     // Enhance stats with additional analytics
     const enhancedStats = {
       best_selling: stats.best_selling || 0,
       fast_moving: stats.fast_moving || 0,
-      least_selling: stats.least_selling || 0
+      least_selling: stats.least_selling || 0,
     };
-    
     res.status(200).json({ message: 'Cart stats fetched successfully', result: enhancedStats });
-  });
+  } catch (error) {
+    console.error('Fetching cart stats error:', error);
+    return res.status(500).json({ error: 'Fetching cart stats failed' });
+  }
 });
 
 module.exports = router;
-
-

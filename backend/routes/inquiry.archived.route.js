@@ -1,17 +1,24 @@
 const { Router } = require('express');
-const mysqlConnection = require('../database/mysql');
+const db = require('../database/mysql');
+const { parsePageParams } = require('../utils/pagination');
 const router = Router();
 
 // GET all archived customers
 router.get('/archived', async (req, res) => {
-  const query = `SELECT * FROM customer_tbl WHERE customer_type = 'archived' ORDER BY created_at DESC`;
-  mysqlConnection.query(query, (error, result) => {
-    if (error) {
-      console.error('Fetching archived customers error:', error);
-      return res.status(500).json({ error: 'Fetching archived customers failed' });
-    }
-    res.status(200).json({ message: 'Fetching archived customers successful', result: result });
-  });
+  const { useLimit, limit, offset } = parsePageParams(req);
+  let sql = `SELECT * FROM customer_tbl WHERE customer_type = 'archived' ORDER BY created_at DESC`;
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching archived customers successful', result: rows });
+  } catch (error) {
+    console.error('Fetching archived customers error:', error);
+    return res.status(500).json({ error: 'Fetching archived customers failed' });
+  }
 });
 
 // PUT mark customer as archived
@@ -24,19 +31,19 @@ router.put('/archived/:id', async (req, res) => {
     WHERE customer_id = ?
   `;
 
-  mysqlConnection.query(query, [id], (error, result) => {
-    if (error) {
-      console.error('Archiving customer error:', error);
-      return res.status(500).json({ error: 'Archiving customer failed' });
-    }
+  try {
+    const result = await db.query(query, [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Customer not found' });
+    } else {
+      res
+        .status(200)
+        .json({ message: 'Customer archived successfully', result: { customer_id: id, customer_type: 'archived' } });
     }
-    res.status(200).json({
-      message: 'Customer archived successfully',
-      result: { customer_id: id, customer_type: 'archived' },
-    });
-  });
+  } catch (error) {
+    console.error('Archiving customer error:', error);
+    return res.status(500).json({ error: 'Archiving customer failed' });
+  }
 });
 
 // PUT unarchive customer (restore to daily type)
@@ -49,23 +56,24 @@ router.put('/unarchive/:id', async (req, res) => {
     WHERE customer_id = ?
   `;
 
-  mysqlConnection.query(query, [id], (error, result) => {
-    if (error) {
-      console.error('Unarchiving customer error:', error);
-      return res.status(500).json({ error: 'Unarchiving customer failed' });
-    }
+  try {
+    const result = await db.query(query, [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Customer not found' });
+    } else {
+      res
+        .status(200)
+        .json({ message: 'Customer unarchived successfully', result: { customer_id: id, customer_type: 'daily' } });
     }
-    res.status(200).json({
-      message: 'Customer unarchived successfully',
-      result: { customer_id: id, customer_type: 'daily' },
-    });
-  });
+  } catch (error) {
+    console.error('Unarchiving customer error:', error);
+    return res.status(500).json({ error: 'Unarchiving customer failed' });
+  }
 });
 
 // POST auto-archive inactive customers (3+ months inactive)
 router.post('/auto-archive', async (req, res) => {
+  const { useLimit, limit, offset } = parsePageParams(req);
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   const threeMonthsAgoStr = threeMonthsAgo.toISOString().split('T')[0];
@@ -82,20 +90,19 @@ router.post('/auto-archive', async (req, res) => {
     AND (r.customer_id IS NULL AND m.customer_id IS NULL)
     AND c.created_at < ?
   `;
+  let params = [threeMonthsAgoStr, threeMonthsAgoStr, threeMonthsAgoStr];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const inactiveCustomers = await db.query(findInactiveQuery, params);
 
-  mysqlConnection.query(findInactiveQuery, [threeMonthsAgoStr, threeMonthsAgoStr, threeMonthsAgoStr], (error, result) => {
-    if (error) {
-      console.error('Finding inactive customers error:', error);
-      return res.status(500).json({ error: 'Finding inactive customers failed' });
-    }
-
-    const inactiveCustomers = result;
-    
     if (inactiveCustomers.length === 0) {
-      return res.status(200).json({ 
-        message: 'No inactive customers found', 
+      return res.status(200).json({
+        message: 'No inactive customers found',
         result: [],
-        archived_count: 0 
+        archived_count: 0,
       });
     }
 
@@ -106,21 +113,27 @@ router.post('/auto-archive', async (req, res) => {
       WHERE customer_id IN (${inactiveCustomers.map(() => '?').join(',')})
     `;
 
-    const customerIds = inactiveCustomers.map(customer => customer.customer_id);
+    params = inactiveCustomers.map((customer) => customer.customer_id);
+    if (useLimit) {
+      sql += ' LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+    }
 
-    mysqlConnection.query(archiveQuery, customerIds, (archiveError, archiveResult) => {
-      if (archiveError) {
-        console.error('Auto-archiving customers error:', archiveError);
-        return res.status(500).json({ error: 'Auto-archiving customers failed' });
-      }
-
+    try {
+      const rows = await db.query(archiveQuery, params);
       res.status(200).json({
-        message: `Successfully auto-archived ${archiveResult.affectedRows} inactive customers`,
+        message: `Successfully auto-archived ${rows.length} inactive customers`,
         result: inactiveCustomers,
-        archived_count: archiveResult.affectedRows
+        archived_count: rows.length,
       });
-    });
-  });
+    } catch (error) {
+      console.error('Auto-archiving customers error:', error);
+      return res.status(500).json({ error: 'Auto-archiving customers failed' });
+    }
+  } catch (error) {
+    console.error('Finding inactive customers error:', error);
+    return res.status(500).json({ error: 'Finding inactive customers failed' });
+  }
 });
 
 module.exports = router;

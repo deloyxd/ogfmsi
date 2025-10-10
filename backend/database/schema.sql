@@ -208,3 +208,43 @@ CREATE TABLE IF NOT EXISTS inquiry_checkins_monthly_tbl (
 --     transaction_id VARCHAR(255),
 --     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 -- );
+
+-- ===============================================
+-- Performance indexes for production traffic
+-- Date: 2025-10-09
+-- These ALTERs are intended for fresh setups. On existing databases, run the migration runner (npm run migrate)
+-- which checks information_schema to avoid duplicate indexes and handles missing tables/columns gracefully.
+-- ===============================================
+
+ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_created_at (created_at);
+ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_category_created (category, created_at);
+ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_stock_status (stock_status);
+
+ALTER TABLE ecommerce_cart_tbl ADD INDEX idx_cart_session_created (session_id, created_at);
+
+ALTER TABLE ecommerce_orders_tbl ADD INDEX idx_orders_created (created_at);
+ALTER TABLE ecommerce_orders_tbl ADD INDEX idx_orders_status_created (status, created_at);
+
+ALTER TABLE ecommerce_order_items_tbl ADD INDEX idx_order_items_order_id (order_id);
+ALTER TABLE ecommerce_order_items_tbl ADD INDEX idx_order_items_product (product_id);
+
+ALTER TABLE gym_equipment_tbl ADD INDEX idx_equipment_created (created_at);
+
+ALTER TABLE gym_equipment_items_tbl ADD INDEX idx_items_equipment_itemcode (equipment_id, item_code);
+ALTER TABLE gym_equipment_items_tbl ADD INDEX idx_items_equipment_status (equipment_id, individual_status);
+
+ALTER TABLE equipment_maintenance_tbl ADD INDEX idx_maint_scheduled (scheduled_date);
+ALTER TABLE equipment_maintenance_tbl ADD INDEX idx_maint_status_sched (status, scheduled_date);
+ALTER TABLE equipment_maintenance_tbl ADD INDEX idx_maint_created (created_at);
+
+ALTER TABLE customer_tbl ADD INDEX idx_customer_created (created_at);
+
+ALTER TABLE customer_monthly_tbl ADD INDEX idx_cust_monthly_enddate (customer_end_date);
+ALTER TABLE customer_monthly_tbl ADD INDEX idx_cust_monthly_customer (customer_id);
+
+ALTER TABLE inquiry_checkins_regular_tbl ADD INDEX idx_checkins_regular_created (created_at);
+
+ALTER TABLE inquiry_checkins_monthly_tbl ADD INDEX idx_checkins_monthly_created (created_at);
+
+ALTER TABLE payment_tbl ADD INDEX idx_payment_type_created (payment_type, created_at);
+ALTER TABLE payment_tbl ADD INDEX idx_payment_customer (payment_customer_id);

@@ -26,10 +26,17 @@ app.use((req, res, next) => {
 
 /* 👆 Default: Do not modify 👆 */
 
+const compression = require('compression');
+const serverTiming = require('./middleware/server-timing-middleware');
+
+// Enable compression and Server-Timing before routes
+app.use(compression());
+app.use(serverTiming());
 
 //API URL: (host):(port)/api
 
 app.use('/api',router);
+
 
 //Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing
 // app.use('*', (req, res) => {
