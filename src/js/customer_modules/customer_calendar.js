@@ -1,3 +1,5 @@
+
+import main from '../admin_main.js';
 import { db } from '../firebase.js';
 import { collection, onSnapshot, query, doc, setDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const CONTAINER_ID = 'customerCalendar';
@@ -78,6 +80,7 @@ async function createReservationFE(reservation) {
   window.showGlobalLoading?.();
   try {
     await setDoc(doc(db, 'reservations', reservation.id), reservation);
+    main.toast('Successfully booked!', 'success');
   } finally {
     window.hideGlobalLoading?.();
   }
