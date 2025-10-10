@@ -19,7 +19,7 @@ router.get('/monthly', async (req, res) => {
     AND m1.customer_pending = 0
     ORDER BY m1.created_at DESC
   `;
-  mysqlConnection.query(query, (error, result) => {
+  db.query(query, (error, result) => {
     if (error) {
       console.error('Fetching customers error:', error);
       return res.status(500).json({ error: 'Fetching customers failed' });
