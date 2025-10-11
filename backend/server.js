@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 
 const router = require('./routes/route');
 const corsMiddleware = require('./middleware/cross-origin-middleware');
+const { withRequestContext } = require('./utils/request-context');
 const app = express();
 const PORT = process.env.PORT || 5501;
 
@@ -18,6 +19,8 @@ app.listen(PORT, () => {
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(corsMiddleware);
+// Per-request context for DB timing aggregation (must be before routes)
+app.use(withRequestContext());
 
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.path}`);
