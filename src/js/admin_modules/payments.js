@@ -137,7 +137,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                     data: [
                       customerImage,
-                      // Column 2: show Customer ID
                       customerIdSafe,
                       completePayment.payment_purpose,
                       main.formatPrice(completePayment.payment_amount_to_pay),
@@ -149,7 +148,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                     ],
                   },
-                  // Column 3: Customer Name
                   customerName,
                   `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                 ],
@@ -280,8 +278,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
                     ],
                   },
-                  // Column 3: Customer Name for service-style tables
-                  customerName,
+                  payment.payment_purpose || 'N/A',
                   `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
                 ],
                 2,
@@ -728,11 +725,7 @@ export function cancelCheckinPayment(transactionId) {
           `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
         ],
       },
-      // Insert Customer Name column before date/time
-      (() => {
-        const r = main.findAtSectionOne('inquiry-customers', findResult.dataset.text, 'equal_id', 1, () => {});
-        return '';
-      })(),
+      findResult.dataset.custom2 || 'N/A',
       `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
     ];
     main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
@@ -857,8 +850,7 @@ export function cancelReservationPayment(transactionId) {
           `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
         ],
       },
-      // Insert Customer Name column before date/time
-      '',
+      findResult.dataset.custom2 || 'Reservation fee',
       `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
     ];
     main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
