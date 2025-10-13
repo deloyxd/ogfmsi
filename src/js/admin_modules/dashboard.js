@@ -776,9 +776,6 @@ function updateDashboardStatsDisplay(stats) {
       
       const label = (header.textContent || '').toLowerCase();
       
-      // Debug: log the label to see what we're matching against
-      console.log('Dashboard stat label:', label);
-      
       if (label.includes('overall') && label.includes('total') && label.includes('sales')) {
         valueEl.textContent = main.encodePrice(stats.overall_total_sales || 0);
       } else if (label.includes('gym') && label.includes('revenue')) {
@@ -791,9 +788,6 @@ function updateDashboardStatsDisplay(stats) {
         valueEl.textContent = stats.active_monthly_customers || 0;
       } else if (label.includes('reservation') && !label.includes('revenue')) {
         valueEl.textContent = stats.active_reservations || 0;
-      } else {
-        // Fallback: if no match found, log it for debugging
-        console.log('No match found for label:', label);
       }
     });
   } catch (error) {

@@ -1,7 +1,14 @@
-
-import main from '../admin_main.js';
 import { db } from '../firebase.js';
-import { collection, onSnapshot, query, doc, setDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {
+  collection,
+  onSnapshot,
+  query,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
 const CONTAINER_ID = 'customerCalendar';
 
 const monthNames = [
@@ -36,6 +43,30 @@ const state = {
   reservations: [],
   unsubscribe: null,
 };
+
+function toast(message, type) {
+  const colorSchemes = {
+    success: { bg: '#4CAF50', text: '#fff' },
+    error: { bg: '#F44336', text: '#fff' },
+    info: { bg: '#2196F3', text: '#fff' },
+    warning: { bg: '#FF9800', text: '#fff' },
+  };
+  Toastify({
+    text: message,
+    duration: 5000,
+    close: true,
+    gravity: 'top',
+    position: 'right',
+    backgroundColor: colorSchemes[type].bg,
+    stopOnFocus: false,
+    style: {
+      color: colorSchemes[type].text,
+      borderRadius: '8px',
+      padding: '12px 20px',
+      fontSize: '14px',
+    },
+  }).showToast();
+}
 
 function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
@@ -77,31 +108,16 @@ function getReservationCountForDate(mmddyyyy) {
 // Firestore CRUD wrappers with loading overlay
 // -------------------------
 async function createReservationFE(reservation) {
-  window.showGlobalLoading?.();
-  try {
-    await setDoc(doc(db, 'reservations', reservation.id), reservation);
-    main.toast('Successfully booked!', 'success');
-  } finally {
-    window.hideGlobalLoading?.();
-  }
+  await setDoc(doc(db, 'reservations', reservation.id), reservation);
+  toast('Successfully reserved the slot!', 'success');
 }
 
 async function updateReservationFE(reservationId, updated) {
-  window.showGlobalLoading?.();
-  try {
-    await updateDoc(doc(db, 'reservations', reservationId), updated);
-  } finally {
-    window.hideGlobalLoading?.();
-  }
+  await updateDoc(doc(db, 'reservations', reservationId), updated);
 }
 
 async function deleteReservationFE(reservationId) {
-  window.showGlobalLoading?.();
-  try {
-    await deleteDoc(doc(db, 'reservations', reservationId));
-  } finally {
-    window.hideGlobalLoading?.();
-  }
+  await deleteDoc(doc(db, 'reservations', reservationId));
 }
 
 // -------------------------
@@ -253,26 +269,6 @@ function formatTodayDateTimeMMDDYYYY_HHMM() {
   const MM = String(now.getMinutes()).padStart(2, '0');
   return `${mm}-${dd}-${yyyy} ${HH}:${MM}`;
 }
-
-async function cancelPendingTransaction(transactionId) {
-  const res = state.reservations.find((r) => r.tid === transactionId);
-  if (res) {
-    await updateReservationFE(res.id, { status: 'Canceled', tid: '' });
-  }
-}
-
-async function completeReservationPayment(transactionId) {
-  const res = state.reservations.find((r) => r.tid === transactionId);
-  if (res) {
-    const datetime = formatTodayDateTimeMMDDYYYY_HHMM();
-    await updateReservationFE(res.id, { status: datetime, tid: '' });
-  }
-}
-
-window.customerPayments = {
-  cancelPendingTransaction,
-  completeReservationPayment,
-};
 
 // Returns pseudo-random reservation count for each date
 function getReservedCount(year, month, day) {
@@ -514,7 +510,7 @@ function mount() {
   } catch (e) {}
   state.unsubscribe = listenToReservationsFE();
   window.addEventListener('beforeunload', () => state.unsubscribe?.());
-  
+
   // Enhance service selection UI highlighting
   const serviceRadios = document.querySelectorAll('input[name="service"]');
   if (serviceRadios.length) {
