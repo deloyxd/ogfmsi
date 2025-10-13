@@ -146,6 +146,7 @@ CREATE TABLE IF NOT EXISTS customer_tbl (
 );
 
 CREATE TABLE IF NOT EXISTS customer_monthly_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id VARCHAR(50) NOT NULL,
     customer_start_date DATE,
     customer_end_date DATE,
@@ -157,6 +158,7 @@ CREATE TABLE IF NOT EXISTS customer_monthly_tbl (
 );
 
 CREATE TABLE IF NOT EXISTS payment_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     payment_id VARCHAR(50) UNIQUE NOT NULL,
     payment_customer_id VARCHAR(50) NOT NULL,
     payment_purpose VARCHAR(255),
