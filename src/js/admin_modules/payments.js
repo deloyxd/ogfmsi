@@ -15,6 +15,43 @@ let activated = false,
 // Cache of completed payments used for stats computation
 let completedPaymentsCache = [];
 
+// Helper function to resolve customer metadata (image, id, name) with backend fallback
+async function resolveCustomerInfo(customerId) {
+  // Try DOM lookup first
+  return new Promise((resolve) => {
+    main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, async (findResult) => {
+      if (findResult) {
+        const customerName = findResult.dataset.text ? main.decodeName(findResult.dataset.text).fullName : '';
+        resolve({
+          image: findResult.dataset.image || '',
+          id: findResult.dataset.id || customerId,
+          name: customerName,
+        });
+      } else {
+        // Fallback to backend API
+        try {
+          const response = await fetch(`${API_BASE_URL}/inquiry/customers/${encodeURIComponent(customerId)}`);
+          if (response.ok) {
+            const data = await response.json();
+            const customer = data.result || {};
+            const fullName = `${customer.customer_first_name || ''} ${customer.customer_last_name || ''}`.trim();
+            resolve({
+              image: customer.customer_image_url || '',
+              id: customer.customer_id || customerId,
+              name: fullName,
+            });
+          } else {
+            resolve({ image: '', id: customerId, name: '' });
+          }
+        } catch (error) {
+          console.error('Error fetching customer from backend:', error);
+          resolve({ image: '', id: customerId, name: '' });
+        }
+      }
+    });
+  });
+}
+
 document.addEventListener('ogfmsiAdminMainLoaded', async function () {
   if (main.sharedState.sectionName != SECTION_NAME) return;
 
@@ -119,49 +156,41 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         ];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
-        completePayments.result.forEach((completePayment) => {
-          main.findAtSectionOne(
-            'inquiry-customers',
-            completePayment.payment_customer_id,
-            'equal_id',
-            1,
-            (findResult) => {
-              const customerImage = findResult ? findResult.dataset.image : '';
-              const customerIdSafe = findResult ? findResult.dataset.id : completePayment.payment_customer_id;
-              const customerName = findResult ? main.decodeName(findResult.dataset.text).fullName : '';
-              main.createAtSectionOne(
-                SECTION_NAME,
-                [
-                  'id_' + completePayment.payment_id,
-                  {
-                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                    data: [
-                      customerImage,
-                      customerIdSafe,
-                      completePayment.payment_purpose,
-                      main.formatPrice(completePayment.payment_amount_to_pay),
-                      main.formatPrice(completePayment.payment_amount_paid_cash),
-                      main.formatPrice(completePayment.payment_amount_paid_cashless),
-                      main.formatPrice(completePayment.payment_amount_change),
-                      main.fixText(completePayment.payment_rate),
-                      main.fixText(completePayment.payment_method),
-                      `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-                    ],
-                  },
-                  customerName,
+        // Use for...of to support async/await
+        for (const completePayment of completePayments.result) {
+          const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
+          
+          main.createAtSectionOne(
+            SECTION_NAME,
+            [
+              'id_' + completePayment.payment_id,
+              {
+                type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                data: [
+                  customerInfo.image,
+                  customerInfo.id,
+                  completePayment.payment_purpose,
+                  main.formatPrice(completePayment.payment_amount_to_pay),
+                  main.formatPrice(completePayment.payment_amount_paid_cash),
+                  main.formatPrice(completePayment.payment_amount_paid_cashless),
+                  main.formatPrice(completePayment.payment_amount_change),
+                  main.fixText(completePayment.payment_rate),
+                  main.fixText(completePayment.payment_method),
                   `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
                 ],
-                3,
-                (createResult) => {
-                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () =>
-                    openTransactionDetails('services', createResult)
-                  );
-                }
+              },
+              customerInfo.name,
+              `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+            ],
+            3,
+            (createResult) => {
+              const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+              transactionDetailsBtn.addEventListener('click', () =>
+                openTransactionDetails('services', createResult)
               );
             }
           );
-        });
+        }
       } catch (error) {
         console.error('Error fetching service payments:', error);
       }
