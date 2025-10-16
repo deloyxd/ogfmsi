@@ -14,6 +14,8 @@ let activated = false,
 
 // Cache of completed payments used for stats computation
 let completedPaymentsCache = [];
+// Track pending IDs to avoid duplicate rows when polling
+const seenPendingPaymentIds = new Set();
 
 // Helper function to resolve customer metadata (image, id, name) with backend fallback
 async function resolveCustomerInfo(customerId) {
@@ -69,6 +71,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     await fetchAllSalesPayments();
     await fetchAllCanceledPayments();
 
+    // Light polling so new portal-submitted pendings show up without reload
+    setInterval(() => {
+      // Only poll while Payments module is active to reduce load
+      if (main.sharedState.sectionName === SECTION_NAME) {
+        fetchAllPendingPayments();
+      }
+    }, 5000);
+
     async function fetchAllPendingPayments() {
       try {
         const response = await fetch(`${API_BASE_URL}/payment/pending`);
@@ -78,59 +88,88 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         const pendingPayments = await response.json();
 
         pendingPayments.result.forEach((pendingPayment) => {
+          if (!pendingPayment || !pendingPayment.payment_id) return;
+          if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
+          // Normalize optional fields coming from customer portal
+          const refFromPortal = pendingPayment.payment_ref || pendingPayment.payment_reference || '';
+          const methodHint = (pendingPayment.payment_method_hint || '').toLowerCase();
+          const fromCustomerPortal = String(pendingPayment.payment_source || '') === 'customer_portal';
+
           main.findAtSectionOne(
             'inquiry-customers',
             pendingPayment.payment_customer_id,
             'equal_id',
             1,
-            (findResult) => {
+            async (findResult) => {
+              let imageSrc = '';
+              let customerIdText = pendingPayment.payment_customer_id;
+              let fullName = '';
               if (findResult) {
-                main.createAtSectionOne(
-                  SECTION_NAME,
-                  [
-                    'id_' + pendingPayment.payment_id,
-                    {
-                      type: 'object',
-                      data: [findResult.dataset.image, findResult.dataset.id],
-                    },
-                    pendingPayment.payment_purpose,
-                    main.formatPrice(pendingPayment.payment_amount_to_pay),
-                    main.fixText(pendingPayment.payment_rate),
-                    'custom_datetime_' +
-                      main.encodeDate(
-                        pendingPayment.created_at,
-                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                      ),
-                  ],
-                  1,
-                  (createResult) => {
-                    const { firstName, lastName, fullName } = main.decodeName(findResult.dataset.text);
-                    const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
-                    transactionProcessBtn.addEventListener('click', () => {
-                      completePayment(
-                        'customers',
-                        createResult.dataset.id,
-                        createResult.dataset.image,
-                        createResult.dataset.text,
-                        createResult.dataset.custom2,
-                        fullName,
-                        pendingPayment.payment_amount_to_pay,
-                        pendingPayment.payment_rate
-                      );
-                    });
-                    const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
-                    transactionCancelBtn.addEventListener('click', () => {
-                      main.openConfirmationModal(
-                        'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
-                        () => {
-                          cancelCheckinPayment(createResult.dataset.id);
-                          main.closeConfirmationModal();
-                        }
-                      );
-                    });
+                imageSrc = findResult.dataset.image || '';
+                customerIdText = findResult.dataset.id || customerIdText;
+                try { fullName = main.decodeName(findResult.dataset.text).fullName; } catch (_) {}
+              } else {
+                // fallback: fetch from backend in case DOM not yet populated
+                try {
+                  const resp = await fetch(`${API_BASE_URL}/inquiry/customers/${encodeURIComponent(customerIdText)}`);
+                  if (resp.ok) {
+                    const data = await resp.json();
+                    const c = data.result || {};
+                    imageSrc = c.customer_image_url || '';
+                    fullName = `${c.customer_first_name || ''} ${c.customer_last_name || ''}`.trim();
                   }
-                );
+                } catch (_) {}
               }
+
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + pendingPayment.payment_id,
+                  {
+                    type: 'object',
+                    data: [imageSrc, customerIdText],
+                  },
+                  pendingPayment.payment_purpose,
+                  main.formatPrice(pendingPayment.payment_amount_to_pay),
+                  main.fixText(pendingPayment.payment_rate),
+                  'custom_datetime_' +
+                    main.encodeDate(
+                      pendingPayment.created_at,
+                      main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                    ),
+                ],
+                1,
+                (createResult) => {
+                  seenPendingPaymentIds.add(pendingPayment.payment_id);
+                  if (fromCustomerPortal && refFromPortal) {
+                    createResult.dataset.refnum = refFromPortal;
+                  }
+                  const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
+                  transactionProcessBtn.addEventListener('click', () => {
+                    completePayment(
+                      'customers',
+                      createResult.dataset.id,
+                      createResult.dataset.image,
+                      createResult.dataset.text,
+                      createResult.dataset.custom2,
+                      fullName,
+                      Number(pendingPayment.payment_amount_to_pay) || 0,
+                      pendingPayment.payment_rate,
+                      { methodHint, refFromPortal, displayId: pendingPayment.payment_id }
+                    );
+                  });
+                  const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
+                  transactionCancelBtn.addEventListener('click', () => {
+                    main.openConfirmationModal(
+                      'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
+                      () => {
+                        cancelCheckinPayment(createResult.dataset.id);
+                        main.closeConfirmationModal();
+                      }
+                    );
+                  });
+                }
+              );
             }
           );
         });
@@ -338,9 +377,13 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
     purpose,
     main.formatPrice(amountToPay),
     main.fixText(priceRate),
+    // GCash Reference Number column
+    'N/A',
     'custom_datetime_today',
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+    // Prevent duplicate insertion when polling picks up this newly-created pending
+    try { seenPendingPaymentIds.add(createResult.dataset.id); } catch (_) {}
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(
@@ -533,10 +576,11 @@ function activeRadioListener(title, input, container, inputGroup) {
   attachSelectAll(cashlessInput);
 }
 
-function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate) {
+function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
+  const effectiveId = opts.displayId || id;
   const inputs = {
     header: {
-      title: `Transaction ID: ${id} ${getEmoji('🔏', 26)}`,
+      title: `Transaction ID: ${effectiveId} ${getEmoji('🔏', 26)}`,
       subtitle: `Purpose: ${purpose}`,
     },
     short: [
@@ -577,6 +621,30 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main: `Complete payment transaction ${getEmoji('🔏')}`,
     },
   };
+
+  // Prefill for customer portal pending monthly payments
+  setTimeout(() => {
+    try {
+      if (opts && opts.methodHint === 'cashless') {
+        const cashlessRadio = document.querySelector('#input-radio-3');
+        cashlessRadio?.click();
+      }
+      if (opts && opts.refFromPortal) {
+        const refInput = document.querySelector('#input-short-12');
+        if (refInput) refInput.value = opts.refFromPortal;
+      }
+      // Auto-fill payment amount = amountToPay for one-tap completion
+      const cashlessInput = document.querySelector('#input-short-8');
+      const cashInput = document.querySelector('#input-short-7');
+      if (cashlessInput && (opts && opts.methodHint === 'cashless')) {
+        cashlessInput.value = String(Number(amountToPay) || 0);
+        cashlessInput.dispatchEvent(new Event('input'));
+      } else if (cashInput) {
+        cashInput.value = String(Number(amountToPay) || 0);
+        cashInput.dispatchEvent(new Event('input'));
+      }
+    } catch (_) {}
+  }, 0);
 
   main.openModal('yellow', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
@@ -648,6 +716,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.createNotifDot(SECTION_NAME, 'main');
       main.createNotifDot(SECTION_NAME, type === 'cart' ? 4 : 3);
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
+      try { seenPendingPaymentIds.delete(effectiveId); } catch (_) {}
 
       const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
       transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -655,7 +724,20 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.closeModal(() => {
         switch (type) {
           case 'customers':
-            customers.completeCheckinPayment(id, amountPaid, priceRate);
+            customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
+            // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
+            try {
+              // Update DOM by ID as backup
+              main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
+                if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
+                  const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
+                  row.dataset.custom2 = baseType + ' - Active';
+                  row.children[2].textContent = row.dataset.custom2;
+                  row.dataset.status = 'active';
+                  row.dataset.tid = '';
+                }
+              });
+            } catch (_) {}
             break;
           case 'reservations':
             reservations.completeReservationPayment(id);
@@ -672,16 +754,22 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       });
 
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${id}`, {
+        // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
+        await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }).catch(()=>{});
+
+        const response = await fetch(`${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            payment_amount_to_pay: Number(amountToPay) || 0,
             payment_amount_paid_cash: result.short[2].value,
             payment_amount_paid_cashless: result.short[3].value,
             payment_amount_change: main.decodePrice(change),
             payment_method: paymentMethod,
+            payment_ref: refNum,
+            payment_rate: priceRate,
           }),
         });
 
@@ -703,6 +791,22 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           });
           computeAndUpdatePaymentStats(completedPaymentsCache);
           await refreshDashboardStats();
+        } catch (_) {}
+
+        // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
+        try {
+          await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
+          });
+        } catch (_) {}
+        try {
+          await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
+          });
         } catch (_) {}
       } catch (error) {
         console.error('Error creating complete payment:', error);
@@ -761,6 +865,7 @@ export function cancelCheckinPayment(transactionId) {
 
     // Remove from pending list
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+    try { seenPendingPaymentIds.delete(transactionId); } catch (_) {}
     main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
   });
 }
@@ -780,6 +885,8 @@ export function processReservationPayment(reservation, callback = () => {}) {
     'custom_datetime_today',
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+    // Prevent duplicate insertion when polling picks up this newly-created pending
+    try { seenPendingPaymentIds.add(createResult.dataset.id); } catch (_) {}
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(
@@ -885,6 +992,7 @@ export function cancelReservationPayment(transactionId) {
     main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
 
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
+    try { seenPendingPaymentIds.delete(transactionId); } catch (_) {}
     main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
   });
 }
@@ -1048,6 +1156,8 @@ export function processCheckoutPayment(purpose, amountToPay, productImage = '') 
     'custom_datetime_today',
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+    // Prevent duplicate insertion when polling picks up this newly-created pending
+    try { seenPendingPaymentIds.add(createResult.dataset.id); } catch (_) {}
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(

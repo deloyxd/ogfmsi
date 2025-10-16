@@ -968,7 +968,8 @@ function activeShortListener(monthInput, container) {
 }
 
 function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
-  const customerId = columnsData[0].split('_')[1];
+  // Extract the full ID after the 'id_' prefix without splitting on underscores in the ID itself
+  const customerId = String(columnsData[0]).startsWith('id_') ? String(columnsData[0]).slice(3) : String(columnsData[0]);
   const { firstName } = main.decodeName(columnsData[1].data[1]);
   main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult) => {
     let isCreating = true;
@@ -1463,27 +1464,55 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
         findResult1.dataset.status = 'active';
         findResult1.dataset.tid = '';
 
-        const columnsData = [
-          'id_' + findResult1.dataset.id,
-          {
-            type: 'object_contact',
-            data: [findResult1.dataset.image, findResult1.dataset.text, findResult1.dataset.contact],
-          },
-          main.encodeDate(
-            findResult1.dataset.startdate,
-            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-          ),
-          main.encodeDate(
-            findResult1.dataset.enddate,
-            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-          ),
-          findResult1.dataset.days + ' day' + (+findResult1.dataset.days > 1 ? 's' : ''),
-          main.formatPrice(amountPaid),
-          main.fixText(priceRate),
-          'custom_datetime_today',
-        ];
+        // Resolve date range and days for monthly activation; portal-created rows may lack dataset values
+        const resolveMonthlyDates = async () => {
+          let startDisplay = findResult1.dataset.startdate;
+          let endDisplay = findResult1.dataset.enddate;
+          let daysVal = findResult1.dataset.days;
+          if (!startDisplay || !endDisplay || !daysVal) {
+            try {
+              const resp = await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(findResult1.dataset.id)}`);
+              if (resp.ok) {
+                const data = await resp.json();
+                const rec = Array.isArray(data.result) ? data.result[0] : data.result;
+                if (rec && rec.customer_start_date && rec.customer_end_date) {
+                  startDisplay = main.encodeDate(
+                    rec.customer_start_date,
+                    main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                  );
+                  endDisplay = main.encodeDate(
+                    rec.customer_end_date,
+                    main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                  );
+                  const start = new Date(rec.customer_start_date);
+                  const end = new Date(rec.customer_end_date);
+                  const diff = Math.max(0, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+                  daysVal = String(diff);
+                }
+              }
+            } catch (_) {}
+          }
 
-        main.createAtSectionOne(SECTION_NAME, columnsData, 2, async (createResult) => {
+          return { startDisplay, endDisplay, daysVal };
+        };
+
+        (async () => {
+          const { startDisplay, endDisplay, daysVal } = await resolveMonthlyDates();
+          const columnsData = [
+            'id_' + findResult1.dataset.id,
+            {
+              type: 'object_contact',
+              data: [findResult1.dataset.image, findResult1.dataset.text, findResult1.dataset.contact],
+            },
+            startDisplay || 'N/A',
+            endDisplay || 'N/A',
+            (daysVal ? daysVal : '0') + ' day' + (+daysVal > 1 ? 's' : ''),
+            main.formatPrice(amountPaid),
+            main.fixText(priceRate),
+            'custom_datetime_today',
+          ];
+
+          main.createAtSectionOne(SECTION_NAME, columnsData, 2, async (createResult) => {
           main.createNotifDot(SECTION_NAME, 2);
 
           const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
@@ -1539,7 +1568,8 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           }
           updateCustomerStats();
           refreshDashboardStats();
-        });
+          });
+        })();
 
         main.showSection(SECTION_NAME, 2);
       } else {
@@ -1610,7 +1640,11 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          await response.json();
+          const serverResult = await response.json();
+          const restored = serverResult && serverResult.result ? serverResult.result : {};
+          const restoredType = (restored.customer_type || '').toLowerCase();
+          const uiCustomerType = restoredType.includes('monthly') ? 'Monthly - Active' : 'Daily';
+          const uiRate = main.fixText(String(restored.customer_rate || customer.dataset.custom3 || 'regular'));
           
           // Remove from archived tab and add to main customers tab
           main.deleteAtSectionOne(SECTION_NAME, 4, customerId);
@@ -1622,8 +1656,8 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
               type: 'object_contact',
               data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
             },
-            'Daily',
-            'Regular',
+            uiCustomerType,
+            uiRate,
             'custom_date_today',
           ];
           
@@ -1658,7 +1692,7 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
   }
 }
 
-export function cancelPendingTransaction(transactionId) {
+export function cancelPendingTransaction(transactionId, customerIdHint = null) {
   cancelPendingTransactionLoop(1);
 
   function cancelPendingTransactionLoop(tabIndex) {
@@ -1716,6 +1750,31 @@ export function cancelPendingTransaction(transactionId) {
         cancelPendingTransactionLoop(2);
       } else if (tabIndex == 1) {
         cancelPendingTransactionLoop(2);
+      } else {
+        // Fallback: if we didn't find by TID in any tab but we have a customer ID hint,
+        // force-clear pending flags in backend and try to update UI row by ID.
+        if (customerIdHint) {
+          try {
+            await fetch(`${API_BASE_URL}/inquiry/customers/pending/${customerIdHint}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ customer_type: 'daily', customer_tid: '', customer_pending: 0 }),
+            });
+          } catch (_) {}
+          try {
+            await fetch(`${API_BASE_URL}/inquiry/monthly/${customerIdHint}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+          } catch (_) {}
+
+          // Update UI by ID if present
+          main.findAtSectionOne(SECTION_NAME, customerIdHint, 'equal_id', 1, (row) => {
+            if (row) {
+              row.dataset.custom2 = main.fixText(CUSTOMER_TYPE[0].value);
+              row.children[2].innerHTML = row.dataset.custom2;
+              row.dataset.status = '';
+              row.dataset.tid = '';
+            }
+          });
+        }
       }
     });
   }

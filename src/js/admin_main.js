@@ -1829,7 +1829,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, callback 
   const btnsCellHeader = document.querySelector(
     `#${sectionName}-section-content [data-tabindex="${tabIndex}"] th:nth-child(${columnsData.length + 1})`
   );
-  btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`);
+  if (btnsCellHeader) btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`);
   newRow.appendChild(cell);
 
   tableRow.classList.add('hidden');
