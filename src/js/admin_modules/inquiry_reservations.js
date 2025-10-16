@@ -476,7 +476,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
     loadExistingReservations();
 
     main.updateDateAndTime(SECTION_NAME);
-    setInterval(main.updateDateAndTime, 10000);
+    setInterval(main.updateDateAndTime, 1000);
 
     setInterval(cleanupExpiredReservations, 60000);
   }
