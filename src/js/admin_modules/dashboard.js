@@ -1,6 +1,14 @@
 import main from '../admin_main.js';
 import accesscontrol from './maintenance_accesscontrol.js';
-import { API_BASE_URL } from '../_global.js';
+import { API_BASE_URL, getEmoji } from '../_global.js';
+import {
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  canCreateAnnouncement,
+  getAnnouncementCount,
+  getAnnouncements,
+} from '../landing_modules/announcements.js';
 
 // default codes:
 let mainBtn, subBtn;
@@ -33,9 +41,71 @@ document.addEventListener('newTab', function () {
 const maxAnnouncementCount = 3;
 let announcementCount = 0;
 
+// Initialize announcement count and load existing announcements on load
+document.addEventListener('ogfmsiAdminMainLoaded', async function () {
+  if (main.sharedState.sectionName != 'dashboard') return;
+  try {
+    announcementCount = await getAnnouncementCount();
+    await loadExistingAnnouncements();
+  } catch (error) {
+    console.error('Error loading announcements:', error);
+    announcementCount = 0;
+  }
+});
+
+// Load existing announcements from Firebase
+async function loadExistingAnnouncements() {
+  try {
+    const announcements = await getAnnouncements();
+
+    if (announcements.length > 0) {
+      // Hide the empty state
+      const emptyState = document.querySelector('.announcementBtn').parentElement.children[0];
+      if (emptyState) {
+        emptyState.classList.add('hidden');
+      }
+
+      // Show the sub button
+      if (subBtn) {
+        subBtn.classList.remove('hidden');
+      }
+
+      // Create DOM elements for each announcement
+      announcements.forEach((announcement) => {
+        const announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
+
+        // Convert Firebase data back to the format expected by injectDataToAnnouncementItem
+        const result = {
+          image: {
+            src: announcement.image.src,
+            type: announcement.image.type,
+            short: [
+              { value: announcement.title.top },
+              { value: announcement.title.highlight },
+              { value: announcement.title.bottom },
+            ],
+          },
+          large: [{ value: announcement.description }],
+          header: {
+            title: announcement.header.title,
+            subtitle: announcement.header.subtitle,
+          },
+        };
+
+        injectDataToAnnouncementItem(announcementBtn, result, announcement.id);
+        announcementBtn.classList.remove('hidden');
+        document.querySelector('.announcementBtn').parentElement.appendChild(announcementBtn);
+      });
+    }
+  } catch (error) {
+    console.error('Error loading existing announcements:', error);
+  }
+}
+
 // Handles creation, update, and deletion of announcements
-function mainBtnFunction() {
-  if (announcementCount == maxAnnouncementCount) {
+async function mainBtnFunction() {
+  const canCreate = await canCreateAnnouncement();
+  if (!canCreate) {
     main.toast('Delete an announcement first!', 'error');
     return;
   }
@@ -73,8 +143,8 @@ function mainBtnFunction() {
   };
 
   main.openModal(mainBtn, inputs, (result) => {
-    main.openConfirmationModal('Announce', () => {
-      createAnnouncement(result);
+    main.openConfirmationModal('Announce', async () => {
+      await createAnnouncementHandler(result);
       main.closeConfirmationModal();
     });
   });
@@ -82,43 +152,119 @@ function mainBtnFunction() {
   let announcementBtn;
 
   // Creates a new announcement
-  function createAnnouncement(result) {
-    announcementCount++;
-    announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
-    injectDataToAnnouncementItem(announcementBtn, result);
-    announcementBtn.parentElement.children[0].classList.add('hidden');
-    subBtn.classList.remove('hidden');
+  async function createAnnouncementHandler(result) {
+    try {
+      // Prepare announcement data for Firebase
+      const announcementData = {
+        title: {
+          top: result.image.short[0].value,
+          highlight: result.image.short[1].value,
+          bottom: result.image.short[2].value,
+        },
+        description: result.large[0].value,
+        image: {
+          src: result.image.src,
+          type: result.image.type,
+        },
+        header: {
+          title: result.header.title,
+          subtitle: result.header.subtitle,
+        },
+      };
 
-    main.toast('Successfully created announcement!', 'success');
-    main.closeModal();
+      // Save to Firebase
+      const announcementId = await createAnnouncement(announcementData);
+
+      // Update local count
+      announcementCount++;
+
+      // Create DOM element
+      announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
+      injectDataToAnnouncementItem(announcementBtn, result, announcementId);
+      announcementBtn.parentElement.children[0].classList.add('hidden');
+      subBtn.classList.remove('hidden');
+
+      main.toast('Successfully created announcement!', 'success');
+      main.closeModal();
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      main.toast('Failed to create announcement!', 'error');
+    }
   }
 
   // Updates an existing announcement
-  function updateAnnouncement(element, result) {
-    injectDataToAnnouncementItem(element, result);
+  async function updateAnnouncementHandler(element, result) {
+    try {
+      const announcementId = element.dataset.announcementId;
+      if (!announcementId) {
+        throw new Error('No announcement ID found');
+      }
 
-    main.toast('Successfully updated announcement!', 'info');
-    main.closeConfirmationModal();
-    main.closeModal();
+      // Prepare update data for Firebase
+      const updateData = {
+        title: {
+          top: result.image.short[0].value,
+          highlight: result.image.short[1].value,
+          bottom: result.image.short[2].value,
+        },
+        description: result.large[0].value,
+        image: {
+          src: result.image.src,
+          type: result.image.type,
+        },
+        header: {
+          title: result.header.title,
+          subtitle: result.header.subtitle,
+        },
+      };
+
+      // Update in Firebase
+      await updateAnnouncement(announcementId, updateData);
+
+      // Update DOM element
+      injectDataToAnnouncementItem(element, result, announcementId);
+
+      main.toast('Successfully updated announcement!', 'info');
+      main.closeConfirmationModal();
+      main.closeModal();
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      main.toast('Failed to update announcement!', 'error');
+    }
   }
 
   // Deletes an announcement
-  function deleteAnnouncement(element) {
-    announcementCount--;
-    if (announcementCount == 0) {
-      element.parentElement.children[0].classList.remove('hidden');
-      subBtn.classList.add('hidden');
+  async function deleteAnnouncementHandler(element) {
+    try {
+      const announcementId = element.dataset.announcementId;
+      if (!announcementId) {
+        throw new Error('No announcement ID found');
+      }
+
+      // Delete from Firebase
+      await deleteAnnouncement(announcementId);
+
+      // Update local count
+      announcementCount--;
+      if (announcementCount == 0) {
+        element.parentElement.children[0].classList.remove('hidden');
+        subBtn.classList.add('hidden');
+      }
+
+      // Remove DOM element
+      element.remove();
+
+      main.toast('Successfully deleted announcement!', 'error');
+      main.closeConfirmationModal();
+      main.closeModal();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      main.toast('Failed to delete announcement!', 'error');
     }
-
-    element.remove();
-
-    main.toast('Successfully deleted announcement!', 'error');
-    main.closeConfirmationModal();
-    main.closeModal();
   }
 
   // Injects announcement data into the UI
-  function injectDataToAnnouncementItem(element, result) {
+  function injectDataToAnnouncementItem(element, result, announcementId = null) {
     element.children[0].src = result.image.src;
     let title = '';
     element.children[2].querySelectorAll('p').forEach((p, i) => {
@@ -136,6 +282,11 @@ function mainBtnFunction() {
     result.footer.sub = `Delete ${getEmoji('⚠️')}`;
     element.dataset.description = result.large[0].value;
 
+    // Store announcement ID if provided
+    if (announcementId) {
+      element.dataset.announcementId = announcementId;
+    }
+
     element.addEventListener('mouseenter', () => {
       element.classList.add('flash-effect');
     });
@@ -147,14 +298,14 @@ function mainBtnFunction() {
         element,
         result,
         (updatedResult) => {
-          main.openConfirmationModal('Update announcement: ' + title, () => {
-            updateAnnouncement(element, updatedResult);
+          main.openConfirmationModal('Update announcement: ' + title, async () => {
+            await updateAnnouncementHandler(element, updatedResult);
             enqueueAnnouncement('Update');
           });
         },
         () =>
-          main.openConfirmationModal('Delete announcement: ' + title, () => {
-            deleteAnnouncement(element);
+          main.openConfirmationModal('Delete announcement: ' + title, async () => {
+            await deleteAnnouncementHandler(element);
             enqueueAnnouncement('Delete');
           })
       );
@@ -224,7 +375,7 @@ async function setupChartOne() {
     }
     const data = await response.json();
     const monthlyData = processMonthlyDataForChart(data.result);
-    
+
     setTimeout(() => {
       new Chart(context, {
         type: 'line',
@@ -314,7 +465,7 @@ async function setupChartTwo() {
     }
     const data = await response.json();
     const rateData = processCustomerRateData(data.result);
-    
+
     setTimeout(() => {
       new Chart(context, {
         type: 'pie',
@@ -371,13 +522,23 @@ async function setupChartTwo() {
 // Processes monthly pass data into counts of ACTIVE passes per start month
 function processMonthlyDataForChart(monthlyPasses) {
   const monthlyCounts = {
-    '01': 0, '02': 0, '03': 0, '04': 0, '05': 0, '06': 0,
-    '07': 0, '08': 0, '09': 0, '10': 0, '11': 0, '12': 0
+    '01': 0,
+    '02': 0,
+    '03': 0,
+    '04': 0,
+    '05': 0,
+    '06': 0,
+    '07': 0,
+    '08': 0,
+    '09': 0,
+    10: 0,
+    11: 0,
+    12: 0,
   };
-  
+
   if (!Array.isArray(monthlyPasses)) return Object.values(monthlyCounts);
-  
-  monthlyPasses.forEach(pass => {
+
+  monthlyPasses.forEach((pass) => {
     // Only count active passes
     if (Number(pass.customer_pending) !== 0) return;
     const startDate = new Date(pass.customer_start_date);
@@ -385,11 +546,20 @@ function processMonthlyDataForChart(monthlyPasses) {
     const month = String(startDate.getMonth() + 1).padStart(2, '0');
     monthlyCounts[month]++;
   });
-  
+
   return [
-    monthlyCounts['01'], monthlyCounts['02'], monthlyCounts['03'], monthlyCounts['04'],
-    monthlyCounts['05'], monthlyCounts['06'], monthlyCounts['07'], monthlyCounts['08'],
-    monthlyCounts['09'], monthlyCounts['10'], monthlyCounts['11'], monthlyCounts['12']
+    monthlyCounts['01'],
+    monthlyCounts['02'],
+    monthlyCounts['03'],
+    monthlyCounts['04'],
+    monthlyCounts['05'],
+    monthlyCounts['06'],
+    monthlyCounts['07'],
+    monthlyCounts['08'],
+    monthlyCounts['09'],
+    monthlyCounts['10'],
+    monthlyCounts['11'],
+    monthlyCounts['12'],
   ];
 }
 
@@ -397,15 +567,15 @@ function processMonthlyDataForChart(monthlyPasses) {
 function processCustomerRateData(customers) {
   let regular = 0;
   let student = 0;
-  
-  customers.forEach(customer => {
+
+  customers.forEach((customer) => {
     if (customer.customer_rate === 'regular') {
       regular++;
     } else if (customer.customer_rate === 'student') {
       student++;
     }
   });
-  
+
   return { regular, student };
 }
 
@@ -418,13 +588,13 @@ async function loadMonthlyGrowthData() {
     }
     const data = await response.json();
     const monthlyData = processMonthlyDataForChart(data.result);
-    
+
     const contentContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="1"]');
     if (contentContainer) {
       contentContainer.innerHTML = '<canvas id="dashboardChart1"></canvas>';
       setupChartOneWithRealData(monthlyData);
     }
-    
+
     // console.log('Monthly growth data loaded:', monthlyData);
   } catch (error) {
     console.error('Failed to load monthly growth data:', error);
@@ -484,65 +654,67 @@ function setupChartOneWithRealData(monthlyData) {
 // Loads upcoming renewals within 14 days
 async function loadUpcomingRenewals() {
   const existingDynamicRows = document.querySelectorAll('.dynamic-renewal-row');
-  existingDynamicRows.forEach(row => row.remove());
-  
+  existingDynamicRows.forEach((row) => row.remove());
+
   try {
     const [customersResponse, monthlyResponse] = await Promise.all([
       fetch(`${API_BASE_URL}/inquiry/customers`),
-      fetch(`${API_BASE_URL}/inquiry/monthly`)
+      fetch(`${API_BASE_URL}/inquiry/monthly`),
     ]);
-    
+
     if (!customersResponse.ok || !monthlyResponse.ok) {
       throw new Error(`HTTP error! status: ${customersResponse.status || monthlyResponse.status}`);
     }
-    
+
     const customersData = await customersResponse.json();
     const monthlyData = await monthlyResponse.json();
-    
+
     const customerMap = {};
-    customersData.result.forEach(customer => {
+    customersData.result.forEach((customer) => {
       customerMap[customer.customer_id] = customer;
     });
-    
+
     const today = new Date();
     const twoWeeksFromNow = new Date();
     twoWeeksFromNow.setDate(today.getDate() + 14);
-    
-    const upcomingRenewals = monthlyData.result.filter(monthlyCustomer => {
+
+    const upcomingRenewals = monthlyData.result.filter((monthlyCustomer) => {
       const endDate = new Date(monthlyCustomer.customer_end_date);
       return endDate >= today && endDate <= twoWeeksFromNow && monthlyCustomer.customer_pending === 0;
     });
-    
+
     const tabContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="2"]');
-    const emptyText = tabContainer ? tabContainer.querySelector('[id*="Empty"]') : document.getElementById('dashboardSectionOneListEmpty2');
-    
+    const emptyText = tabContainer
+      ? tabContainer.querySelector('[id*="Empty"]')
+      : document.getElementById('dashboardSectionOneListEmpty2');
+
     if (emptyText) {
       const tableBody = emptyText.parentElement;
       const allRows = Array.from(tableBody.querySelectorAll('tr'));
-      allRows.forEach(row => {
+      allRows.forEach((row) => {
         if (row !== emptyText) {
           row.remove();
         }
       });
-      
+
       if (upcomingRenewals.length > 0) {
         emptyText.classList.add('hidden');
       } else {
         emptyText.classList.remove('hidden');
         return;
       }
-      
-      upcomingRenewals.forEach(monthlyCustomer => {
+
+      upcomingRenewals.forEach((monthlyCustomer) => {
         const customer = customerMap[monthlyCustomer.customer_id];
         if (!customer) {
           console.warn(`Customer data not found for ID: ${monthlyCustomer.customer_id}`);
           return;
         }
-        
+
         const endDate = new Date(monthlyCustomer.customer_end_date);
         const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
         const daysText = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
-        
+
         const columnsData = [
           'id_' + customer.customer_id,
           {
@@ -550,18 +722,18 @@ async function loadUpcomingRenewals() {
             data: [
               customer.customer_image_url || '/src/images/client_logo.jpg',
               customer.customer_first_name + ' ' + customer.customer_last_name,
-              customer.customer_contact || 'N/A'
+              customer.customer_contact || 'N/A',
             ],
           },
           daysText,
         ];
-        
+
         main.createAtSectionOne('dashboard', columnsData, 2, (createResult) => {
           const renewBtn = createResult.querySelector('#renewBtn');
           if (renewBtn) {
             renewBtn.addEventListener('click', () => handleRenewal(customer.customer_id));
           }
-          
+
           createResult.dataset.customerId = customer.customer_id;
           createResult.dataset.endDate = monthlyCustomer.customer_end_date;
           createResult.dataset.daysLeft = daysLeft;
@@ -569,12 +741,14 @@ async function loadUpcomingRenewals() {
         });
       });
     }
-    
+
     console.log('Upcoming renewals loaded:', upcomingRenewals);
   } catch (error) {
     console.error('Failed to load upcoming renewals:', error);
     const tabContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="2"]');
-    const emptyText = tabContainer ? tabContainer.querySelector('[id*="Empty"]') : document.getElementById('dashboardSectionOneListEmpty2');
+    const emptyText = tabContainer
+      ? tabContainer.querySelector('[id*="Empty"]')
+      : document.getElementById('dashboardSectionOneListEmpty2');
     if (emptyText) {
       emptyText.classList.remove('hidden');
     }
@@ -592,7 +766,7 @@ function handleRenewal(customerId) {
 let dashboardStatsCache = {
   payments: [],
   monthlyCustomers: [],
-  reservations: []
+  reservations: [],
 };
 
 // Fetches and processes all dashboard stats data
@@ -600,7 +774,7 @@ async function loadDashboardStats() {
   try {
     // Fetch payment data for earnings calculations
     const paymentsResponse = await fetch(`${API_BASE_URL}/payment/complete`);
-    
+
     if (!paymentsResponse.ok) {
       throw new Error(`HTTP error! status: ${paymentsResponse.status}`);
     }
@@ -619,7 +793,7 @@ async function loadDashboardStats() {
       reservation_revenue: 0,
       overall_total_sales: 0,
       active_monthly_customers: 0,
-      active_reservations: 0
+      active_reservations: 0,
     });
   }
 }
@@ -632,7 +806,7 @@ async function computeAndUpdateDashboardStats() {
     reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
     overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
     active_monthly_customers: getActiveMonthlyCustomersCount(),
-    active_reservations: getActiveReservationsCount()
+    active_reservations: getActiveReservationsCount(),
   };
 
   updateDashboardStatsDisplay(stats);
@@ -644,17 +818,18 @@ function calculateGymRevenue(payments) {
 
   let totalGymRevenue = 0;
 
-  payments.forEach(payment => {
+  payments.forEach((payment) => {
     if (!payment) return;
-    
+
     // Check if payment is related to gym services (membership, monthly pass, etc.)
     const purpose = (payment.payment_purpose || '').toLowerCase();
-    const isGymService = purpose.includes('monthly') || 
-                        purpose.includes('membership') || 
-                        purpose.includes('gym') ||
-                        purpose.includes('pass') ||
-                        purpose.includes('subscription');
-    
+    const isGymService =
+      purpose.includes('monthly') ||
+      purpose.includes('membership') ||
+      purpose.includes('gym') ||
+      purpose.includes('pass') ||
+      purpose.includes('subscription');
+
     if (isGymService) {
       const paidCash = Number(payment.payment_amount_paid_cash) || 0;
       const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
@@ -678,9 +853,9 @@ async function calculateProductSales(payments) {
 
     let totalProductSales = 0;
 
-    salesPayments.forEach(payment => {
+    salesPayments.forEach((payment) => {
       if (!payment) return;
-      
+
       const paidCash = Number(payment.payment_amount_paid_cash) || 0;
       const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
       totalProductSales += paidCash + paidCashless;
@@ -699,17 +874,18 @@ function calculateReservationRevenue(payments) {
 
   let totalReservationRevenue = 0;
 
-  payments.forEach(payment => {
+  payments.forEach((payment) => {
     if (!payment) return;
-    
+
     // Check if payment is related to reservations
     const purpose = (payment.payment_purpose || '').toLowerCase();
-    const isReservation = purpose.includes('reservation') || 
-                         purpose.includes('booking') || 
-                         purpose.includes('facility') ||
-                         purpose.includes('class') ||
-                         purpose.includes('session');
-    
+    const isReservation =
+      purpose.includes('reservation') ||
+      purpose.includes('booking') ||
+      purpose.includes('facility') ||
+      purpose.includes('class') ||
+      purpose.includes('session');
+
     if (isReservation) {
       const paidCash = Number(payment.payment_amount_paid_cash) || 0;
       const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
@@ -726,9 +902,9 @@ function calculateOverallTotalSales(payments) {
 
   let totalSales = 0;
 
-  payments.forEach(payment => {
+  payments.forEach((payment) => {
     if (!payment) return;
-    
+
     const paidCash = Number(payment.payment_amount_paid_cash) || 0;
     const paidCashless = Number(payment.payment_amount_paid_cashless) || 0;
     totalSales += paidCash + paidCashless;
@@ -773,9 +949,9 @@ function updateDashboardStatsDisplay(stats) {
       const header = card.querySelector('.section-stats-h');
       const valueEl = card.querySelector('.section-stats-c');
       if (!header || !valueEl) return;
-      
+
       const label = (header.textContent || '').toLowerCase();
-      
+
       if (label.includes('overall') && label.includes('total') && label.includes('sales')) {
         valueEl.textContent = main.encodePrice(stats.overall_total_sales || 0);
       } else if (label.includes('gym') && label.includes('revenue')) {
@@ -813,7 +989,7 @@ export async function refreshDashboardStats() {
     reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
     overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
     active_monthly_customers: getActiveMonthlyCustomersCount(),
-    active_reservations: getActiveReservationsCount()
+    active_reservations: getActiveReservationsCount(),
   };
 
   updateDashboardStatsDisplay(stats);

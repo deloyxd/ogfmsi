@@ -484,109 +484,7 @@
           What's New at Fitworx Gym? Updates here!
         </h2>
 
-        <div class="grid gap-8 lg:grid-cols-3">
-          <!-- new equipment card -->
-          <div class="news-item">
-            <div
-              style="cursor: pointer"
-              data-color="orange"
-              class="redirect-to-demo rounded-lg border border-orange-500 bg-orange-200 p-6 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-600 dark:hover:shadow-orange-300"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-              <h3 class="mb-2 text-xl font-semibold text-red-500">
-                New Equipment Arrived
-              </h3>
-              <p class="text-red-500 text-opacity-70">
-                Latest additions including state-of-the-art treadmills and
-                premium weightlifting gear.
-              </p>
-            </div>
-          </div>
-          <!-- promotion card -->
-          <div class="news-item">
-            <div
-              style="cursor: pointer"
-              data-color="black"
-              class="redirect-to-login transform rounded-lg border border-gray-900 bg-gradient-to-br from-orange-500 to-red-500 p-6 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black dark:hover:shadow-orange-600"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="#F56226"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 class="mb-2 text-xl font-semibold text-white">
-                Special Offer
-              </h3>
-              <p class="text-white text-opacity-70">
-                Get 20% off on annual memberships when you sign up this month.
-                Limited time offer!
-              </p>
-            </div>
-          </div>
-          <!-- special program card -->
-          <div class="news-item">
-            <div
-              style="cursor: pointer"
-              data-color="orange"
-              class="redirect-to-demo transform rounded-lg border border-orange-500 bg-orange-200 p-6 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-600 dark:hover:shadow-orange-300"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 class="mb-2 text-xl font-semibold text-red-500">
-                New HIIT Classes
-              </h3>
-              <p class="text-red-500 text-opacity-70">
-                Join our newly launched high-intensity interval training
-                sessions with certified trainers.
-              </p>
-            </div>
-          </div>
+        <div id="announcements-container" class="grid gap-8 lg:grid-cols-3">
         </div>
       </section>
     </div>
@@ -3290,5 +3188,7 @@
     <!-- add new js here 👆 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
     <script src="/src/js/customer_modules/customer.calendar.js"></script>
+    <!-- announcement loader -->
+    <script type="module" src="/src/js/landing_modules/announcement-loader.js"></script>
   </body>
 </html>
