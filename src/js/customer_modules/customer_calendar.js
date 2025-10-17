@@ -931,7 +931,7 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
     body: JSON.stringify({
       payment_id: transactionId,
       payment_customer_id: customerId,
-      payment_purpose: 'Monthly registration fee',
+      payment_purpose: 'Facility reservation fee',
       payment_amount_to_pay: amount,
       payment_rate: rate,
       payment_method_hint: 'cashless',
