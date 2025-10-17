@@ -677,19 +677,6 @@ function mount() {
 
       const amount = calculateDynamicPrice(startVal, durationHours);
 
-      const reservation = {
-        id,
-        customerId,
-        customerName,
-        reservationType,
-        date: dateMMDDYYYY,
-        startTime: startVal,
-        endTime: endVal,
-        status: 'Pending',
-        amount,
-        tid: '',
-      };
-
       try {
         e.preventDefault();
         // Clear previous error if any and optionally update any price UI
@@ -700,7 +687,7 @@ function mount() {
         // Optionally set tid via updateReservationFE once you get a transactionId
         // await updateReservationFE(reservation.id, { tid: transactionId });
         const prepared = prepareFormData({ id, customerId, customerName, reservationType, dateMMDDYYYY, startVal, endVal, amount });
-        openPaymentModal(reservation, prepared);
+        openPaymentModal(prepared);
       } catch (err) {
         e.preventDefault();
         console.log(err)
@@ -710,7 +697,7 @@ function mount() {
   }
 }
 
-function openPaymentModal(reservation, preparedRegistrationData) {
+function openPaymentModal(preparedRegistrationData) {
   const totalAmount = preparedRegistrationData.get('amount');
   const totalLabel = `Total amount to pay: ₱${totalAmount}`;
 
@@ -856,7 +843,7 @@ function openPaymentModal(reservation, preparedRegistrationData) {
     }
 
     // Submit to backend (create customer, monthly record, and pending payment)
-    submitMonthlyRegistration(reservation, preparedRegistrationData, paymentData)
+    submitMonthlyRegistration(preparedRegistrationData, paymentData)
       .then(() => {
         close();
         openConfirmationModal();
@@ -885,9 +872,9 @@ function preparePaymentFormData(payload) {
   return data;
 }
 
-async function submitMonthlyRegistration(reservation, regData, payData) {
+async function submitMonthlyRegistration(regData, payData) {
   const amount = regData.get('amount');
-  const rate = 'regular';
+  const rate = 'Regular';
 
   // Generate ids similar to admin-side conventions
   const customerId = `U${Date.now()}`;

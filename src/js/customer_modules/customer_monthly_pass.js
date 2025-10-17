@@ -484,22 +484,22 @@ async function submitMonthlyRegistration(regData, payData) {
   }
   const profileDataUrl = await toDataUrl(/** @type {File|null} */ (regData.get('profile')));
 
-  // 1) Create customer (pending monthly)
-  await fetch(`${API_BASE_URL}/inquiry/customers`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      customer_id: customerId,
-      customer_image_url: profileDataUrl || '/src/images/client_logo.jpg',
-      customer_first_name: firstName || fullName,
-      customer_last_name: lastName,
-      customer_contact: String(regData.get('email') || ''),
-      customer_type: 'monthly',
-      customer_tid: transactionId,
-      customer_pending: 1,
-      customer_rate: rate,
-    }),
-  });
+  // // 1) Create customer (pending monthly)
+  // await fetch(`${API_BASE_URL}/inquiry/customers`, {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({
+  //     customer_id: customerId,
+  //     customer_image_url: profileDataUrl || '/src/images/client_logo.jpg',
+  //     customer_first_name: firstName || fullName,
+  //     customer_last_name: lastName,
+  //     customer_contact: String(regData.get('email') || ''),
+  //     customer_type: 'monthly',
+  //     customer_tid: transactionId,
+  //     customer_pending: 1,
+  //     customer_rate: rate,
+  //   }),
+  // });
 
   // 2) Create monthly record (pending)
   await fetch(`${API_BASE_URL}/inquiry/monthly`, {
