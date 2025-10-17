@@ -46,30 +46,6 @@ const state = {
   unsubscribe: null,
 };
 
-function toast(message, type) {
-  const colorSchemes = {
-    success: { bg: '#4CAF50', text: '#fff' },
-    error: { bg: '#F44336', text: '#fff' },
-    info: { bg: '#2196F3', text: '#fff' },
-    warning: { bg: '#FF9800', text: '#fff' },
-  };
-  Toastify({
-    text: message,
-    duration: 5000,
-    close: true,
-    gravity: 'top',
-    position: 'right',
-    backgroundColor: colorSchemes[type].bg,
-    stopOnFocus: false,
-    style: {
-      color: colorSchemes[type].text,
-      borderRadius: '8px',
-      padding: '12px 20px',
-      fontSize: '14px',
-    },
-  }).showToast();
-}
-
 function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 }
@@ -111,7 +87,6 @@ function getReservationCountForDate(mmddyyyy) {
 // -------------------------
 async function createReservationFE(reservation) {
   await setDoc(doc(db, 'reservations', reservation.id), reservation);
-  toast('Successfully reserved the slot!', 'success');
 }
 
 async function updateReservationFE(reservationId, updated) {
@@ -921,9 +896,6 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
   const startDate = String(regData.get('startDate'));
   const endDate = String(regData.get('endDate'));
 
-        await createReservationFE(reservation);
-        updatePriceDisplay(amount);
-
   // 3) Create pending payment with cashless hint and reference number
   await fetch(`${API_BASE_URL}/payment/pending`, {
     method: 'POST',
@@ -931,7 +903,7 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
     body: JSON.stringify({
       payment_id: transactionId,
       payment_customer_id: customerId,
-      payment_purpose: 'Facility reservation fee',
+      payment_purpose: `Online facility reservation fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
       payment_amount_to_pay: amount,
       payment_rate: rate,
       payment_method_hint: 'cashless',

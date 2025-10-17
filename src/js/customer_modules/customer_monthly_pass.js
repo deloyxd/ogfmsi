@@ -522,7 +522,7 @@ async function submitMonthlyRegistration(regData, payData) {
     body: JSON.stringify({
       payment_id: transactionId,
       payment_customer_id: customerId,
-      payment_purpose: 'Monthly registration fee',
+      payment_purpose: `Online monthly registration fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
       payment_amount_to_pay: amount,
       payment_rate: isStudent ? 'Student' : 'Regular',
       payment_method_hint: 'cashless',

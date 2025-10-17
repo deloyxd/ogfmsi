@@ -577,6 +577,7 @@ function activeRadioListener(title, input, container, inputGroup) {
 }
 
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
+  const isOnlineTransaction = purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
   const effectiveId = opts.displayId || id;
   const inputs = {
     header: {
@@ -590,14 +591,14 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         locked: true,
       },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
-      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price' },
-      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: true },
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
+      { placeholder: 'Payment amount', value: 0, required: true, autoformat: 'price', hidden: !isOnlineTransaction },
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
-      { placeholder: 'Reference number', value: 'N/A', required: true },
+      { placeholder: 'Reference number', value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A', required: true },
     ],
     radio: [
-      { label: 'Payment method', selected: 1, autoformat: { type: 'short', index: 11 } },
+      { label: 'Payment method', selected: isOnlineTransaction ? 2 : 1, autoformat: { type: 'short', index: 11 } },
       {
         icon: `${getEmoji('💵', 26)}`,
         title: 'Cash',
@@ -636,7 +637,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       // Auto-fill payment amount = amountToPay for one-tap completion
       const cashlessInput = document.querySelector('#input-short-8');
       const cashInput = document.querySelector('#input-short-7');
-      if (cashlessInput && (opts && opts.methodHint === 'cashless')) {
+      if (cashlessInput && ( isOnlineTransaction || (opts && opts.methodHint === 'cashless'))) {
         cashlessInput.value = String(Number(amountToPay) || 0);
         cashlessInput.dispatchEvent(new Event('input'));
       } else if (cashInput) {
@@ -872,7 +873,7 @@ export function cancelCheckinPayment(transactionId) {
 
 export function processReservationPayment(reservation, callback = () => {}) {
   const { firstName, lastName, fullName } = main.decodeName(reservation.name);
-  const purpose = `Reservation fee`;
+  const purpose = `Manual facility reservation fee`;
   const columnsData = [
     'id_T_random',
     {
