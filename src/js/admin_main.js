@@ -863,7 +863,7 @@ export async function showSection(sectionName, tabIndex = 1) {
     }
     sharedState.sectionName = sectionName;
     updateDateAndTime();
-    sharedState.intervalId = setInterval(updateDateAndTime, 10000);
+    sharedState.intervalId = setInterval(updateDateAndTime, 1000);
   }
 
   sharedState.activeTab = tabIndex;
@@ -1829,7 +1829,7 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, callback 
   const btnsCellHeader = document.querySelector(
     `#${sectionName}-section-content [data-tabindex="${tabIndex}"] th:nth-child(${columnsData.length + 1})`
   );
-  btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`);
+  if (btnsCellHeader) btnsCellHeader.classList.add(`w-[${totalBtnsCellWidth}px]`);
   newRow.appendChild(cell);
 
   tableRow.classList.add('hidden');
@@ -1879,7 +1879,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
               month: getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long',
               day: 'numeric',
             };
-            const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+            const timeOptions = { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true };
 
             let value = '';
             if (type === 'date' || type === 'datetime') {
@@ -2108,6 +2108,7 @@ export function encodeTime(time) {
   return time.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
+    second: '2-digit',
     hour12: true,
   });
 }
@@ -2139,7 +2140,7 @@ export function getDateOrTimeOrBoth() {
 
   // Time format
   const hour12 = prefs.timeFormat === '12h';
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12 });
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12 });
 
   // Date format
   const mm = String(now.getMonth() + 1).padStart(2, '0');

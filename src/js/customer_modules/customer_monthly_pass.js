@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../_global.js';
+
 const BUTTON_SELECTOR = '#subscription-form';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -221,16 +223,44 @@ function openRegistrationModal() {
       return;
     }
 
-    const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
-    console.log('[MonthlyPass] Prepared FormData for submission', debugFormData(prepared));
-    close();
-    openPaymentModal(prepared);
+    // Duplicate validation against existing customers (admin side)
+    validateDuplicateCustomer(memberName)
+      .then((dup) => {
+        if (dup) {
+          msg.textContent = `A customer named "${memberName}" already exists. Please use a different name or contact admin.`;
+          try {
+            if (typeof Toastify === 'function') {
+              Toastify({
+                text: 'Customer already exists!',
+                duration: 3000,
+                gravity: 'top',
+                position: 'right',
+                close: true,
+              }).showToast();
+            }
+          } catch (_) {}
+          return;
+        }
+        const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
+        console.log('[MonthlyPass] Prepared FormData for submission', debugFormData(prepared));
+        close();
+        openPaymentModal(prepared);
+      })
+      .catch(() => {
+        // On error, allow to proceed rather than block UX
+        const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
+        close();
+        openPaymentModal(prepared);
+      });
   });
 }
 
 function openPaymentModal(preparedRegistrationData) {
   const totalAmount = preparedRegistrationData.get('membershipType') === 'student' ? 850 : 950;
-  const totalLabel = preparedRegistrationData.get('membershipType') === 'student' ? 'Total for Student: ₱850' : 'Total for Regular: ₱950';
+  const totalLabel =
+    preparedRegistrationData.get('membershipType') === 'student'
+      ? 'Total for Student: ₱850'
+      : 'Total for Regular: ₱950';
 
   const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="monthlyPassPaymentModal">
@@ -287,7 +317,9 @@ function openPaymentModal(preparedRegistrationData) {
   // 13-digit limit for GCash Reference Number
   const gcashRefInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashRef'));
   if (gcashRefInput) {
-    try { gcashRefInput.maxLength = 13; } catch (_) {}
+    try {
+      gcashRefInput.maxLength = 13;
+    } catch (_) {}
     gcashRefInput.setAttribute('inputmode', 'numeric');
     gcashRefInput.addEventListener('input', () => {
       const digitsOnly = String(gcashRefInput.value).replace(/\D/g, '');
@@ -295,7 +327,13 @@ function openPaymentModal(preparedRegistrationData) {
         try {
           // Prefer toast if available
           if (typeof Toastify === 'function') {
-            Toastify({ text: 'Reference number max is 13 digits', duration: 3000, gravity: 'top', position: 'right', close: true }).showToast();
+            Toastify({
+              text: 'Reference number max is 13 digits',
+              duration: 3000,
+              gravity: 'top',
+              position: 'right',
+              close: true,
+            }).showToast();
           }
         } catch (_) {}
       }
@@ -336,7 +374,13 @@ function openPaymentModal(preparedRegistrationData) {
       msg.textContent = 'Reference number must be exactly 13 digits.';
       try {
         if (typeof Toastify === 'function') {
-          Toastify({ text: 'Reference number must be exactly 13 digits', duration: 3000, gravity: 'top', position: 'right', close: true }).showToast();
+          Toastify({
+            text: 'Reference number must be exactly 13 digits',
+            duration: 3000,
+            gravity: 'top',
+            position: 'right',
+            close: true,
+          }).showToast();
         }
       } catch (_) {}
       return;
@@ -374,8 +418,16 @@ function openPaymentModal(preparedRegistrationData) {
     paymentData.forEach((v, k) => unified.set('pay_' + k, v));
     console.log('[MonthlyPass] Unified FormData ready for API', debugFormData(unified));
 
-    close();
-    openConfirmationModal(preparedRegistrationData.get('membershipType'));
+    // Submit to backend (create customer, monthly record, and pending payment)
+    submitMonthlyRegistration(preparedRegistrationData, paymentData)
+      .then(() => {
+        close();
+        openConfirmationModal(preparedRegistrationData.get('membershipType'));
+      })
+      .catch((err) => {
+        console.error('[MonthlyPass] Submission failed', err);
+        if (msg) msg.textContent = 'Submission failed. Please try again.';
+      });
   });
 }
 
@@ -386,6 +438,81 @@ function preparePaymentFormData(payload) {
   data.set('gcashAmount', payload.gcashAmount);
   data.set('totalExpected', String(payload.totalAmount));
   return data;
+}
+
+async function submitMonthlyRegistration(regData, payData) {
+  const isStudent = String(regData.get('membershipType')) === 'student';
+  const amount = isStudent ? 850 : 950;
+  const rate = isStudent ? 'student' : 'regular';
+
+  // Generate ids similar to admin-side conventions
+  const customerId = `U${Date.now()}`;
+  const transactionId = `T${Date.now()}`;
+
+  const fullName = String(regData.get('memberName') || '').trim();
+  const [firstName, ...lastParts] = fullName.split(/\s+/);
+  const lastName = lastParts.join(' ') || '';
+  const startDate = String(regData.get('startDate'));
+  const endDate = String(regData.get('endDate'));
+
+  // Prepare profile image as data URL (fallback to logo)
+  async function toDataUrl(file) {
+    return new Promise((resolve) => {
+      if (!file) return resolve('');
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  }
+  const profileDataUrl = await toDataUrl(/** @type {File|null} */ (regData.get('profile')));
+
+  // 1) Create customer (pending monthly)
+  await fetch(`${API_BASE_URL}/inquiry/customers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_id: customerId,
+      customer_image_url: profileDataUrl || '/src/images/client_logo.jpg',
+      customer_first_name: firstName || fullName,
+      customer_last_name: lastName,
+      customer_contact: String(regData.get('email') || ''),
+      customer_type: 'monthly',
+      customer_tid: transactionId,
+      customer_pending: 1,
+      customer_rate: rate,
+    }),
+  });
+
+  // 2) Create monthly record (pending)
+  await fetch(`${API_BASE_URL}/inquiry/monthly`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_id: customerId,
+      customer_start_date: startDate,
+      customer_end_date: endDate,
+      customer_months: 1,
+      customer_tid: transactionId,
+      customer_pending: 1,
+    }),
+  });
+
+  // 3) Create pending payment with cashless hint and reference number
+  await fetch(`${API_BASE_URL}/payment/pending`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      payment_id: transactionId,
+      payment_customer_id: customerId,
+      payment_purpose: 'Monthly registration fee',
+      payment_amount_to_pay: amount,
+      payment_rate: isStudent ? 'Student' : 'Regular',
+      payment_method_hint: 'cashless',
+      payment_ref: String(payData.get('gcashRef') || ''),
+      payment_source: 'customer_portal',
+    }),
+  });
 }
 
 function openConfirmationModal(membershipType) {
@@ -503,4 +630,26 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// Check duplicate by querying admin API and comparing normalized names
+async function validateDuplicateCustomer(fullName) {
+  try {
+    const resp = await fetch(`${API_BASE_URL}/inquiry/customers`);
+    if (!resp.ok) return false;
+    const data = await resp.json();
+    const list = Array.isArray(data.result) ? data.result : [];
+    const norm = normalizeName(fullName);
+    return list.some((c) => normalizeName(`${c.customer_first_name || ''} ${c.customer_last_name || ''}`) === norm);
+  } catch (_) {
+    return false;
+  }
+}
+
+function normalizeName(n) {
+  return String(n || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

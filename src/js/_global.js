@@ -9,9 +9,14 @@ export const playSFX = (sfxid) => {
   sfx.play();
 };
 
+export const getEmoji = (emoji, size = 20) => {
+  return emoji;
+};
+
 export default {
   API_BASE_URL,
   playSFX,
+  getEmoji,
 };
 
 /* tailwind: dark mode color palette */

@@ -46,25 +46,48 @@ router.put('/archived/:id', async (req, res) => {
   }
 });
 
-// PUT unarchive customer (restore to daily type)
+// PUT unarchive customer (restore to previous active state)
 router.put('/unarchive/:id', async (req, res) => {
   const { id } = req.params;
 
-  const query = `
-    UPDATE customer_tbl 
-    SET customer_type = 'daily'
-    WHERE customer_id = ?
-  `;
-
   try {
-    const result = await db.query(query, [id]);
+    // Determine if the customer currently has an active monthly subscription
+    const [activeMonthly] = await db.query(
+      `
+        SELECT 1
+        FROM customer_monthly_tbl
+        WHERE customer_id = ?
+          AND customer_end_date >= CURDATE()
+          AND customer_pending = 0
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+      [id]
+    );
+
+    const restoreType = activeMonthly ? 'monthly' : 'daily';
+
+    const result = await db.query(
+      `
+        UPDATE customer_tbl 
+        SET customer_type = ?, customer_pending = CASE WHEN ? = 'monthly' THEN 0 ELSE customer_pending END
+        WHERE customer_id = ?
+      `,
+      [restoreType, restoreType, id]
+    );
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Customer not found' });
-    } else {
-      res
-        .status(200)
-        .json({ message: 'Customer unarchived successfully', result: { customer_id: id, customer_type: 'daily' } });
     }
+
+    // Return the latest customer state
+    const rows = await db.query('SELECT * FROM customer_tbl WHERE customer_id = ? LIMIT 1', [id]);
+    const customer = rows && rows[0] ? rows[0] : { customer_id: id, customer_type: restoreType };
+
+    return res.status(200).json({
+      message: 'Customer unarchived successfully',
+      result: customer,
+    });
   } catch (error) {
     console.error('Unarchiving customer error:', error);
     return res.status(500).json({ error: 'Unarchiving customer failed' });

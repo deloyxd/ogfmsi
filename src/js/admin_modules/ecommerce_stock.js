@@ -851,7 +851,7 @@ async function deleteProduct(result) {
       if (response.ok) {
         const now = new Date();
         const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
 
         logAction(
           'Delete product',
