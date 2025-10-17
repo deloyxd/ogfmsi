@@ -234,8 +234,7 @@ router.put('/products/:id/stock', async (req, res) => {
     }
 
     // Update product quantity and stock status
-    const updateQuery =
-      'UPDATE ecommerce_products_tbl SET quantity = ?, stock_status = ? WHERE product_id = ?';
+    const updateQuery = 'UPDATE ecommerce_products_tbl SET quantity = ?, stock_status = ? WHERE product_id = ?';
 
     await db.query(updateQuery, [newQuantity, stock_status, id]);
 
@@ -260,18 +259,41 @@ router.put('/products/:id/dispose', async (req, res) => {
   const { id } = req.params;
   const { disposal_status, disposal_reason, disposal_notes, disposed_at } = req.body;
 
-  const query = `
-    UPDATE ecommerce_products_tbl 
-    SET disposal_status = ?, disposal_reason = ?, disposal_notes = ?, disposed_at = ? 
-    WHERE product_id = ?
-  `;
+  // Validate required fields
+  if (!disposal_status) {
+    return res.status(400).json({ error: 'disposal_status is required' });
+  }
+
+  if (!disposal_reason) {
+    return res.status(400).json({ error: 'disposal_reason is required' });
+  }
+
+  // Validate disposal_status value
+  const validStatuses = ['Active', 'Disposed'];
+  if (!validStatuses.includes(disposal_status)) {
+    return res.status(400).json({ error: 'disposal_status must be either "Active" or "Disposed"' });
+  }
+
+  // First check if product exists
+  const checkQuery = 'SELECT product_id FROM ecommerce_products_tbl WHERE product_id = ?';
 
   try {
+    const checkResult = await db.query(checkQuery, [id]);
+    if (!checkResult || checkResult.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const query = `
+      UPDATE ecommerce_products_tbl 
+      SET disposal_status = ?, disposal_reason = ?, disposal_notes = ?, disposed_at = ? 
+      WHERE product_id = ?
+    `;
+
     const result = await db.query(query, [
       disposal_status,
-      disposal_reason,
-      disposal_notes,
-      disposed_at,
+      disposal_reason || null,
+      disposal_notes || null,
+      disposed_at || null,
       id,
     ]);
 
