@@ -782,6 +782,9 @@ function openPaymentModal(reservation, preparedRegistrationData) {
   // });
   document.getElementById('mpPayCancel').addEventListener('click', close);
   document.getElementById('mpPaySubmit').addEventListener('click', () => {
+    if (document.getElementById('mpPaySubmit').disabled) {
+      return;
+    }
     const form = /** @type {HTMLFormElement|null} */ (document.getElementById('paymentForm'));
     const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
     if (!form || !msg) return;
