@@ -396,6 +396,7 @@ async function loadSectionSilently(sectionName) {
       }
 
       async function loadContent() {
+        const screenHeight = window.innerHeight;
         const sectionOne = document.getElementById(`${sectionName}_tab`).parentElement;
         const sectionTwo = document.getElementById(`${sectionName}SectionContent`).children[1];
         setupSectionOne();
@@ -490,7 +491,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? 500 + 106 : 500}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? screenHeight - 408 + 106 : screenHeight - 408}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
@@ -529,14 +530,17 @@ async function loadSectionSilently(sectionName) {
             sectionOne.appendChild(clone);
 
             if (statsDisabled) {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${530 + 132}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${530 + 132}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 378 + 132}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 378 + 132}px]`);
+            } else {
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 358}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 358}px]`);
             }
           }
         }
 
         function setupSectionTwo() {
-          let totalSectionTwoListContainerHeight = 534;
+          let totalSectionTwoListContainerHeight = screenHeight - 374;
           if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].innerHTML = dataset['sectiontwotitletexts'][0];
