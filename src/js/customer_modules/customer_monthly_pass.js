@@ -104,24 +104,26 @@ function openRegistrationModal() {
             </div>
           </div>
 
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1" for="memberName">Member Name</label>
-            <input id="memberName" name="memberName" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1" for="email">Email Address</label>
-            <input id="email" name="email" type="email" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
-          </div>
-
           <div id="studentFields" class="hidden">
-            <label class="block text-xs font-semibold text-gray-700 mb-1" for="studentId">Student ID Picture (required for student)</label>
-            <input id="studentId" name="studentId" type="file" accept="image/*" class="w-full text-sm" />
+            <label class="block text-xs font-semibold text-gray-700 mb-1" for="studentId">
+              Student ID Picture <span class="text-red-500">(required for student)</span>
+            </label>
+            <div class="relative w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white">
+              <input id="studentId" name="studentId" type="file" accept="image/*"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <span class="block text-gray-500">Choose image…</span>
+            </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1" for="profile">Profile Picture (required)</label>
-            <input id="profile" name="profile" type="file" accept="image/*" class="w-full text-sm" />
+            <label class="block text-xs font-semibold text-gray-700 mb-1" for="profile">
+              Profile Picture <span class="text-red-500">(required)</span>
+            </label>
+            <div class="relative w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white">
+              <input id="profile" name="profile" type="file" accept="image/*"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <span class="block text-gray-500">Choose image…</span>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -137,6 +139,16 @@ function openRegistrationModal() {
         </div>
       </form>
     `;
+
+          // <div>
+          //   <label class="block text-xs font-semibold text-gray-700 mb-1" for="memberName">Member Name</label>
+          //   <input id="memberName" name="memberName" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+          // </div>
+
+          // <div>
+          //   <label class="block text-xs font-semibold text-gray-700 mb-1" for="email">Email Address</label>
+          //   <input id="email" name="email" type="email" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+          // </div>
 
   const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="monthlyPassRegistrationModal">
@@ -195,6 +207,17 @@ function openRegistrationModal() {
     updateVariant();
   }
 
+  form?.addEventListener("change", function (e) {
+    const target = /** @type {HTMLInputElement} */ (e.target);
+    if (target.type === "file") {
+      const label = target.nextElementSibling;
+      const fileName = target.files?.[0]?.name || "Choose image…";
+      if (label && label.tagName === "SPAN") {
+        label.textContent = fileName;
+      }
+    }
+  });
+
   document.getElementById('mpRegSubmit').addEventListener('click', () => {
     const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
     if (!form || !msg) return;
@@ -206,14 +229,14 @@ function openRegistrationModal() {
     const startDate = /** @type {HTMLInputElement} */ (form.querySelector('#startDate'))?.value;
     const endDate = /** @type {HTMLInputElement} */ (form.querySelector('#endDate'))?.value;
 
-    if (!memberName) {
-      msg.textContent = 'Please enter the Member Name.';
-      return;
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      msg.textContent = 'Please enter a valid Email Address.';
-      return;
-    }
+    // if (!memberName) {
+    //   msg.textContent = 'Please enter the Member Name.';
+    //   return;
+    // }
+    // if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    //   msg.textContent = 'Please enter a valid Email Address.';
+    //   return;
+    // }
     if (!profile) {
       msg.textContent = 'Profile Picture is required.';
       return;
@@ -224,34 +247,9 @@ function openRegistrationModal() {
     }
 
     // Duplicate validation against existing customers (admin side)
-    validateDuplicateCustomer(memberName)
-      .then((dup) => {
-        if (dup) {
-          msg.textContent = `A customer named "${memberName}" already exists. Please use a different name or contact admin.`;
-          try {
-            if (typeof Toastify === 'function') {
-              Toastify({
-                text: 'Customer already exists!',
-                duration: 3000,
-                gravity: 'top',
-                position: 'right',
-                close: true,
-              }).showToast();
-            }
-          } catch (_) {}
-          return;
-        }
-        const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
-        console.log('[MonthlyPass] Prepared FormData for submission', debugFormData(prepared));
-        close();
-        openPaymentModal(prepared);
-      })
-      .catch(() => {
-        // On error, allow to proceed rather than block UX
         const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
         close();
         openPaymentModal(prepared);
-      });
   });
 }
 
@@ -352,9 +350,9 @@ function openPaymentModal(preparedRegistrationData) {
     }, 300);
   };
 
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) close();
-  });
+  // modal.addEventListener('click', (e) => {
+  //   if (e.target === modal) close();
+  // });
   document.getElementById('mpPayCancel').addEventListener('click', close);
   document.getElementById('mpPaySubmit').addEventListener('click', () => {
     const form = /** @type {HTMLFormElement|null} */ (document.getElementById('paymentForm'));

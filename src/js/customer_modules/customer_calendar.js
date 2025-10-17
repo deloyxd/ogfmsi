@@ -724,12 +724,200 @@ function mount() {
         updatePriceDisplay(amount);
         // Optionally set tid via updateReservationFE once you get a transactionId
         // await updateReservationFE(reservation.id, { tid: transactionId });
+        const prepared = prepareFormData({ id, customerId, customerName, reservationType, dateMMDDYYYY, startVal, endVal });
+        openPaymentModal(prepared);
       } catch (err) {
         e.preventDefault();
+        console.log(err)
         showError('Error creating reservation. Please try again.');
       }
     });
   }
+}
+
+function openPaymentModal(preparedRegistrationData) {
+  const totalAmount = 100;
+  const totalLabel = `Total amount to pay: ₱${totalAmount}`;
+
+  const modalHTML = `
+      <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="monthlyPassPaymentModal">
+        <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+          <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-orange-500 to-orange-800 p-4 text-center text-white">
+            <p class="text-xl font-medium">💳 Payment Details (GCash)</p>
+          </div>
+          <div class="p-6 text-left text-sm text-gray-800 space-y-3">
+            <p class="font-semibold">${totalLabel}</p>
+            <p>Scan QR Code below via GCash</p>
+            <div class="flex items-center justify-center">
+              <img src="/src/images/qr.jpg" alt="GCash QR Code" class="max-h-56 rounded-md border" />
+            </div>
+            <div class="space-y-1">
+              <p class="font-semibold">Account Details:</p>
+              <p>Name: Enzo Daniela</p>
+              <p>Number: 09633226873</p>
+            </div>
+            <form id="paymentForm" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1" for="gcashRef">GCash Reference Number</label>
+                <input id="gcashRef" name="gcashRef" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1" for="gcashName">Account Name</label>
+                <input id="gcashName" name="gcashName" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1" for="gcashAmount">Amount Paid</label>
+                <input id="gcashAmount" name="gcashAmount" type="text" inputmode="decimal" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="${totalAmount}" value="0" required />
+              </div>
+              <p class="text-xs text-gray-600">Please ensure all details are correct before submitting. Payment verification may take a few minutes.</p>
+              <p class="inline-validation-msg mt-2 text-xs text-red-600"></p>
+            </form>
+          </div>
+          <div class="flex gap-3 p-6">
+            <button type="button" id="mpPayCancel" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
+            <button type="button" id="mpPaySubmit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600">Submit Payment</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('monthlyPassPaymentModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  // 13-digit limit for GCash Reference Number
+  const gcashRefInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashRef'));
+  if (gcashRefInput) {
+    try {
+      gcashRefInput.maxLength = 13;
+    } catch (_) {}
+    gcashRefInput.setAttribute('inputmode', 'numeric');
+    gcashRefInput.addEventListener('input', () => {
+      const digitsOnly = String(gcashRefInput.value).replace(/\D/g, '');
+      if (digitsOnly.length > 13) {
+        try {
+          // Prefer toast if available
+          if (typeof Toastify === 'function') {
+            Toastify({
+              text: 'Reference number max is 13 digits',
+              duration: 3000,
+              gravity: 'top',
+              position: 'right',
+              close: true,
+            }).showToast();
+          }
+        } catch (_) {}
+      }
+      gcashRefInput.value = digitsOnly.slice(0, 13);
+    });
+  }
+
+  const close = () => {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  };
+
+  // modal.addEventListener('click', (e) => {
+  //   if (e.target === modal) close();
+  // });
+  document.getElementById('mpPayCancel').addEventListener('click', close);
+  document.getElementById('mpPaySubmit').addEventListener('click', () => {
+    const form = /** @type {HTMLFormElement|null} */ (document.getElementById('paymentForm'));
+    const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
+    if (!form || !msg) return;
+    const gcashRef = /** @type {HTMLInputElement} */ (form.querySelector('#gcashRef'))?.value?.trim();
+    const gcashName = /** @type {HTMLInputElement} */ (form.querySelector('#gcashName'))?.value?.trim();
+    const gcashAmountRaw = /** @type {HTMLInputElement} */ (form.querySelector('#gcashAmount'))?.value?.trim();
+
+    if (!gcashRef || !gcashName || !gcashAmountRaw) {
+      msg.textContent = 'Please fill in all payment details.';
+      return;
+    }
+
+    const refDigits = String(gcashRef).replace(/\D/g, '');
+    if (refDigits.length !== 13) {
+      msg.textContent = 'Reference number must be exactly 13 digits.';
+      try {
+        if (typeof Toastify === 'function') {
+          Toastify({
+            text: 'Reference number must be exactly 13 digits',
+            duration: 3000,
+            gravity: 'top',
+            position: 'right',
+            close: true,
+          }).showToast();
+        }
+      } catch (_) {}
+      return;
+    }
+
+    const normalizeAmount = (val) => {
+      const cleaned = String(val).replace(/[^0-9.]/g, '');
+      const parts = cleaned.split('.');
+      const normalized = parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+      const num = Number(normalized);
+      return Number.isFinite(num) ? num : NaN;
+    };
+
+    const gcashAmountNum = normalizeAmount(gcashAmountRaw);
+    if (!Number.isFinite(gcashAmountNum)) {
+      msg.textContent = 'Please enter a valid amount (numbers only).';
+      return;
+    }
+    if (Math.abs(gcashAmountNum - totalAmount) > 0.009) {
+      msg.textContent = `Amount must be exactly ₱${totalAmount}.`;
+      return;
+    }
+
+    const paymentData = preparePaymentFormData({
+      gcashRef,
+      gcashName,
+      gcashAmount: String(totalAmount),
+      totalAmount,
+    });
+    console.log('[MonthlyPass] Prepared Payment FormData', debugFormData(paymentData));
+
+    // Example merging for future submission
+    const unified = new FormData();
+    preparedRegistrationData.forEach((v, k) => unified.set('reg_' + k, v));
+    paymentData.forEach((v, k) => unified.set('pay_' + k, v));
+    console.log('[MonthlyPass] Unified FormData ready for API', debugFormData(unified));
+
+    // Submit to backend (create customer, monthly record, and pending payment)
+    submitMonthlyRegistration(preparedRegistrationData, paymentData)
+      .then(() => {
+        close();
+        openConfirmationModal(preparedRegistrationData.get('membershipType'));
+      })
+      .catch((err) => {
+        console.error('[MonthlyPass] Submission failed', err);
+        if (msg) msg.textContent = 'Submission failed. Please try again.';
+      });
+  });
+}
+
+function prepareFormData(payload) {
+  const data = new FormData();
+  data.set('id', payload.id);
+  data.set('customerId', payload.customerId);
+  data.set('customerName', payload.customerName);
+  data.set('reservationType', payload.reservationType);
+  data.set('dateMMDDYYYY', payload.dateMMDDYYYY);
+  data.set('startVal', payload.startVal);
+  data.set('endVal', payload.endVal);
+  return data;
 }
 
 function initializeCalendar() {
