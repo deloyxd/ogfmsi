@@ -416,6 +416,17 @@ function openPaymentModal(preparedRegistrationData) {
     paymentData.forEach((v, k) => unified.set('pay_' + k, v));
     console.log('[MonthlyPass] Unified FormData ready for API', debugFormData(unified));
 
+    // Provide user feedback during submission
+    const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
+    const cancelBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPayCancel'));
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+    }
+    if (cancelBtn) {
+      cancelBtn.disabled = true;
+    }
+
     // Submit to backend (create customer, monthly record, and pending payment)
     submitMonthlyRegistration(preparedRegistrationData, paymentData)
       .then(() => {
@@ -425,6 +436,14 @@ function openPaymentModal(preparedRegistrationData) {
       .catch((err) => {
         console.error('[MonthlyPass] Submission failed', err);
         if (msg) msg.textContent = 'Submission failed. Please try again.';
+        // Re-enable buttons on failure
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Payment';
+        }
+        if (cancelBtn) {
+          cancelBtn.disabled = false;
+        }
       });
   });
 }
