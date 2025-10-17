@@ -342,6 +342,15 @@ function createDayElement(day, month, year) {
     if (bookingDateInput) {
       bookingDateInput.value = `${monthNames[month]} ${day}, ${year}`;
     }
+
+    // Open modal listing reservations for this date only if there is at least 1 reservation
+    const mm = String(month + 1).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    const dateStr = `${mm}-${dd}-${year}`;
+    const countForDay = getReservationCountForDate(dateStr);
+    if (countForDay > 0) {
+      openDateReservationsModal(dateStr);
+    }
   });
 
   // Show bookmark on hover for past days
@@ -867,6 +876,96 @@ function openPaymentModal(reservation, preparedRegistrationData) {
         }
       });
   });
+}
+
+// -------------------------
+// Date Reservations Modal (customer-facing)
+// -------------------------
+function openDateReservationsModal(dateMMDDYYYY) {
+  try {
+    const modalRoot = document.getElementById('customerModalRoot') || document.body;
+    const [mm, dd, yyyy] = (dateMMDDYYYY || '').split('-');
+    const humanDate = (() => {
+      const mIdx = Math.max(0, parseInt(mm, 10) - 1);
+      const dNum = parseInt(dd, 10);
+      const yNum = parseInt(yyyy, 10);
+      if (!Number.isFinite(mIdx) || !Number.isFinite(dNum) || !Number.isFinite(yNum)) return dateMMDDYYYY;
+      return `${monthNames[mIdx]} ${dNum}, ${yNum}`;
+    })();
+
+    const reservationsForDay = state.reservations
+      .filter((r) => r?.date === dateMMDDYYYY)
+      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+    const listItems = reservationsForDay.length
+      ? reservationsForDay
+          .map((r) => {
+            const status = String(r.status || 'Pending');
+            const statusColor =
+              status === 'Pending'
+                ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                : 'bg-green-100 text-green-800 border-green-200';
+            const time = `${r.startTime || '--:--'} – ${r.endTime || '--:--'}`;
+            const type = r.reservationType || '—';
+            return `
+              <li class="flex items-start justify-between gap-3 rounded-md border p-3 text-sm">
+                <div class="flex flex-col">
+                  <span class="font-semibold text-gray-800">${time}</span>
+                  <span class="text-gray-600">${type}</span>
+                </div>
+                <span class="whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${statusColor}">${status}</span>
+              </li>`;
+          })
+          .join('')
+      : `<li class="rounded-md border border-dashed p-4 text-center text-sm text-gray-500">No reservations found for this date.</li>`;
+
+    const modalHTML = `
+      <div class="fixed inset-0 z-50 hidden h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300" id="dateReservationsModal">
+        <div class="m-auto w-full max-w-lg -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between rounded-t-2xl bg-gradient-to-br from-orange-500 to-orange-800 p-4 text-white">
+            <p class="text-base sm:text-lg font-medium">📅 Reservations on ${humanDate}</p>
+            <button type="button" class="rounded-md bg-white/20 px-2 py-1 text-sm hover:bg-white/30" id="dateResClose">Close</button>
+          </div>
+          <div class="p-4 sm:p-6">
+            <ul class="flex flex-col gap-2">
+              ${listItems}
+            </ul>
+          </div>
+        </div>
+      </div>`;
+
+    // Ensure only one instance at a time
+    document.getElementById('dateReservationsModal')?.remove();
+    modalRoot.insertAdjacentHTML('beforeend', modalHTML);
+
+    const modal = document.getElementById('dateReservationsModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => {
+      modal.classList.add('opacity-100');
+      modal.children[0].classList.remove('-translate-y-6');
+      modal.children[0].classList.add('scale-100');
+    }, 10);
+
+    const close = () => {
+      modal.classList.remove('opacity-100');
+      modal.children[0].classList.add('-translate-y-6');
+      modal.children[0].classList.remove('scale-100');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.remove();
+      }, 300);
+    };
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) close();
+    });
+    modal.querySelector('#dateResClose')?.addEventListener('click', close);
+  } catch (_) {
+    // no-op
+  }
 }
 
 function preparePaymentFormData(payload) {
