@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../_global.js';
+
 import { db } from '../firebase.js';
 import {
   collection,
@@ -715,17 +717,15 @@ function mount() {
 
       try {
         e.preventDefault();
-        await createReservationFE(reservation);
         // Clear previous error if any and optionally update any price UI
         if (timeError) {
           timeError.textContent = '';
           timeError.classList.add('hidden');
         }
-        updatePriceDisplay(amount);
         // Optionally set tid via updateReservationFE once you get a transactionId
         // await updateReservationFE(reservation.id, { tid: transactionId });
-        const prepared = prepareFormData({ id, customerId, customerName, reservationType, dateMMDDYYYY, startVal, endVal });
-        openPaymentModal(prepared);
+        const prepared = prepareFormData({ id, customerId, customerName, reservationType, dateMMDDYYYY, startVal, endVal, amount });
+        openPaymentModal(reservation, prepared);
       } catch (err) {
         e.preventDefault();
         console.log(err)
@@ -735,8 +735,8 @@ function mount() {
   }
 }
 
-function openPaymentModal(preparedRegistrationData) {
-  const totalAmount = 100;
+function openPaymentModal(reservation, preparedRegistrationData) {
+  const totalAmount = preparedRegistrationData.get('amount');
   const totalLabel = `Total amount to pay: ₱${totalAmount}`;
 
   const modalHTML = `
@@ -790,33 +790,6 @@ function openPaymentModal(preparedRegistrationData) {
     modal.children[0].classList.remove('-translate-y-6');
     modal.children[0].classList.add('scale-100');
   }, 10);
-
-  // 13-digit limit for GCash Reference Number
-  const gcashRefInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashRef'));
-  if (gcashRefInput) {
-    try {
-      gcashRefInput.maxLength = 13;
-    } catch (_) {}
-    gcashRefInput.setAttribute('inputmode', 'numeric');
-    gcashRefInput.addEventListener('input', () => {
-      const digitsOnly = String(gcashRefInput.value).replace(/\D/g, '');
-      if (digitsOnly.length > 13) {
-        try {
-          // Prefer toast if available
-          if (typeof Toastify === 'function') {
-            Toastify({
-              text: 'Reference number max is 13 digits',
-              duration: 3000,
-              gravity: 'top',
-              position: 'right',
-              close: true,
-            }).showToast();
-          }
-        } catch (_) {}
-      }
-      gcashRefInput.value = digitsOnly.slice(0, 13);
-    });
-  }
 
   const close = () => {
     modal.classList.remove('opacity-100');
@@ -887,25 +860,130 @@ function openPaymentModal(preparedRegistrationData) {
       gcashAmount: String(totalAmount),
       totalAmount,
     });
-    console.log('[MonthlyPass] Prepared Payment FormData', debugFormData(paymentData));
 
     // Example merging for future submission
     const unified = new FormData();
     preparedRegistrationData.forEach((v, k) => unified.set('reg_' + k, v));
     paymentData.forEach((v, k) => unified.set('pay_' + k, v));
-    console.log('[MonthlyPass] Unified FormData ready for API', debugFormData(unified));
+
+    // Provide user feedback during submission
+    const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
+    const cancelBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPayCancel'));
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+    }
+    if (cancelBtn) {
+      cancelBtn.disabled = true;
+    }
 
     // Submit to backend (create customer, monthly record, and pending payment)
-    submitMonthlyRegistration(preparedRegistrationData, paymentData)
+    submitMonthlyRegistration(reservation, preparedRegistrationData, paymentData)
       .then(() => {
         close();
-        openConfirmationModal(preparedRegistrationData.get('membershipType'));
+        openConfirmationModal();
       })
       .catch((err) => {
         console.error('[MonthlyPass] Submission failed', err);
         if (msg) msg.textContent = 'Submission failed. Please try again.';
+        // Re-enable buttons on failure
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Payment';
+        }
+        if (cancelBtn) {
+          cancelBtn.disabled = false;
+        }
       });
   });
+}
+
+function preparePaymentFormData(payload) {
+  const data = new FormData();
+  data.set('gcashRef', payload.gcashRef);
+  data.set('gcashName', payload.gcashName);
+  data.set('gcashAmount', payload.gcashAmount);
+  data.set('totalExpected', String(payload.totalAmount));
+  return data;
+}
+
+async function submitMonthlyRegistration(reservation, regData, payData) {
+  const amount = regData.get('amount');
+  const rate = 'regular';
+
+  // Generate ids similar to admin-side conventions
+  const customerId = `U${Date.now()}`;
+  const transactionId = `T${Date.now()}`;
+
+  const fullName = String(regData.get('memberName') || '').trim();
+  const [firstName, ...lastParts] = fullName.split(/\s+/);
+  const lastName = lastParts.join(' ') || '';
+  const startDate = String(regData.get('startDate'));
+  const endDate = String(regData.get('endDate'));
+
+        await createReservationFE(reservation);
+        updatePriceDisplay(amount);
+
+  // 3) Create pending payment with cashless hint and reference number
+  await fetch(`${API_BASE_URL}/payment/pending`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      payment_id: transactionId,
+      payment_customer_id: customerId,
+      payment_purpose: 'Monthly registration fee',
+      payment_amount_to_pay: amount,
+      payment_rate: rate,
+      payment_method_hint: 'cashless',
+      payment_ref: String(payData.get('gcashRef') || ''),
+      payment_source: 'customer_portal',
+    }),
+  });
+}
+
+function openConfirmationModal() {
+  const message = 'We have sent a notification to the email you provided. You will receive verification once your payment is confirmed.';
+  const modalHTML = `
+      <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="calendarConfirmation">
+        <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+          <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-orange-500 to-orange-800 p-4 text-center text-white">
+            <p class="text-xl font-medium">✅ Confirmation</p>
+          </div>
+          <div class="p-6 text-left text-sm text-gray-800">
+            ${message}
+          </div>
+          <div class="flex gap-3 p-6">
+            <button type="button" id="mpConfOk" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600">OK</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('calendarConfirmation');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const close = () => {
+    modal.classList.remove('opacity-100');
+    modal.children[0].classList.add('-translate-y-6');
+    modal.children[0].classList.remove('scale-100');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.remove();
+    }, 300);
+  };
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+  document.getElementById('mpConfOk').addEventListener('click', close);
 }
 
 function prepareFormData(payload) {
@@ -917,6 +995,7 @@ function prepareFormData(payload) {
   data.set('dateMMDDYYYY', payload.dateMMDDYYYY);
   data.set('startVal', payload.startVal);
   data.set('endVal', payload.endVal);
+  data.set('amount', payload.amount);
   return data;
 }
 
