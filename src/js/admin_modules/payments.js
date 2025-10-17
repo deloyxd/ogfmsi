@@ -147,7 +147,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
                     completePayment(
-                      'customers',
+                      pendingPayment.payment_purpose.includes('facility') ? 'reservations' : 'customers',
                       createResult.dataset.id,
                       createResult.dataset.image,
                       createResult.dataset.text,

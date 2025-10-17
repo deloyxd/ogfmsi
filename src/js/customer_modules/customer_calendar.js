@@ -670,12 +670,18 @@ function mount() {
         reservationType = labelText || serviceChecked.value || 'basketball';
       }
 
-      const customerIdEl = document.getElementById('customerId');
-      const customerNameEl = document.getElementById('customerName');
-      const customerId = (customerIdEl?.value || customerIdEl?.textContent || '').trim() || 'anonymous-id';
-      const customerName = (customerNameEl?.value || customerNameEl?.textContent || '').trim() || 'anonymous';
-
       const amount = calculateDynamicPrice(startVal, durationHours);
+
+      const reservation = {
+        id,
+        customerName: '',
+        reservationType,
+        date: dateMMDDYYYY,
+        startTime: startVal,
+        endTime: endVal,
+        status: 'Pending',
+        amount,
+      };
 
       try {
         e.preventDefault();
@@ -686,8 +692,8 @@ function mount() {
         }
         // Optionally set tid via updateReservationFE once you get a transactionId
         // await updateReservationFE(reservation.id, { tid: transactionId });
-        const prepared = prepareFormData({ id, customerId, customerName, reservationType, dateMMDDYYYY, startVal, endVal, amount });
-        openPaymentModal(prepared);
+        const prepared = prepareFormData({ id, customerName: '', reservationType, dateMMDDYYYY, startVal, endVal, amount });
+        openPaymentModal(reservation, prepared);
       } catch (err) {
         e.preventDefault();
         console.log(err)
@@ -697,7 +703,7 @@ function mount() {
   }
 }
 
-function openPaymentModal(preparedRegistrationData) {
+function openPaymentModal(reservation, preparedRegistrationData) {
   const totalAmount = preparedRegistrationData.get('amount');
   const totalLabel = `Total amount to pay: ₱${totalAmount}`;
 
@@ -843,7 +849,7 @@ function openPaymentModal(preparedRegistrationData) {
     }
 
     // Submit to backend (create customer, monthly record, and pending payment)
-    submitMonthlyRegistration(preparedRegistrationData, paymentData)
+    submitMonthlyRegistration(reservation, preparedRegistrationData, paymentData)
       .then(() => {
         close();
         openConfirmationModal();
@@ -872,7 +878,7 @@ function preparePaymentFormData(payload) {
   return data;
 }
 
-async function submitMonthlyRegistration(regData, payData) {
+async function submitMonthlyRegistration(reservation, regData, payData) {
   const amount = regData.get('amount');
   const rate = 'Regular';
 
@@ -880,11 +886,15 @@ async function submitMonthlyRegistration(regData, payData) {
   const customerId = `U${Date.now()}`;
   const transactionId = `T${Date.now()}`;
 
-  const fullName = String(regData.get('memberName') || '').trim();
+  const fullName = String(regData.get('customerName') || '').trim();
   const [firstName, ...lastParts] = fullName.split(/\s+/);
   const lastName = lastParts.join(' ') || '';
   const startDate = String(regData.get('startDate'));
   const endDate = String(regData.get('endDate'));
+
+  reservation.customerId = customerId;
+  reservation.tid = transactionId;
+  await createReservationFE(reservation);
 
   // 3) Create pending payment with cashless hint and reference number
   await fetch(`${API_BASE_URL}/payment/pending`, {
@@ -951,7 +961,6 @@ function openConfirmationModal() {
 function prepareFormData(payload) {
   const data = new FormData();
   data.set('id', payload.id);
-  data.set('customerId', payload.customerId);
   data.set('customerName', payload.customerName);
   data.set('reservationType', payload.reservationType);
   data.set('dateMMDDYYYY', payload.dateMMDDYYYY);

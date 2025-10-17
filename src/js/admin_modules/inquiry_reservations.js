@@ -109,13 +109,7 @@ async function updateReservation(reservationId, updatedData) {
 
 async function updateReservationFE(reservationId, updatedData) {
   main.sharedState.moduleLoad = SECTION_NAME;
-  window.showGlobalLoading?.();
-  try {
     await updateDoc(doc(db, 'reservations', reservationId), updatedData);
-  } catch (e) {
-  } finally {
-    window.hideGlobalLoading?.();
-  }
 }
 
 async function deleteReservation(reservationId) {
