@@ -51,3 +51,7 @@ OGFMSI (Online Gym Facility Management with Sales and Inventory) is a comprehens
 - `git checkout [your-branch-name]`
 - `git reset --hard ORIG_HEAD`
 - `git clean -fd`
+
+**Other commands:**
+
+Powershell: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
