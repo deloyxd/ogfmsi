@@ -86,6 +86,10 @@ function setupLoginForm() {
       const info = getAdditionalUserInfo(result);
       const isNewUser = info?.isNewUser ?? false;
 
+      // Disable Google Sign-In button
+      googleSignInBtn.disabled = true;
+      googleSignInBtn.innerHTML = "Logged in";
+
       // localStorage.setItem("fitworxUser", JSON.stringify({
       //   name: user.displayName,
       //   email: user.email,
@@ -230,6 +234,7 @@ async function submitClicked(e) {
   const isLoginMode = formTitle.textContent.includes('Sign in');
   const sanitizedEmail = sanitizeInput(username.value.trim());
   const sanitizedPassword = password.value.trim();
+  const sanitizedConfirmPassword = confirmPassword.value.trim();
   const sanitizedFirst = sanitizeInput(firstName.value.trim());
   const sanitizedLast = sanitizeInput(lastName.value.trim());
 
@@ -247,6 +252,26 @@ async function submitClicked(e) {
 
   try {
     if (!isLoginMode) {
+      // Check empty fields
+      if (!sanitizedFirst || !sanitizedLast || !sanitizedEmail || !sanitizedPassword || !sanitizedConfirmPassword) {
+        throw new Error('Please fill out all required fields.');
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(sanitizedEmail)) {
+        throw new Error('Please enter a valid email address.');
+      }
+
+      // Check password match
+      if (sanitizedPassword !== sanitizedConfirmPassword) {
+        throw new Error('Passwords do not match. Please try again.');
+      }
+
+      // Check password strength
+      if (sanitizedPassword.length < 6) {
+        throw new Error('Password must be at least 6 characters long.');
+      }
       // 🔹 Sign Up
       const userCredential = await createUserWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
       const user = userCredential.user;
@@ -268,6 +293,9 @@ async function submitClicked(e) {
         callback: () => toggleFormClicked(e),
       }).showToast();
     } else {
+      if (!sanitizedEmail || !sanitizedPassword) {
+        throw new Error('Please enter your email and password.');
+      }
       // 🔹 Login
       const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
       const user = userCredential.user;
@@ -289,12 +317,11 @@ async function submitClicked(e) {
     console.error('Firebase Auth Error:', error);
     Swal.fire({
       title: 'Authentication Error',
-      text: error.message,
+      text: 'Email or password is incorrect!',
       icon: 'error',
       confirmButtonText: 'OK',
       confirmButtonColor: '#ef4444',
     });
-  } finally {
     submitBtn.innerHTML = oldSubmitBtn;
     submitBtn.disabled = false;
   }
@@ -341,6 +368,20 @@ function toggleFormClicked(e) {
   firstNameField.classList.toggle('hidden', !isLoginMode);
   lastNameField.classList.toggle('hidden', !isLoginMode);
   confirmPasswordField.classList.toggle('hidden', !isLoginMode);
+
+  // 🔹 Dynamically handle required attributes
+  if (!isLoginMode) {
+    // Switch to SIGN UP
+    firstName.setAttribute('required', 'true');
+    lastName.setAttribute('required', 'true');
+    confirmPassword.setAttribute('required', 'true');
+  } else {
+    // Switch to SIGN IN
+    firstName.removeAttribute('required');
+    lastName.removeAttribute('required');
+    confirmPassword.removeAttribute('required');
+  }
+
   submitBtnLabel.innerText = isLoginMode ? 'Sign Up' : 'Sign In';
 }
 

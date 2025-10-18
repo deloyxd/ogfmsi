@@ -39,20 +39,7 @@ function setupLogout() {
           try {
             await signOut(auth);
             sessionStorage.clear();
-
-            Toastify({
-              text: 'You have been logged out.',
-              duration: 2000,
-              close: true,
-              gravity: 'top',
-              position: 'center',
-              backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)',
-              stopOnFocus: true,
-              callback: () => {
-                // Redirect to login page
-                window.location.href = '/';
-              },
-            }).showToast();
+            window.location.href = '/';
           } catch (error) {
             console.error('Logout Error:', error);
             Swal.fire({
