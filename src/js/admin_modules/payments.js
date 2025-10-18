@@ -854,16 +854,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         const refInput = document.querySelector('#input-short-12');
         if (refInput) refInput.value = opts.refFromPortal;
       }
-      // Auto-fill payment amount = amountToPay for one-tap completion
+      // Amount tendered fields now default to 0 instead of auto-filling with amountToPay
       const cashlessInput = document.querySelector('#input-short-8');
       const cashInput = document.querySelector('#input-short-7');
-      if (cashlessInput && ( isOnlineTransaction || (opts && opts.methodHint === 'cashless'))) {
-        cashlessInput.value = String(Number(amountToPay) || 0);
-        cashlessInput.dispatchEvent(new Event('input'));
-      } else if (cashInput) {
-        cashInput.value = String(Number(amountToPay) || 0);
-        cashInput.dispatchEvent(new Event('input'));
-      }
+      // Fields are already initialized to 0 in the modal configuration, no need to set them here
     } catch (_) {}
   }, 0);
 
