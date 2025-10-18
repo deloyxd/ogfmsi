@@ -932,6 +932,16 @@ async function disposeProduct(result) {
           
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">
+              Quantity to dispose:
+            </label>
+            <input type="number" id="disposalQuantityInput" min="1" max="${result.dataset.custom3}" 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                   placeholder="Enter quantity to dispose" value="1" required>
+            <p class="text-xs text-gray-500 mt-1">Current quantity: ${result.dataset.custom3}</p>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Additional notes (optional):
             </label>
             <textarea id="disposalNotesInput" rows="3" 
@@ -987,104 +997,114 @@ window.closeDisposeProductModal = function () {
   }
 };
 
+// Create a disposal record that will appear in the Disposed Products tab
+async function createDisposalRecord(productRow, disposalQuantity, reason, notes) {
+  try {
+    const originalName = main.decodeText(productRow.dataset.text);
+    const disposedName = `[DISPOSED: ${reason}] ${originalName} (${disposalQuantity} items)`;
+    const currentDate = new Date().toISOString();
+    
+    const disposalData = {
+      product_name: disposedName,
+      product_name_encoded: main.encodeText(disposedName),
+      price: main.decodePrice(productRow.dataset.custom2),
+      price_encoded: productRow.dataset.custom2,
+      quantity: disposalQuantity,
+      measurement_value: productRow.dataset.custom5,
+      measurement_unit: productRow.dataset.custom6,
+      category: productRow.dataset.custom7,
+      image_url: productRow.dataset.image,
+      disposal_status: 'Disposed',
+      disposal_reason: reason,
+      disposal_notes: notes,
+      disposed_at: currentDate,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(disposalData),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to create disposal record:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error creating disposal record:', error);
+  }
+}
+
 window.confirmDisposeProduct = async function (productId) {
   try {
     const reason = document.getElementById('disposalReasonSelect').value;
     const notes = document.getElementById('disposalNotesInput').value.trim();
-
-    // Try disposal endpoint, fallback to regular update if not available
-    let response;
-    let isDisposalEndpoint = false;
+    const disposalQuantity = parseInt(document.getElementById('disposalQuantityInput').value);
     
-    try {
-      let datetime = new Date().toISOString();
-      datetime = datetime.replace('T', ' ').replace('Z', '').split('.')[0];
-      response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}/dispose`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          disposal_status: 'Disposed',
-          disposal_reason: reason,
-          disposal_notes: notes,
-          disposed_at: datetime,
-        }),
-      });
-      
-      if (response.status === 404) {
-        throw new Error('Disposal endpoint not available');
-      }
-      isDisposalEndpoint = true;
-    } catch (error) {
-      // Fallback: Use regular update endpoint and modify product name to indicate disposal
-      const productRow = document.querySelector(`tr[data-id="${productId}"]`);
-      if (!productRow) {
-        throw new Error('Product not found');
-      }
-      
-      const originalName = main.decodeText(productRow.dataset.text);
-      const disposedName = `[DISPOSED: ${reason}] ${originalName}`;
-      
-      const response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          product_name: disposedName,
-          product_name_encoded: main.encodeText(disposedName),
-          price: main.decodePrice(productRow.dataset.custom2),
-          price_encoded: productRow.dataset.custom2,
-          quantity: productRow.dataset.custom3,
-          measurement_value: productRow.dataset.custom5 + (notes ? ` | Disposal Notes: ${notes}` : ''),
-          measurement_unit: productRow.dataset.custom6,
-          category: productRow.dataset.custom7,
-          image_url: productRow.dataset.image,
-        }),
-      });
-      
-      if (response.ok) {
-        logAction(
-          'Dispose product',
-          {
-            id: productId,
-            name: originalName,
-            reason: reason,
-            notes: notes,
-            disposed_at: new Date().toISOString(),
-            date: new Date().toISOString().split('T')[0],
-          },
-          'product_dispose'
-        );
-
-        main.toast(`Product marked as disposed: ${reason}`, 'success');
-        closeDisposeProductModal();
-        main.closeModal();
-        loadProducts();
-        return;
-      } else {
-        throw new Error('Failed to update product');
-      }
+    // Validate disposal quantity
+    if (!disposalQuantity || disposalQuantity < 1) {
+      main.toast('Please enter a valid quantity to dispose', 'error');
+      return;
+    }
+    
+    const productRow = document.querySelector(`tr[data-id="${productId}"]`);
+    if (!productRow) {
+      main.toast('Product not found', 'error');
+      return;
+    }
+    
+    const currentQuantity = parseInt(productRow.dataset.custom3);
+    if (disposalQuantity > currentQuantity) {
+      main.toast(`Cannot dispose ${disposalQuantity} items. Current quantity is only ${currentQuantity}`, 'error');
+      return;
     }
 
+    // Use regular update endpoint to reduce quantity (disposal endpoint doesn't support partial disposal yet)
+    const originalName = main.decodeText(productRow.dataset.text);
+    const newQuantity = currentQuantity - disposalQuantity;
+    
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        product_name: originalName,
+        product_name_encoded: main.encodeText(originalName),
+        price: main.decodePrice(productRow.dataset.custom2),
+        price_encoded: productRow.dataset.custom2,
+        quantity: newQuantity,
+        measurement_value: productRow.dataset.custom5,
+        measurement_unit: productRow.dataset.custom6,
+        category: productRow.dataset.custom7,
+        image_url: productRow.dataset.image,
+      }),
+    });
+    
     const result = await response.json();
 
     if (response.ok) {
+      // Create a disposal record that will appear in the Disposed Products tab
+      await createDisposalRecord(productRow, disposalQuantity, reason, notes);
+      
       logAction(
         'Dispose product',
         {
           id: productId,
-          name: document.querySelector(`tr[data-id="${productId}"]`)?.dataset.text || 'Unknown',
+          name: originalName,
           reason: reason,
           notes: notes,
+          disposal_quantity: disposalQuantity,
+          original_quantity: currentQuantity,
+          remaining_quantity: newQuantity,
           disposed_at: new Date().toISOString(),
           date: new Date().toISOString().split('T')[0],
         },
         'product_dispose'
       );
 
-      main.toast('Product disposed successfully!', 'success');
+      main.toast(`Disposed ${disposalQuantity} items. Remaining quantity: ${newQuantity}`, 'success');
       closeDisposeProductModal();
       main.closeModal();
 
