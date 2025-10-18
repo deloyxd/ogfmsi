@@ -17,6 +17,7 @@ const INDEX_DEFS = [
   { table: 'ecommerce_products_tbl', index: 'idx_products_created_at', columns: ['created_at'] },
   { table: 'ecommerce_products_tbl', index: 'idx_products_category_created', columns: ['category', 'created_at'] },
   { table: 'ecommerce_products_tbl', index: 'idx_products_stock_status', columns: ['stock_status'] },
+  { table: 'ecommerce_products_tbl', index: 'idx_products_expiration_date', columns: ['expiration_date'] },
 
   // ecommerce_cart_tbl
   { table: 'ecommerce_cart_tbl', index: 'idx_cart_session_created', columns: ['session_id', 'created_at'] },
