@@ -53,12 +53,12 @@ function setupLandingHeaderComponent() {
 function setupClientLogo() {
   document.querySelectorAll('.redirect-to-dashboard').forEach((button) => {
     button.addEventListener('click', function () {
-      window.location.href = '/index.html';
+      window.location.href = '/';
     });
   });
   document.querySelectorAll('.redirect-to-login').forEach((button) => {
     button.addEventListener('click', function () {
-      window.location.href = '/src/modules_html/customer_side/login.html';
+      window.location.href = '/src/html/customer_login.html';
     });
   });
   document.querySelectorAll('.redirect-to-demo').forEach((button) => {
