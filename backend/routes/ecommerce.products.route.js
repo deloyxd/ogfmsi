@@ -322,4 +322,63 @@ router.put('/products/:id/dispose', async (req, res) => {
   }
 });
 
+// POST check and dispose expired products automatically
+router.post('/products/check-expired', async (req, res) => {
+  const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+
+  try {
+    // Find products that have expired (expiration_date < today) and are still active
+    const findExpiredQuery = `
+      SELECT product_id, product_name, quantity, expiration_date
+      FROM ecommerce_products_tbl 
+      WHERE expiration_date IS NOT NULL 
+      AND expiration_date < ? 
+      AND disposal_status = 'Active'
+    `;
+
+    const expiredProducts = await db.query(findExpiredQuery, [today]);
+
+    if (expiredProducts.length === 0) {
+      return res.status(200).json({
+        message: 'No expired products found',
+        result: [],
+        disposed_count: 0,
+      });
+    }
+
+    // Update each expired product to disposed status
+    const disposedProducts = [];
+    for (const product of expiredProducts) {
+      const updateQuery = `
+        UPDATE ecommerce_products_tbl 
+        SET disposal_status = 'Disposed', 
+            disposal_reason = 'expired', 
+            disposal_notes = 'Automatically disposed due to expiration',
+            disposed_at = NOW()
+        WHERE product_id = ?
+      `;
+
+      await db.query(updateQuery, [product.product_id]);
+      
+      disposedProducts.push({
+        product_id: product.product_id,
+        product_name: product.product_name,
+        quantity: product.quantity,
+        expiration_date: product.expiration_date,
+        disposed_at: new Date().toISOString(),
+      });
+    }
+
+    res.status(200).json({
+      message: `Successfully disposed ${disposedProducts.length} expired products`,
+      result: disposedProducts,
+      disposed_count: disposedProducts.length,
+    });
+
+  } catch (error) {
+    console.error('Checking expired products error:', error);
+    return res.status(500).json({ error: 'Checking expired products failed' });
+  }
+});
+
 module.exports = router;
