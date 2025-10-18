@@ -222,8 +222,8 @@ function openRegistrationModal() {
     const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
     if (!form || !msg) return;
     const membershipType = getSelectedMembershipType();
-    const memberName = /** @type {HTMLInputElement} */ (form.querySelector('#memberName'))?.value?.trim();
-    const email = /** @type {HTMLInputElement} */ (form.querySelector('#email'))?.value?.trim();
+    const memberName = sessionStorage.getItem('full_name');
+    const email = sessionStorage.getItem('email');
     const profile = /** @type {HTMLInputElement} */ (form.querySelector('#profile'))?.files?.[0] || null;
     const studentId = /** @type {HTMLInputElement} */ (form.querySelector('#studentId'))?.files?.[0] || null;
     const startDate = /** @type {HTMLInputElement} */ (form.querySelector('#startDate'))?.value;

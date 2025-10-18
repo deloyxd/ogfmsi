@@ -683,7 +683,7 @@ function mount() {
 
       const reservation = {
         id,
-        customerName: '',
+        customerName: sessionStorage.getItem('full_name'),
         reservationType,
         date: dateMMDDYYYY,
         startTime: startVal,
@@ -701,7 +701,7 @@ function mount() {
         }
         // Optionally set tid via updateReservationFE once you get a transactionId
         // await updateReservationFE(reservation.id, { tid: transactionId });
-        const prepared = prepareFormData({ id, customerName: '', reservationType, dateMMDDYYYY, startVal, endVal, amount });
+        const prepared = prepareFormData({ id, customerName: sessionStorage.getItem('full_name'), reservationType, dateMMDDYYYY, startVal, endVal, amount });
         openPaymentModal(reservation, prepared);
       } catch (err) {
         e.preventDefault();

@@ -170,6 +170,7 @@ function setupLoginForm() {
 
           const newCustomer = await response.json();
           sessionStorage.setItem('full_name', user.displayName);
+          sessionStorage.setItem('email', user.email);
 
           Toastify({
             text: 'Login successful!',
@@ -186,6 +187,7 @@ function setupLoginForm() {
         }
       } else {
         sessionStorage.setItem('full_name', user.displayName);
+        sessionStorage.setItem('email', user.email);
 
         Toastify({
           text: 'Login successful!',
@@ -281,6 +283,7 @@ async function submitClicked(e) {
       });
 
       sessionStorage.setItem('full_name', user.displayName);
+      sessionStorage.setItem('email', user.email);
 
       Toastify({
         text: 'Account created successfully!',
@@ -300,7 +303,8 @@ async function submitClicked(e) {
       const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
       const user = userCredential.user;
 
-      sessionStorage.setItem('full_name', user.displayName || sanitizedEmail);
+      sessionStorage.setItem('full_name', user.displayName);
+      sessionStorage.setItem('email', user.email);
 
       Toastify({
         text: 'Login successful!',

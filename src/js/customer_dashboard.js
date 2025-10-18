@@ -56,20 +56,19 @@ function setupLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  setupMobileDropdown();
-  setupLogout();
-
   const fullName = sessionStorage.getItem('full_name') || 'Guest';
   if (fullName === 'Guest') {
     window.location.href = '/';
+    return;
   }
+  setupMobileDropdown();
+  setupLogout();
   document.getElementById('welcomeUser').innerText = fullName;
 
-  
   const openMessage = document.getElementById('openMessage');
   const hoursMessage = document.getElementById('hoursMessage');
   const storeHours = document.getElementById('storeHours');
-  
+
   const operatingHoursText = storeHours.textContent.trim();
   const [openingTimeStr, closingTimeStr] = operatingHoursText.split(' - ');
   const convertTo24Hour = (timeStr) => {
@@ -81,10 +80,10 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (modifier === 'AM' && hours === 12) {
       hours = 0;
     }
-    
+
     return hours;
   };
-  
+
   const openingTime = convertTo24Hour(openingTimeStr);
   const closingTime = convertTo24Hour(closingTimeStr);
 
