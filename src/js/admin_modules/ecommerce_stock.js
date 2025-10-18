@@ -229,7 +229,7 @@ function mainBtnFunction() {
 
   main.openModal(mainBtn, inputs, async (result) => {
     const name = result.image.short[0].value;
-    const [price, quantity] = result.short.map((item) => item.value);
+    const [price, quantity, expirationDate] = result.short.map((item) => item.value);
     const measurement = result.image.short[1].value?.trim() || '';
     const measurementUnit = main.getSelectedSpinner(result.image.spinner[0]);
 
@@ -242,11 +242,11 @@ function mainBtnFunction() {
       return;
     }
 
-    addProduct(result, name, +price, +quantity, measurement);
+    addProduct(result, name, +price, +quantity, measurement, expirationDate);
   });
 }
 
-async function addProduct(result, name, price, quantity, measurement) {
+async function addProduct(result, name, price, quantity, measurement, expirationDate) {
   const category = main.getSelectedSpinner(result.spinner[0]);
   const measurementUnit = main.getSelectedSpinner(result.image.spinner[0]);
 
@@ -260,6 +260,7 @@ async function addProduct(result, name, price, quantity, measurement) {
     measurement_unit: measurementUnit,
     category,
     image_url: result.image.src,
+    expiration_date: expirationDate || null,
   };
 
   try {
@@ -285,6 +286,7 @@ async function addProduct(result, name, price, quantity, measurement) {
           measurement,
           measurementUnit,
           category,
+          expirationDate,
           date: new Date().toISOString(),
         },
         'product_create'
@@ -544,6 +546,11 @@ function displayProductsForTab(products, tabIndex) {
       product.measurement_value || '',
       product.measurement_unit || '',
       main.getSelectedOption(product.category, CATEGORIES),
+      product.expiration_date ? new Date(product.expiration_date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }) : 'No expiration',
       'custom_date_today',
     ];
 
@@ -556,8 +563,8 @@ function displayProductsForTab(products, tabIndex) {
           day: 'numeric',
         });
         frontendResult.dataset.date = date;
-        // Adjusted index due to removed Purchase Type column
-        frontendResult.children[8].innerHTML = date;
+        // Adjusted index due to added Expiration Date column
+        frontendResult.children[9].innerHTML = date;
       }
 
       // Set up the product data for editing
@@ -572,6 +579,7 @@ function displayProductsForTab(products, tabIndex) {
       frontendResult.dataset.custom6 = product.measurement_unit;
       // custom7 now maps to category after removing purchase_type
       frontendResult.dataset.custom7 = product.category;
+      frontendResult.dataset.custom8 = product.expiration_date || '';
       frontendResult.dataset.disposalStatus = product.disposal_status || 'Active';
       frontendResult.dataset.disposalReason = product.disposal_reason || '';
       frontendResult.dataset.disposalNotes = product.disposal_notes || '';
@@ -624,6 +632,7 @@ function setupProductDetailsButton(result) {
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
       category: result.dataset.custom7,
+      expirationDate: result.dataset.custom8,
     };
 
     const inputs = createModalInputs(true, productData);
@@ -658,6 +667,7 @@ function setupDisposedProductButton(result) {
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
       category: result.dataset.custom7,
+      expirationDate: result.dataset.custom8,
       disposalStatus: result.dataset.disposalStatus || (result.dataset.text && result.dataset.text.includes('[DISPOSED') ? 'Disposed' : 'Active'),
       disposalReason: result.dataset.disposalReason || (result.dataset.text ? extractDisposalReason(result.dataset.text) : ''),
       disposalNotes: result.dataset.disposalNotes || (result.dataset.custom5 ? extractDisposalNotes(result.dataset.custom5) : ''),
@@ -770,7 +780,7 @@ window.closeDisposedProductModal = function () {
 
 async function updateProduct(result, newResult, name) {
   const newName = newResult.image.short[0].value;
-  const [newPrice, newQuantity] = newResult.short.map((item) => item.value);
+  const [newPrice, newQuantity, newExpirationDate] = newResult.short.map((item) => item.value);
   const newMeasurement = newResult.image.short[1].value?.trim() || '';
 
   if (!main.validateStockInputs(newPrice, newQuantity, newMeasurement)) return;
@@ -788,6 +798,7 @@ async function updateProduct(result, newResult, name) {
     measurement_unit: measurementUnit,
     category: category,
     image_url: newResult.image.src,
+    expiration_date: newExpirationDate || null,
   };
 
   main.sharedState.moduleLoad = SECTION_NAME;
@@ -815,6 +826,7 @@ async function updateProduct(result, newResult, name) {
           measurement: newMeasurement,
           measurementUnit,
           category,
+          expirationDate: newExpirationDate,
           date: result.dataset.date,
         },
         'product_update'
@@ -1138,6 +1150,7 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
   short: [
     { placeholder: 'Price', value: productData.price || '', required: true },
     { placeholder: 'Initial quantity', value: productData.quantity || '', required: true },
+    { placeholder: 'Expiration date (YYYY-MM-DD)', value: productData.expirationDate || '', type: 'date' },
   ],
   spinner: [
     {
@@ -1169,7 +1182,8 @@ function checkIfSameData(newData, oldData) {
     newData.short[1].value == oldData.quantity &&
     newData.image.short[1].value == oldData.measurement &&
     main.getSelectedSpinner(newData.image.spinner[0]) == oldData.measurementUnit &&
-    main.getSelectedSpinner(newData.spinner[0]) == oldData.category
+    main.getSelectedSpinner(newData.spinner[0]) == oldData.category &&
+    newData.short[2].value == oldData.expirationDate
   );
 }
 
