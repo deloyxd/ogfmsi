@@ -445,6 +445,43 @@ function normalizeCustomerName(firstName, lastName) {
     .trim();
 }
 
+// Utility: Check if current date has reached the customer's start date for monthly customers
+function hasReachedStartDate(customer) {
+  const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
+  if (!isMonthlyCustomer) return true; // Non-monthly customers are always available
+  
+  const startDateStr = customer.dataset.startdate;
+  if (!startDateStr) return true; // If no start date, allow actions (fallback)
+  
+  try {
+    // Convert the stored start date to a comparable format
+    // The startDate is stored in the format returned by main.decodeDate()
+    // We need to convert it back to mm-dd-yyyy format for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Parse the start date - it could be in various formats from main.decodeDate()
+    let startDate;
+    if (startDateStr.includes(',')) {
+      // Format: "October 19, 2025" (long format)
+      startDate = new Date(startDateStr);
+    } else if (startDateStr.includes('-')) {
+      // Format: "10-19-2025" (numeric format)
+      const [month, day, year] = startDateStr.split('-').map(Number);
+      startDate = new Date(year, month - 1, day);
+    } else {
+      // Try to parse as-is
+      startDate = new Date(startDateStr);
+    }
+    
+    startDate.setHours(0, 0, 0, 0);
+    return startDate <= today;
+  } catch (error) {
+    console.error('Error parsing start date:', error);
+    return true; // If there's an error parsing, allow actions (fallback)
+  }
+}
+
 // Listener for modal inputs: auto-correct casing on every input change
 function nameAutoCaseListener(inputEl) {
   const corrected = toTitleCaseName(inputEl.value);
@@ -1129,6 +1166,20 @@ function autoChangeButtonText(title, button, text) {
 
 function customerProcessBtnFunction(customer, { firstName, lastName, fullName }) {
   const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
+  const hasReachedStart = hasReachedStartDate(customer);
+  
+  // If it's a monthly customer and start date hasn't been reached, show a message
+  if (isMonthlyCustomer && !hasReachedStart) {
+    const startDateStr = customer.dataset.startdate || 'N/A';
+    main.openConfirmationModal(
+      `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
+      () => {
+        main.closeConfirmationModal();
+      }
+    );
+    return;
+  }
+  
   const inputs = {
     header: {
       title: `Initiate Customer Process ${getEmoji('📒', 26)}`,
