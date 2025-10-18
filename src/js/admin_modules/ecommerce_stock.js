@@ -999,6 +999,8 @@ window.confirmDisposeProduct = async function (productId) {
     let isDisposalEndpoint = false;
     
     try {
+      let datetime = new Date().toISOString();
+      datetime = datetime.replace('T', ' ').replace('Z', '').split('.')[0];
       response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}/dispose`, {
         method: 'PUT',
         headers: {
@@ -1008,7 +1010,7 @@ window.confirmDisposeProduct = async function (productId) {
           disposal_status: 'Disposed',
           disposal_reason: reason,
           disposal_notes: notes,
-          disposed_at: new Date().toISOString(),
+          disposed_at: datetime,
         }),
       });
       
