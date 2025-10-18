@@ -17,6 +17,7 @@ router.post('/products', async (req, res) => {
     measurement_unit,
     category,
     image_url,
+    expiration_date,
   } = req.body;
 
   // Generate unique product ID
@@ -32,8 +33,8 @@ router.post('/products', async (req, res) => {
 
   const query = `
     INSERT INTO ecommerce_products_tbl 
-    (product_id, product_name, product_name_encoded, price, price_encoded, quantity, stock_status, measurement_value, measurement_unit, purchase_type, category, image_url) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (product_id, product_name, product_name_encoded, price, price_encoded, quantity, stock_status, measurement_value, measurement_unit, purchase_type, category, image_url, expiration_date) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   try {
@@ -50,6 +51,7 @@ router.post('/products', async (req, res) => {
       'retail',
       category,
       image_url,
+      expiration_date || null,
     ]);
 
     res.status(201).json({
@@ -64,6 +66,7 @@ router.post('/products', async (req, res) => {
         measurement_unit,
         category,
         image_url,
+        expiration_date,
       },
     });
   } catch (error) {
@@ -139,6 +142,7 @@ router.put('/products/:id', async (req, res) => {
     measurement_unit,
     category,
     image_url,
+    expiration_date,
   } = req.body;
 
   // Determine stock status based on quantity
@@ -153,7 +157,7 @@ router.put('/products/:id', async (req, res) => {
     UPDATE ecommerce_products_tbl 
     SET product_name = ?, product_name_encoded = ?, price = ?, price_encoded = ?, 
         quantity = ?, stock_status = ?, measurement_value = ?, measurement_unit = ?, 
-        category = ?, image_url = ? 
+        category = ?, image_url = ?, expiration_date = ? 
     WHERE product_id = ?
   `;
 
@@ -169,6 +173,7 @@ router.put('/products/:id', async (req, res) => {
       measurement_unit,
       category,
       image_url,
+      expiration_date || null,
       id,
     ]);
 
