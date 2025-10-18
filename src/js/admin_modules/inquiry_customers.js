@@ -104,8 +104,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                   createResult.dataset.status = 'pending';
                   createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Pending';
                 } else {
-                  createResult.dataset.status = 'active';
-                  createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Active';
+                  createResult.dataset.status = 'fetching';
+                  createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Fetching';
                 }
                 createResult.children[2].textContent = createResult.dataset.custom2;
               } else {
@@ -150,6 +150,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
           
           main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
+              if (findResult.dataset.custom2 === 'Daily') {
+                return;
+              }
               const endDate = new Date(customer.customer_end_date);
               const today = new Date();
               endDate.setHours(0, 0, 0, 0);
@@ -236,6 +239,18 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                         ],
                         2,
                         (createResult) => {
+                          const startDate = new Date(customer.customer_start_date);
+                          startDate.setHours(0, 0, 0, 0);
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          if (startDate <= today) {
+                            findResult.dataset.status = 'active';
+                            findResult.dataset.custom2 = 'Monthly - Active';
+                          } else {
+                            findResult.dataset.status = 'incoming';
+                            findResult.dataset.custom2 = 'Monthly - Incoming';
+                          }
+                          findResult.children[2].innerText = findResult.dataset.custom2;
                           const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
                           customerProcessBtn.addEventListener('click', () =>
                             customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
@@ -447,11 +462,11 @@ function normalizeCustomerName(firstName, lastName) {
 
 // Utility: Check if current date has reached the customer's start date for monthly customers
 function hasReachedStartDate(customer) {
-  const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
-  if (!isMonthlyCustomer) return true; // Non-monthly customers are always available
+  // const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
+  // if (!isMonthlyCustomer) return true; // Non-monthly customers are always available
   
-  const startDateStr = customer.dataset.startdate;
-  if (!startDateStr) return true; // If no start date, allow actions (fallback)
+  const startDateStr = customer.dataset.custom2;
+  if (!startDateStr || !startDateStr.includes(',')) return true; // If no start date, allow actions (fallback)
   
   try {
     // Convert the stored start date to a comparable format
@@ -1165,20 +1180,41 @@ function autoChangeButtonText(title, button, text) {
 }
 
 function customerProcessBtnFunction(customer, { firstName, lastName, fullName }) {
-  const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
+  if (customer.dataset.custom2.toLowerCase().includes('incoming')) {
+    return;
+  }
   const hasReachedStart = hasReachedStartDate(customer);
   
   // If it's a monthly customer and start date hasn't been reached, show a message
-  if (isMonthlyCustomer && !hasReachedStart) {
-    const startDateStr = customer.dataset.startdate || 'N/A';
-    main.openConfirmationModal(
-      `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
-      () => {
-        main.closeConfirmationModal();
-      }
-    );
+  if (customer.dataset.custom2.toLowerCase().includes('incoming') || !hasReachedStart) {
+    let startDateStr = customer.dataset.custom2.toLowerCase().includes('incoming') ? 'N/A' : customer.dataset.custom2;
+    if (startDateStr === 'N/A') {
+      main.findAtSectionOne(SECTION_NAME, customer.dataset.id, 'equal_id', 2, (findResult) => {
+        if (findResult) {
+          startDateStr = findResult.dataset.custom2;
+          main.openConfirmationModal(
+            `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
+            () => {
+              main.closeConfirmationModal(() => continueCustomerProcess());
+            }
+          );
+        }
+      });
+    } else {
+      main.openConfirmationModal(
+        `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
+        () => {
+          main.closeConfirmationModal(() => continueCustomerProcess());
+        }
+      );
+    }
     return;
   }
+
+  continueCustomerProcess();
+
+  function continueCustomerProcess() {
+  const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
   
   const inputs = {
     header: {
@@ -1424,6 +1460,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
       }
     });
   }
+}
 }
 
 function customerEditDetailsBtnFunction(customer, { firstName, lastName, fullName }) {
