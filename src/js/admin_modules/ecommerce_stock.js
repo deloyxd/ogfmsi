@@ -926,8 +926,6 @@ async function disposeProduct(result) {
             <select id="disposalReasonSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
               <option value="expired">Expired</option>
               <option value="damaged">Damaged</option>
-              <option value="recalled">Recalled</option>
-              <option value="unsellable">Unsellable</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -1166,7 +1164,7 @@ const createModalInputs = (isUpdate = false, productData = {}) => ({
   ...(isUpdate && {
     footer: {
       main: `Update Product ${getEmoji('🧊')}`,
-      sub: `Delete ${getEmoji('⚠️')}`,
+      // sub: `Delete ${getEmoji('⚠️')}`,
       third: `Dispose ${getEmoji('🗑️')}`,
     },
   }),
