@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS ecommerce_products_tbl (
     purchase_type VARCHAR(100) NOT NULL,
     category VARCHAR(100) NOT NULL,
     image_url LONGTEXT,
+    expiration_date DATE NULL,
     disposal_status ENUM('Active', 'Disposed') DEFAULT 'Active',
     disposal_reason VARCHAR(100),
     disposal_notes TEXT,
@@ -221,6 +222,7 @@ CREATE TABLE IF NOT EXISTS inquiry_checkins_monthly_tbl (
 ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_created_at (created_at);
 ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_category_created (category, created_at);
 ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_stock_status (stock_status);
+ALTER TABLE ecommerce_products_tbl ADD INDEX idx_products_expiration_date (expiration_date);
 
 ALTER TABLE ecommerce_cart_tbl ADD INDEX idx_cart_session_created (session_id, created_at);
 
