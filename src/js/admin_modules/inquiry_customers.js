@@ -141,13 +141,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
         // Track processed customers to avoid duplicates
         const processedCustomers = new Set();
-        
+
         customers.result.forEach((customer) => {
           // Skip if we've already processed this customer
           if (processedCustomers.has(customer.customer_id)) {
             return;
           }
-          
+
           main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
               if (findResult.dataset.custom2 === 'Daily') {
@@ -159,7 +159,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               today.setHours(0, 0, 0, 0);
               const diffTime = endDate - today;
               const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              
+
               if (customer.customer_pending == 1) {
                 findResult.dataset.tid = customer.customer_tid;
               } else {
@@ -183,7 +183,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                         main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
                       ),
                       main.formatPrice(
-                        customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                        customer.customer_months *
+                          PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                       ),
                       findResult.dataset.custom3,
                       'custom_date_' +
@@ -226,7 +227,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           ),
                           daysLeft + ' days',
                           main.formatPrice(
-                            customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                            customer.customer_months *
+                              PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                           ),
                           findResult.dataset.custom3,
                           'custom_date_' +
@@ -266,7 +268,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                   });
                 }
               }
-              
+
               // Mark this customer as processed
               processedCustomers.add(customer.customer_id);
             }
@@ -306,9 +308,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 customer.customer_end_date,
                 main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
               ),
-              main.formatPrice(
-                customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]
-              ),
+              main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
               main.fixText(customer.customer_rate),
               'custom_date_' +
                 main.encodeDate(
@@ -391,11 +391,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
 
         const result = await response.json();
-        
+
         if (result.archived_count > 0) {
           console.log(`Auto-archived ${result.archived_count} inactive customers`);
           main.toast(`Auto-archived ${result.archived_count} inactive customers (3+ months)`, 'success');
-          
+
           // Refresh the archived customers list to show newly archived customers
           await fetchAllArchivedCustomers();
           updateCustomerStats();
@@ -413,24 +413,24 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
           const tbody = emptyText.parentElement.parentElement;
           const seenCustomers = new Set();
           const rowsToRemove = [];
-          
+
           // Find duplicate entries
           for (let i = 1; i < tbody.children.length; i++) {
             const row = tbody.children[i];
             const customerId = row.dataset.id;
-            
+
             if (seenCustomers.has(customerId)) {
               rowsToRemove.push(row);
             } else {
               seenCustomers.add(customerId);
             }
           }
-          
+
           // Remove duplicate entries
-          rowsToRemove.forEach(row => {
+          rowsToRemove.forEach((row) => {
             row.remove();
           });
-          
+
           if (rowsToRemove.length > 0) {
             console.log(`Cleared ${rowsToRemove.length} duplicate monthly customer entries`);
             updateCustomerStats();
@@ -464,17 +464,17 @@ function normalizeCustomerName(firstName, lastName) {
 function hasReachedStartDate(customer) {
   // const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
   // if (!isMonthlyCustomer) return true; // Non-monthly customers are always available
-  
+
   const startDateStr = customer.dataset.custom2;
   if (!startDateStr || !startDateStr.includes(',')) return true; // If no start date, allow actions (fallback)
-  
+
   try {
     // Convert the stored start date to a comparable format
     // The startDate is stored in the format returned by main.decodeDate()
     // We need to convert it back to mm-dd-yyyy format for comparison
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Parse the start date - it could be in various formats from main.decodeDate()
     let startDate;
     if (startDateStr.includes(',')) {
@@ -488,7 +488,7 @@ function hasReachedStartDate(customer) {
       // Try to parse as-is
       startDate = new Date(startDateStr);
     }
-    
+
     startDate.setHours(0, 0, 0, 0);
     return startDate <= today;
   } catch (error) {
@@ -753,7 +753,7 @@ function mainBtnFunction(
           main.findAtSectionOne(SECTION_NAME, customer.id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
               if (findResult.dataset.tid) payments.cancelCheckinPayment(findResult.dataset.tid);
-              
+
               // Persist archive to backend
               try {
                 const response = await fetch(`${API_BASE_URL}/inquiry/archived/${customer.id}`, {
@@ -1021,7 +1021,9 @@ function activeShortListener(monthInput, container) {
 
 function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
   // Extract the full ID after the 'id_' prefix without splitting on underscores in the ID itself
-  const customerId = String(columnsData[0]).startsWith('id_') ? String(columnsData[0]).slice(3) : String(columnsData[0]);
+  const customerId = String(columnsData[0]).startsWith('id_')
+    ? String(columnsData[0]).slice(3)
+    : String(columnsData[0]);
   const { firstName } = main.decodeName(columnsData[1].data[1]);
   main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult) => {
     let isCreating = true;
@@ -1184,7 +1186,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
     return;
   }
   const hasReachedStart = hasReachedStartDate(customer);
-  
+
   // If it's a monthly customer and start date hasn't been reached, show a message
   if (customer.dataset.custom2.toLowerCase().includes('incoming') || !hasReachedStart) {
     let startDateStr = customer.dataset.custom2.toLowerCase().includes('incoming') ? 'N/A' : customer.dataset.custom2;
@@ -1214,253 +1216,260 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
   continueCustomerProcess();
 
   function continueCustomerProcess() {
-  const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
-  
-  const inputs = {
-    header: {
-      title: `Initiate Customer Process ${getEmoji('📒', 26)}`,
-    },
-    short: [{ placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true }],
-    radio: [
-      { label: 'Process options', selected: 1, autoformat: { type: 'footer:sub', text: `Check-in ${getEmoji('📘')}` } },
-      {
-        icon: `${getEmoji('📘', 26)}`,
-        title: 'Check-in',
-        subtitle: 'Check-in this customer for today',
-        listener: (title, button, text) => {
-          if (isMonthlyCustomer) autoChangeButtonText(title, button, text);
+    const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
+
+    const inputs = {
+      header: {
+        title: `Initiate Customer Process ${getEmoji('📒', 26)}`,
+      },
+      short: [{ placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true }],
+      radio: [
+        {
+          label: 'Process options',
+          selected: 1,
+          autoformat: { type: 'footer:sub', text: `Check-in ${getEmoji('📘')}` },
         },
+        {
+          icon: `${getEmoji('📘', 26)}`,
+          title: 'Check-in',
+          subtitle: 'Check-in this customer for today',
+          listener: (title, button, text) => {
+            if (isMonthlyCustomer) autoChangeButtonText(title, button, text);
+          },
+        },
+        {
+          icon: `${getEmoji('🎫', 26)}`,
+          title: `${isMonthlyCustomer ? 'Renew' : 'Monthly'}`,
+          subtitle: `${isMonthlyCustomer ? 'Monthly renewal' : 'Register this customer to monthly'}`,
+          listener: autoChangeButtonText,
+        },
+        {
+          icon: `${getEmoji('🛕', 26)}`,
+          title: 'Reserve',
+          subtitle: 'Reserve facility with this customer',
+          listener: autoChangeButtonText,
+        },
+      ],
+      footer: {
+        main: isMonthlyCustomer ? `Check-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('📒')}`,
       },
-      {
-        icon: `${getEmoji('🎫', 26)}`,
-        title: `${isMonthlyCustomer ? 'Renew' : 'Monthly'}`,
-        subtitle: `${isMonthlyCustomer ? 'Monthly renewal' : 'Register this customer to monthly'}`,
-        listener: autoChangeButtonText,
-      },
-      {
-        icon: `${getEmoji('🛕', 26)}`,
-        title: 'Reserve',
-        subtitle: 'Reserve facility with this customer',
-        listener: autoChangeButtonText,
-      },
-    ],
-    footer: {
-      main: isMonthlyCustomer ? `Check-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('📒')}`,
-    },
-  };
+    };
 
-  continueCustomerProcessBtnFunction();
+    continueCustomerProcessBtnFunction();
 
-  function continueCustomerProcessBtnFunction() {
-    main.openModal('yellow', inputs, (result) => {
-      const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('monthly');
-      const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
-      const priceRate = customer.dataset.custom3.toLowerCase();
-      let amount =
-        isMonthlyCustomer && isPending
-          ? PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase().split(' - ')[0]}`]
-          : isMonthlyCustomer
-            ? 0
-            : PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase()}`];
-      const selectedProcess = main.getSelectedRadio(result.radio).toLowerCase();
-      if ((isMonthlyCustomer && isPending) || (!isMonthlyCustomer && customer.dataset.tid)) {
-        payments.pendingTransaction(customer.dataset.tid, (pendingResult) => {
-          if (pendingResult) {
-            const purpose = pendingResult.dataset.custom2.toLowerCase();
-            if (!isMonthlyCustomer && purpose.includes('daily') && selectedProcess.includes('check-in')) {
-              successPending();
-            } else if (
-              purpose.includes('monthly') &&
-              (selectedProcess.includes('monthly') || selectedProcess.includes('renew'))
-            ) {
-              successPending();
-            } else {
-              failedPending();
-            }
-
-            function successPending() {
-              main.closeModal(() => {
-                payments.continueProcessCheckinPayment(customer.dataset.tid, fullName);
-              });
-            }
-
-            function failedPending() {
-              main.toast(`${PENDING_TRANSACTION_MESSAGE} ${customer.dataset.tid}`, 'error');
-            }
-          } else {
-            const proceedWithoutPending = () => {
-              if (selectedProcess.includes('check-in')) {
-                checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
-                  if (findLogResult) {
-                    const logDate = findLogResult.dataset.datetime
-                      ? findLogResult.dataset.datetime.split(' - ')[0]
-                      : findLogResult.dataset.date
-                        ? findLogResult.dataset.date
-                        : findLogResult.dataset.custom2.split(' - ')[0];
-                    const logDateObj = new Date(logDate);
-                    const today = new Date();
-                    const isToday =
-                      logDateObj.getFullYear() === today.getFullYear() &&
-                      logDateObj.getMonth() === today.getMonth() &&
-                      logDateObj.getDate() === today.getDate();
-                    if (isToday) {
-                      const displayDatetime =
-                        findLogResult.dataset.datetime ||
-                        findLogResult.dataset.date ||
-                        findLogResult.dataset.custom2;
-                      main.openConfirmationModal(
-                        `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${displayDatetime}`,
-                        () => {
-                          continueCheckinProcess();
-                          main.closeConfirmationModal();
-                        }
-                      );
-                      return;
-                    }
-                  }
-                  continueCheckinProcess();
-
-                  function continueCheckinProcess() {
-                    if (isMonthlyCustomer && !isPending) {
-                      checkins.logCheckin(
-                        customer.dataset.tid || `CI_${customer.dataset.id}_${Date.now()}`,
-                        customer,
-                        2,
-                        true
-                      );
-                      return;
-                    } else {
-                      processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
-                    }
-                  }
-                });
-
-                return;
-              }
-              if (selectedProcess.includes('monthly') || selectedProcess.includes('renew')) {
-                const columnsData = [
-                  'id_' + customer.dataset.id,
-                  {
-                    type: 'object_contact',
-                    data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
-                  },
-                  'Monthly',
-                  customer.dataset.custom3,
-                  'custom_date_' + customer.dataset.date,
+    function continueCustomerProcessBtnFunction() {
+      main.openModal('yellow', inputs, (result) => {
+        const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
+        const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
+        const priceRate = customer.dataset.custom3.toLowerCase();
+        let amount =
+          isMonthlyCustomer && isPending
+            ? PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase().split(' - ')[0]}`]
+            : isMonthlyCustomer
+              ? 0
+              : PRICES_AUTOFILL[
+                  `${priceRate}_${customer.dataset.custom2.toLowerCase().includes('incoming') ? 'daily' : customer.dataset.custom2.toLowerCase()}`
                 ];
-                validateCustomer(
-                  columnsData,
-                  continueCustomerProcessBtnFunction,
-                  selectedProcess.includes('renew')
-                    ? {
-                        startDate: customer.dataset.startdate,
-                        endDate: customer.dataset.enddate,
-                        days: customer.dataset.days,
-                      }
-                    : null,
-                  true,
-                  true
-                );
-                return;
+        const selectedProcess = main.getSelectedRadio(result.radio).toLowerCase();
+        if ((isMonthlyCustomer && isPending) || (!isMonthlyCustomer && customer.dataset.tid)) {
+          payments.pendingTransaction(customer.dataset.tid, (pendingResult) => {
+            if (pendingResult) {
+              const purpose = pendingResult.dataset.custom2.toLowerCase();
+              if (!isMonthlyCustomer && purpose.includes('daily') && selectedProcess.includes('check-in')) {
+                successPending();
+              } else if (
+                purpose.includes('monthly') &&
+                (selectedProcess.includes('monthly') || selectedProcess.includes('renew'))
+              ) {
+                successPending();
+              } else {
+                failedPending();
               }
-              if (selectedProcess.includes('reserve')) {
-                main.sharedState.reserveCustomerId = customer.dataset.id;
+
+              function successPending() {
                 main.closeModal(() => {
-                  reservations.reserveCustomer();
+                  payments.continueProcessCheckinPayment(customer.dataset.tid, fullName);
                 });
               }
-            };
 
-            // Clear stale TID locally to avoid future false positives
-            customer.dataset.tid = '';
-            proceedWithoutPending();
-          }
-        });
-      } else {
-        if (selectedProcess.includes('check-in')) {
-          checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
-            if (findLogResult) {
-              const logDate = findLogResult.dataset.datetime
-                ? findLogResult.dataset.datetime.split(' - ')[0]
-                : findLogResult.dataset.date
-                  ? findLogResult.dataset.date
-                  : findLogResult.dataset.custom2.split(' - ')[0];
-              const logDateObj = new Date(logDate);
-              const today = new Date();
-              const isToday =
-                logDateObj.getFullYear() === today.getFullYear() &&
-                logDateObj.getMonth() === today.getMonth() &&
-                logDateObj.getDate() === today.getDate();
-              if (isToday) {
-                const displayDatetime =
-                  findLogResult.dataset.datetime ||
-                  findLogResult.dataset.date ||
-                  findLogResult.dataset.custom2;
-                main.openConfirmationModal(
-                  `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${displayDatetime}`,
-                  () => {
+              function failedPending() {
+                main.toast(`${PENDING_TRANSACTION_MESSAGE} ${customer.dataset.tid}`, 'error');
+              }
+            } else {
+              const proceedWithoutPending = () => {
+                if (selectedProcess.includes('check-in')) {
+                  checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
+                    if (findLogResult) {
+                      const logDate = findLogResult.dataset.datetime
+                        ? findLogResult.dataset.datetime.split(' - ')[0]
+                        : findLogResult.dataset.date
+                          ? findLogResult.dataset.date
+                          : findLogResult.dataset.custom2.split(' - ')[0];
+                      const logDateObj = new Date(logDate);
+                      const today = new Date();
+                      const isToday =
+                        logDateObj.getFullYear() === today.getFullYear() &&
+                        logDateObj.getMonth() === today.getMonth() &&
+                        logDateObj.getDate() === today.getDate();
+                      if (isToday) {
+                        const displayDatetime =
+                          findLogResult.dataset.datetime || findLogResult.dataset.date || findLogResult.dataset.custom2;
+                        main.openConfirmationModal(
+                          `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${displayDatetime}`,
+                          () => {
+                            continueCheckinProcess();
+                            main.closeConfirmationModal();
+                          }
+                        );
+                        return;
+                      }
+                    }
                     continueCheckinProcess();
-                    main.closeConfirmationModal();
-                  }
-                );
-                return;
-              }
-            }
-            continueCheckinProcess();
 
-            function continueCheckinProcess() {
-              if (isMonthlyCustomer && !isPending) {
-                checkins.logCheckin(
-                  customer.dataset.tid || `CI_${customer.dataset.id}_${Date.now()}`,
-                  customer,
-                  2,
-                  true
-                );
-                return;
-              } else {
-                processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
-              }
-            }
-          });
+                    function continueCheckinProcess() {
+                      if (isMonthlyCustomer && !isPending) {
+                        checkins.logCheckin(
+                          customer.dataset.tid || `CI_${customer.dataset.id}_${Date.now()}`,
+                          customer,
+                          2,
+                          true
+                        );
+                        return;
+                      } else {
+                        processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
+                      }
+                    }
+                  });
 
-          return;
-        }
-        if (selectedProcess.includes('monthly') || selectedProcess.includes('renew')) {
-          const columnsData = [
-            'id_' + customer.dataset.id,
-            {
-              type: 'object_contact',
-              data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
-            },
-            'Monthly',
-            customer.dataset.custom3,
-            'custom_date_' + customer.dataset.date,
-          ];
-          validateCustomer(
-            columnsData,
-            continueCustomerProcessBtnFunction,
-            selectedProcess.includes('renew')
-              ? {
-                  startDate: customer.dataset.startdate,
-                  endDate: customer.dataset.enddate,
-                  days: customer.dataset.days,
+                  return;
                 }
-              : null,
-            true,
-            true
-          );
-          return;
-        }
-        if (selectedProcess.includes('reserve')) {
-          main.sharedState.reserveCustomerId = customer.dataset.id;
-          main.closeModal(() => {
-            reservations.reserveCustomer();
+                if (selectedProcess.includes('monthly') || selectedProcess.includes('renew')) {
+                  const columnsData = [
+                    'id_' + customer.dataset.id,
+                    {
+                      type: 'object_contact',
+                      data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
+                    },
+                    'Monthly',
+                    customer.dataset.custom3,
+                    'custom_date_' + customer.dataset.date,
+                  ];
+                  validateCustomer(
+                    columnsData,
+                    continueCustomerProcessBtnFunction,
+                    selectedProcess.includes('renew')
+                      ? {
+                          startDate: customer.dataset.startdate,
+                          endDate: customer.dataset.enddate,
+                          days: customer.dataset.days,
+                        }
+                      : null,
+                    true,
+                    true
+                  );
+                  return;
+                }
+                if (selectedProcess.includes('reserve')) {
+                  main.sharedState.reserveCustomerId = customer.dataset.id;
+                  main.closeModal(() => {
+                    reservations.reserveCustomer();
+                  });
+                }
+              };
+
+              // Clear stale TID locally to avoid future false positives
+              customer.dataset.tid = '';
+              proceedWithoutPending();
+            }
           });
+        } else {
+          if (selectedProcess.includes('check-in')) {
+            checkins.findLogCheckin(customer.dataset.id, isMonthlyCustomer ? 2 : 1, (findLogResult) => {
+              if (findLogResult) {
+                const logDate = findLogResult.dataset.datetime
+                  ? findLogResult.dataset.datetime.split(' - ')[0]
+                  : findLogResult.dataset.date
+                    ? findLogResult.dataset.date
+                    : findLogResult.dataset.custom2.split(' - ')[0];
+                const logDateObj = new Date(logDate);
+                const today = new Date();
+                const isToday =
+                  logDateObj.getFullYear() === today.getFullYear() &&
+                  logDateObj.getMonth() === today.getMonth() &&
+                  logDateObj.getDate() === today.getDate();
+                if (isToday) {
+                  const displayDatetime =
+                    findLogResult.dataset.datetime || findLogResult.dataset.date || findLogResult.dataset.custom2;
+                  main.openConfirmationModal(
+                    `Customer already checked-in today:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>${displayDatetime}`,
+                    () => {
+                      continueCheckinProcess();
+                      main.closeConfirmationModal();
+                    }
+                  );
+                  return;
+                }
+              }
+              continueCheckinProcess();
+
+              function continueCheckinProcess() {
+                if (isMonthlyCustomer && !isPending) {
+                  checkins.logCheckin(
+                    customer.dataset.tid || `CI_${customer.dataset.id}_${Date.now()}`,
+                    customer,
+                    2,
+                    true
+                  );
+                  return;
+                } else {
+                  processCheckinPayment(
+                    customer,
+                    customer.dataset.custom2.toLowerCase().includes('monthly'),
+                    amount,
+                    priceRate
+                  );
+                }
+              }
+            });
+
+            return;
+          }
+          if (selectedProcess.includes('monthly') || selectedProcess.includes('renew')) {
+            const columnsData = [
+              'id_' + customer.dataset.id,
+              {
+                type: 'object_contact',
+                data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
+              },
+              'Monthly',
+              customer.dataset.custom3,
+              'custom_date_' + customer.dataset.date,
+            ];
+            validateCustomer(
+              columnsData,
+              continueCustomerProcessBtnFunction,
+              selectedProcess.includes('renew')
+                ? {
+                    startDate: customer.dataset.startdate,
+                    endDate: customer.dataset.enddate,
+                    days: customer.dataset.days,
+                  }
+                : null,
+              true,
+              true
+            );
+            return;
+          }
+          if (selectedProcess.includes('reserve')) {
+            main.sharedState.reserveCustomerId = customer.dataset.id;
+            main.closeModal(() => {
+              reservations.reserveCustomer();
+            });
+          }
         }
-      }
-    });
+      });
+    }
   }
-}
 }
 
 function customerEditDetailsBtnFunction(customer, { firstName, lastName, fullName }) {
@@ -1547,10 +1556,18 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
       const customerType = findResult1.dataset.custom2.split(' - ')[0];
       const isMonthlyCustomer = customerType.toLowerCase().includes('monthly');
       if (isMonthlyCustomer) {
-        findResult1.dataset.custom2 = customerType + ' - Active';
+        findResult1.dataset.custom2 =
+          customerType +
+          ' - ' +
+          (findResult1.dataset.custom2.toLowerCase().includes('incoming') ? 'Incoming' : 'Active');
         findResult1.children[2].textContent = findResult1.dataset.custom2;
-        findResult1.dataset.status = 'active';
+        findResult1.dataset.status = findResult1.dataset.custom2.toLowerCase().split(' - ')[1];
         findResult1.dataset.tid = '';
+
+        if (findResult1.dataset.status.includes('incoming')) {
+          checkins.logCheckin(transactionId, findResult1, 1, true);
+          return;
+        }
 
         // Resolve date range and days for monthly activation; portal-created rows may lack dataset values
         const resolveMonthlyDates = async () => {
@@ -1601,61 +1618,61 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           ];
 
           main.createAtSectionOne(SECTION_NAME, columnsData, 2, async (createResult) => {
-          main.createNotifDot(SECTION_NAME, 2);
+            main.createNotifDot(SECTION_NAME, 2);
 
-          const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-          customerProcessBtn.addEventListener('click', () =>
-            customerProcessBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
-          );
-          const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-          customerEditDetailsBtn.addEventListener('click', () =>
-            customerEditDetailsBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
-          );
+            const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+            customerProcessBtn.addEventListener('click', () =>
+              customerProcessBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
+            );
+            const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+            customerEditDetailsBtn.addEventListener('click', () =>
+              customerEditDetailsBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
+            );
 
-          try {
-            const response = await fetch(`${API_BASE_URL}/inquiry/customers/pending/${findResult1.dataset.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                customer_type: 'monthly',
-                customer_tid: '',
-                customer_pending: 0,
-              }),
-            });
+            try {
+              const response = await fetch(`${API_BASE_URL}/inquiry/customers/pending/${findResult1.dataset.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  customer_type: 'monthly',
+                  customer_tid: '',
+                  customer_pending: 0,
+                }),
+              });
 
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+
+              await response.json();
+            } catch (error) {
+              console.error('Error updating customer:', error);
             }
 
-            await response.json();
-          } catch (error) {
-            console.error('Error updating customer:', error);
-          }
+            try {
+              const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${findResult1.dataset.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  customer_tid: '',
+                  customer_pending: 0,
+                }),
+              });
 
-          try {
-            const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${findResult1.dataset.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                customer_tid: '',
-                customer_pending: 0,
-              }),
-            });
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
 
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+              await response.json();
+            } catch (error) {
+              console.error('Error updating customer:', error);
             }
-
-            await response.json();
-          } catch (error) {
-            console.error('Error updating customer:', error);
-          }
-          updateCustomerStats();
-          refreshDashboardStats();
+            updateCustomerStats();
+            refreshDashboardStats();
           });
         })();
 
@@ -1686,7 +1703,7 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
   function continueCustomerDetailsBtnFunction(customer) {
     const { firstName, lastName, fullName } = main.decodeName(customer.dataset.text);
     const isArchivedCustomer = title.includes('Archive');
-    
+
     const inputs = {
       header: {
         title: `${title} ${getEmoji(emoji, 26)}`,
@@ -1712,71 +1729,75 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
         sub: isArchivedCustomer ? `Exit View` : undefined,
       },
     };
-    
-    main.openModal('gray', inputs, async (result) => {
-      if (isArchivedCustomer) {
-        // Unarchive the customer
-        try {
-          const response = await fetch(`${API_BASE_URL}/inquiry/unarchive/${customerId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    main.openModal(
+      'gray',
+      inputs,
+      async (result) => {
+        if (isArchivedCustomer) {
+          // Unarchive the customer
+          try {
+            const response = await fetch(`${API_BASE_URL}/inquiry/unarchive/${customerId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const serverResult = await response.json();
+            const restored = serverResult && serverResult.result ? serverResult.result : {};
+            const restoredType = (restored.customer_type || '').toLowerCase();
+            const uiCustomerType = restoredType.includes('monthly') ? 'Monthly - Active' : 'Daily';
+            const uiRate = main.fixText(String(restored.customer_rate || customer.dataset.custom3 || 'regular'));
+
+            // Remove from archived tab and add to main customers tab
+            main.deleteAtSectionOne(SECTION_NAME, 4, customerId);
+
+            // Add back to main customers tab
+            const columnsData = [
+              'id_' + customerId,
+              {
+                type: 'object_contact',
+                data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
+              },
+              uiCustomerType,
+              uiRate,
+              'custom_date_today',
+            ];
+
+            main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+              const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+              customerProcessBtn.addEventListener('click', () =>
+                customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+              );
+              const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+              customerEditDetailsBtn.addEventListener('click', () =>
+                customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+              );
+              updateCustomerStats();
+            });
+
+            main.toast(`${fullName} has been unarchived successfully!`, 'success');
+            main.closeModal();
+          } catch (error) {
+            console.error('Error unarchiving customer:', error);
+            main.toast('Failed to unarchive customer', 'error');
           }
-
-          const serverResult = await response.json();
-          const restored = serverResult && serverResult.result ? serverResult.result : {};
-          const restoredType = (restored.customer_type || '').toLowerCase();
-          const uiCustomerType = restoredType.includes('monthly') ? 'Monthly - Active' : 'Daily';
-          const uiRate = main.fixText(String(restored.customer_rate || customer.dataset.custom3 || 'regular'));
-          
-          // Remove from archived tab and add to main customers tab
-          main.deleteAtSectionOne(SECTION_NAME, 4, customerId);
-          
-          // Add back to main customers tab
-          const columnsData = [
-            'id_' + customerId,
-            {
-              type: 'object_contact',
-              data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
-            },
-            uiCustomerType,
-            uiRate,
-            'custom_date_today',
-          ];
-          
-          main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
-            const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-            customerProcessBtn.addEventListener('click', () =>
-              customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-            );
-            const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-            customerEditDetailsBtn.addEventListener('click', () =>
-              customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-            );
-            updateCustomerStats();
-          });
-          
-          main.toast(`${fullName} has been unarchived successfully!`, 'success');
+        } else {
           main.closeModal();
-          
-        } catch (error) {
-          console.error('Error unarchiving customer:', error);
-          main.toast('Failed to unarchive customer', 'error');
         }
-      } else {
-        main.closeModal();
+      },
+      () => {
+        // Sub button (Exit View) - only for archived customers
+        if (isArchivedCustomer) {
+          main.closeModal();
+        }
       }
-    }, () => {
-      // Sub button (Exit View) - only for archived customers
-      if (isArchivedCustomer) {
-        main.closeModal();
-      }
-    });
+    );
   }
 }
 
@@ -1850,7 +1871,10 @@ export function cancelPendingTransaction(transactionId, customerIdHint = null) {
             });
           } catch (_) {}
           try {
-            await fetch(`${API_BASE_URL}/inquiry/monthly/${customerIdHint}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+            await fetch(`${API_BASE_URL}/inquiry/monthly/${customerIdHint}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+            });
           } catch (_) {}
 
           // Update UI by ID if present
