@@ -5,7 +5,7 @@ const sharedState = {
   intervalId: null,
   reserveCustomerId: '',
 };
- 
+
 export let { sectionName, activeTab, moduleLoad } = sharedState;
 
 // Global loading overlay (admin modules use window.showGlobalLoading/window.hideGlobalLoading)
@@ -26,7 +26,7 @@ function ensureGlobalLoadingOverlay() {
     overlay.style.alignItems = 'center';
     overlay.style.justifyContent = 'center';
     overlay.style.background = 'rgba(0,0,0,0.35)'; // keep original
-    overlay.style.backdropFilter = 'blur(2px)';    // keep original blur
+    overlay.style.backdropFilter = 'blur(2px)'; // keep original blur
     overlay.style.zIndex = '99999';
     overlay.style.pointerEvents = 'all';
 
@@ -118,9 +118,8 @@ function ensureGlobalLoadingOverlay() {
   return overlay;
 }
 
-
 export function showGlobalLoading() {
-  if (sharedState.moduleLoad === '') return
+  if (sharedState.moduleLoad === '') return;
   console.log('loading:', sharedState.moduleLoad);
   try {
     const overlay = ensureGlobalLoadingOverlay();
@@ -165,7 +164,7 @@ if (typeof window !== 'undefined') {
     }
   }
 }
- 
+
 function checkIfJsShouldNotRun(id) {
   let result = false;
   result = document.getElementById(id) == null;
@@ -669,7 +668,7 @@ async function loadSectionSilently(sectionName) {
                 customContentSectionTwo.remove();
                 sectionTwo.children[0].children[1].children[0].appendChild(sectionTwoContent);
                 if (statsDisabled) {
-                  sectionTwoContent.classList.add(`h-[${500 + 132}px]`);
+                  sectionTwoContent.classList.add(`h-[${screenHeight - 328 + 132}px]`);
                 }
               }
               const customContentSectionOne = tempCustomContent.querySelector('[data-sectionindex="1"]');
@@ -680,7 +679,9 @@ async function loadSectionSilently(sectionName) {
                   const customContent = tempCustomContent.querySelector(`[data-tabindex="${i}"]`).cloneNode(true);
                   sectionOneContent.appendChild(customContent);
                   if (statsDisabled) {
-                    customContent.className = `h-[${514 + 132}px]`;
+                    customContent.className = `h-[${screenHeight - 314 + 132}px]`;
+                  } else {
+                    customContent.className = `h-[${screenHeight - 510 + 132}px]`;
                   }
                 }
                 const removeSectionTwo = sectionOneContent.querySelector('[data-sectionindex="2"]');
@@ -1485,7 +1486,9 @@ function setupModalBase(defaultData, inputs, callback) {
       // 13-digit limit for any input labeled "Reference number"
       const placeholderText = (data.placeholder || '').toLowerCase();
       if (placeholderText.includes('reference number')) {
-        try { input.maxLength = 13; } catch (_) {}
+        try {
+          input.maxLength = 13;
+        } catch (_) {}
         input.setAttribute('inputmode', 'numeric');
         input.addEventListener('input', (e) => {
           const currentVal = String(input.value || '');
@@ -1498,7 +1501,9 @@ function setupModalBase(defaultData, inputs, callback) {
           // Enforce digits only on real user edits
           const digitsOnly = currentVal.replace(/\D/g, '');
           if (digitsOnly.length > 13 && e && e.isTrusted) {
-            try { toast('Reference number max is 13 digits', 'warning'); } catch (_) {}
+            try {
+              toast('Reference number max is 13 digits', 'warning');
+            } catch (_) {}
           }
           input.value = digitsOnly.slice(0, 13);
           data.value = input.value;
@@ -1935,7 +1940,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
 
     const cellContent = `
       <div class="flex items-center gap-3">
-        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${(data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]).replace(/'/g, "&#39;")}')" />
+        <img src="${data.data[0] ? data.data[0] : '/src/images/client_logo.jpg'}" class="h-8 w-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" onclick="showImageModal(this.src, '${(data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]).replace(/'/g, '&#39;')}')" />
         <p>${data.data[1].includes(':://') ? data.data[1].replace(/\:\:\/\//g, ' ') : data.data[1]}</p>
       </div>
     `;
@@ -2389,7 +2394,7 @@ async function showLoadingAndPreloadSections() {
       //   showSection(saved.sectionName, saved.tabIndex || 1);
       // } else {
       // }
-        showSection('dashboard');
+      showSection('dashboard');
     } catch (_e) {
       showSection('dashboard');
     }
@@ -2462,7 +2467,7 @@ function setupLogoDashboardRedirect() {
       absoluteSrc.endsWith('client_logo.jpg');
     if (!isClientLogo) return;
     e.preventDefault();
-    if (target.getAttribute("onclick").split("(")[0].trim() === 'showImageModal') return;
+    if (target.getAttribute('onclick').split('(')[0].trim() === 'showImageModal') return;
     try {
       showSection('dashboard');
     } catch (_e) {}
