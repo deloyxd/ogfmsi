@@ -1180,7 +1180,7 @@ function autoChangeButtonText(title, button, text) {
 }
 
 function customerProcessBtnFunction(customer, { firstName, lastName, fullName }) {
-  if (customer.dataset.custom2.toLowerCase().includes('incoming')) {
+  if (customer.dataset.custom2.toLowerCase().includes('fetching')) {
     return;
   }
   const hasReachedStart = hasReachedStartDate(customer);
