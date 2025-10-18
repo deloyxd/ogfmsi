@@ -14,10 +14,7 @@
     <!-- add new css here 👆 -->
 
     <!-- icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <!-- tailwindcss (for easier css) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,6 +31,10 @@
         font-style: italic;
       }
     </style> -->
+
+    <!-- firebase (for database) -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
   </head>
   <body
     class="min-h-screen cursor-default overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-black lg:overflow-x-hidden"
@@ -47,9 +48,7 @@
     <div class="min-h-screen">
       <div class="login-container grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <!-- welcome -->
-        <div
-          class="welcome-section relative flex flex-col items-center justify-center overflow-hidden pb-16 pt-16"
-        >
+        <div class="welcome-section relative flex flex-col items-center justify-center overflow-hidden pb-16 pt-16">
           <div
             id="welcomeText"
             class="animate-slide-in-left relative z-10 space-y-6 text-center lg:space-y-8 lg:text-left"
@@ -64,23 +63,24 @@
               <h1
                 class="text-4xl font-black uppercase leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl"
               >
-                Welcome to<br />
+                Welcome to
+                <br />
                 <!-- 🔑 CLIENT -->
                 <span
                   class="bg-gradient-to-r from-yellow-300 to-orange-100 bg-clip-text uppercase text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-                  >Fitworx Gym</span
                 >
+                  Fitworx Gym
+                </span>
               </h1>
               <p class="text-xl font-light text-white opacity-90 sm:text-2xl">
                 <!-- 🔑 CLIENT -->
-                Transform your body, transform your<br />life with our premium
-                fitness experience.
+                Transform your body, transform your
+                <br />
+                life with our premium fitness experience.
               </p>
             </div>
 
-            <div
-              class="flex flex-col gap-4 pt-6 sm:flex-row sm:justify-center lg:justify-start"
-            >
+            <div class="flex flex-col gap-4 pt-6 sm:flex-row sm:justify-center lg:justify-start">
               <!-- 🔑 CLIENT (items) -->
               <div class="flex items-center space-x-3 text-white">
                 <div
@@ -108,15 +108,9 @@
           </div>
 
           <!-- 🔑 CLIENT -->
-          <div
-            class="animate-slide-in-left relative z-10 mt-12 text-center lg:mt-16 lg:text-left"
-          >
-            <h2 class="mb-2 text-3xl font-bold text-white sm:text-4xl">
-              Fitworx Gym
-            </h2>
-            <p class="text-lg font-light text-white opacity-90 sm:text-xl">
-              Your premium fitness destination
-            </p>
+          <div class="animate-slide-in-left relative z-10 mt-12 text-center lg:mt-16 lg:text-left">
+            <h2 class="mb-2 text-3xl font-bold text-white sm:text-4xl">Fitworx Gym</h2>
+            <p class="text-lg font-light text-white opacity-90 sm:text-xl">Your premium fitness destination</p>
           </div>
         </div>
 
@@ -138,14 +132,12 @@
           <div class="animate-slide-in-right relative z-10 w-full max-w-lg">
             <div class="mb-10 text-center lg:mb-12">
               <div
+                id="authIcon"
                 class="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600"
               >
                 <i class="fas fa-user-circle text-5xl text-white"></i>
               </div>
-              <h3
-                class="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl"
-                id="formTitle"
-              >
+              <h3 class="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl" id="formTitle">
                 Sign in to an Account
               </h3>
               <p class="text-lg text-gray-400 sm:text-xl" id="formSubtitle">
@@ -153,43 +145,49 @@
                 Start your fitness journey today
               </p>
               <div
+                id="authDivider"
                 class="mx-auto mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-orange-500 to-orange-600"
               ></div>
             </div>
 
-            <form class="space-y-6 lg:space-y-8" id="loginForm">
-              <div class="relative hidden" id="fullNameField">
-                <div
-                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6"
-                >
+            <form class="space-y-6 lg:space-y-4" id="loginForm">
+              <div class="relative hidden" id="firstNameField">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
                   <i class="fas fa-user z-10 text-gray-400"></i>
                 </div>
                 <input
                   type="text"
-                  id="fullName"
+                  id="firstName"
                   class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-4 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
-                  placeholder="Full Name"
+                  placeholder="First Name"
+                />
+              </div>
+              <div class="relative hidden" id="lastNameField">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
+                  <i class="fas fa-user z-10 text-gray-400"></i>
+                </div>
+                <input
+                  type="text"
+                  id="lastName"
+                  class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-4 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
+                  placeholder="Last Name"
                 />
               </div>
 
               <div class="relative">
-                <div
-                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6"
-                >
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
                   <i class="fas fa-envelope z-10 text-gray-400"></i>
                 </div>
                 <input
                   type="text"
                   id="username"
                   class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-4 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
-                  placeholder="Username"
+                  placeholder="Email"
                 />
               </div>
 
               <div class="relative">
-                <div
-                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6"
-                >
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
                   <i class="fas fa-lock z-10 text-gray-400"></i>
                 </div>
                 <input
@@ -201,28 +199,59 @@
                 />
                 <button
                   type="button"
-                  id="showPassword"
+                  id="showPassword1"
                   class="absolute right-4 top-1/2 -translate-y-1/2 transform p-2 text-gray-400 transition-colors duration-300 hover:text-orange-500"
                 >
                   <i class="fas fa-eye"></i>
                 </button>
               </div>
 
-              <button
-                type="submit"
-                class="submit-button w-full transform rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 px-8 py-4 text-lg font-bold uppercase text-white transition-all duration-300 hover:scale-105 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 hover:shadow-2xl hover:shadow-orange-500/25 focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 sm:py-5"
-              >
-                <span
-                  class="flex items-center justify-center space-x-2 tracking-[2px]"
+              <div class="relative hidden" id="confirmPasswordField">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
+                  <i class="fas fa-lock z-10 text-gray-400"></i>
+                </div>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  class="input-field w-full rounded-2xl border-2 border-gray-700 bg-gray-800 bg-opacity-50 py-4 pl-14 pr-16 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:border-orange-500 focus:bg-gray-700 focus:bg-opacity-70 focus:outline-none sm:py-5"
+                  placeholder="Confirm Password"
+                  required
+                />
+                <button
+                  type="button"
+                  id="showPassword2"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 transform p-2 text-gray-400 transition-colors duration-300 hover:text-orange-500"
                 >
-                  <span>Sign In</span>
-                  <i class="fas fa-arrow-right"></i>
-                </span>
-              </button>
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+
+              <div class="flex w-full flex-col sm:flex-row sm:space-x-4">
+                <!-- Submit Button -->
+                <button
+                  type="submit"
+                  class="submit-button flex-1 transform rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 px-8 py-4 text-lg font-bold uppercase text-white transition-all duration-300 hover:scale-105 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 hover:shadow-2xl hover:shadow-orange-500/25 focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 sm:py-5"
+                >
+                  <span class="flex items-center justify-center space-x-2 tracking-[2px]">
+                    <span id="submitBtnLabel">Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                  </span>
+                </button>
+
+                <!-- Google Sign-In Button -->
+                <button
+                  type="button"
+                  id="googleSignInBtn"
+                  class="mt-4 flex flex-1 items-center justify-center space-x-3 rounded-2xl border border-gray-700 bg-gray-800 py-4 text-white transition-all duration-300 hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 sm:mt-0 sm:py-5"
+                >
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="h-6 w-6" />
+                  <span class="font-semibold tracking-wide">Sign in with Google</span>
+                </button>
+              </div>
             </form>
 
-            <div class="mt-10 text-center lg:mt-12">
-              <div class="mb-6 flex items-center justify-center space-x-4">
+            <div class="mt-4 text-center lg:mt-6">
+              <div class="mb-4 flex items-center justify-center space-x-4">
                 <div class="h-px flex-1 bg-gray-600"></div>
                 <span class="text-sm text-gray-400">OR</span>
                 <div class="h-px flex-1 bg-gray-600"></div>
@@ -309,15 +338,12 @@
       <div class="checkbox-wrapper cursor-default">
         <label class="checkbox-label">
           <input type="checkbox" id="agreeCheckbox" class="checkbox-input" />
-          <span class="checkbox-text"
-            >I have read and agree to the terms and conditions</span
-          >
+          <span class="checkbox-text">I have read and agree to the terms and conditions</span>
         </label>
       </div>
 
       <div class="terms-footer cursor-default">
-        By accepting these terms, you acknowledge that you have read and
-        understood all gym policies.
+        By accepting these terms, you acknowledge that you have read and understood all gym policies.
       </div>
     </div>
 
@@ -326,9 +352,7 @@
       id="successModal"
       class="modal fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-70"
     >
-      <div
-        class="rounded-lg border-2 border-green-500 bg-zinc-900 p-6 text-center shadow-xl"
-      >
+      <div class="rounded-lg border-2 border-green-500 bg-zinc-900 p-6 text-center shadow-xl">
         <div class="mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -346,14 +370,8 @@
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
         </div>
-        <h3
-          id="success-title"
-          class="text-xl font-bold uppercase text-white"
-        ></h3>
-        <p
-          id="success-message"
-          class="mt-2 text-sm uppercase tracking-wider text-gray-400"
-        ></p>
+        <h3 id="success-title" class="text-xl font-bold uppercase text-white"></h3>
+        <p id="success-message" class="mt-2 text-sm uppercase tracking-wider text-gray-400"></p>
       </div>
     </div>
 
@@ -362,15 +380,12 @@
     <audio id="error-sfx" src="/src/sfx/error.mp3"></audio>
 
     <!-- main js -->
+    <script type="module" src="/src/js/firebase.js"></script>
     <script type="module" src="/src/js/modal.js"></script>
     <script type="module" src="/src/js/customer_login.js"></script>
     <!-- add new js here 👆 -->
-    <script src="/src/js/customer_modules/calendar.js"></script>
 
     <!-- imported js -->
-    <script
-      type="text/javascript"
-      src="https://cdn.jsdelivr.net/npm/toastify-js"
-    ></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   </body>
 </html>

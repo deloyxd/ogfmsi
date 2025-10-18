@@ -1,4 +1,12 @@
 import global from './_global.js';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  getAdditionalUserInfo,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { app } from './firebase.js';
+import { API_BASE_URL } from './_global.js';
 
 export function showTermsAndConditions() {
   const termsContainer = document.querySelector('.terms-container');
@@ -45,42 +53,160 @@ const sanitizeInput = (input) => {
     .replace(/\//g, '&#x2F;');
 };
 
+const authIcon = document.getElementById('authIcon');
+const authDivider = document.getElementById('authDivider');
 const username = document.getElementById('username');
 const password = document.getElementById('password');
-const fullName = document.getElementById('fullName');
-const fullNameField = document.getElementById('fullNameField');
+const confirmPasswordField = document.getElementById('confirmPasswordField');
+const confirmPassword = document.getElementById('confirmPassword');
+const firstName = document.getElementById('firstName');
+const firstNameField = document.getElementById('firstNameField');
+const lastName = document.getElementById('lastName');
+const lastNameField = document.getElementById('lastNameField');
 const formTitle = document.getElementById('formTitle');
 const formSubtitle = document.getElementById('formSubtitle');
 const toggleText = document.getElementById('toggleText');
 const toggleButton = document.getElementById('toggleForm');
 const welcomeText = document.getElementById('welcomeText');
+const submitBtnLabel = document.getElementById('submitBtnLabel');
+const googleSignInBtn = document.getElementById('googleSignInBtn');
+
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+googleSignInBtn.addEventListener('click', async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const info = getAdditionalUserInfo(result);
+    const isNewUser = info?.isNewUser ?? false;
+
+    // localStorage.setItem("fitworxUser", JSON.stringify({
+    //   name: user.displayName,
+    //   email: user.email,
+    //   photo: user.photoURL
+    // }));
+
+    if (isNewUser) {
+      const fullName = user.displayName || '';
+      const [defaultFirst, ...rest] = fullName.split(' ');
+      const defaultLast = rest.join(' ');
+
+      const {
+        value: formValues,
+        isConfirmed,
+        isDismissed,
+      } = await Swal.fire({
+        title: 'Welcome to Fitworx Gym! 🏋️‍♀️',
+        html: `
+                <p class="text-gray-700 mb-3">Please confirm or edit your name below to complete your registration.</p>
+                <input id="swal-first" class="swal2-input" placeholder="First Name" value="${defaultFirst || ''}">
+                <input id="swal-last" class="swal2-input" placeholder="Last Name" value="${defaultLast || ''}">
+              `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Continue',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#f97316',
+        preConfirm: () => {
+          const first = Swal.getPopup().querySelector('#swal-first').value.trim();
+          const last = Swal.getPopup().querySelector('#swal-last').value.trim();
+          if (!first || !last) {
+            Swal.showValidationMessage('Please fill out both first and last name.');
+            return false;
+          }
+          return { first, last };
+        },
+      });
+
+      if (!isConfirmed) {
+        try {
+          await user.delete();
+          Swal.fire({
+            icon: 'info',
+            title: 'Registration Cancelled',
+            text: 'Your Google sign-in has been cancelled. No account was created.',
+            confirmButtonColor: '#ef4444',
+          });
+        } catch (err) {
+          console.error('⚠️ Error deleting temporary user:', err);
+        }
+        return;
+      }
+
+      const { first, last } = formValues;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_id: `U${Date.now()}`,
+            customer_image_url: user.photoURL,
+            customer_first_name: first,
+            customer_last_name: last,
+            customer_contact: user.email,
+            customer_type: 'daily',
+            customer_tid: '',
+            customer_pending: 0,
+            customer_rate: 'regular',
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const newCustomer = await response.json();
+        window.location.href = '/src/html/customer_dashboard.html';
+      } catch (error) {
+        console.error('Error creating customer:', error);
+      }
+    } else {
+      window.location.href = '/src/html/customer_dashboard.html';
+    }
+  } catch (error) {
+    console.error('❌ Google Sign-In Error:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Google Sign-In Failed',
+      text: error.message,
+      confirmButtonColor: '#ef4444',
+    });
+  }
+});
 
 function setupLoginForm() {
   const loginForm = document.getElementById('loginForm');
-  const showPasswordButton = document.getElementById('showPassword');
+  const showPassword1Button = document.getElementById('showPassword1');
+  const showPassword2Button = document.getElementById('showPassword2');
 
   resetInputFields();
 
   loginForm.addEventListener('submit', submitClicked);
-  showPasswordButton.addEventListener('click', showPasswordClicked);
+  showPassword1Button.addEventListener('click', showPassword1Clicked);
+  showPassword2Button.addEventListener('click', showPassword2Clicked);
   toggleButton.addEventListener('click', toggleFormClicked);
 }
 
 function resetInputFields() {
   username.value = '';
   password.value = '';
-  fullName.value = '';
+  confirmPassword.value = '';
+  firstName.value = '';
+  lastName.value = '';
 }
 
 async function submitClicked(e) {
   e.preventDefault();
 
   const submitBtn = document.getElementById('loginForm').lastChild.previousSibling;
-  console.log(submitBtn);
   const isLoginMode = formTitle.textContent.includes('Sign in');
   const sanitizedUsername = sanitizeInput(username.value.trim());
   const sanitizedPassword = password.value;
-  const sanitizedFullName = isLoginMode ? '' : sanitizeInput(fullName.value.trim());
+  const sanitizedFullName = isLoginMode ? '' : sanitizeInput(firstName.value.trim() + ' ' + lastName.value.trim());
 
   const oldSubmitBtn = submitBtn.innerHTML;
   submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -170,9 +296,17 @@ async function submitClicked(e) {
   submitBtn.disabled = false;
 }
 
-function showPasswordClicked() {
+function showPassword1Clicked() {
   const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
   password.setAttribute('type', type);
+
+  this.querySelector('i').classList.toggle('fa-eye');
+  this.querySelector('i').classList.toggle('fa-eye-slash');
+}
+
+function showPassword2Clicked() {
+  const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+  confirmPassword.setAttribute('type', type);
 
   this.querySelector('i').classList.toggle('fa-eye');
   this.querySelector('i').classList.toggle('fa-eye-slash');
@@ -198,7 +332,12 @@ function toggleFormClicked(e) {
 
   updatePanelText(isLoginMode);
 
-  fullNameField.classList.toggle('hidden', !isLoginMode);
+  authIcon.classList.toggle('hidden', isLoginMode);
+  authDivider.classList.toggle('hidden', isLoginMode);
+  firstNameField.classList.toggle('hidden', !isLoginMode);
+  lastNameField.classList.toggle('hidden', !isLoginMode);
+  confirmPasswordField.classList.toggle('hidden', !isLoginMode);
+  submitBtnLabel.innerText = isLoginMode ? 'Sign Up' : 'Sign In';
 }
 
 function updatePanelText(isLoginMode) {
@@ -213,9 +352,9 @@ function updatePanelText(isLoginMode) {
               <h1
                 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight tracking-tight uppercase"
               >
-                Hello,<br />
+                Welcome to<br />
                 <!-- 🔑 CLIENT -->
-                <span class="bg-gradient-to-r from-yellow-300 to-orange-100 bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] uppercase">Friend!</span>
+                <span class="bg-gradient-to-r from-yellow-300 to-orange-100 bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] uppercase">Fitworx Gym</span>
               </h1>
               <p class="text-white text-xl sm:text-2xl opacity-90 font-light">
                 <!-- 🔑 CLIENT -->
