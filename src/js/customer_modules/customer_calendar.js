@@ -327,6 +327,7 @@ function createDayElement(day, month, year) {
     if (state.selectedDate) {
       state.selectedDate.classList.remove('bg-orange-300');
       state.selectedDate.setAttribute('aria-pressed', 'false');
+      state.selectedDate.querySelector('.bookmark')?.classList.add('opacity-0');
     }
     el.classList.add('bg-orange-300');
     state.selectedDate = el;
@@ -643,7 +644,9 @@ function mount() {
         };
 
         const parseDurationToMinutes = (raw) => {
-          const val = String(raw ?? '').trim().toLowerCase();
+          const val = String(raw ?? '')
+            .trim()
+            .toLowerCase();
           if (!val) return NaN;
 
           const numMatch = val.match(/([0-9]*\.?[0-9]+)/);
@@ -787,11 +790,19 @@ function mount() {
         }
         // Optionally set tid via updateReservationFE once you get a transactionId
         // await updateReservationFE(reservation.id, { tid: transactionId });
-        const prepared = prepareFormData({ id, customerName: sessionStorage.getItem('full_name'), reservationType, dateMMDDYYYY, startVal, endVal, amount });
+        const prepared = prepareFormData({
+          id,
+          customerName: sessionStorage.getItem('full_name'),
+          reservationType,
+          dateMMDDYYYY,
+          startVal,
+          endVal,
+          amount,
+        });
         openPaymentModal(reservation, prepared);
       } catch (err) {
         e.preventDefault();
-        console.log(err)
+        console.log(err);
         showError('Error creating reservation. Please try again.');
       }
     });
@@ -1099,7 +1110,8 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
 }
 
 function openConfirmationModal() {
-  const message = 'We have sent a notification to the email you provided. You will receive verification once your payment is confirmed.';
+  const message =
+    'We have sent a notification to the email you provided. You will receive verification once your payment is confirmed.';
   const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="calendarConfirmation">
         <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
