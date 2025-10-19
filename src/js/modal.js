@@ -109,7 +109,7 @@ function adminModalSetup(confirmBtn, cancelBtn) {
 
         // redirect after delay
         setTimeout(() => {
-          window.location.href = '/src/modules_html/admin_side/dashboard.html';
+          window.location.href = '/admin';
         }, 500);
       } else {
         validationMessage.textContent = data.error || 'Invalid credentials';
