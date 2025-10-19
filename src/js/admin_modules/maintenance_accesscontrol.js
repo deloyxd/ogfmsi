@@ -18,12 +18,23 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 });
 
 async function fetchAllSystemUsers() {
+  main.deleteAllAtSectionOne(SECTION_NAME, 1);
   try {
     const resp = await fetch(`${API_BASE_URL}/admin/users`);
     const data = await resp.json();
     if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
     const systemUsers = data.result;
-    console.log(systemUsers);
+    systemUsers.forEach((systemUser) => {
+      const columnsData = [
+        'id_' + systemUser.admin_id,
+        {
+          type: 'object_username',
+          data: [systemUser.admin_image_url, systemUser.admin_full_name, systemUser.admin_username],
+        },
+        main.fixText(systemUser.admin_role),
+      ];
+      main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {});
+    });
   } catch (err) {}
 }
 

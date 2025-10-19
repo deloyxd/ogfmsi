@@ -16,6 +16,16 @@ let activated = false,
   subBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
+  const systemUserRole = sessionStorage.getItem('systemUserRole') || '';
+  if (systemUserRole === '') {
+    window.location.href = '/';
+    return;
+  }
+  const roleElement = document.getElementById('role');
+  if (roleElement) {
+    roleElement.innerText = systemUserRole;
+    roleElement.parentElement.previousElementSibling.innerText = `Welcome, ${sessionStorage.getItem('systemUserFullname') || 'Guest'}!`;
+  }
   if (!activated) {
     mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
     mainBtn.addEventListener('click', mainBtnFunction);

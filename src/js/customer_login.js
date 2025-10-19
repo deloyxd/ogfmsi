@@ -357,11 +357,32 @@ async function submitClicked(e) {
       if (!sanitizedEmail || !sanitizedPassword) {
         throw new Error('Please enter your email and password.');
       }
-      // 🔹 Login
-      const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
-      const user = userCredential.user;
-
       try {
+        // 🔹 Login
+        if (!sanitizedEmail.includes('@') && !sanitizedEmail.includes('.com')) {
+          const response = await fetch(`${API_BASE_URL}/admin/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: sanitizedEmail,
+              password: sanitizedPassword,
+            }),
+          });
+          if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
+          const data = await response.json();
+          const systemUser = data.user;
+          if (!systemUser) throw new Error('System user not found');
+
+          sessionStorage.setItem('systemUserRole', systemUser.role);
+          sessionStorage.setItem('systemUserFullname', systemUser.name);
+          window.location.href = '/admin';
+          return;
+        }
+        const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
+        const user = userCredential.user;
+
         const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
           method: 'POST',
           headers: {

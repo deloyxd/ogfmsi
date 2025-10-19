@@ -10,6 +10,107 @@ function hashPassword(plain) {
   return `scrypt:${salt}:${hash}`;
 }
 
+/**
+ * Verify password against scrypt-hash formatted as: "scrypt:<salt>:<hex-hash>"
+ * Returns true on match, false otherwise.
+ */
+function verifyScryptPassword(plain, stored) {
+  try {
+    if (typeof stored !== 'string') return false;
+    const parts = stored.split(':');
+    if (parts.length !== 3 || parts[0] !== 'scrypt') return false;
+    const salt = parts[1];
+    const hashHex = parts[2];
+    const derived = crypto.scryptSync(String(plain), salt, 64).toString('hex');
+
+    const a = Buffer.from(hashHex, 'hex');
+    const b = Buffer.from(derived, 'hex');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * POST /login
+ * Admin Login endpoint
+ * Body: { "email": string, "password": string }
+ * Behavior:
+ *  - Validates input types and presence
+ *  - Looks up user in admin_users_tbl by admin_username (treated as email/username)
+ *  - Requires admin_status = 'active'
+ *  - Verifies password:
+ *      - Supports scrypt format: "scrypt:<salt>:<hashHex>"
+ *      - If value looks like bcrypt ("$2...") but bcrypt is not installed, returns 500 (config issue)
+ *      - Otherwise falls back to plain string comparison
+ * Responses:
+ *  - 200 { success: true, user: { id, email, name, role } }
+ *  - 400 { error: "..." } for validation errors
+ *  - 401 { success: false, message: "Invalid email or password" } on auth failure
+ *  - 500 { error: "Internal server error" } on unexpected errors
+ */
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (typeof email !== 'string' || typeof password !== 'string' || email.trim() === '' || password === '') {
+      return res.status(400).json({ error: 'Invalid request body: email and password are required' });
+    }
+
+    // Treat admin_username as the login identifier (email/username)
+    const rows = await db.query(
+      'SELECT admin_id, admin_full_name, admin_username, admin_role, admin_status, admin_password_hash FROM admin_users_tbl WHERE admin_username = ? LIMIT 1',
+      [email]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    const record = rows[0];
+
+    // Enforce active status
+    if (record.admin_status !== 'active') {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    const stored = record.admin_password_hash || '';
+
+    // If bcrypt-like hash is stored but bcrypt isn't installed, treat as server configuration issue.
+    if (typeof stored === 'string' && stored.startsWith('$2')) {
+      console.error('Login error: bcrypt hash detected but bcrypt is not installed');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    // Verify password
+    let ok = false;
+    if (typeof stored === 'string' && stored.startsWith('scrypt:')) {
+      ok = verifyScryptPassword(password, stored);
+    } else {
+      // Fallback: plaintext comparison
+      ok = String(password) === String(stored);
+    }
+
+    if (!ok) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: record.admin_id,
+        email: record.admin_username,
+        name: record.admin_full_name,
+        role: record.admin_role,
+      },
+    });
+  } catch (err) {
+    console.error('POST /admin/login error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+ 
 router.get('/users', async (req, res) => {
   const { useLimit, limit, offset } = parsePageParams(req);
   let sql = `SELECT * FROM admin_users_tbl ORDER BY created_at DESC`;
