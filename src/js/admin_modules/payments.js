@@ -570,7 +570,20 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
                 ],
                 2,
-                () => {}
+                (createResult) => {
+                  // Set the proper data attributes for the details modal
+                  createResult.dataset.purpose = payment.payment_purpose || 'N/A';
+                  createResult.dataset.amounttopay = main.formatPrice(payment.payment_amount_to_pay || 0);
+                  createResult.dataset.amountpaidcash = main.formatPrice(0);
+                  createResult.dataset.amountpaidcashless = main.formatPrice(0);
+                  createResult.dataset.changeamount = main.formatPrice(0);
+                  createResult.dataset.pricerate = payment.payment_rate || 'N/A';
+                  createResult.dataset.paymentmethod = 'canceled';
+                  createResult.dataset.datetime = `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`;
+                  
+                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('canceled', createResult));
+                }
               );
             }
           );
