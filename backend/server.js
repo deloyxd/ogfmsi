@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 const router = require('./routes/route');
 const corsMiddleware = require('./middleware/cross-origin-middleware');
@@ -36,9 +37,21 @@ const serverTiming = require('./middleware/server-timing-middleware');
 app.use(compression());
 app.use(serverTiming());
 
+// Serve static files from src/html directory
+app.use(express.static(path.join(__dirname, '../src/html')));
+
 //API URL: (host):(port)/api
 
 app.use('/api',router);
+
+// Specific routes for short paths
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../src/html/_admin_main.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, '../src/html/customer_login.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../src/html/customer_dashboard.html')));
+app.get('/about', (req, res) => res.sendFile(path.join(__dirname, '../src/html/apt_about_us.html')));
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../src/html/apt_privacy_policy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../src/html/apt_terms_of_service.html')));
 
 
 //Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing
