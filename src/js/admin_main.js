@@ -304,7 +304,7 @@ async function loadSectionSilently(sectionName) {
       await loadComponent(name, element, dataset);
 
       async function loadComponent(componentName, element, dataset) {
-        const response = await fetch(`/src/html/admin_${componentName}.html`);
+          const response = await fetch(`/src/html/admin_${componentName}.html`);
         let html = await response.text();
 
         html = html.replace(/\$\{(\w+)\}/g, (match, varName) =>
