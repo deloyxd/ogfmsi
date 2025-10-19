@@ -98,13 +98,46 @@ const CLOTHING_SIZE_UNITS = new Set([
 
 let mainBtn;
 
+// Set up periodic expiration check (every 5 sec)
+let expirationCheckInterval;
+
+// Start periodic expiration check when section is loaded
+function startExpirationCheck() {
+  // Clear any existing interval
+  if (expirationCheckInterval) {
+    clearInterval(expirationCheckInterval);
+  }
+  
+  // Check every 5 seconds (5000 ms)
+  expirationCheckInterval = setInterval(async () => {
+    try {
+      await checkAndDisposeExpiredProducts();
+    } catch (error) {
+      console.error('Error in periodic expiration check:', error);
+    }
+  }, 5000); // 5 sec
+}
+
+// Stop periodic expiration check
+function stopExpirationCheck() {
+  if (expirationCheckInterval) {
+    clearInterval(expirationCheckInterval);
+    expirationCheckInterval = null;
+  }
+}
+
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
-  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  if (main.sharedState.sectionName !== SECTION_NAME) {
+    stopExpirationCheck();
+    return;
+  }
 
   mainBtn = document.querySelector(`.section-main-btn[data-section="${SECTION_NAME}"]`);
   mainBtn?.removeEventListener('click', mainBtnFunction);
   mainBtn?.addEventListener('click', mainBtnFunction);
 
+  // Start expiration check and load products
+  startExpirationCheck();
   loadProducts();
 });
 
@@ -113,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentSection = document.querySelector(`#${SECTION_NAME}-section`);
   if (currentSection && !currentSection.classList.contains('hidden')) {
     setTimeout(() => {
+      // Check for expired products and load products when section becomes active
       loadProducts();
     }, 100);
   }
@@ -307,8 +341,44 @@ async function addProduct(result, name, price, quantity, measurement, expiration
   }
 }
 
+// Check for expired products and automatically dispose them
+async function checkAndDisposeExpiredProducts() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products/check-expired`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.disposed_count > 0) {
+      // Show notification about disposed products
+      main.toast(`${data.disposed_count} expired product(s) automatically moved to Disposed Products tab`, 'info');
+      
+      // Log the action
+      logAction(
+        'Auto-dispose expired products',
+        {
+          disposed_count: data.disposed_count,
+          disposed_products: data.result,
+          date: new Date().toISOString(),
+        },
+        'product_auto_dispose'
+      );
+    }
+  } catch (error) {
+    console.error('Error checking expired products:', error);
+    // Don't show error to user as this is a background process
+  }
+}
+
 async function loadProducts() {
   try {
+    // First, check for expired products and automatically dispose them
+    await checkAndDisposeExpiredProducts();
+    
     const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
     const data = await response.json();
 
@@ -1210,3 +1280,14 @@ function checkIfSameData(newData, oldData) {
 function refreshAllTabs() {
   loadProducts();
 }
+
+// Test function for expiration logic (can be called from browser console)
+window.testExpirationLogic = async function() {
+  console.log('Testing expiration logic...');
+  try {
+    await checkAndDisposeExpiredProducts();
+    console.log('Expiration check completed');
+  } catch (error) {
+    console.error('Error testing expiration logic:', error);
+  }
+};
