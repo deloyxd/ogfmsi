@@ -70,6 +70,8 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Customer not found. Please sign up.' });
     }
 
+    console.log(rows)
+
     res.status(200).json({
       message: 'Login successful',
       result: rows[0],

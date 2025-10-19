@@ -313,7 +313,7 @@ async function submitClicked(e) {
           },
           body: JSON.stringify({
             customer_id: id,
-            customer_image_url: user.photoURL,
+            customer_image_url: '',
             customer_first_name: sanitizedFirst,
             customer_last_name: sanitizedLast,
             customer_contact: sanitizedEmail,
@@ -330,8 +330,8 @@ async function submitClicked(e) {
 
         const newCustomer = await response.json();
         sessionStorage.setItem('id', id);
-        sessionStorage.setItem('full_name', user.displayName);
-        sessionStorage.setItem('email', user.email);
+        sessionStorage.setItem('full_name', sanitizedFirst + ' ' + sanitizedLast);
+        sessionStorage.setItem('email', sanitizedEmail);
 
         Toastify({
           text: 'Account created successfully!',
@@ -341,7 +341,7 @@ async function submitClicked(e) {
           position: 'center',
           backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
           stopOnFocus: true,
-          callback: () => toggleFormClicked(e),
+          callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
         }).showToast();
       } catch (error) {
         console.error('Error creating customer:', error);
@@ -366,10 +366,11 @@ async function submitClicked(e) {
         });
 
         if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
-        const customer = await response.json();
+        const data = await response.json();
+        const customer = data.result;
         if (!customer) throw new Error('Customer not found');
         sessionStorage.setItem('id', customer.customer_id);
-        sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
+        sessionStorage.setItem('full_name', user.displayName);
         sessionStorage.setItem('email', user.email);
 
         Toastify({
