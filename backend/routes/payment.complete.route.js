@@ -21,4 +21,17 @@ router.get('/complete', async (req, res) => {
   }
 });
 
+// GET all complete payments
+router.get('/complete/:id', async (req, res) => {
+  const { id } = req.params;
+  const query = `SELECT * FROM payment_tbl WHERE payment_id = ?`;
+  try {
+      const rows = await db.query(query, [id]);
+    return res.status(200).json({ message: 'Fetching payments successful', result: rows });
+  } catch (error) {
+    console.error('Fetching payments error:', error);
+    return res.status(500).json({ error: 'Fetching payments failed' });
+  }
+});
+
 module.exports = router;

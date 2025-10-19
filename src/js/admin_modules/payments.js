@@ -595,9 +595,309 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
   }
 });
 
-function mainBtnFunction() {}
+function mainBtnFunction() {
+  openConsolidateTransactionsModal();
+}
 
 function subBtnFunction() {}
+
+// ===== Consolidate Transactions Modal =====
+function openConsolidateTransactionsModal() {
+  // Build modal shell
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-20 hidden" id="consolidateTransactionsModal">
+      <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Consolidate Transactions</p>
+          <p class="text-xs">Showing first 5 recent Service and Sales transactions</p>
+        </div>
+        <div class="p-4">
+          <div class="mb-3">
+            <label class="mb-1 block text-sm font-medium text-gray-700">Search transactions</label>
+            <input type="text" id="consolidateSearchInput" placeholder="Search by Transaction ID or Date"
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="consolidateGrid">
+            <div class="flex flex-col gap-2 border rounded-lg p-3" id="serviceCol">
+              <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur">
+                <p class="text-sm font-semibold text-emerald-700">Service</p>
+              </div>
+              <div class="text-sm text-gray-600" id="serviceListLoading">Loading...</div>
+              <div class="flex flex-col gap-2" id="serviceList"></div>
+            </div>
+            <div class="flex flex-col gap-2 border rounded-lg p-3" id="salesCol">
+              <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur">
+                <p class="text-sm font-semibold text-cyan-700">Sales</p>
+              </div>
+              <div class="text-sm text-gray-600" id="salesListLoading">Loading...</div>
+              <div class="flex flex-col gap-2" id="salesList"></div>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-end gap-2">
+            <span class="text-xs md:text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md" id="selectedCountText" aria-live="polite">Selected: 0</span>
+            <button type="button" id="processConsolidateBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">Process</button>
+            <button type="button" id="closeConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('consolidateTransactionsModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  // Close handlers
+  modal.addEventListener('click', closeConsolidateTransactionsModal);
+  const closeBtn = document.getElementById('closeConsolidateBtn');
+  if (closeBtn) closeBtn.addEventListener('click', closeConsolidateTransactionsModal);
+  const processBtn = document.getElementById('processConsolidateBtn');
+  if (processBtn) processBtn.addEventListener('click', openProcessConsolidatedModal);
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') closeConsolidateTransactionsModal();
+  };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
+
+  // Fetch and render first 5 of each
+  fetchFirstFiveTransactions();
+
+  // Wire up search
+  const searchInput = document.getElementById('consolidateSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value || '';
+      renderConsolidatedTransactions(consolidatedServiceData, consolidatedSalesData, q);
+    });
+  }
+}
+
+function closeConsolidateTransactionsModal() {
+  const modal = document.getElementById('consolidateTransactionsModal');
+  if (!modal) return;
+  modal.classList.remove('opacity-100');
+  modal.children[0].classList.add('-translate-y-6');
+  modal.children[0].classList.remove('scale-100');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.remove();
+  }, 300);
+}
+
+// Cache for search filtering
+let consolidatedServiceData = [];
+let consolidatedSalesData = [];
+// Track selected items across renders (key format: `${type}:${payment_id}`)
+const consolidatedSelected = new Set();
+
+function updateSelectedCountUI() {
+  const el = document.getElementById('selectedCountText');
+  if (el) el.textContent = `Selected: ${consolidatedSelected.size}`;
+}
+
+async function fetchFirstFiveTransactions() {
+  try {
+    // Parallel fetch
+    const [serviceRes, salesRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/payment/service`),
+      fetch(`${API_BASE_URL}/payment/sales`),
+    ]);
+
+    let serviceList = [];
+    let salesList = [];
+    try {
+      if (serviceRes.ok) {
+        const s = await serviceRes.json();
+        serviceList = Array.isArray(s.result) ? s.result : [];
+      }
+    } catch (_) {}
+    try {
+      if (salesRes.ok) {
+        const s = await salesRes.json();
+        salesList = Array.isArray(s.result) ? s.result : [];
+      }
+    } catch (_) {}
+
+    // Save to cache and render initial (first 5) view
+    consolidatedServiceData = serviceList;
+    consolidatedSalesData = salesList;
+    renderConsolidatedTransactions(consolidatedServiceData, consolidatedSalesData, '');
+  } catch (error) {
+    console.error('Error fetching consolidated transactions:', error);
+    consolidatedServiceData = [];
+    consolidatedSalesData = [];
+    renderConsolidatedTransactions([], [], '');
+  }
+}
+
+function renderConsolidatedTransactions(service, sales, query = '') {
+  const serviceLoading = document.getElementById('serviceListLoading');
+  const salesLoading = document.getElementById('salesListLoading');
+  if (serviceLoading) serviceLoading.remove();
+  if (salesLoading) salesLoading.remove();
+
+  const serviceListEl = document.getElementById('serviceList');
+  const salesListEl = document.getElementById('salesList');
+
+  const renderRow = (tx) => {
+    const datetime = `${main.encodeDate(tx.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(tx.created_at, 'long')}`;
+    const idText = tx.payment_id || 'N/A';
+    return `
+      <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 hover:shadow-sm">
+        <div class="flex items-center gap-2">
+          <input type="checkbox" class="h-4 w-4 border-gray-300 rounded consolidate-check" data-id="${idText}" />
+          <div class="text-sm font-medium text-gray-900">${idText}</div>
+        </div>
+        <div class="text-xs text-gray-600">${datetime}</div>
+      </div>`;
+  };
+
+  const normalizedQuery = (query || '').toLowerCase().trim();
+  const matcher = (tx) => {
+    if (!normalizedQuery) return true;
+    const id = (tx.payment_id || '').toLowerCase();
+    const dateStr = `${main.encodeDate(tx.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(tx.created_at, 'long')}`.toLowerCase();
+    return id.includes(normalizedQuery) || dateStr.includes(normalizedQuery);
+  };
+
+  if (serviceListEl) {
+    const filtered = (Array.isArray(service) ? service : []).filter(matcher).slice(0, 5);
+    if (filtered.length === 0) {
+      serviceListEl.innerHTML = '<div class="text-sm text-gray-500">No service transactions found</div>';
+    } else {
+      serviceListEl.innerHTML = filtered.map(renderRow).join('');
+    }
+    Array.from(serviceListEl.querySelectorAll('.consolidate-check')).forEach((cb) => {
+      const id = cb.dataset.id;
+      const key = `service:${id}`;
+      cb.checked = consolidatedSelected.has(key);
+      cb.addEventListener('change', () => {
+        if (cb.checked) consolidatedSelected.add(key);
+        else consolidatedSelected.delete(key);
+        updateSelectedCountUI();
+      });
+    });
+  }
+  if (salesListEl) {
+    const filtered = (Array.isArray(sales) ? sales : []).filter(matcher).slice(0, 5);
+    if (filtered.length === 0) {
+      salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
+    } else {
+      salesListEl.innerHTML = filtered.map(renderRow).join('');
+    }
+    Array.from(salesListEl.querySelectorAll('.consolidate-check')).forEach((cb) => {
+      const id = cb.dataset.id;
+      const key = `sales:${id}`;
+      cb.checked = consolidatedSelected.has(key);
+      cb.addEventListener('change', () => {
+        if (cb.checked) consolidatedSelected.add(key);
+        else consolidatedSelected.delete(key);
+        updateSelectedCountUI();
+      });
+    });
+  }
+
+  updateSelectedCountUI();
+}
+
+// Opens a follow-up modal (same size) when Process is clicked
+function openProcessConsolidatedModal() {
+  // Build rows from selected keys
+  const ids = Array.from(consolidatedSelected)
+    .map((k) => (k || '').split(':')[1])
+    .filter(Boolean);
+
+  const uniqueIds = Array.from(new Set(ids));
+
+  // Using uniqueIds, fetch the payments table of database to select their purpose and amount
+  const purposes = [];
+  const amounts = [];
+  uniqueIds.forEach((id) => {
+    fetch(`${API_BASE_URL}/payment/complete/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        purposes.push(data.result.purpose);
+        amounts.push(data.result.amount);
+      });
+  });
+
+  const rowsHTML = uniqueIds.length === 0
+    ? '<tr><td colspan="3" class="px-3 py-2 text-sm text-gray-500 text-center">No transactions selected</td></tr>'
+    : uniqueIds
+        .map(
+          (id) => `
+            <tr class="border-b last:border-0 hover:bg-gray-50">
+              <td class="px-3 py-2 text-sm text-gray-900">${id}</td>
+              <td class="px-3 py-2 text-sm text-gray-600"></td>
+              <td class="px-3 py-2 text-sm text-gray-600"></td>
+            </tr>`
+        )
+        .join('');
+
+  const modalHTML = `
+    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-30 hidden" id="consolidateProcessModal">
+      <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
+          <p class="text-xl font-medium">Process Consolidated Transactions</p>
+          <p class="text-xs">Selected: ${consolidatedSelected.size}</p>
+        </div>
+        <div class="p-4">
+          <div class="overflow-x-auto rounded-lg border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Transaction ID</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Particulars</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white">${rowsHTML}</tbody>
+            </table>
+          </div>
+          <div class="flex justify-end gap-2 mt-4">
+            <button type="button" id="closeProcessConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modal = document.getElementById('consolidateProcessModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    modal.children[0].classList.remove('-translate-y-6');
+    modal.children[0].classList.add('scale-100');
+  }, 10);
+
+  const close = () => closeProcessConsolidatedModal();
+  const closeBtn = document.getElementById('closeProcessConsolidateBtn');
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', close);
+  const handleEscape = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', handleEscape);
+  modal.dataset.escapeHandler = 'true';
+}
+
+function closeProcessConsolidatedModal() {
+  const modal = document.getElementById('consolidateProcessModal');
+  if (!modal) return;
+  modal.classList.remove('opacity-100');
+  modal.children[0].classList.add('-translate-y-6');
+  modal.children[0].classList.remove('scale-100');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.remove();
+  }, 300);
+}
 
 export function processCheckinPayment(customerId, image, fullName, isMonthlyType, amountToPay, priceRate, callback) {
   const purpose = `${isMonthlyType ? 'Monthly' : 'Daily'} ${isMonthlyType ? 'registration fee' : 'check-in (Walk-in)'}`;
