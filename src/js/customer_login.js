@@ -355,21 +355,16 @@ async function submitClicked(e) {
       const user = userCredential.user;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers?email=${encodeURIComponent(user.email)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            customer_contact: user.email,
-          }),
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const customer = await response.json();
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const payload = await response.json();
+        const customer = payload.result;
         sessionStorage.setItem('id', customer.customer_id);
         sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
         sessionStorage.setItem('email', user.email);

@@ -3,37 +3,41 @@ const db = require('../database/mysql');
 const { parsePageParams } = require('../utils/pagination');
 const router = Router();
 
-// GET all customers
+// GET all customers or lookup by email
 router.get('/customers', async (req, res) => {
-  const { useLimit, limit, offset } = parsePageParams(req);
-  let sql = 'SELECT * FROM customer_tbl ORDER BY created_at DESC';
-  const params = [];
-  if (useLimit) {
-    sql += ' LIMIT ? OFFSET ?';
-    params.push(limit, offset);
-  }
-  try {
-    const rows = await db.query(sql, params);
-    res.status(200).json({ message: 'Fetching customers successful', result: rows });
-  } catch (error) {
-    console.error('Fetching customers error:', error);
-    return res.status(500).json({ error: 'Fetching customers failed' });
-  }
-});
+  const { email, useLimit, limit, offset } = (() => {
+    // simple parse helpers - keep your parsePageParams for pagination if you prefer
+    const qp = req.query || {};
+    return {
+      email: qp.email,
+      useLimit: qp.limit != null && qp.offset != null,
+      limit: qp.limit,
+      offset: qp.offset,
+    };
+  })();
 
-// GET specific customer
-router.get('/customers', async (req, res) => {
-  const { useLimit, limit, offset } = parsePageParams(req);
-  const { customer_contact } = req.body;
-  let sql = 'SELECT * FROM customer_tbl WHERE customer_contact = ?';
-  const params = [customer_contact];
-  if (useLimit) {
-    sql += ' LIMIT ? OFFSET ?';
-    params.push(limit, offset);
-  }
   try {
+    if (email) {
+      // find single customer by email (customer_contact)
+      const query = 'SELECT * FROM customer_tbl WHERE customer_contact = ? LIMIT 1';
+      const rows = await db.query(query, [email]);
+      if (!rows || rows.length === 0) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      // return single object (not an array) so frontend can do customer.customer_id
+      return res.status(200).json({ message: 'Fetching customer successful', result: rows[0] });
+    }
+
+    // fallback: return list (existing behavior). Use your parsePageParams util if you prefer
+    let sql = 'SELECT * FROM customer_tbl ORDER BY created_at DESC';
+    const params = [];
+    if (useLimit) {
+      sql += ' LIMIT ? OFFSET ?';
+      params.push(Number(limit), Number(offset));
+    }
+
     const rows = await db.query(sql, params);
-    res.status(200).json({ message: 'Fetching customers successful', result: rows });
+    return res.status(200).json({ message: 'Fetching customers successful', result: rows });
   } catch (error) {
     console.error('Fetching customers error:', error);
     return res.status(500).json({ error: 'Fetching customers failed' });
