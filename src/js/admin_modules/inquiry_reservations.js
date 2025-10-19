@@ -578,11 +578,7 @@ function sectionTwoMainBtnFunction() {
                 if (!/^\d{2}:\d{2}$/.test(start)) return;
 
                 // Get the selected duration
-                const durationSelect =
-                  container.querySelector('select[placeholder="Select duration"]') ||
-                  container.querySelector('#input-spinner-5') ||
-                  container.querySelectorAll('select')[1] ||
-                  container.querySelector('select');
+                const durationSelect = container.querySelector('#input-spinner-25');
                 const selectedDuration = DURATION_OPTIONS[durationSelect?.selectedIndex - 1]?.value || 1;
 
                 const [h, m] = start.split(':').map((n) => parseInt(n, 10));
