@@ -252,3 +252,17 @@ ALTER TABLE inquiry_checkins_monthly_tbl ADD INDEX idx_checkins_monthly_created 
 
 ALTER TABLE payment_tbl ADD INDEX idx_payment_type_created (payment_type, created_at);
 ALTER TABLE payment_tbl ADD INDEX idx_payment_customer (payment_customer_id);
+
+-- Admin users table
+CREATE TABLE IF NOT EXISTS admin_users_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id VARCHAR(50) UNIQUE NOT NULL,
+    admin_full_name VARCHAR(255) NOT NULL,
+    admin_username VARCHAR(100) UNIQUE NOT NULL,
+    admin_email VARCHAR(255),
+    admin_role ENUM('admin','staff') NOT NULL DEFAULT 'staff',
+    admin_status ENUM('active','disabled') NOT NULL DEFAULT 'active',
+    admin_password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

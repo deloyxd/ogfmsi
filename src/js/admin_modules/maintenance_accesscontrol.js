@@ -1,4 +1,5 @@
 import main from '../admin_main.js';
+import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'maintenance-accesscontrol';
 
@@ -11,7 +12,90 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   mainBtn.addEventListener('click', mainBtnFunction);
 });
 
-function mainBtnFunction() {}
+const USER_ROLES = [
+  {
+    value: 'admin',
+    label: 'Administrative',
+  },
+  {
+    value: 'staff',
+    label: 'Staff (Front Desk/Cashier/Maintenance)',
+  },
+];
+
+function mainBtnFunction() {
+  const inputs = {
+    header: {
+      title: `Create System User ${getEmoji('🔧', 26)}`,
+      subtitle: 'System User Form',
+    },
+    image: {
+      src: '/src/images/client_logo.jpg',
+      type: 'normal',
+      short: [
+        {
+          placeholder: 'Full Name',
+          value: '',
+          required: true,
+        },
+        {
+          placeholder: 'Username',
+          value: '',
+          required: true,
+        },
+        {
+          placeholder: 'Password',
+          value: '',
+          required: true,
+        },
+      ],
+    },
+      spinner: [
+        {
+          label: 'User Role',
+          placeholder: 'Select user role',
+          selected: 0,
+          required: true,
+          options: USER_ROLES,
+        },
+      ],
+  };
+
+  main.openModal(mainBtn, inputs, (result) => {
+    (async () => {
+      const [fullName, username, password] = result.image.short.map(i => (i.value || '').trim());
+      const role = main.getSelectedSpinner(result.spinner[0]); // 'admin' | 'staff'
+
+      if (!fullName || !username || !password || !role) {
+        main.toast('Please fill all required fields', 'error');
+        return;
+      }
+
+      try {
+        const resp = await fetch(`${API_BASE_URL}/admin/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            admin_full_name: fullName,
+            admin_username: username,
+            admin_role: role,
+            admin_password: password
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+
+        main.toast('Admin user created successfully!', 'success');
+        // Optionally: log to Access Control activity if applicable
+        // accesscontrol.log({ module: 'Access Control', description: `Created admin ${username}` }, {});
+        main.closeModal();
+      } catch (e) {
+        console.error('Create admin error:', e);
+        main.toast(String(e.message || e), 'error');
+      }
+    })();
+  });
+}
 
 export function log(action, data) {
   // Only attempt to render log rows when the Maintenance Access Control section is active.

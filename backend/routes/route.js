@@ -29,6 +29,7 @@ const paymentSalesRoute = require('./payment.sales.route');
 const paymentCompleteRoute = require('./payment.complete.route');
 const paymentCanceledRoute = require('./payment.canceled.route');
 
+const adminUsersRoute = require('./admin.users.route');
 const router = Router();
 
 //API URL: (host):(port)/api/demo
@@ -63,6 +64,9 @@ router.use('/payment', paymentServiceRoute);
 router.use('/payment', paymentSalesRoute);
 router.use('/payment', paymentCompleteRoute);
 router.use('/payment', paymentCanceledRoute);
+
+// API URL: (host):(port)/api/admin
+router.use('/admin', adminUsersRoute);
 
 // Add routes declaration here:
 
