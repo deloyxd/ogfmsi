@@ -64,47 +64,74 @@ function renderPreferencesUI() {
 
   const panel = document.createElement('div');
   panel.id = 'userPreferencesPanel';
-  panel.className = `p-2`;
+  panel.className = `p-2 space-y-4`;
   panel.innerHTML = `
-    <div class="mb-5 flex items-center justify-between gap-2 font-bold">
-      <div class="flex flex-col gap-1">
+    <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
+      <header class="flex items-center justify-between rounded-t-lg bg-gray-50 px-3 py-2">
+        <p class="text-sm font-semibold text-gray-700">Modules visibility</p>
+        <span class="text-xs text-gray-400">Toggle modules you want to show in the sidebar</span>
+      </header>
+      <div class="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
+        ${modules
+          .map(
+            (m) => `
+          <label class="flex cursor-pointer items-center gap-3 rounded-md border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50">
+            <input type="checkbox" class="ogfmsi-pref-module h-4 w-4 rounded border-gray-300" data-key="${m.key}" ${
+              prefs.hiddenSections?.includes(m.key) ? '' : 'checked'
+            } />
+            <span class="text-sm font-medium text-gray-700">${m.label}</span>
+          </label>`
+          )
+          .join('')}
       </div>
-    </div>
-    <div class="grid gap-3 lg:grid-cols-2">
-      ${modules
-        .map(
-          (m) => `
-        <label class="flex cursor-pointer items-center gap-3 rounded-md border border-gray-200 p-3 hover:bg-gray-50">
-          <input type="checkbox" class="ogfmsi-pref-module" data-key="${m.key}" ${
-            prefs.hiddenSections?.includes(m.key) ? '' : 'checked'
+    </section>
+
+    <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
+      <header class="flex items-center justify-between rounded-t-lg bg-gray-50 px-3 py-2">
+        <p class="text-sm font-semibold text-gray-700">Display preferences</p>
+        <span class="text-xs text-gray-400">Affects formatting and layout</span>
+      </header>
+      <div class="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" id="ogfmsi-compact-sidebar" class="h-4 w-4 rounded border-gray-300" ${
+            prefs.compactSidebar ? 'checked' : ''
           } />
-          <span class="text-sm">${m.label}</span>
-        </label>`
-        )
-        .join('')}
-    </div>
-    <div class="mt-4 grid gap-3 lg:grid-cols-3">
-      <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" id="ogfmsi-compact-sidebar" ${prefs.compactSidebar ? 'checked' : ''} />
-        Compact sidebar
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-        <span class="w-28">Time format</span>
-        <select id="ogfmsi-time-format" class="rounded border border-gray-300 p-1 text-sm">
-          <option value="12h" ${prefs.timeFormat === '12h' ? 'selected' : ''}>12h</option>
-          <option value="24h" ${prefs.timeFormat === '24h' ? 'selected' : ''}>24h</option>
-        </select>
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-        <span class="w-28">Date format</span>
-        <select id="ogfmsi-date-format" class="rounded border border-gray-300 p-1 text-sm">
-          <option value="MM-DD-YYYY" ${prefs.dateFormat === 'MM-DD-YYYY' ? 'selected' : ''}>MM-DD-YYYY</option>
-          <option value="DD-MM-YYYY" ${prefs.dateFormat === 'DD-MM-YYYY' ? 'selected' : ''}>DD-MM-YYYY</option>
-        </select>
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-      </label>
-    </div>
+          Compact sidebar
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <span class="w-28">Time format</span>
+          <select id="ogfmsi-time-format" class="rounded border border-gray-300 p-1 text-sm">
+            <option value="12h" ${prefs.timeFormat === '12h' ? 'selected' : ''}>12h</option>
+            <option value="24h" ${prefs.timeFormat === '24h' ? 'selected' : ''}>24h</option>
+          </select>
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <span class="w-28">Date format</span>
+          <select id="ogfmsi-date-format" class="rounded border border-gray-300 p-1 text-sm">
+            <option value="MM-DD-YYYY" ${prefs.dateFormat === 'MM-DD-YYYY' ? 'selected' : ''}>MM-DD-YYYY</option>
+            <option value="DD-MM-YYYY" ${prefs.dateFormat === 'DD-MM-YYYY' ? 'selected' : ''}>DD-MM-YYYY</option>
+          </select>
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <span class="w-28">Base font</span>
+          <select id="ogfmsi-base-font" class="rounded border border-gray-300 p-1 text-sm">
+            <option value="small" ${prefs.baseFontSize === 'small' ? 'selected' : ''}>Small</option>
+            <option value="normal" ${prefs.baseFontSize === 'normal' ? 'selected' : ''}>Normal</option>
+            <option value="large" ${prefs.baseFontSize === 'large' ? 'selected' : ''}>Large</option>
+          </select>
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" id="ogfmsi-remember-last" class="h-4 w-4 rounded border-gray-300" ${
+            prefs.rememberLast ? 'checked' : ''
+          } />
+          Remember last opened section
+        </label>
+      </div>
+    </section>
   `;
 
   // Insert at top of custom content area

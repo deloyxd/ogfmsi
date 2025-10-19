@@ -1928,6 +1928,14 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
     }
 
     row.dataset['custom' + index] = data;
+    // Auto-align currency-like values to the right
+    try {
+      const txt = String(data);
+      const currencyLike = /[₱$€]|php/i.test(txt) || /^\s*\d{1,3}(,\d{3})*(\.\d{2})?\s*$/.test(txt);
+      if (currencyLike) {
+        cell.classList.add('text-right');
+      }
+    } catch (_) {}
     cell.innerHTML = data;
     return;
   }
@@ -1952,6 +1960,14 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
     return;
   }
 
+  // Auto-align currency-like values to the right for non-string inputs as well
+  try {
+    const txt = String(data);
+    const currencyLike = /[₱$€]|php/i.test(txt) || /^\s*\d{1,3}(,\d{3})*(\.\d{2})?\s*$/.test(txt);
+    if (currencyLike) {
+      cell.classList.add('text-right');
+    }
+  } catch (_) {}
   cell.innerHTML = data;
 }
 

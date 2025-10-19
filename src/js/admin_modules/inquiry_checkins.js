@@ -15,7 +15,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   if (!activated) {
     activated = true;
     subBtn = document.querySelector(`.section-sub-btn[data-section="${SECTION_NAME}"]`);
-    subBtn?.classList.remove('hidden');
+    // subBtn?.classList.remove('hidden');
     subBtn?.addEventListener('click', () => {});
 
     await loadAllCheckins();

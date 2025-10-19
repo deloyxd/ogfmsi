@@ -63,7 +63,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
     mainBtn.addEventListener('click', mainBtnFunction);
     subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-    subBtn.classList.remove('hidden');
+    // subBtn.classList.remove('hidden');
     subBtn.addEventListener('click', subBtnFunction);
 
     await fetchAllPendingPayments();

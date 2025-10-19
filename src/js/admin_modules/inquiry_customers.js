@@ -55,7 +55,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     subBtn = document.querySelector(`.section-sub-btn[data-section="${SECTION_NAME}"]`);
 
     mainBtn?.addEventListener('click', () => mainBtnFunction());
-    subBtn?.classList.remove('hidden');
+    // subBtn?.classList.remove('hidden');
     subBtn?.addEventListener('click', () => {});
 
     await fetchAllCustomers();
