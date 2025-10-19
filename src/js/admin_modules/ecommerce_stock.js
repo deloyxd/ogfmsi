@@ -523,7 +523,7 @@ function computeAndUpdateStats(products) {
 function updateStatsDisplay(stats) {
   const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
 
-  if (statElements.length >= 6) {
+  if (statElements.length >= 7) {
     // Unique Products: All active stocks
     const uniqueProductsStat = statElements[1];
     if (uniqueProductsStat) {
@@ -575,6 +575,15 @@ function updateStatsDisplay(stats) {
       const valueElement = superLowStockStat.querySelector('.section-stats-c');
       if (valueElement) {
         valueElement.textContent = stats.super_low_stock || 0;
+      }
+    }
+
+    // Disposed Products: Expired or damaged products
+    const disposedStat = statElements[7];
+    if (disposedStat) {
+      const valueElement = disposedStat.querySelector('.section-stats-c');
+      if (valueElement) {
+        valueElement.textContent = stats.disposed || 0;
       }
     }
   }
