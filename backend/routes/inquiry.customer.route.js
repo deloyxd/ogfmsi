@@ -21,6 +21,25 @@ router.get('/customers', async (req, res) => {
   }
 });
 
+// GET specific customer
+router.get('/customers', async (req, res) => {
+  const { useLimit, limit, offset } = parsePageParams(req);
+  const { customer_contact } = req.body;
+  let sql = 'SELECT * FROM customer_tbl WHERE customer_contact = ?';
+  const params = [customer_contact];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching customers successful', result: rows });
+  } catch (error) {
+    console.error('Fetching customers error:', error);
+    return res.status(500).json({ error: 'Fetching customers failed' });
+  }
+});
+
 // GET single customer
 router.get('/customers/:id', async (req, res) => {
   const { id } = req.params;

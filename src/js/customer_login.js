@@ -88,7 +88,7 @@ function setupLoginForm() {
 
       // Disable Google Sign-In button
       googleSignInBtn.disabled = true;
-      googleSignInBtn.innerHTML = "Logged in";
+      googleSignInBtn.innerHTML = 'Logged in';
 
       // localStorage.setItem("fitworxUser", JSON.stringify({
       //   name: user.displayName,
@@ -146,13 +146,14 @@ function setupLoginForm() {
         const { first, last } = formValues;
 
         try {
+          const id = `U${Date.now()}`;
           const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              customer_id: `U${Date.now()}`,
+              customer_id: id,
               customer_image_url: user.photoURL,
               customer_first_name: first,
               customer_last_name: last,
@@ -169,7 +170,8 @@ function setupLoginForm() {
           }
 
           const newCustomer = await response.json();
-          sessionStorage.setItem('full_name', user.displayName);
+          sessionStorage.setItem('id', id);
+          sessionStorage.setItem('full_name', first + ' ' + last);
           sessionStorage.setItem('email', user.email);
 
           Toastify({
@@ -186,19 +188,39 @@ function setupLoginForm() {
           console.error('Error creating customer:', error);
         }
       } else {
-        sessionStorage.setItem('full_name', user.displayName);
-        sessionStorage.setItem('email', user.email);
+        try {
+          const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              customer_contact: user.email,
+            }),
+          });
 
-        Toastify({
-          text: 'Login successful!',
-          duration: 3000,
-          close: true,
-          gravity: 'top',
-          position: 'center',
-          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-          stopOnFocus: true,
-          callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
-        }).showToast();
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const customer = await response.json();
+          sessionStorage.setItem('id', customer.customer_id);
+          sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
+          sessionStorage.setItem('email', user.email);
+
+          Toastify({
+            text: 'Login successful!',
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'center',
+            backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+            stopOnFocus: true,
+            callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
+          }).showToast();
+        } catch (error) {
+          console.error('Error fetching customer:', error);
+        }
       }
     } catch (error) {
       console.error('❌ Google Sign-In Error:', error);
@@ -282,19 +304,48 @@ async function submitClicked(e) {
         displayName: `${sanitizedFirst} ${sanitizedLast}`,
       });
 
-      sessionStorage.setItem('full_name', user.displayName);
-      sessionStorage.setItem('email', user.email);
+      try {
+        const id = `U${Date.now()}`;
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_id: id,
+            customer_image_url: user.photoURL,
+            customer_first_name: sanitizedFirst,
+            customer_last_name: sanitizedLast,
+            customer_contact: sanitizedEmail,
+            customer_type: 'daily',
+            customer_tid: '',
+            customer_pending: 0,
+            customer_rate: 'regular',
+          }),
+        });
 
-      Toastify({
-        text: 'Account created successfully!',
-        duration: 3000,
-        close: true,
-        gravity: 'top',
-        position: 'center',
-        backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-        stopOnFocus: true,
-        callback: () => toggleFormClicked(e),
-      }).showToast();
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const newCustomer = await response.json();
+        sessionStorage.setItem('id', id);
+        sessionStorage.setItem('full_name', user.displayName);
+        sessionStorage.setItem('email', user.email);
+
+        Toastify({
+          text: 'Account created successfully!',
+          duration: 3000,
+          close: true,
+          gravity: 'top',
+          position: 'center',
+          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+          stopOnFocus: true,
+          callback: () => toggleFormClicked(e),
+        }).showToast();
+      } catch (error) {
+        console.error('Error creating customer:', error);
+      }
     } else {
       if (!sanitizedEmail || !sanitizedPassword) {
         throw new Error('Please enter your email and password.');
@@ -303,25 +354,45 @@ async function submitClicked(e) {
       const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
       const user = userCredential.user;
 
-      sessionStorage.setItem('full_name', user.displayName);
-      sessionStorage.setItem('email', user.email);
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_contact: user.email,
+          }),
+        });
 
-      Toastify({
-        text: 'Login successful!',
-        duration: 3000,
-        close: true,
-        gravity: 'top',
-        position: 'center',
-        backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-        stopOnFocus: true,
-        callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
-      }).showToast();
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const customer = await response.json();
+        sessionStorage.setItem('id', customer.customer_id);
+        sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
+        sessionStorage.setItem('email', user.email);
+
+        Toastify({
+          text: 'Login successful!',
+          duration: 3000,
+          close: true,
+          gravity: 'top',
+          position: 'center',
+          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+          stopOnFocus: true,
+          callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
+        }).showToast();
+      } catch (error) {
+        console.error('Error fetching customer:', error);
+      }
     }
   } catch (error) {
     console.error('Firebase Auth Error:', error);
     Swal.fire({
       title: 'Authentication Error',
-      text: 'Email or password is incorrect!',
+      text: error.message,
       icon: 'error',
       confirmButtonText: 'OK',
       confirmButtonColor: '#ef4444',
