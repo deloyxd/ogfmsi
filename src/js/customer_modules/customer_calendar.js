@@ -549,13 +549,6 @@ function mount() {
 
     startInput?.addEventListener('change', () => {
       if (!endInput || !startInput.value) return;
-      endInput.min = startInput.value;
-      if (toMinutes(endInput.value) <= toMinutes(startInput.value)) {
-        // Suggest end time 60 minutes after start time
-        const suggested = toMinutes(startInput.value) + 60;
-        const max = endInput.max ? toMinutes(endInput.max) : Infinity;
-        endInput.value = toHHMM(Math.min(suggested, max));
-      }
       clearError();
     });
 
@@ -615,11 +608,94 @@ function mount() {
       // Facility hours constraints and duration
       const startMins = toMinutes(startVal || '00:00');
       const endMins = toMinutes(endVal || '00:00');
-      const durationHours = (endMins - startMins) / 60;
+      const durationSelect = document.getElementById('duration');
+      const durationHours = durationSelect.value;
 
-      if (startMins < 9 * 60) {
+      // Helper: validate that (End - Start) strictly equals the selected duration (in minutes)
+      // Returns: { valid: boolean, message: string }
+      function validateDuration(startTimeStr, endTimeStr, selectedDurationRaw) {
+        const parseTimeToMinutes = (s) => {
+          const str = String(s || '').trim();
+          if (!str) return NaN;
+
+          // 12-hour format with AM/PM (e.g., "8:00 AM", "12 PM")
+          const ampmMatch = str.match(/^\s*(\d{1,2})(?::(\d{2}))?\s*([ap]m)\s*$/i);
+          if (ampmMatch) {
+            let h = parseInt(ampmMatch[1], 10);
+            const m = parseInt(ampmMatch[2] || '0', 10);
+            const ap = ampmMatch[3].toLowerCase();
+            if (h === 12) h = 0; // 12am -> 0, 12pm handled by adding 12 below
+            const hours24 = ap === 'pm' ? h + 12 : h;
+            if (hours24 < 0 || hours24 > 23 || m < 0 || m > 59) return NaN;
+            return hours24 * 60 + m;
+          }
+
+          // 24-hour format "HH:mm"
+          const hhmmMatch = str.match(/^\s*(\d{1,2})(?::(\d{2}))\s*$/);
+          if (hhmmMatch) {
+            const h = parseInt(hhmmMatch[1], 10);
+            const m = parseInt(hhmmMatch[2] || '0', 10);
+            if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
+            return h * 60 + m;
+          }
+
+          return NaN;
+        };
+
+        const parseDurationToMinutes = (raw) => {
+          const val = String(raw ?? '').trim().toLowerCase();
+          if (!val) return NaN;
+
+          const numMatch = val.match(/([0-9]*\.?[0-9]+)/);
+          if (!numMatch) return NaN;
+          const num = parseFloat(numMatch[1]);
+          if (!Number.isFinite(num)) return NaN;
+
+          const isMin = /\bmin(s|ute|utes)?\b/.test(val);
+          const isHour = /\b(h|hr|hrs|hour|hours)\b/.test(val);
+
+          if (isMin && isHour) return NaN; // ambiguous
+
+          if (isMin) return Math.round(num);
+          if (isHour) return Math.round(num * 60);
+
+          // No unit: infer
+          if (val.includes('.')) {
+            // decimals indicate hours (e.g., "1.5")
+            return Math.round(num * 60);
+          }
+          // Small integers are hours (project uses 1-7 hrs), larger are minutes
+          if (num <= 10) return Math.round(num * 60);
+          return Math.round(num);
+        };
+
+        const s = parseTimeToMinutes(startTimeStr);
+        const e = parseTimeToMinutes(endTimeStr);
+        const d = parseDurationToMinutes(selectedDurationRaw);
+
+        if (!Number.isFinite(s) || !Number.isFinite(e)) {
+          return { valid: false, message: 'Invalid time format. Please use a valid time (e.g., 08:00 or 8:00 AM).' };
+        }
+        if (!Number.isFinite(d)) {
+          return { valid: false, message: 'Could not parse selected duration.' };
+        }
+        if (e <= s) {
+          return { valid: false, message: 'End Time must be later than Start Time.' };
+        }
+
+        const delta = e - s;
+        if (delta !== d) {
+          return {
+            valid: false,
+            message: 'Selected duration must match the difference between Start Time and End Time.',
+          };
+        }
+        return { valid: true, message: '' };
+      }
+
+      if (startMins < 7 * 60) {
         e.preventDefault();
-        showError('Reservation cannot start before 09:00.');
+        showError('Reservation cannot start before 07:00.');
         return;
       }
       if (endMins > 23 * 60 + 59) {
@@ -636,6 +712,16 @@ function mount() {
         e.preventDefault();
         showError('Reservation cannot exceed 7 hours.');
         return;
+      }
+
+      // Enforce that (End - Start) equals selected duration exactly
+      {
+        const durationCheck = validateDuration(startVal, endVal, durationSelect?.value);
+        if (!durationCheck.valid) {
+          e.preventDefault();
+          showError(durationCheck.message);
+          return;
+        }
       }
 
       // Same-day past time check
