@@ -104,7 +104,7 @@ router.post('/signup', async (req, res) => {
       customer_contact,
     ]);
 
-    if (existing.length > 0) {
+    if (existing && existing.length > 0) {
       return res.status(409).json({ error: 'Customer already exists. Please log in.' });
     }
 
