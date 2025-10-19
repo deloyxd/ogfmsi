@@ -522,54 +522,6 @@ function sectionTwoMainBtnFunction() {
             required: true,
             calendar: true,
           },
-          {
-            placeholder: 'Start time',
-            value: '',
-            required: true,
-            type: 'time',
-            listener: (input, container) => {
-              try {
-                const start = input.value;
-                if (!/^\d{2}:\d{2}$/.test(start)) return;
-
-                // Reset duration to 1 hour when start time changes
-                const durationSelect =
-                  container.querySelector('select[placeholder="Select duration"]') ||
-                  container.querySelector('#input-spinner-5') ||
-                  container.querySelectorAll('select')[1] ||
-                  container.querySelector('select');
-                if (durationSelect) {
-                  durationSelect.selectedIndex = 1;
-                  durationSelect.dispatchEvent(new Event('change'));
-                }
-
-                const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-                const endMinutes = (h * 60 + m + 60) % 1440;
-                const endH = Math.floor(endMinutes / 60)
-                  .toString()
-                  .padStart(2, '0');
-                const endM = (endMinutes % 60).toString().padStart(2, '0');
-
-                const endInput =
-                  container.querySelector('input[placeholder="End time"]') ||
-                  container.querySelector('#input-short-9') ||
-                  container.querySelectorAll('input[type="time"]')[1];
-                if (endInput) {
-                  endInput.value = `${endH}:${endM}`;
-                  endInput.dispatchEvent(new Event('input'));
-                }
-
-                updatePriceDisplay(1, start, container);
-              } catch (e) {}
-            },
-          },
-          {
-            placeholder: 'End time',
-            value: '',
-            required: true,
-            type: 'time',
-            offset: 60,
-          },
         ],
         spinner2: [
           {
@@ -584,7 +536,7 @@ function sectionTwoMainBtnFunction() {
 
                 const startInput =
                   container.querySelector('input[placeholder="Start time"]') ||
-                  container.querySelector('#input-short-8') ||
+                  container.querySelector('#input-short-25') ||
                   container.querySelector('input[type="time"]');
                 const startTime = startInput?.value || '';
 
@@ -616,6 +568,51 @@ function sectionTwoMainBtnFunction() {
         ],
         short3: [
           {
+            placeholder: 'Start time',
+            value: '',
+            required: true,
+            type: 'time',
+            listener: (input, container) => {
+              try {
+                const start = input.value;
+                if (!/^\d{2}:\d{2}$/.test(start)) return;
+
+                // Get the selected duration
+                const durationSelect =
+                  container.querySelector('select[placeholder="Select duration"]') ||
+                  container.querySelector('#input-spinner-5') ||
+                  container.querySelectorAll('select')[1] ||
+                  container.querySelector('select');
+                const selectedDuration = DURATION_OPTIONS[durationSelect?.selectedIndex - 1]?.value || 1;
+
+                const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+                const endMinutes = (h * 60 + m + selectedDuration * 60) % 1440;
+                const endH = Math.floor(endMinutes / 60)
+                  .toString()
+                  .padStart(2, '0');
+                const endM = (endMinutes % 60).toString().padStart(2, '0');
+
+                const endInput =
+                  container.querySelector('input[placeholder="End time"]') ||
+                  container.querySelector('#input-short-10') ||
+                  container.querySelectorAll('input[type="time"]')[1];
+                if (endInput) {
+                  endInput.value = `${endH}:${endM}`;
+                  endInput.dispatchEvent(new Event('input'));
+                }
+
+                updatePriceDisplay(selectedDuration, start, container);
+              } catch (e) {}
+            },
+          },
+          {
+            placeholder: 'End time',
+            value: '',
+            required: true,
+            type: 'time',
+            locked: true,
+          },
+          {
             placeholder: 'Amount to pay',
             value: main.encodePrice(180),
             locked: true,
@@ -642,8 +639,8 @@ function sectionTwoMainBtnFunction() {
           return;
         }
 
-        const startTime = result.short2[1].value;
-        const endTime = result.short2[2].value;
+        const startTime = result.short3[0].value;
+        const endTime = result.short3[1].value;
         const selectedDuration = DURATION_OPTIONS[result.spinner2[0].selected - 1]?.value || 1;
 
         try {
@@ -747,7 +744,7 @@ function sectionTwoMainBtnFunction() {
               startTime: startTime,
               endTime: endTime,
               status: 'Pending',
-              amount: main.decodePrice(result.short3[0].value),
+              amount: main.decodePrice(result.short3[2].value),
             };
 
             try {
