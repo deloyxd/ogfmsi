@@ -609,7 +609,7 @@ function openConsolidateTransactionsModal() {
       <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
         <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
           <p class="text-xl font-medium">Consolidate Transactions</p>
-          <p class="text-xs">Showing first 5 recent Service and Sales transactions</p>
+          <p class="text-xs">Showing first 10 recent Service and Sales transactions</p>
         </div>
         <div class="p-4">
           <div class="mb-3">
@@ -679,22 +679,33 @@ function openConsolidateTransactionsModal() {
   // Initialize button state based on current selection (likely zero on open)
   updateSelectedCountUI();
 
-  // Fetch and render first 5 of each
+  // Fetch and render first 10 of each
   fetchFirstFiveTransactions();
 
   // Wire up search
   const searchInput = document.getElementById('consolidateSearchInput');
   if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      const q = searchInput.value || '';
-      renderConsolidatedTransactions(consolidatedServiceData, consolidatedSalesData, q);
-    });
+    const debounced = debounce(async () => {
+      const q = (searchInput.value || '').trim();
+      if (!q) {
+        // Empty search: re-fetch the first ten recents and render
+        fetchFirstFiveTransactions();
+        return;
+      }
+      setConsolidateListsLoading();
+      await fetchConsolidatedByQuery(q);
+    }, 300);
+    searchInput.addEventListener('input', debounced);
   }
 }
 
 function closeConsolidateTransactionsModal() {
   const modal = document.getElementById('consolidateTransactionsModal');
   if (!modal) return;
+  // Clear all selections when closing the consolidate modal
+  try { consolidatedSelected.clear(); } catch (_) {}
+  // Also ensure the Process button state is reset
+  try { updateSelectedCountUI(); } catch (_) {}
   modal.classList.remove('opacity-100');
   modal.children[0].classList.add('-translate-y-6');
   modal.children[0].classList.remove('scale-100');
@@ -710,6 +721,55 @@ let consolidatedServiceData = [];
 let consolidatedSalesData = [];
 // Track selected items across renders (key format: `${type}:${payment_id}`)
 const consolidatedSelected = new Set();
+
+// Simple debounce utility
+function debounce(fn, delay) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
+}
+
+// Set lists to loading state during search/fetch
+function setConsolidateListsLoading() {
+  const serviceListEl = document.getElementById('serviceList');
+  const salesListEl = document.getElementById('salesList');
+  if (serviceListEl) serviceListEl.innerHTML = '<div class="text-sm text-gray-600">Loading...</div>';
+  if (salesListEl) salesListEl.innerHTML = '<div class="text-sm text-gray-600">Loading...</div>';
+}
+
+// Fetch filtered service and sales lists from backend using a query
+async function fetchConsolidatedByQuery(query) {
+  try {
+    const [serviceRes, salesRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/payment/service?q=${encodeURIComponent(query)}`),
+      fetch(`${API_BASE_URL}/payment/sales?q=${encodeURIComponent(query)}`),
+    ]);
+
+    let serviceList = [];
+    let salesList = [];
+    try {
+      if (serviceRes.ok) {
+        const s = await serviceRes.json();
+        serviceList = Array.isArray(s.result) ? s.result : [];
+      }
+    } catch (_) {}
+    try {
+      if (salesRes.ok) {
+        const s = await salesRes.json();
+        salesList = Array.isArray(s.result) ? s.result : [];
+      }
+    } catch (_) {}
+
+    consolidatedServiceData = serviceList;
+    consolidatedSalesData = salesList;
+    renderConsolidatedTransactions(serviceList, salesList, query);
+  } catch (error) {
+    console.error('Error fetching consolidated transactions by query:', error);
+    renderConsolidatedTransactions([], [], query);
+  }
+}
 
 function updateSelectedCountUI() {
   const el = document.getElementById('selectedCountText');
@@ -747,7 +807,7 @@ async function fetchFirstFiveTransactions() {
       }
     } catch (_) {}
 
-    // Save to cache and render initial (first 5) view
+    // Save to cache and render initial (first 10) view
     consolidatedServiceData = serviceList;
     consolidatedSalesData = salesList;
     renderConsolidatedTransactions(consolidatedServiceData, consolidatedSalesData, '');
@@ -790,7 +850,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
   };
 
   if (serviceListEl) {
-    const filtered = (Array.isArray(service) ? service : []).filter(matcher).slice(0, 5);
+    const filtered = (Array.isArray(service) ? service : []).filter(matcher).slice(0, 10);
     if (filtered.length === 0) {
       serviceListEl.innerHTML = '<div class="text-sm text-gray-500">No service transactions found</div>';
     } else {
@@ -862,7 +922,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     });
   }
   if (salesListEl) {
-    const filtered = (Array.isArray(sales) ? sales : []).filter(matcher).slice(0, 5);
+    const filtered = (Array.isArray(sales) ? sales : []).filter(matcher).slice(0, 10);
     if (filtered.length === 0) {
       salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
     } else {
