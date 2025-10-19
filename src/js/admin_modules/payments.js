@@ -136,7 +136,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     main.encodeDate(
                       pendingPayment.created_at,
                       main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                    ),
+                    ) + ' - ' + main.encodeTime(pendingPayment.created_at),
                 ],
                 1,
                 (createResult) => {

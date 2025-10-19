@@ -81,7 +81,6 @@ async function createReservation(reservation) {
 }
 
 async function createReservationFE(reservation) {
-  console.log('test');
   main.sharedState.moduleLoad = SECTION_NAME;
   window.showGlobalLoading?.();
   try {
@@ -400,7 +399,7 @@ async function loadExistingReservations() {
             'id_' + id,
             {
               type: 'object_cid',
-              data: ['', fullName, customerId], // image is empty now
+              data: ['/src/images/client_logo.jpg', fullName, customerId], // image is empty now
             },
             reservationTypeText,
             `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,

@@ -119,8 +119,7 @@ function ensureGlobalLoadingOverlay() {
 }
 
 export function showGlobalLoading() {
-  if (sharedState.moduleLoad === '') return;
-  console.log('loading:', sharedState.moduleLoad);
+  if (sharedState.moduleLoad == 0) return;
   try {
     const overlay = ensureGlobalLoadingOverlay();
     __globalLoadingCount = Math.max(0, __globalLoadingCount) + 1;
@@ -152,7 +151,11 @@ if (typeof window !== 'undefined') {
     if (originalFetch) {
       window.fetch = (...args) => {
         try {
-          window.showGlobalLoading?.();
+          if (sharedState.moduleLoad != 0) {
+            console.log('loading:', sharedState.moduleLoad);
+            sharedState.moduleLoad = '';
+            window.showGlobalLoading?.();
+          }
         } catch (_e) {}
         return originalFetch(...args).finally(() => {
           try {
@@ -304,7 +307,7 @@ async function loadSectionSilently(sectionName) {
       await loadComponent(name, element, dataset);
 
       async function loadComponent(componentName, element, dataset) {
-          const response = await fetch(`/src/html/admin_${componentName}.html`);
+        const response = await fetch(`/src/html/admin_${componentName}.html`);
         let html = await response.text();
 
         html = html.replace(/\$\{(\w+)\}/g, (match, varName) =>
