@@ -86,15 +86,7 @@ const MEASUREMENT_UNITS = [
 ];
 
 // Clothing size unit values for quick checks
-const CLOTHING_SIZE_UNITS = new Set([
-  'extra small',
-  'small',
-  'medium',
-  'large',
-  'extra large',
-  '2x large',
-  '3x large',
-]);
+const CLOTHING_SIZE_UNITS = new Set(['extra small', 'small', 'medium', 'large', 'extra large', '2x large', '3x large']);
 
 let mainBtn;
 
@@ -107,7 +99,7 @@ function startExpirationCheck() {
   if (expirationCheckInterval) {
     clearInterval(expirationCheckInterval);
   }
-  
+
   // Check every 5 seconds (5000 ms)
   expirationCheckInterval = setInterval(async () => {
     try {
@@ -163,11 +155,10 @@ async function validateProductRegistration(name, measurementUnit) {
     const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
     const data = await response.json();
     const products = response.ok ? data.result || [] : [];
-    
+
     const isProductDisposed = (product) => {
       return (
-        product?.disposal_status === 'Disposed' ||
-        (product?.product_name && product.product_name.includes('[DISPOSED'))
+        product?.disposal_status === 'Disposed' || (product?.product_name && product.product_name.includes('[DISPOSED'))
       );
     };
 
@@ -246,7 +237,7 @@ function showSimilarProductModal(similarProduct, attemptedName) {
   };
 
   document.getElementById('similarProductOkBtn').addEventListener('click', close);
-  
+
   // Close on escape key
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
@@ -256,7 +247,6 @@ function showSimilarProductModal(similarProduct, attemptedName) {
   document.addEventListener('keydown', handleEscape);
   modal.dataset.escapeHandler = 'true';
 }
-
 
 function mainBtnFunction() {
   const inputs = createModalInputs();
@@ -356,7 +346,7 @@ async function checkAndDisposeExpiredProducts() {
     if (response.ok && data.disposed_count > 0) {
       // Show notification about disposed products
       main.toast(`${data.disposed_count} expired product(s) automatically moved to Disposed Products tab`, 'info');
-      
+
       // Log the action
       logAction(
         'Auto-dispose expired products',
@@ -378,7 +368,7 @@ async function loadProducts() {
   try {
     // First, check for expired products and automatically dispose them
     await checkAndDisposeExpiredProducts();
-    
+
     const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
     const data = await response.json();
 
@@ -387,13 +377,19 @@ async function loadProducts() {
 
       // Tab 1: Unique Products (All stocks) — exclude disposed products
       const activeProducts = products.filter(
-        (p) => !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+        (p) =>
+          !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
       );
       displayProductsForTab(activeProducts, 1);
 
       // Tab 2: Low Stock Products (About to be out of stock)
       displayProductsForTab(
-        products.filter((p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
+        products.filter(
+          (p) =>
+            +p.quantity > 10 &&
+            +p.quantity <= 50 &&
+            !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+        ),
         2
       );
 
@@ -405,13 +401,22 @@ async function loadProducts() {
 
       // Tab 4: Best Selling Products (Fast moving stocks)
       displayProductsForTab(
-        products.filter((p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
+        products.filter(
+          (p) =>
+            +p.quantity > 50 &&
+            !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+        ),
         4
       );
 
       // Tab 5: Least Selling Products (Slow moving stocks)
       displayProductsForTab(
-        products.filter((p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))),
+        products.filter(
+          (p) =>
+            +p.quantity > 0 &&
+            +p.quantity <= 10 &&
+            !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+        ),
         5
       );
 
@@ -427,7 +432,10 @@ async function loadProducts() {
 
       // Tab 7: Disposed Products (Expired or damaged products)
       displayProductsForTab(
-        products.filter((p) => p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))),
+        products.filter(
+          (p) =>
+            p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))
+        ),
         7
       );
 
@@ -463,7 +471,7 @@ function computeAndUpdateStats(products) {
   }
 
   // Use the exact same filtering logic as the tabs to ensure stats match tab counts
-  
+
   // Tab 1: Unique Products (All stocks) — exclude disposed products
   const uniqueProducts = products.filter(
     (p) => !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
@@ -471,22 +479,28 @@ function computeAndUpdateStats(products) {
 
   // Tab 2: Low Stock Products (About to be out of stock)
   const lowStock = products.filter(
-    (p) => (+p.quantity > 10 && +p.quantity <= 50) && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+    (p) =>
+      +p.quantity > 10 &&
+      +p.quantity <= 50 &&
+      !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
   ).length;
 
   // Tab 3: Out of Stock Products (Dead stocks)
-  const outOfStock = products.filter(
-    (p) => +p.quantity === 0 || p.stock_status === 'Out of Stock'
-  ).length;
+  const outOfStock = products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock').length;
 
   // Tab 4: Best Selling Products (Fast moving stocks)
   const bestSelling = products.filter(
-    (p) => +p.quantity > 50 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+    (p) =>
+      +p.quantity > 50 &&
+      !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
   ).length;
 
   // Tab 5: Least Selling Products (Slow moving stocks)
   const slowMoving = products.filter(
-    (p) => +p.quantity > 0 && +p.quantity <= 10 && !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+    (p) =>
+      +p.quantity > 0 &&
+      +p.quantity <= 10 &&
+      !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
   ).length;
 
   // Tab 6: Super Low Stock Products (Critical stock levels)
@@ -611,8 +625,10 @@ function displayProductsForTab(products, tabIndex) {
 
   products.forEach((product) => {
     const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
-    const isDisposed = product.disposal_status === 'Disposed' || (product.product_name && product.product_name.toLowerCase().includes('disposed'));
-    
+    const isDisposed =
+      product.disposal_status === 'Disposed' ||
+      (product.product_name && product.product_name.toLowerCase().includes('disposed'));
+
     const columnsData = [
       displayId,
       {
@@ -625,11 +641,13 @@ function displayProductsForTab(products, tabIndex) {
       product.measurement_value || '',
       product.measurement_unit || '',
       main.getSelectedOption(product.category, CATEGORIES),
-      product.expiration_date ? new Date(product.expiration_date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }) : 'No expiration',
+      product.expiration_date
+        ? new Date(product.expiration_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })
+        : 'No expiration',
       'custom_date_today',
     ];
 
@@ -678,17 +696,17 @@ function displayProductsForTab(products, tabIndex) {
 function updateTabTitleWithCount(tabIndex, count) {
   // Only update tab 7 (Disposed Products)
   if (tabIndex !== 7) return;
-  
+
   const tabElement = document.getElementById(`${SECTION_NAME}_tab${tabIndex}`);
   if (!tabElement) return;
-  
+
   const tabTitleElement = tabElement.children[0]; // First child contains the title
   if (!tabTitleElement) return;
-  
+
   // Extract the base title (remove any existing count)
   const currentTitle = tabTitleElement.textContent.trim();
   const baseTitle = currentTitle.replace(/\s*\(\d+\)\s*$/, '');
-  
+
   // Update the title with the count
   if (count > 0) {
     tabTitleElement.textContent = `${baseTitle} (${count})`;
@@ -747,9 +765,13 @@ function setupDisposedProductButton(result) {
       measurementUnit: result.dataset.custom6,
       category: result.dataset.custom7,
       expirationDate: result.dataset.custom8,
-      disposalStatus: result.dataset.disposalStatus || (result.dataset.text && result.dataset.text.includes('[DISPOSED') ? 'Disposed' : 'Active'),
-      disposalReason: result.dataset.disposalReason || (result.dataset.text ? extractDisposalReason(result.dataset.text) : ''),
-      disposalNotes: result.dataset.disposalNotes || (result.dataset.custom5 ? extractDisposalNotes(result.dataset.custom5) : ''),
+      disposalStatus:
+        result.dataset.disposalStatus ||
+        (result.dataset.text && result.dataset.text.includes('[DISPOSED') ? 'Disposed' : 'Active'),
+      disposalReason:
+        result.dataset.disposalReason || (result.dataset.text ? extractDisposalReason(result.dataset.text) : ''),
+      disposalNotes:
+        result.dataset.disposalNotes || (result.dataset.custom5 ? extractDisposalNotes(result.dataset.custom5) : ''),
       disposedAt: result.dataset.disposedAt || '',
     };
 
@@ -769,14 +791,17 @@ function extractDisposalNotes(measurement) {
 }
 
 function showDisposedProductDetails(productData) {
-  const disposalDate = productData.disposedAt ? 
-    new Date(productData.disposedAt).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) : (productData.disposalStatus === 'Disposed' ? 'Recently disposed' : 'Unknown');
+  const disposalDate = productData.disposedAt
+    ? new Date(productData.disposedAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : productData.disposalStatus === 'Disposed'
+      ? 'Recently disposed'
+      : 'Unknown';
 
   const modalHTML = `
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-30 hidden" id="disposedProductModal">
@@ -930,7 +955,7 @@ async function updateProduct(result, newResult, name) {
 
 async function deleteProduct(result) {
   main.openConfirmationModal(`Delete product: ${main.decodeText(result.dataset.text)}`, async () => {
-  main.sharedState.moduleLoad = SECTION_NAME;
+    main.sharedState.moduleLoad = SECTION_NAME;
     window.showGlobalLoading?.();
     try {
       const response = await fetch(`${API_BASE_URL}/ecommerce/products/${result.dataset.id}`, {
@@ -942,7 +967,12 @@ async function deleteProduct(result) {
       if (response.ok) {
         const now = new Date();
         const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        const time = now.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        });
 
         logAction(
           'Delete product',
@@ -981,7 +1011,7 @@ async function deleteProduct(result) {
 async function disposeProduct(result) {
   const productName = main.decodeText(result.dataset.text);
   const productId = result.dataset.id;
-  
+
   const modalHTML = `
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-30 hidden" id="disposeProductModal">
       <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
@@ -1082,7 +1112,7 @@ async function createDisposalRecord(productRow, disposalQuantity, reason, notes)
     const originalName = main.decodeText(productRow.dataset.text);
     const disposedName = `[DISPOSED: ${reason}] ${originalName} (${disposalQuantity} items)`;
     const currentDate = new Date().toISOString();
-    
+
     const disposalData = {
       product_name: disposedName,
       product_name_encoded: main.encodeText(disposedName),
@@ -1120,19 +1150,19 @@ window.confirmDisposeProduct = async function (productId) {
     const reason = document.getElementById('disposalReasonSelect').value;
     const notes = document.getElementById('disposalNotesInput').value.trim();
     const disposalQuantity = parseInt(document.getElementById('disposalQuantityInput').value);
-    
+
     // Validate disposal quantity
     if (!disposalQuantity || disposalQuantity < 1) {
       main.toast('Please enter a valid quantity to dispose', 'error');
       return;
     }
-    
+
     const productRow = document.querySelector(`tr[data-id="${productId}"]`);
     if (!productRow) {
       main.toast('Product not found', 'error');
       return;
     }
-    
+
     const currentQuantity = parseInt(productRow.dataset.custom3);
     if (disposalQuantity > currentQuantity) {
       main.toast(`Cannot dispose ${disposalQuantity} items. Current quantity is only ${currentQuantity}`, 'error');
@@ -1142,7 +1172,7 @@ window.confirmDisposeProduct = async function (productId) {
     // Use regular update endpoint to reduce quantity (disposal endpoint doesn't support partial disposal yet)
     const originalName = main.decodeText(productRow.dataset.text);
     const newQuantity = currentQuantity - disposalQuantity;
-    
+
     const response = await fetch(`${API_BASE_URL}/ecommerce/products/${productId}`, {
       method: 'PUT',
       headers: {
@@ -1157,17 +1187,17 @@ window.confirmDisposeProduct = async function (productId) {
         measurement_value: productRow.dataset.custom5,
         measurement_unit: productRow.dataset.custom6,
         category: productRow.dataset.custom7,
-        expiration_date: productRow.dataset.custom8,
+        expiration_date: productRow.dataset.custom8.split('T')[0],
         image_url: productRow.dataset.image,
       }),
     });
-    
+
     const result = await response.json();
 
     if (response.ok) {
       // Create a disposal record that will appear in the Disposed Products tab
       await createDisposalRecord(productRow, disposalQuantity, reason, notes);
-      
+
       logAction(
         'Dispose product',
         {
@@ -1292,7 +1322,7 @@ function refreshAllTabs() {
 }
 
 // Test function for expiration logic (can be called from browser console)
-window.testExpirationLogic = async function() {
+window.testExpirationLogic = async function () {
   console.log('Testing expiration logic...');
   try {
     await checkAndDisposeExpiredProducts();
