@@ -619,15 +619,23 @@ function openConsolidateTransactionsModal() {
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="consolidateGrid">
             <div class="flex flex-col gap-2 border rounded-lg p-3" id="serviceCol">
-              <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur">
+              <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur flex items-center justify-between">
                 <p class="text-sm font-semibold text-emerald-700">Service</p>
+                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" id="serviceSelectAll" class="h-4 w-4 border-gray-300 rounded" />
+                  <span>Select all</span>
+                </label>
               </div>
               <div class="text-sm text-gray-600" id="serviceListLoading">Loading...</div>
               <div class="flex flex-col gap-2" id="serviceList"></div>
             </div>
             <div class="flex flex-col gap-2 border rounded-lg p-3" id="salesCol">
-              <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur">
+              <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur flex items-center justify-between">
                 <p class="text-sm font-semibold text-cyan-700">Sales</p>
+                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" id="salesSelectAll" class="h-4 w-4 border-gray-300 rounded" />
+                  <span>Select all</span>
+                </label>
               </div>
               <div class="text-sm text-gray-600" id="salesListLoading">Loading...</div>
               <div class="flex flex-col gap-2" id="salesList"></div>
@@ -652,17 +660,24 @@ function openConsolidateTransactionsModal() {
     modal.children[0].classList.add('scale-100');
   }, 10);
 
-  // Close handlers
-  modal.addEventListener('click', closeConsolidateTransactionsModal);
+  // Close handlers (overlay click disabled by request; keep Close button and Escape)
   const closeBtn = document.getElementById('closeConsolidateBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeConsolidateTransactionsModal);
   const processBtn = document.getElementById('processConsolidateBtn');
-  if (processBtn) processBtn.addEventListener('click', openProcessConsolidatedModal);
+  if (processBtn)
+    processBtn.addEventListener('click', () => {
+      // Do not open Process modal if nothing is selected
+      if (consolidatedSelected.size === 0) return;
+      openProcessConsolidatedModal();
+    });
   const handleEscape = (e) => {
     if (e.key === 'Escape') closeConsolidateTransactionsModal();
   };
   document.addEventListener('keydown', handleEscape);
   modal.dataset.escapeHandler = 'true';
+
+  // Initialize button state based on current selection (likely zero on open)
+  updateSelectedCountUI();
 
   // Fetch and render first 5 of each
   fetchFirstFiveTransactions();
@@ -699,6 +714,14 @@ const consolidatedSelected = new Set();
 function updateSelectedCountUI() {
   const el = document.getElementById('selectedCountText');
   if (el) el.textContent = `Selected: ${consolidatedSelected.size}`;
+  // Also toggle the Process button state and styling
+  const processBtn = document.getElementById('processConsolidateBtn');
+  if (processBtn) {
+    const isDisabled = consolidatedSelected.size === 0;
+    processBtn.disabled = isDisabled;
+    processBtn.classList.toggle('opacity-50', isDisabled);
+    processBtn.classList.toggle('cursor-not-allowed', isDisabled);
+  }
 }
 
 async function fetchFirstFiveTransactions() {
@@ -745,11 +768,11 @@ function renderConsolidatedTransactions(service, sales, query = '') {
   const serviceListEl = document.getElementById('serviceList');
   const salesListEl = document.getElementById('salesList');
 
-  const renderRow = (tx) => {
+  const renderRow = (tx, type) => {
     const datetime = `${main.encodeDate(tx.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(tx.created_at, 'long')}`;
     const idText = tx.payment_id || 'N/A';
     return `
-      <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 hover:shadow-sm">
+      <div class="consolidate-item flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 hover:shadow-sm" data-id="${idText}" data-type="${type}">
         <div class="flex items-center gap-2">
           <input type="checkbox" class="h-4 w-4 border-gray-300 rounded consolidate-check" data-id="${idText}" />
           <div class="text-sm font-medium text-gray-900">${idText}</div>
@@ -771,7 +794,29 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     if (filtered.length === 0) {
       serviceListEl.innerHTML = '<div class="text-sm text-gray-500">No service transactions found</div>';
     } else {
-      serviceListEl.innerHTML = filtered.map(renderRow).join('');
+      serviceListEl.innerHTML = filtered.map((tx) => renderRow(tx, 'service')).join('');
+    }
+    // Sync Select All header checkbox state (checked/indeterminate)
+    const serviceSelectAll = document.getElementById('serviceSelectAll');
+    if (serviceSelectAll) {
+      const selectedCount = filtered.reduce((acc, tx) => acc + (consolidatedSelected.has(`service:${tx.payment_id}`) ? 1 : 0), 0);
+      serviceSelectAll.indeterminate = selectedCount > 0 && selectedCount < filtered.length;
+      serviceSelectAll.checked = filtered.length > 0 && selectedCount === filtered.length;
+      // Click to select/deselect all visible
+      serviceSelectAll.onchange = () => {
+        const targetChecked = !!serviceSelectAll.checked;
+        Array.from(serviceListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
+          const cb = row.querySelector('.consolidate-check');
+          const id = row.dataset.id;
+          const key = `service:${id}`;
+          cb.checked = targetChecked;
+          if (targetChecked) consolidatedSelected.add(key);
+          else consolidatedSelected.delete(key);
+        });
+        // After bulk change, clear indeterminate
+        serviceSelectAll.indeterminate = false;
+        updateSelectedCountUI();
+      };
     }
     Array.from(serviceListEl.querySelectorAll('.consolidate-check')).forEach((cb) => {
       const id = cb.dataset.id;
@@ -781,6 +826,38 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (cb.checked) consolidatedSelected.add(key);
         else consolidatedSelected.delete(key);
         updateSelectedCountUI();
+        // Update header checkbox state on individual change
+        const serviceSelectAll = document.getElementById('serviceSelectAll');
+        if (serviceSelectAll) {
+          const filtered = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
+          const total = filtered.length;
+          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          serviceSelectAll.indeterminate = selected > 0 && selected < total;
+          serviceSelectAll.checked = total > 0 && selected === total;
+        }
+      });
+    });
+    // Make entire row clickable to toggle selection
+    Array.from(serviceListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
+      row.addEventListener('click', (e) => {
+        // Ignore clicks originating from the checkbox itself to prevent double toggles
+        if (e.target.closest('input[type="checkbox"]')) return;
+        const cb = row.querySelector('.consolidate-check');
+        const id = row.dataset.id;
+        const key = `service:${id}`;
+        cb.checked = !cb.checked;
+        if (cb.checked) consolidatedSelected.add(key);
+        else consolidatedSelected.delete(key);
+        updateSelectedCountUI();
+        // Update header checkbox state on row click
+        const serviceSelectAll = document.getElementById('serviceSelectAll');
+        if (serviceSelectAll) {
+          const filtered = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
+          const total = filtered.length;
+          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          serviceSelectAll.indeterminate = selected > 0 && selected < total;
+          serviceSelectAll.checked = total > 0 && selected === total;
+        }
       });
     });
   }
@@ -789,7 +866,28 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     if (filtered.length === 0) {
       salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
     } else {
-      salesListEl.innerHTML = filtered.map(renderRow).join('');
+      salesListEl.innerHTML = filtered.map((tx) => renderRow(tx, 'sales')).join('');
+    }
+    // Sync Select All header checkbox state (checked/indeterminate)
+    const salesSelectAll = document.getElementById('salesSelectAll');
+    if (salesSelectAll) {
+      const selectedCount = filtered.reduce((acc, tx) => acc + (consolidatedSelected.has(`sales:${tx.payment_id}`) ? 1 : 0), 0);
+      salesSelectAll.indeterminate = selectedCount > 0 && selectedCount < filtered.length;
+      salesSelectAll.checked = filtered.length > 0 && selectedCount === filtered.length;
+      // Click to select/deselect all visible
+      salesSelectAll.onchange = () => {
+        const targetChecked = !!salesSelectAll.checked;
+        Array.from(salesListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
+          const cb = row.querySelector('.consolidate-check');
+          const id = row.dataset.id;
+          const key = `sales:${id}`;
+          cb.checked = targetChecked;
+          if (targetChecked) consolidatedSelected.add(key);
+          else consolidatedSelected.delete(key);
+        });
+        salesSelectAll.indeterminate = false;
+        updateSelectedCountUI();
+      };
     }
     Array.from(salesListEl.querySelectorAll('.consolidate-check')).forEach((cb) => {
       const id = cb.dataset.id;
@@ -799,6 +897,37 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (cb.checked) consolidatedSelected.add(key);
         else consolidatedSelected.delete(key);
         updateSelectedCountUI();
+        // Update header checkbox state on individual change
+        const salesSelectAll = document.getElementById('salesSelectAll');
+        if (salesSelectAll) {
+          const filtered = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
+          const total = filtered.length;
+          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          salesSelectAll.indeterminate = selected > 0 && selected < total;
+          salesSelectAll.checked = total > 0 && selected === total;
+        }
+      });
+    });
+    // Make entire row clickable to toggle selection
+    Array.from(salesListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('input[type="checkbox"]')) return;
+        const cb = row.querySelector('.consolidate-check');
+        const id = row.dataset.id;
+        const key = `sales:${id}`;
+        cb.checked = !cb.checked;
+        if (cb.checked) consolidatedSelected.add(key);
+        else consolidatedSelected.delete(key);
+        updateSelectedCountUI();
+        // Update header checkbox state on row click
+        const salesSelectAll = document.getElementById('salesSelectAll');
+        if (salesSelectAll) {
+          const filtered = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
+          const total = filtered.length;
+          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          salesSelectAll.indeterminate = selected > 0 && selected < total;
+          salesSelectAll.checked = total > 0 && selected === total;
+        }
       });
     });
   }
@@ -920,7 +1049,7 @@ async function openProcessConsolidatedModal() {
   const close = () => closeProcessConsolidatedModal();
   const closeBtn = document.getElementById('closeProcessConsolidateBtn');
   if (closeBtn) closeBtn.addEventListener('click', close);
-  modal.addEventListener('click', close);
+  // Overlay click disabled by request; only Close button and Escape key will close
   const handleEscape = (e) => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', handleEscape);
   modal.dataset.escapeHandler = 'true';
