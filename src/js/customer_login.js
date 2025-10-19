@@ -365,6 +365,7 @@ async function submitClicked(e) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const payload = await response.json();
         const customer = payload.result;
+        if (!customer) throw new Error('Customer not found');
         sessionStorage.setItem('id', customer.customer_id);
         sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
         sessionStorage.setItem('email', user.email);
