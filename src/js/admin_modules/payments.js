@@ -597,8 +597,6 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
     purpose,
     main.formatPrice(amountToPay),
     main.fixText(priceRate),
-    // GCash Reference Number column
-    'N/A',
     'custom_datetime_today',
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {

@@ -171,6 +171,8 @@ function setupLoginForm() {
 
           const newCustomer = await response.json();
           sessionStorage.setItem('id', id);
+          sessionStorage.setItem('first_name', first);
+          sessionStorage.setItem('last_name', last);
           sessionStorage.setItem('full_name', first + ' ' + last);
           sessionStorage.setItem('email', user.email);
 
@@ -203,8 +205,11 @@ function setupLoginForm() {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          const customer = await response.json();
+          const data = await response.json();
+          const customer = data.result;
           sessionStorage.setItem('id', customer.customer_id);
+          sessionStorage.setItem('first_name', customer.customer_first_name);
+          sessionStorage.setItem('last_name', customer.customer_last_name);
           sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
           sessionStorage.setItem('email', user.email);
 
@@ -313,7 +318,7 @@ async function submitClicked(e) {
           },
           body: JSON.stringify({
             customer_id: id,
-            customer_image_url: '',
+            customer_image_url: '/src/images/client_logo.jpg',
             customer_first_name: sanitizedFirst,
             customer_last_name: sanitizedLast,
             customer_contact: sanitizedEmail,
@@ -330,6 +335,8 @@ async function submitClicked(e) {
 
         const newCustomer = await response.json();
         sessionStorage.setItem('id', id);
+        sessionStorage.setItem('first_name', sanitizedFirst);
+        sessionStorage.setItem('last_name', sanitizedLast);
         sessionStorage.setItem('full_name', sanitizedFirst + ' ' + sanitizedLast);
         sessionStorage.setItem('email', sanitizedEmail);
 
@@ -370,7 +377,9 @@ async function submitClicked(e) {
         const customer = data.result;
         if (!customer) throw new Error('Customer not found');
         sessionStorage.setItem('id', customer.customer_id);
-        sessionStorage.setItem('full_name', user.displayName);
+        sessionStorage.setItem('first_name', customer.customer_first_name);
+        sessionStorage.setItem('last_name', customer.customer_last_name);
+        sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
         sessionStorage.setItem('email', user.email);
 
         Toastify({

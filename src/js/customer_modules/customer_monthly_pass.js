@@ -24,7 +24,6 @@ function openInfoModal() {
               <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
                 <li><b>Payment Method:</b> GCash payments only - quick and secure</li>
                 <li><b>Membership Rates:</b> Regular ₱950 | Student ₱850</li>
-                <li><b>Instant Activation:</b> Membership starts after payment verification</li>
                 <li><b>Keep Your Receipt:</b> Save your GCash reference number for verification</li>
                 <li><b>Important Notice:</b> No refunds for incomplete or invalid payments</li>
               </ul>
@@ -463,12 +462,12 @@ async function submitMonthlyRegistration(regData, payData) {
   const rate = isStudent ? 'student' : 'regular';
 
   // Generate ids similar to admin-side conventions
-  const customerId = `U${Date.now()}`;
+  const customerId = sessionStorage.getItem('id');
   const transactionId = `T${Date.now()}`;
 
-  const fullName = String(regData.get('memberName') || '').trim();
-  const [firstName, ...lastParts] = fullName.split(/\s+/);
-  const lastName = lastParts.join(' ') || '';
+  const fullName = sessionStorage.getItem('full_name');
+  const firstName = sessionStorage.getItem('first_name');
+  const lastName = sessionStorage.getItem('last_name');
   const startDate = String(regData.get('startDate'));
   const endDate = String(regData.get('endDate'));
 
@@ -484,22 +483,21 @@ async function submitMonthlyRegistration(regData, payData) {
   }
   const profileDataUrl = await toDataUrl(/** @type {File|null} */ (regData.get('profile')));
 
-  // // 1) Create customer (pending monthly)
-  // await fetch(`${API_BASE_URL}/inquiry/customers`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({
-  //     customer_id: customerId,
-  //     customer_image_url: profileDataUrl || '/src/images/client_logo.jpg',
-  //     customer_first_name: firstName || fullName,
-  //     customer_last_name: lastName,
-  //     customer_contact: String(regData.get('email') || ''),
-  //     customer_type: 'monthly',
-  //     customer_tid: transactionId,
-  //     customer_pending: 1,
-  //     customer_rate: rate,
-  //   }),
-  // });
+  // 1) Create customer (pending monthly)
+  await fetch(`${API_BASE_URL}/inquiry/customers/${customerId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_image_url: profileDataUrl || '/src/images/client_logo.jpg',
+      customer_first_name: firstName,
+      customer_last_name: lastName,
+      customer_contact: sessionStorage.getItem('email'),
+      customer_type: 'monthly',
+      customer_tid: transactionId,
+      customer_pending: 1,
+      customer_rate: rate,
+    }),
+  });
 
   // 2) Create monthly record (pending)
   // await fetch(`${API_BASE_URL}/inquiry/monthly`, {
