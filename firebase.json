@@ -14,27 +14,27 @@
       },
       {
         "source": "/admin",
-        "destination": "/src/html/_admin_main.html"
+        "destination": "/src/html/admin/index.html"
       },
       {
         "source": "/login",
-        "destination": "/src/html/customer_login.html"
+        "destination": "/src/html/login/index.html"
       },
       {
         "source": "/dashboard",
-        "destination": "/src/html/customer_dashboard.html"
+        "destination": "/src/html/dashboard/index.html"
       },
       {
         "source": "/about",
-        "destination": "/src/html/apt_about_us.html"
+        "destination": "/src/html/about/index.html"
       },
       {
         "source": "/privacy",
-        "destination": "/src/html/apt_privacy_policy.html"
+        "destination": "/src/html/privacy/index.html"
       },
       {
         "source": "/terms",
-        "destination": "/src/html/apt_terms_of_service.html"
+        "destination": "/src/html/terms/index.html"
       }
     ]
   }

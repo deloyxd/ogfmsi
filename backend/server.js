@@ -46,12 +46,12 @@ app.use('/api',router);
 
 // Specific routes for short paths
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../src/html/_admin_main.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, '../src/html/customer_login.html')));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../src/html/customer_dashboard.html')));
-app.get('/about', (req, res) => res.sendFile(path.join(__dirname, '../src/html/apt_about_us.html')));
-app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../src/html/apt_privacy_policy.html')));
-app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../src/html/apt_terms_of_service.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../src/html/admin/index.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, '../src/html/login/index.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../src/html/dashboard/index.html')));
+app.get('/about', (req, res) => res.sendFile(path.join(__dirname, '../src/html/about/index.html')));
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../src/html/privacy/index.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../src/html/terms/index.html')));
 
 
 //Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing
