@@ -3,11 +3,6 @@ const router = express.Router();
 const db = require('../database/mysql');
 const crypto = require('crypto');
 
-function generateAdminId() {
-  const rand = crypto.randomBytes(4).toString('hex');
-  return `A_${Date.now()}_${rand}`;
-}
-
 function hashPassword(plain) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.scryptSync(plain, salt, 64).toString('hex');
@@ -17,6 +12,7 @@ function hashPassword(plain) {
 router.post('/users', async (req, res) => {
   try {
     const {
+      admin_id,
       admin_image_url,
       admin_full_name,
       admin_username,
@@ -53,7 +49,6 @@ router.post('/users', async (req, res) => {
       return res.status(409).json({ error: 'Username already exists' });
     }
 
-    const admin_id = generateAdminId();
     const admin_password_hash = hashPassword(String(admin_password));
 
     const insertSql = `

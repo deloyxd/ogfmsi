@@ -50,21 +50,23 @@ function mainBtnFunction() {
         },
       ],
     },
-      spinner: [
-        {
-          label: 'User Role',
-          placeholder: 'Select user role',
-          selected: 0,
-          required: true,
-          options: USER_ROLES,
-        },
-      ],
+    spinner: [
+      {
+        label: 'User Role',
+        placeholder: 'Select user role',
+        selected: 0,
+        required: true,
+        options: USER_ROLES,
+      },
+    ],
   };
 
   main.openModal(mainBtn, inputs, (result) => {
-    (async () => {
-      const [fullName, username, password] = result.image.short.map(i => (i.value || '').trim());
-      const role = main.getSelectedSpinner(result.spinner[0]); // 'admin' | 'staff'
+    main.closeModal(() => {
+      const fullName = result.image.short[0].value;
+      const username = result.image.short[1].value;
+      const password = result.image.short[2].value;
+      const role = main.getSelectedSpinner(result.spinner[0]);
 
       if (!fullName || !username || !password || !role) {
         main.toast('Please fill all required fields', 'error');
@@ -72,42 +74,37 @@ function mainBtnFunction() {
       }
 
       try {
-        const resp = await fetch(`${API_BASE_URL}/admin/users`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            admin_image_url: result.image.src,
-            admin_full_name: fullName,
-            admin_username: username,
-            admin_role: role,
-            admin_password: password
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
-
-        main.toast('Admin user created successfully!', 'success');
-        // Optionally: log to Access Control activity if applicable
-        // accesscontrol.log({ module: 'Access Control', description: `Created admin ${username}` }, {});
-        main.closeModal();
-
-        const systemUser = data.result;
         const columnsData = [
-          'id_' + systemUser.admin_id,
+          'id_A_random',
           {
             type: 'object_username',
-            data: [systemUser.admin_image_url, systemUser.admin_full_name, systemUser.admin_username],
+            data: [result.image.src, fullName, username],
           },
-          main.fixText(systemUser.admin_role),
+          main.fixText(role),
         ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
-
+        main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+          const resp = await fetch(`${API_BASE_URL}/admin/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              admin_id: createResult.dataset.id,
+              admin_image_url: result.image.src,
+              admin_full_name: fullName,
+              admin_username: username,
+              admin_role: role,
+              admin_password: password,
+            }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+          const systemUser = data.result;
+          main.toast('Admin user created successfully!', 'success');
         });
       } catch (e) {
         console.error('Create admin error:', e);
         main.toast(String(e.message || e), 'error');
       }
-    })();
+    });
   });
 }
 
