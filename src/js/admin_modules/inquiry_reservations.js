@@ -81,7 +81,7 @@ async function createReservation(reservation) {
 }
 
 async function createReservationFE(reservation) {
-  console.log('test')
+  console.log('test');
   main.sharedState.moduleLoad = SECTION_NAME;
   window.showGlobalLoading?.();
   try {
@@ -564,10 +564,7 @@ function sectionTwoMainBtnFunction() {
               try {
                 const selectedDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 1;
 
-                const startInput =
-                  container.querySelector('input[placeholder="Start time"]') ||
-                  container.querySelector('#input-short-25') ||
-                  container.querySelector('input[type="time"]');
+                const startInput = container.querySelector('#input-short-35');
                 const startTime = startInput?.value || '';
 
                 updatePriceDisplay(selectedDuration, startTime, container);
@@ -584,10 +581,7 @@ function sectionTwoMainBtnFunction() {
                   .padStart(2, '0');
                 const endM = (endMinutes % 60).toString().padStart(2, '0');
 
-                const endInput =
-                  container.querySelector('input[placeholder="End time"]') ||
-                  container.querySelector('#input-short-9') ||
-                  container.querySelectorAll('input[type="time"]')[1];
+                const endInput = container.querySelector('#input-short-36');
                 if (endInput) {
                   endInput.value = `${endH}:${endM}`;
                   endInput.dispatchEvent(new Event('input'));
@@ -618,10 +612,7 @@ function sectionTwoMainBtnFunction() {
                   .padStart(2, '0');
                 const endM = (endMinutes % 60).toString().padStart(2, '0');
 
-                const endInput =
-                  container.querySelector('input[placeholder="End time"]') ||
-                  container.querySelector('#input-short-10') ||
-                  container.querySelectorAll('input[type="time"]')[1];
+                const endInput = container.querySelector('#input-short-36');
                 if (endInput) {
                   endInput.value = `${endH}:${endM}`;
                   endInput.dispatchEvent(new Event('input'));
@@ -636,6 +627,7 @@ function sectionTwoMainBtnFunction() {
             value: '',
             required: true,
             type: 'time',
+            offset: 1,
             locked: true,
           },
           {
@@ -670,9 +662,13 @@ function sectionTwoMainBtnFunction() {
         const selectedDuration = DURATION_OPTIONS[result.spinner2[0].selected - 1]?.value || 1;
 
         try {
-          const start = new Date(`1970-01-01T${startTime}`);
-          const end = new Date(`1970-01-01T${endTime}`);
-          const durationHours = (end - start) / (1000 * 60 * 60);
+          const start = new Date(`1970-01-01T${startTime}:00`);
+          let end = new Date(`1970-01-01T${endTime}:00`);
+          if (end < start) {
+            end.setDate(end.getDate() + 1);
+          }
+          const diffMs = end - start;
+          const durationHours = diffMs / (1000 * 60 * 60);
 
           if (end <= start) {
             throw new Error('End time must be after start time');
