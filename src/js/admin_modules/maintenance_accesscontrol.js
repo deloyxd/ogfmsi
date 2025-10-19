@@ -76,6 +76,7 @@ function mainBtnFunction() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            admin_image_url: result.image.src,
             admin_full_name: fullName,
             admin_username: username,
             admin_role: role,
@@ -89,6 +90,19 @@ function mainBtnFunction() {
         // Optionally: log to Access Control activity if applicable
         // accesscontrol.log({ module: 'Access Control', description: `Created admin ${username}` }, {});
         main.closeModal();
+
+        const systemUser = data.result;
+        const columnsData = [
+          'id_' + systemUser.admin_id,
+          {
+            type: 'object_username',
+            data: [systemUser.admin_image_url, systemUser.admin_full_name, systemUser.admin_username],
+          },
+          main.fixText(systemUser.admin_role),
+        ];
+        main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+
+        });
       } catch (e) {
         console.error('Create admin error:', e);
         main.toast(String(e.message || e), 'error');

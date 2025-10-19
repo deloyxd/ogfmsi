@@ -17,11 +17,11 @@ function hashPassword(plain) {
 router.post('/users', async (req, res) => {
   try {
     const {
+      admin_image_url,
       admin_full_name,
       admin_username,
       admin_role,
       admin_password,
-      admin_email,
     } = req.body || {};
 
     // Basic validation
@@ -58,15 +58,15 @@ router.post('/users', async (req, res) => {
 
     const insertSql = `
       INSERT INTO admin_users_tbl
-        (admin_id, admin_full_name, admin_username, admin_email, admin_role, admin_status, admin_password_hash)
+        (admin_id, admin_image_url, admin_full_name, admin_username, admin_role, admin_status, admin_password_hash)
       VALUES
         (?, ?, ?, ?, ?, 'active', ?)
     `;
     const params = [
       admin_id,
+      admin_image_url,
       String(admin_full_name).trim(),
       String(admin_username).trim(),
-      admin_email ? String(admin_email).trim() : null,
       role,
       admin_password_hash,
     ];
@@ -77,9 +77,9 @@ router.post('/users', async (req, res) => {
       message: 'Admin user created successfully',
       result: {
         admin_id,
+        admin_image_url,
         admin_full_name: String(admin_full_name).trim(),
         admin_username: String(admin_username).trim(),
-        admin_email: admin_email ? String(admin_email).trim() : null,
         admin_role: role,
         admin_status: 'active',
       },
