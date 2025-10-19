@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ?', [customer_contact]);
 
-    if (rows.length === 0) {
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found. Please sign up.' });
     }
 
