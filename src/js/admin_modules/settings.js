@@ -71,15 +71,23 @@ function renderPreferencesUI() {
         <p class="text-sm font-semibold text-gray-700">Modules visibility</p>
         <span class="text-xs text-gray-400">Toggle modules you want to show in the sidebar</span>
       </header>
-      <div class="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-4 p-4 sm:grid-cols-1 lg:grid-cols-1 2xl:grid-cols-2">
         ${modules
           .map(
             (m) => `
-          <label class="flex cursor-pointer items-center gap-3 rounded-md border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50">
-            <input type="checkbox" class="ogfmsi-pref-module h-4 w-4 rounded border-gray-300" data-key="${m.key}" ${
+          <label class="block w-full cursor-pointer">
+            <input type="checkbox" class="ogfmsi-pref-module peer sr-only text-3xl" data-key="${m.key}" ${
               prefs.hiddenSections?.includes(m.key) ? '' : 'checked'
             } />
-            <span class="text-sm font-medium text-gray-700">${m.label}</span>
+            <div class="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-5 min-h-[88px] transition-all hover:bg-gray-50 peer-checked:bg-gradient-to-br peer-checked:from-blue-500 peer-checked:to-white peer-checked:border-blue-500">
+              <span class="text-lg font-semibold text-gray-700 peer-checked:text-gray-900 flex-1">${m.label}</span>
+              <span class="relative block h-7 w-7">
+                <span aria-hidden="true" class="absolute inset-0 rounded-md border-2 border-gray-300 bg-white transition-colors duration-200 peer-checked:bg-gradient-to-br peer-checked:from-blue-600 peer-checked:to-white peer-checked:border-blue-600"></span>
+                <svg viewBox="0 0 24 24" class="pointer-events-none absolute inset-0 m-auto h-4 w-4 text-white opacity-0 drop-shadow peer-checked:opacity-100 transition-opacity duration-200">
+                  <path fill="currentColor" d="M20.285 6.708a1 1 0 0 1 0 1.414l-9.192 9.192a1 1 0 0 1-1.414 0l-5.657-5.657a1 1 0 1 1 1.414-1.414l4.95 4.95 8.485-8.485a1 1 0 0 1 1.414 0z" />
+                </svg>
+              </span>
+            </div>
           </label>`
           )
           .join('')}
