@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const startDate = new Date();
     startDate.setHours(hours, minutes, 0, 0);
     const durationHours = parseInt(durationValue);
+    console.log(durationHours)
     startDate.setHours(startDate.getHours() + durationHours);
     const endHours = startDate.getHours().toString().padStart(2, '0');
     const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
