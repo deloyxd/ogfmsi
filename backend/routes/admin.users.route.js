@@ -9,6 +9,23 @@ function hashPassword(plain) {
   return `scrypt:${salt}:${hash}`;
 }
 
+router.get('/users', async (req, res) => {
+  const { useLimit, limit, offset } = parsePageParams(req);
+  let sql = `SELECT * FROM admin_users_tbl ORDER BY created_at DESC`;
+  const params = [];
+  if (useLimit) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  try {
+    const rows = await db.query(sql, params);
+    res.status(200).json({ message: 'Fetching system users successful', result: rows });
+  } catch (error) {
+    console.error('Fetching system users error:', error);
+    return res.status(500).json({ error: 'Fetching system users failed' });
+  }
+});
+
 router.post('/users', async (req, res) => {
   try {
     const {

@@ -3,14 +3,29 @@ import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'maintenance-accesscontrol';
 
-let mainBtn;
+let activated = false,
+  mainBtn;
 
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != SECTION_NAME) return;
 
-  mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
-  mainBtn.addEventListener('click', mainBtnFunction);
+  if (!activated) {
+    mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
+    mainBtn.addEventListener('click', mainBtnFunction);
+
+    fetchAllSystemUsers();
+  }
 });
+
+async function fetchAllSystemUsers() {
+  try {
+    const resp = await fetch(`${API_BASE_URL}/admin/users`);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+    const systemUsers = data.result;
+    console.log(systemUsers);
+  } catch (err) {}
+}
 
 const USER_ROLES = [
   {
@@ -83,22 +98,29 @@ function mainBtnFunction() {
           main.fixText(role),
         ];
         main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
-          const resp = await fetch(`${API_BASE_URL}/admin/users`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              admin_id: createResult.dataset.id,
-              admin_image_url: result.image.src,
-              admin_full_name: fullName,
-              admin_username: username,
-              admin_role: role,
-              admin_password: password,
-            }),
-          });
-          const data = await resp.json();
-          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
-          const systemUser = data.result;
-          main.toast('Admin user created successfully!', 'success');
+          main.sharedState.moduleLoad = SECTION_NAME;
+          window.showGlobalLoading?.();
+          try {
+            const resp = await fetch(`${API_BASE_URL}/admin/users`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                admin_id: createResult.dataset.id,
+                admin_image_url: result.image.src,
+                admin_full_name: fullName,
+                admin_username: username,
+                admin_role: role,
+                admin_password: password,
+              }),
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+            const systemUser = data.result;
+            main.toast('Admin user created successfully!', 'success');
+          } catch (err) {
+          } finally {
+            window.hideGlobalLoading?.();
+          }
         });
       } catch (e) {
         console.error('Create admin error:', e);

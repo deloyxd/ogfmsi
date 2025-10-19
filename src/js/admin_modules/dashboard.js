@@ -11,16 +11,21 @@ import {
 } from '../landing_modules/announcements.js';
 
 // default codes:
-let mainBtn, subBtn;
+let activated = false,
+  mainBtn,
+  subBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
-  mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
-  mainBtn.addEventListener('click', mainBtnFunction);
-  subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
-  subBtn.addEventListener('click', subBtnFunction);
-  setupChartOne();
-  setupChartTwo();
-  loadDashboardStats(); // Load dashboard stats
+  if (!activated) {
+    mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
+    mainBtn.addEventListener('click', mainBtnFunction);
+    subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
+    subBtn.addEventListener('click', subBtnFunction);
+    activated = true;
+    setupChartOne();
+    setupChartTwo();
+    loadDashboardStats(); // Load dashboard stats
+  }
 });
 
 document.addEventListener('newTab', function () {
@@ -62,7 +67,7 @@ async function loadExistingAnnouncements() {
     // 🔥 Prevent duplication: remove previously loaded announcement elements except the first (template)
     Array.from(container.querySelectorAll('.announcementBtn'))
       .slice(1)
-      .forEach(el => el.remove());
+      .forEach((el) => el.remove());
 
     if (announcements.length > 0) {
       // Hide the empty state
@@ -112,7 +117,6 @@ async function loadExistingAnnouncements() {
     console.error('Error loading existing announcements:', error);
   }
 }
-
 
 // Handles creation, update, and deletion of announcements
 async function mainBtnFunction() {
@@ -247,8 +251,6 @@ async function deleteAnnouncementHandler(element) {
     main.toast('Failed to delete announcement!', 'error');
   }
 }
-
-
 
 // ✅ make injectDataToAnnouncementItem globally available
 function injectDataToAnnouncementItem(element, result, announcementId = null) {
