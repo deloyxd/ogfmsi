@@ -112,4 +112,26 @@ document.addEventListener('DOMContentLoaded', function () {
       </div>
     `;
   }
+  const startTimeInput = document.getElementById('start_time');
+  const durationSelect = document.getElementById('duration');
+  const endTimeInput = document.getElementById('end_time');
+
+  function updateEndTime() {
+    const startTimeValue = startTimeInput.value;
+    const durationValue = durationSelect.value;
+    if (!startTimeValue || !durationValue) {
+      return;
+    }
+    const [hours, minutes] = startTimeValue.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(hours, minutes, 0, 0);
+    const durationHours = parseInt(durationValue);
+    startDate.setHours(startDate.getHours() + durationHours);
+    const endHours = startDate.getHours().toString().padStart(2, '0');
+    const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
+    endTimeInput.value = `${endHours}:${endMinutes}`;
+  }
+
+  startTimeInput.addEventListener('change', updateEndTime);
+  durationSelect.addEventListener('change', updateEndTime);
 });
