@@ -47,7 +47,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
 // Attach click listeners to all tabs
 function setupTabSwitching() {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 4; i++) {
     const tab = document.getElementById(`${SECTION_NAME}_tab${i}`);
     if (tab) {
       tab.addEventListener('click', () => switchToTab(i));
@@ -97,13 +97,13 @@ async function loadTabData(tabIndex) {
     lastLoadedAt = now;
     main.showGlobalLoading();
 
-    // Ensure Reservations listener is disabled when leaving tab 5
-    if (tabIndex !== 5 && typeof reservationsUnsubscribe === 'function') {
+    // Ensure Reservations listener is disabled when leaving Reservations tab (now tab 4)
+    if (tabIndex !== 4 && typeof reservationsUnsubscribe === 'function') {
       try {
         reservationsUnsubscribe();
       } catch (_) {}
       reservationsUnsubscribe = null;
-      main.deleteAllAtSectionOne(SECTION_NAME, 5);
+      main.deleteAllAtSectionOne(SECTION_NAME, 4);
     }
 
     switch (tabIndex) {
@@ -114,12 +114,9 @@ async function loadTabData(tabIndex) {
         await loadRegularUsers();
         break;
       case 3:
-        await loadStudents();
-        break;
-      case 4:
         await loadSupplements();
         break;
-      case 5:
+      case 4:
         await loadReservations();
         break;
     }
@@ -152,6 +149,8 @@ async function loadMonthlyUsers() {
         ? `${customerData.customer_first_name} ${customerData.customer_last_name}`
         : 'Unknown';
       const image = customerData?.customer_image_url || '/src/images/client_logo.jpg';
+      const priceRateLabel =
+        String(customerData?.customer_rate || '').toLowerCase() === 'student' ? 'Student' : 'Regular';
       const columnsData = [
         'id_' + user.customer_id,
         { type: 'object_contact', data: [image, fullName, customerData?.customer_contact || ''] },
@@ -159,6 +158,7 @@ async function loadMonthlyUsers() {
         user.customer_pending ? 'Pending' : 'Active',
         'custom_date_' + main.encodeDate(user.customer_start_date, 'long'),
         'custom_date_' + main.encodeDate(user.customer_end_date, 'long'),
+        priceRateLabel,
         main.encodePrice(
           (user.customer_months || 1) *
             (String(customerData?.customer_rate || '').toLowerCase() === 'student'
@@ -194,23 +194,46 @@ async function loadRegularUsers() {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const data = await response.json();
-    const regularUsers = (data.result || [])
-      .filter(Boolean)
-      .filter((user) => String(user.customer_type || '').toLowerCase() === 'daily');
-    tableData.regularUsers = regularUsers;
+    const all = (data.result || []).filter(Boolean);
+    // Daily users
+    const dailyUsers = all.filter(
+      (user) => String(user.customer_type || '').toLowerCase() === 'daily'
+    );
+    // Students (by rate)
+    const studentUsers = all.filter(
+      (user) => String(user.customer_rate || '').toLowerCase() === 'student'
+    );
+
+    // Merge (union by customer_id), prefer daily record details if duplicate
+    const combinedById = new Map();
+    studentUsers.forEach((u) => {
+      if (u && u.customer_id) combinedById.set(u.customer_id, u);
+    });
+    dailyUsers.forEach((u) => {
+      if (u && u.customer_id) combinedById.set(u.customer_id, u);
+    });
+
+    const combined = Array.from(combinedById.values());
+    tableData.regularUsers = combined;
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
 
-    const seenRegular = new Set();
-    regularUsers.forEach((user) => {
+    const seen = new Set();
+    combined.forEach((user) => {
       if (!user || !user.customer_id) return;
-      if (seenRegular.has(user.customer_id)) return;
-      seenRegular.add(user.customer_id);
-      const isStudent = String(user.customer_rate || '').toLowerCase() === 'student';
-      const amount = isStudent ? 60 : 70;
+      if (seen.has(user.customer_id)) return;
+      seen.add(user.customer_id);
+
+      const isDaily = String(user.customer_type || '').toLowerCase() === 'daily';
+      const isStudentRate = String(user.customer_rate || '').toLowerCase() === 'student';
+      // Amount: Daily -> 60 (student) / 70 (regular); Otherwise (non-daily student) -> 850
+      const amount = isDaily ? (isStudentRate ? 60 : 70) : 850;
+      const priceRateLabel = isStudentRate ? 'Student' : 'Regular';
+      const typeLabel = isDaily ? 'Daily' : 'Student';
+
       const columnsData = [
         'id_' + user.customer_id,
-        'Daily',
+        typeLabel,
         {
           type: 'object_contact',
           data: [
@@ -219,7 +242,9 @@ async function loadRegularUsers() {
             user.customer_contact || '',
           ],
         },
-        'custom_time_today',
+        // Use full datetime to align with "Log Date & Time" (from created_at if available)
+        'custom_datetime_' + main.encodeDate(user.created_at, 'long') + ' - ' + main.encodeTime(user.created_at),
+        priceRateLabel,
         main.encodePrice(amount),
       ];
 
@@ -228,7 +253,7 @@ async function loadRegularUsers() {
         ?.parentElement?.parentElement?.querySelector(`[data-id="${user.customer_id}"]`);
       if (existing) return;
       main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        setupRowEditing(createResult, 'regular', user);
+        setupRowEditing(createResult, isDaily ? 'regular' : 'student', user);
       });
     });
   } catch (error) {
@@ -301,7 +326,7 @@ async function loadSupplements() {
     });
     tableData.supplements = products;
 
-    main.deleteAllAtSectionOne(SECTION_NAME, 4);
+    main.deleteAllAtSectionOne(SECTION_NAME, 3);
 
     // Build sales aggregates per product (quantity_sold, total_sales)
     const salesAggregates = await getProductSalesAggregates();
@@ -340,11 +365,11 @@ async function loadSupplements() {
       ];
 
       const existing = document
-        .querySelector(`#${SECTION_NAME}SectionOneListEmpty4`)
+        .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
         ?.parentElement?.parentElement?.querySelector(`[data-id="${product.product_id}"]`);
       if (existing) return;
 
-      main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
+      main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
         // Ensure dataset contains the full product_id even if display shows a shortened value
         createResult.dataset.id = product.product_id;
         setupRowEditing(createResult, 'supplement', product);
@@ -438,7 +463,7 @@ async function loadReservations() {
 
           tableData.reservations = normalized;
 
-          main.deleteAllAtSectionOne(SECTION_NAME, 5);
+          main.deleteAllAtSectionOne(SECTION_NAME, 4);
 
           tableData.reservations.forEach((reservation) => {
             const resTypeRaw = reservation.reservationType || reservation.serviceType || 'gym';
@@ -482,10 +507,10 @@ async function loadReservations() {
             ];
 
             const existing = document
-              .querySelector(`#${SECTION_NAME}SectionOneListEmpty5`)
+              .querySelector(`#${SECTION_NAME}SectionOneListEmpty4`)
               ?.parentElement?.parentElement?.querySelector(`[data-id="${reservation.id}"]`);
             if (existing) return;
-            main.createAtSectionOne(SECTION_NAME, columnsData, 5, (createResult) => {
+            main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
               setupRowEditing(createResult, 'reservation', reservation);
             });
           });
@@ -495,12 +520,12 @@ async function loadReservations() {
       },
       (error) => {
         console.error('Reservations listener error:', error);
-        main.deleteAllAtSectionOne(SECTION_NAME, 5);
+        main.deleteAllAtSectionOne(SECTION_NAME, 4);
       }
     );
   } catch (error) {
     console.error('Error starting reservations listener:', error);
-    main.deleteAllAtSectionOne(SECTION_NAME, 5);
+    main.deleteAllAtSectionOne(SECTION_NAME, 4);
   }
 }
 
@@ -671,7 +696,7 @@ function subBtnFunction() {
 
 // Export current tab data to PDF
 function exportToPDF() {
-  const tabNames = ['Monthly Users', 'Regular/Daily Users', 'Students', 'Supplements', 'Reservations'];
+  const tabNames = ['Monthly Users', 'Regular/Daily & Students', 'Supplements', 'Reservations'];
   const activeIndex = Number(main.sharedState.activeTab) || currentTab || 1;
   const currentTabName = tabNames[activeIndex - 1] || 'Report';
 
@@ -957,7 +982,7 @@ function exportToPDF() {
 
 // Export current tab data to Excel
 function exportToExcel() {
-  const tabNames = ['Monthly Users', 'Regular/Daily Users', 'Students', 'Supplements', 'Reservations'];
+  const tabNames = ['Monthly Users', 'Regular/Daily & Students', 'Supplements', 'Reservations'];
   const activeIndex = Number(main.sharedState.activeTab) || currentTab || 1;
   const currentTabName = tabNames[activeIndex - 1] || 'Report';
 
