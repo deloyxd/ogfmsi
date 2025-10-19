@@ -703,7 +703,7 @@ function mount() {
         showError('Reservation cannot end after 23:59.');
         return;
       }
-      if (!Number.isFinite(durationHours) || durationHours < 1) {
+      if (+durationHours < 1) {
         e.preventDefault();
         showError('Reservation must be at least 1 hour.');
         return;
