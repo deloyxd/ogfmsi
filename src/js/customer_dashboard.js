@@ -112,9 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
       </div>
     `;
   }
-  const startTimeInput = document.getElementById('start_time');
+  const startTimeInput = document.getElementById('startTime');
   const durationSelect = document.getElementById('duration');
-  const endTimeInput = document.getElementById('end_time');
+  const endTimeInput = document.getElementById('endTime');
 
   function updateEndTime() {
     const startTimeValue = startTimeInput.value;
