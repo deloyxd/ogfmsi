@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/mysql');
+const { parsePageParams } = require('../utils/pagination');
 const crypto = require('crypto');
 
 function hashPassword(plain) {
