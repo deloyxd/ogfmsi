@@ -55,27 +55,61 @@ router.get('/customers/:id', async (req, res) => {
   }
 });
 
-// POST auth (login/signup)
-router.post('/auth', async (req, res) => {
-  const { customer_contact, customer_first_name, customer_last_name, customer_image_url, customer_type, customer_tid, customer_pending, customer_rate } = req.body;
+// LOGIN ROUTE
+router.post('/login', async (req, res) => {
+  const { customer_contact } = req.body;
 
   if (!customer_contact) {
     return res.status(400).json({ error: 'customer_contact is required' });
   }
 
   try {
-    // Check if customer exists
     const [rows] = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ? LIMIT 1', [customer_contact]);
 
-    if (rows.length > 0) {
-      return res.status(200).json({
-        message: 'Customer found',
-        result: rows[0],
-      });
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found. Please sign up.' });
+    }
+
+    res.status(200).json({
+      message: 'Login successful',
+      result: rows[0],
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// SIGNUP ROUTE
+router.post('/signup', async (req, res) => {
+  const {
+    id,
+    customer_contact,
+    customer_first_name,
+    customer_last_name,
+    customer_image_url,
+    customer_type,
+    customer_tid,
+    customer_pending,
+    customer_rate,
+  } = req.body;
+
+  if (!customer_contact) {
+    return res.status(400).json({ error: 'customer_contact is required' });
+  }
+
+  try {
+    // Check if the customer already exists
+    const [existing] = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ? LIMIT 1', [
+      customer_contact,
+    ]);
+
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'Customer already exists. Please log in.' });
     }
 
     // Create new customer
-    const customer_id = 'U' + Date.now();
+    const customer_id = id || 'U' + Date.now();
     const image_url = customer_image_url || '';
     const first_name = customer_first_name || '';
     const last_name = customer_last_name || '';
@@ -117,8 +151,8 @@ router.post('/auth', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Auth error:', err);
-    res.status(500).json({ error: 'Auth failed' });
+    console.error('Signup error:', err);
+    res.status(500).json({ error: 'Signup failed' });
   }
 });
 

@@ -147,7 +147,7 @@ function setupLoginForm() {
 
         try {
           const id = `U${Date.now()}`;
-          const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
+          const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ function setupLoginForm() {
         }
       } else {
         try {
-          const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
+          const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -306,7 +306,7 @@ async function submitClicked(e) {
 
       try {
         const id = `U${Date.now()}`;
-        const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
+        const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -355,7 +355,7 @@ async function submitClicked(e) {
       const user = userCredential.user;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
+        const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
