@@ -525,7 +525,7 @@ function updateStatsDisplay(stats) {
 
   if (statElements.length >= 6) {
     // Unique Products: All active stocks
-    const uniqueProductsStat = statElements[0];
+    const uniqueProductsStat = statElements[1];
     if (uniqueProductsStat) {
       const valueElement = uniqueProductsStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -534,7 +534,7 @@ function updateStatsDisplay(stats) {
     }
 
     // Low Stock Products: About to be out of stock
-    const lowStockStat = statElements[1];
+    const lowStockStat = statElements[2];
     if (lowStockStat) {
       const valueElement = lowStockStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -543,7 +543,7 @@ function updateStatsDisplay(stats) {
     }
 
     // Out of Stock Products: Dead stocks
-    const outOfStockStat = statElements[2];
+    const outOfStockStat = statElements[3];
     if (outOfStockStat) {
       const valueElement = outOfStockStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -552,7 +552,7 @@ function updateStatsDisplay(stats) {
     }
 
     // Best Selling Products: Fast moving stocks
-    const bestSellingStat = statElements[3];
+    const bestSellingStat = statElements[4];
     if (bestSellingStat) {
       const valueElement = bestSellingStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -561,7 +561,7 @@ function updateStatsDisplay(stats) {
     }
 
     // Least Selling Products: Slow moving stocks
-    const slowMovingStat = statElements[4];
+    const slowMovingStat = statElements[5];
     if (slowMovingStat) {
       const valueElement = slowMovingStat.querySelector('.section-stats-c');
       if (valueElement) {
@@ -570,7 +570,7 @@ function updateStatsDisplay(stats) {
     }
 
     // Super Low Stock Products: Critical stock levels
-    const superLowStockStat = statElements[5];
+    const superLowStockStat = statElements[6];
     if (superLowStockStat) {
       const valueElement = superLowStockStat.querySelector('.section-stats-c');
       if (valueElement) {

@@ -81,6 +81,7 @@ async function createReservation(reservation) {
 }
 
 async function createReservationFE(reservation) {
+  console.log('test')
   main.sharedState.moduleLoad = SECTION_NAME;
   window.showGlobalLoading?.();
   try {
@@ -108,8 +109,7 @@ async function updateReservation(reservationId, updatedData) {
 }
 
 async function updateReservationFE(reservationId, updatedData) {
-  main.sharedState.moduleLoad = SECTION_NAME;
-    await updateDoc(doc(db, 'reservations', reservationId), updatedData);
+  await updateDoc(doc(db, 'reservations', reservationId), updatedData);
 }
 
 async function deleteReservation(reservationId) {
@@ -363,80 +363,112 @@ function cleanupExpiredReservations() {
     const reservationEnd = new Date(`${reservation.date}T${reservation.endTime}`);
     return reservationEnd > now;
   });
-  updateReservationStats();
-  refreshDashboardStats();
+
+  render();
 }
 
 async function loadExistingReservations() {
-  listenToReservationsFE((reservations) => {
+  listenToReservationsFE(async (reservations) => {
     existingReservations = reservations;
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
 
-    existingReservations.forEach(async (reservation) => {
-      const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
-      const { fullName } = main.decodeName(customerName);
-      const customerImage = await new Promise((resolve) => {
-        main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (findResult) => {
-          if (findResult && findResult.dataset.image) {
-            resolve(findResult.dataset.image);
-          } else {
-            resolve('');
-          }
+    // 1) Create rows first with placeholder images and collect customerIds
+    const createdRows = []; // { reservation, createdItem }
+    const customerIdSet = new Set();
+
+    await Promise.all(
+      existingReservations.map((reservation) => {
+        return new Promise((resolveCreate) => {
+          const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
+          const { fullName } = main.decodeName(customerName);
+
+          // collect customerId
+          customerIdSet.add(customerId);
+
+          const reservationEnd = new Date(`${date}T${endTime}`);
+          const isPast = reservationEnd <= new Date();
+          const tabIndex = isPast ? 3 : 2;
+
+          const reservationTypeText =
+            typeof reservationType === 'number'
+              ? RESERVATION_TYPES[reservationType].label
+              : main.fixText(reservationType);
+
+          // NOTE: put placeholder '' for image for now
+          const columnsData = [
+            'id_' + id,
+            {
+              type: 'object_cid',
+              data: ['', fullName, customerId], // image is empty now
+            },
+            reservationTypeText,
+            `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
+            `custom_datetime_${status}`,
+          ];
+
+          main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createdItem) => {
+            createdItem.dataset.tid = tid || '';
+
+            // Add event listeners (unchanged)
+            const viewDetailsBtn = createdItem.querySelector('[id^="reservationViewDetailsBtn"]');
+            if (viewDetailsBtn) {
+              viewDetailsBtn.addEventListener('click', () => {
+                editReservation(reservation);
+              });
+            }
+
+            const voidBtn = createdItem.querySelector('[id^="reservationVoidBtn"]');
+            if (voidBtn) {
+              voidBtn.addEventListener('click', async () => {
+                main.openConfirmationModal('Are you sure you want to void this reservation?', async () => {
+                  try {
+                    await deleteReservationFE(id);
+                    main.toast('Reservation voided successfully!', 'success');
+                    main.closeConfirmationModal();
+                  } catch (error) {
+                    main.toast(`Error voiding reservation: ${error.message}`, 'error');
+                  }
+                });
+              });
+            }
+
+            // store link so we can update the image later
+            createdRows.push({ reservation, createdItem });
+            resolveCreate();
+          });
         });
-      });
+      })
+    );
 
-      const reservationEnd = new Date(`${date}T${endTime}`);
-      const isPast = reservationEnd <= new Date();
-      const tabIndex = isPast ? 3 : 2;
+    // 2) Fetch images for all unique customerIds in parallel
+    const customerIds = Array.from(customerIdSet);
+    const imageByCustomerId = {}; // { [customerId]: imageString }
 
-      const reservationTypeText =
-        typeof reservationType === 'number' ? RESERVATION_TYPES[reservationType].label : main.fixText(reservationType);
-
-      const columnsData = [
-        'id_' + id,
-        {
-          type: 'object_cid',
-          data: [customerImage, fullName, customerId],
-        },
-        reservationTypeText,
-        `${main.decodeDate(date)} - ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
-        `custom_datetime_${status}`,
-      ];
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createdItem) => {
-        createdItem.dataset.tid = tid || '';
-
-        const viewDetailsBtn = createdItem.querySelector('[id^="reservationViewDetailsBtn"]');
-        if (viewDetailsBtn) {
-          viewDetailsBtn.addEventListener('click', () => {
-            editReservation(reservation);
+    await Promise.all(
+      customerIds.map((cid) => {
+        return new Promise((resolveImg) => {
+          main.findAtSectionOne('inquiry-customers', cid, 'equal_id', 1, (findResult) => {
+            const img = findResult && findResult.dataset && findResult.dataset.image ? findResult.dataset.image : '';
+            imageByCustomerId[cid] = img;
+            resolveImg();
           });
-        }
+        });
+      })
+    );
 
-        const voidBtn = createdItem.querySelector('[id^="reservationVoidBtn"]');
-        if (voidBtn) {
-          voidBtn.addEventListener('click', async () => {
-            main.openConfirmationModal('Are you sure you want to void this reservation?', async () => {
-              try {
-                await deleteReservationFE(id);
-                main.toast('Reservation voided successfully!', 'success');
-                main.closeConfirmationModal();
-                loadExistingReservations();
-              } catch (error) {
-                main.toast(`Error voiding reservation: ${error.message}`, 'error');
-              }
-            });
-          });
-        }
-      });
+    // 3) Update created rows with fetched images
+    // Implementation depends slightly on how your object_cid cell is rendered inside createdItem.
+    // Below we try a few sensible approaches (in order). If your DOM structure differs, adjust the selector.
+    createdRows.forEach(({ reservation, createdItem }) => {
+      const cid = reservation.customerId;
+      const img = imageByCustomerId[cid] || '';
+
+      createdItem.querySelector('img').src = img;
     });
-    updateReservationStats();
-    refreshDashboardStats();
+
+    // Finally, render now that images are applied
     render();
-    // } catch (error) {
-    //   main.toast(`Error loading reservations: ${error.message}`, 'error');
-    // }
   });
 }
 
@@ -475,8 +507,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
     setInterval(cleanupExpiredReservations, 60000);
   }
   render();
-  updateReservationStats();
-  refreshDashboardStats();
 });
 
 // Main section button handler
@@ -758,7 +788,6 @@ function sectionTwoMainBtnFunction() {
                 },
                 async (transactionId) => {
                   await updateReservationFE(reservationData.id, { tid: transactionId });
-                  loadExistingReservations();
                 }
               );
             } catch (error) {
@@ -1054,6 +1083,7 @@ function updateReservationStats() {
 export function reserveCustomer() {
   autoselect = true;
   main.showSection(SECTION_NAME);
+  render();
   sectionTwoMainBtnFunction();
 }
 
@@ -1062,7 +1092,6 @@ export async function cancelPendingTransaction(transactionId) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, async (findResult) => {
     if (findResult) {
       await updateReservationFE(findResult.dataset.id, { status: 'Canceled', tid: '' });
-      loadExistingReservations();
     }
   });
 }
@@ -1074,7 +1103,6 @@ export async function completeReservationPayment(transactionId) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, async (findResult) => {
     if (findResult) {
       await updateReservationFE(findResult.dataset.id, { status: datetime, tid: '' });
-      loadExistingReservations();
     }
   });
 }
@@ -1189,7 +1217,6 @@ function editReservation(reservation) {
       await updateReservationFE(id, updatedData);
       main.toast('Reservation updated successfully!', 'success');
       main.closeModal();
-      loadExistingReservations();
     } catch (error) {
       main.toast(`Error updating reservation: ${error.message}`, 'error');
     }
