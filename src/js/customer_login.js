@@ -361,7 +361,7 @@ async function submitClicked(e) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            customer_contact: user.email,
+            customer_contact: sanitizedEmail,
           }),
         });
 
