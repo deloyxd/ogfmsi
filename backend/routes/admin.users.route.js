@@ -49,7 +49,7 @@ router.post('/users', async (req, res) => {
       'SELECT id FROM admin_users_tbl WHERE admin_username = ? LIMIT 1',
       [admin_username]
     );
-    if (!dupes || dupes.length > 0) {
+    if (dupes && dupes.length > 0) {
       return res.status(409).json({ error: 'Username already exists' });
     }
 
