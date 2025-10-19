@@ -332,6 +332,7 @@ function createDayElement(day, month, year) {
     el.classList.add('bg-orange-300');
     state.selectedDate = el;
     state.selectedDate.setAttribute('aria-pressed', 'true');
+    state.selectedDate.querySelector('.bookmark')?.classList.remove('opacity-0');
 
     // Persist selected date details for submission
     state.selectedDate.dataset.day = String(day);
