@@ -61,11 +61,15 @@ function setupClientLogo() {
       window.location.href = '/login';
     });
   });
-  document.querySelectorAll('.redirect-to-demo').forEach((button) => {
-    button.addEventListener('click', function () {
-      showVideoModal();
+
+  const demoButtons = document.querySelectorAll('.redirect-to-demo');
+  if (demoButtons) {
+    demoButtons.forEach((button) => {
+      button.addEventListener('click', function () {
+        showVideoModal();
+      });
     });
-  });
+  }
 }
 
 function setupDarkMode() {
@@ -83,10 +87,12 @@ function setupDarkMode() {
   }
 
   // toggler
-  themeToggleBtn.addEventListener('click', () => {
-    html.classList.toggle('dark');
-    localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
-  });
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      html.classList.toggle('dark');
+      localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
+    });
+  }
 }
 
 function setupLoginDropdown() {
@@ -94,6 +100,7 @@ function setupLoginDropdown() {
   const dropdownMenu = document.getElementById('dropdown-menu');
 
   // toggler
+  if (!dropdownToggle || !dropdownMenu) return;
   dropdownToggle.addEventListener('click', function () {
     dropdownMenu.classList.toggle('hidden');
   });
@@ -107,22 +114,28 @@ function setupLoginDropdown() {
 
   // attach the event listener to the "Admin Login" button
   const adminLoginBtn = document.getElementById('admin-login-btn');
-  adminLoginBtn.addEventListener('click', () => {
-    modal.showModal('adminLoginModal', 'loginBtn', 'cancelBtn');
-    dropdownMenu.classList.add('hidden');
-  });
+  if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', () => {
+      modal.showModal('adminLoginModal', 'loginBtn', 'cancelBtn');
+      dropdownMenu.classList.add('hidden');
+    });
+  }
 }
 
 function setupMobileLoginDropdown() {
   const mobileMenuBtn = document.getElementById('mobile-menu-button');
   const mobileMenu = document.getElementById('mobile-menu');
   const adminLoginBtn = document.getElementById('mobile-admin-login-btn');
-  mobileMenuBtn.addEventListener('click', () => {
-    mobileMenu.classList.toggle('hidden');
-  });
-  adminLoginBtn.addEventListener('click', () => {
-    modal.showModal('adminLoginModal', 'loginBtn', 'cancelBtn');
-  });
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  }
+  if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', () => {
+      modal.showModal('adminLoginModal', 'loginBtn', 'cancelBtn');
+    });
+  }
 }
 
 function setupCarouselComponent() {
@@ -137,37 +150,47 @@ function setupWatchDemo() {
   const demoVideo = document.getElementById('demoVideo');
 
   // open video modal with animation
-  watchDemoBtn.addEventListener('click', function () {
-    showVideoModal();
-  });
+  if (watchDemoBtn) {
+    watchDemoBtn.addEventListener('click', function () {
+      showVideoModal();
+    });
+  }
 
   // close video modal
   function closeVideo() {
+    if (!videoModal || !demoVideo) return;
     videoModal.classList.add('hidden');
     demoVideo.pause();
     demoVideo.currentTime = 0;
   }
 
-  closeVideoBtn.addEventListener('click', function () {
-    closeVideo();
-  });
+  if (closeVideoBtn) {
+    closeVideoBtn.addEventListener('click', function () {
+      closeVideo();
+    });
+  }
 
   // close modal when clicking outside the video
-  videoModal.addEventListener('click', function (e) {
-    if (e.target === videoModal) {
-      closeVideo();
-    }
-  });
+  if (videoModal) {
+    videoModal.addEventListener('click', function (e) {
+      if (e.target === videoModal) {
+        closeVideo();
+      }
+    });
+  }
 
   // close modal with escape key
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
+    if (e.key === 'Escape' && videoModal && !videoModal.classList.contains('hidden')) {
       closeVideo();
     }
   });
 }
 
 function showVideoModal() {
+  const videoModal = document.getElementById('videoModal');
+  const demoVideo = document.getElementById('demoVideo');
+  if (!videoModal || !demoVideo) return;
   videoModal.classList.remove('hidden');
   demoVideo.muted = false;
   demoVideo.play().catch((e) => {
@@ -177,6 +200,7 @@ function showVideoModal() {
 
 function setupCarouselImages() {
   const carousel = document.getElementById('carousel');
+  if (!carousel) return;
   const carouselItems = carousel.querySelectorAll('.carousel-item');
   let currentIndex = 0;
 
