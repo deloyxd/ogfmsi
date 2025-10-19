@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupMobileDropdown();
   setupLogout();
   document.getElementById('welcomeUser').innerText = fullName;
+  console.log(sessionStorage.getItem('id'))
 
   const openMessage = document.getElementById('openMessage');
   const hoursMessage = document.getElementById('hoursMessage');
