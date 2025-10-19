@@ -57,10 +57,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 async function loadExistingAnnouncements() {
   try {
     const announcements = await getAnnouncements();
+    const container = document.querySelector('.announcementBtn').parentElement;
+
+    // 🔥 Prevent duplication: remove previously loaded announcement elements except the first (template)
+    Array.from(container.querySelectorAll('.announcementBtn'))
+      .slice(1)
+      .forEach(el => el.remove());
 
     if (announcements.length > 0) {
       // Hide the empty state
-      const emptyState = document.querySelector('.announcementBtn').parentElement.children[0];
+      const emptyState = container.children[0];
       if (emptyState) {
         emptyState.classList.add('hidden');
       }
@@ -74,7 +80,6 @@ async function loadExistingAnnouncements() {
       announcements.forEach((announcement) => {
         const announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
 
-        // Convert Firebase data back to the format expected by injectDataToAnnouncementItem
         const result = {
           image: {
             src: announcement.image.src,
@@ -94,13 +99,20 @@ async function loadExistingAnnouncements() {
 
         injectDataToAnnouncementItem(announcementBtn, result, announcement.id);
         announcementBtn.classList.remove('hidden');
-        document.querySelector('.announcementBtn').parentElement.appendChild(announcementBtn);
+        container.appendChild(announcementBtn);
       });
+    } else {
+      // show empty state if none
+      const emptyState = container.children[0];
+      if (emptyState) {
+        emptyState.classList.remove('hidden');
+      }
     }
   } catch (error) {
     console.error('Error loading existing announcements:', error);
   }
 }
+
 
 // Handles creation, update, and deletion of announcements
 async function mainBtnFunction() {
@@ -119,16 +131,8 @@ async function mainBtnFunction() {
       src: '/src/images/carousel_image_2.jpg',
       type: 'live',
       short: [
-        {
-          placeholder: 'Title - Top',
-          value: `💪 Let's go 🏋️‍♀️`,
-          required: true,
-        },
-        {
-          placeholder: 'Title - Highlight',
-          value: 'Fitworx',
-          required: true,
-        },
+        { placeholder: 'Title - Top', value: `💪 Let's go 🏋️‍♀️`, required: true },
+        { placeholder: 'Title - Highlight', value: 'Fitworx', required: true },
         { placeholder: 'Title - Bottom', value: 'Gym!', required: true },
       ],
     },
@@ -149,12 +153,8 @@ async function mainBtnFunction() {
     });
   });
 
-  let announcementBtn;
-
-  // Creates a new announcement
   async function createAnnouncementHandler(result) {
     try {
-      // Prepare announcement data for Firebase
       const announcementData = {
         title: {
           top: result.image.short[0].value,
@@ -172,14 +172,10 @@ async function mainBtnFunction() {
         },
       };
 
-      // Save to Firebase
       const announcementId = await createAnnouncement(announcementData);
-
-      // Update local count
       announcementCount++;
 
-      // Create DOM element
-      announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
+      const announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
       injectDataToAnnouncementItem(announcementBtn, result, announcementId);
       announcementBtn.parentElement.children[0].classList.add('hidden');
       subBtn.classList.remove('hidden');
@@ -191,155 +187,140 @@ async function mainBtnFunction() {
       main.toast('Failed to create announcement!', 'error');
     }
   }
+}
 
-  // Updates an existing announcement
-  async function updateAnnouncementHandler(element, result) {
-    try {
-      const announcementId = element.dataset.announcementId;
-      if (!announcementId) {
-        throw new Error('No announcement ID found');
-      }
+// ✅ Used by injectDataToAnnouncementItem
+async function updateAnnouncementHandler(element, result) {
+  try {
+    const announcementId = element.dataset.announcementId;
+    if (!announcementId) throw new Error('No announcement ID found');
 
-      // Prepare update data for Firebase
-      const updateData = {
-        title: {
-          top: result.image.short[0].value,
-          highlight: result.image.short[1].value,
-          bottom: result.image.short[2].value,
-        },
-        description: result.large[0].value,
-        image: {
-          src: result.image.src,
-          type: result.image.type,
-        },
-        header: {
-          title: result.header.title,
-          subtitle: result.header.subtitle,
-        },
-      };
-
-      // Update in Firebase
-      await updateAnnouncement(announcementId, updateData);
-
-      // Update DOM element
-      injectDataToAnnouncementItem(element, result, announcementId);
-
-      main.toast('Successfully updated announcement!', 'info');
-      main.closeConfirmationModal();
-      main.closeModal();
-    } catch (error) {
-      console.error('Error updating announcement:', error);
-      main.toast('Failed to update announcement!', 'error');
-    }
-  }
-
-  // Deletes an announcement
-  async function deleteAnnouncementHandler(element) {
-    try {
-      const announcementId = element.dataset.announcementId;
-      if (!announcementId) {
-        throw new Error('No announcement ID found');
-      }
-
-      // Delete from Firebase
-      await deleteAnnouncement(announcementId);
-
-      // Update local count
-      announcementCount--;
-      if (announcementCount == 0) {
-        element.parentElement.children[0].classList.remove('hidden');
-        subBtn.classList.add('hidden');
-      }
-
-      // Remove DOM element
-      element.remove();
-
-      main.toast('Successfully deleted announcement!', 'error');
-      main.closeConfirmationModal();
-      main.closeModal();
-    } catch (error) {
-      console.error('Error deleting announcement:', error);
-      main.toast('Failed to delete announcement!', 'error');
-    }
-  }
-
-  // Injects announcement data into the UI
-  function injectDataToAnnouncementItem(element, result, announcementId = null) {
-    element.children[0].src = result.image.src;
-    let title = '';
-    element.children[2].querySelectorAll('p').forEach((p, i) => {
-      result.image.short.forEach((input, index) => {
-        if (index == i) {
-          title += ' ' + input.value;
-          p.textContent = input.value;
-        }
-      });
-    });
-    result.header.title = `Update Announcement ${getEmoji('📌', 26)}`;
-    result.header.subtitle = 'Announcement form';
-    result.footer = {};
-    result.footer.main = `Update ${getEmoji('📌')}`;
-    result.footer.sub = `Delete ${getEmoji('⚠️')}`;
-    element.dataset.description = result.large[0].value;
-
-    // Store announcement ID if provided
-    if (announcementId) {
-      element.dataset.announcementId = announcementId;
-    }
-
-    element.addEventListener('mouseenter', () => {
-      element.classList.add('flash-effect');
-    });
-    element.addEventListener('mouseleave', () => {
-      element.classList.remove('flash-effect');
-    });
-    element.onclick = () => {
-      main.openModal(
-        element,
-        result,
-        (updatedResult) => {
-          main.openConfirmationModal('Update announcement: ' + title, async () => {
-            await updateAnnouncementHandler(element, updatedResult);
-            enqueueAnnouncement('Update');
-          });
-        },
-        () =>
-          main.openConfirmationModal('Delete announcement: ' + title, async () => {
-            await deleteAnnouncementHandler(element);
-            enqueueAnnouncement('Delete');
-          })
-      );
+    const updateData = {
+      title: {
+        top: result.image.short[0].value,
+        highlight: result.image.short[1].value,
+        bottom: result.image.short[2].value,
+      },
+      description: result.large[0].value,
+      image: {
+        src: result.image.src,
+        type: result.image.type,
+      },
+      header: {
+        title: result.header.title,
+        subtitle: result.header.subtitle,
+      },
     };
 
-    enqueueAnnouncement('Create');
+    await updateAnnouncement(announcementId, updateData);
+    injectDataToAnnouncementItem(element, result, announcementId);
 
-    // Logs announcement actions
-    function enqueueAnnouncement(actionType) {
-      const action = {
-        module: 'Dashboard',
-        submodule: 'Announcement',
-        description: `${actionType} announcement`,
-      };
-      const data = {
-        id: announcementCount,
-        date: new Date().toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-        type: 'user',
-      };
-      if (actionType.toLowerCase().includes('create') || actionType.toLowerCase().includes('update')) {
-        data.image = element.children[0].src;
-        data.title = title;
-        data.description = element.dataset.description;
-      }
-      accesscontrol.log(action, data);
+    main.toast('Successfully updated announcement!', 'info');
+    main.closeConfirmationModal();
+    main.closeModal();
+  } catch (error) {
+    console.error('Error updating announcement:', error);
+    main.toast('Failed to update announcement!', 'error');
+  }
+}
+
+// ✅ Used by injectDataToAnnouncementItem
+async function deleteAnnouncementHandler(element) {
+  try {
+    const announcementId = element.dataset.announcementId;
+    if (!announcementId) throw new Error('No announcement ID found');
+
+    await deleteAnnouncement(announcementId);
+    announcementCount--;
+
+    if (announcementCount === 0) {
+      element.parentElement.children[0].classList.remove('hidden');
+      subBtn.classList.add('hidden');
     }
 
-    element.classList.remove('hidden');
-    document.querySelector('.announcementBtn').parentElement.appendChild(element);
+    element.remove();
+    main.toast('Successfully deleted announcement!', 'error');
+    main.closeConfirmationModal();
+    main.closeModal();
+  } catch (error) {
+    console.error('Error deleting announcement:', error);
+    main.toast('Failed to delete announcement!', 'error');
   }
+}
+
+
+
+// ✅ make injectDataToAnnouncementItem globally available
+function injectDataToAnnouncementItem(element, result, announcementId = null) {
+  element.children[0].src = result.image.src;
+  let title = '';
+  element.children[2].querySelectorAll('p').forEach((p, i) => {
+    result.image.short.forEach((input, index) => {
+      if (index == i) {
+        title += ' ' + input.value;
+        p.textContent = input.value;
+      }
+    });
+  });
+  result.header.title = `Update Announcement ${getEmoji('📌', 26)}`;
+  result.header.subtitle = 'Announcement form';
+  result.footer = {};
+  result.footer.main = `Update ${getEmoji('📌')}`;
+  result.footer.sub = `Delete ${getEmoji('⚠️')}`;
+  element.dataset.description = result.large[0].value;
+
+  if (announcementId) {
+    element.dataset.announcementId = announcementId;
+  }
+
+  element.addEventListener('mouseenter', () => element.classList.add('flash-effect'));
+  element.addEventListener('mouseleave', () => element.classList.remove('flash-effect'));
+
+  element.onclick = () => {
+    main.openModal(
+      element,
+      result,
+      (updatedResult) => {
+        main.openConfirmationModal('Update announcement: ' + title, async () => {
+          await updateAnnouncementHandler(element, updatedResult);
+          enqueueAnnouncement('Update');
+        });
+      },
+      () =>
+        main.openConfirmationModal('Delete announcement: ' + title, async () => {
+          await deleteAnnouncementHandler(element);
+          enqueueAnnouncement('Delete');
+        })
+    );
+  };
+
+  enqueueAnnouncement('Create');
+
+  function enqueueAnnouncement(actionType) {
+    const action = {
+      module: 'Dashboard',
+      submodule: 'Announcement',
+      description: `${actionType} announcement`,
+    };
+    const data = {
+      id: announcementCount,
+      date: new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+      type: 'user',
+    };
+    if (actionType.toLowerCase().includes('create') || actionType.toLowerCase().includes('update')) {
+      data.image = element.children[0].src;
+      data.title = title;
+      data.description = element.dataset.description;
+    }
+    accesscontrol.log(action, data);
+  }
+
+  element.classList.remove('hidden');
+  document.querySelector('.announcementBtn').parentElement.appendChild(element);
 }
 
 // Handles sub button logic

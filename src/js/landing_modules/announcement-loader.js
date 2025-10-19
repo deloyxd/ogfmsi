@@ -139,7 +139,6 @@ function createAnnouncementElement(announcement, index) {
 
   const announcementHTML = `
     <div
-      style="cursor: pointer"
       data-color="${colorConfig.color}"
       class="${colorConfig.classes}"
     >
@@ -162,7 +161,7 @@ function createAnnouncementElement(announcement, index) {
   if (clickableElement) {
     clickableElement.addEventListener('click', () => {
       // Navigate to customer login or specific page
-      window.location.href = '/login';
+      // window.location.href = '/login';
     });
   }
 
