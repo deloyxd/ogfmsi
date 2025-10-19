@@ -116,6 +116,26 @@ function createAnnouncementElement(announcement, index) {
 
   // Determine colors and classes based on index
   const colorConfig = getColorConfig(index);
+  
+  // Build an optional image block to render UNDER the text content
+  const hasImage = announcement && announcement.image && announcement.image.src;
+  const altTitle = [
+    announcement?.title?.top || '',
+    announcement?.title?.highlight || '',
+    announcement?.title?.bottom || '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  const imageBlock = hasImage
+    ? `
+      <img
+        src="${announcement.image.src}"
+        alt="${altTitle || 'Announcement image'}"
+        class="mt-4 w-full rounded-lg object-cover max-h-56"
+      />
+    `
+    : '';
 
   const announcementHTML = `
     <div
@@ -123,28 +143,15 @@ function createAnnouncementElement(announcement, index) {
       data-color="${colorConfig.color}"
       class="${colorConfig.classes}"
     >
-      <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full ${colorConfig.iconBg}">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-white"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="${colorConfig.iconPath}"
-          />
-        </svg>
-      </div>
-      <h3 class="mb-2 text-xl font-semibold ${colorConfig.titleColor}">
+      <!-- Icon removed as requested -->
+      <div class="hidden"></div>
+      <h3 class="mb-3 text-3xl font-bold ${colorConfig.titleColor}">
         ${announcement.title.top}
       </h3>
-      <p class="${colorConfig.textColor}">
+      <p class="text-xl ${colorConfig.textColor} mb-4">
         ${announcement.description}
       </p>
+      ${imageBlock}
     </div>
   `;
 

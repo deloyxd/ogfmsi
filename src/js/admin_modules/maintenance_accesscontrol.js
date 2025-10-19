@@ -14,6 +14,15 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 function mainBtnFunction() {}
 
 export function log(action, data) {
+  // Only attempt to render log rows when the Maintenance Access Control section is active.
+  // This avoids errors when other modules (e.g., Dashboard) call log() while the
+  // section's DOM is not mounted yet.
+  if (main.sharedState.sectionName !== SECTION_NAME) {
+    // Optionally: queue logs for later rendering if needed.
+    // For now, safely no-op to prevent runtime errors.
+    return;
+  }
+
   const columnsData = [
     'id_U288343611137',
     {
