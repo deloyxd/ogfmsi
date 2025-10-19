@@ -147,7 +147,7 @@ function setupLoginForm() {
 
         try {
           const id = `U${Date.now()}`;
-          const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+          const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ function setupLoginForm() {
             }),
           });
 
-          if (!response.ok) {
+          if (response.status !== 201) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
@@ -189,8 +189,8 @@ function setupLoginForm() {
         }
       } else {
         try {
-          const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
-            method: 'GET',
+          const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
+            method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
@@ -199,7 +199,7 @@ function setupLoginForm() {
             }),
           });
 
-          if (!response.ok) {
+          if (response.status !== 200) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
@@ -306,7 +306,7 @@ async function submitClicked(e) {
 
       try {
         const id = `U${Date.now()}`;
-        const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -324,7 +324,7 @@ async function submitClicked(e) {
           }),
         });
 
-        if (!response.ok) {
+        if (response.status !== 201) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -355,16 +355,18 @@ async function submitClicked(e) {
       const user = userCredential.user;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/inquiry/customers?email=${encodeURIComponent(user.email)}`, {
-          method: 'GET',
+        const response = await fetch(`${API_BASE_URL}/inquiry/customers/auth`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            customer_contact: user.email,
+          }),
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const payload = await response.json();
-        const customer = payload.result;
+        if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
+        const customer = await response.json();
         if (!customer) throw new Error('Customer not found');
         sessionStorage.setItem('id', customer.customer_id);
         sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);

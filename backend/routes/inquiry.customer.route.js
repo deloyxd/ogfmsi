@@ -55,6 +55,73 @@ router.get('/customers/:id', async (req, res) => {
   }
 });
 
+// POST auth (login/signup)
+router.post('/auth', async (req, res) => {
+  const { customer_contact, customer_first_name, customer_last_name, customer_image_url, customer_type, customer_tid, customer_pending, customer_rate } = req.body;
+
+  if (!customer_contact) {
+    return res.status(400).json({ error: 'customer_contact is required' });
+  }
+
+  try {
+    // Check if customer exists
+    const [rows] = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ? LIMIT 1', [customer_contact]);
+
+    if (rows.length > 0) {
+      return res.status(200).json({
+        message: 'Customer found',
+        result: rows[0],
+      });
+    }
+
+    // Create new customer
+    const customer_id = 'U' + Date.now();
+    const image_url = customer_image_url || '';
+    const first_name = customer_first_name || '';
+    const last_name = customer_last_name || '';
+    const type = customer_type || 'daily';
+    const tid = customer_tid || '';
+    const pending = customer_pending || 0;
+    const rate = customer_rate || 'regular';
+
+    const insertQuery = `
+      INSERT INTO customer_tbl
+      (customer_id, customer_image_url, customer_first_name, customer_last_name, customer_contact, customer_type, customer_tid, customer_pending, customer_rate)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    await db.query(insertQuery, [
+      customer_id,
+      image_url,
+      first_name,
+      last_name,
+      customer_contact,
+      type,
+      tid,
+      pending,
+      rate,
+    ]);
+
+    res.status(201).json({
+      message: 'Customer created successfully',
+      result: {
+        customer_id,
+        customer_image_url: image_url,
+        customer_first_name: first_name,
+        customer_last_name: last_name,
+        customer_contact,
+        customer_type: type,
+        customer_tid: tid,
+        customer_pending: pending,
+        customer_rate: rate,
+      },
+    });
+  } catch (err) {
+    console.error('Auth error:', err);
+    res.status(500).json({ error: 'Auth failed' });
+  }
+});
+
 // POST new customer
 router.post('/customers', async (req, res) => {
   const {
