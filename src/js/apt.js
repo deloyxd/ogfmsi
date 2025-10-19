@@ -34,7 +34,7 @@ function setupLandingHeaderComponent() {
 function setupClientLogo() {
   document.querySelectorAll('.redirect-to-dashboard').forEach((button) => {
     button.addEventListener('click', function () {
-      window.location.href = '/index.html';
+      window.location.href = '/';
     });
   });
   document.querySelectorAll('.redirect-to-demo').forEach((button) => {
