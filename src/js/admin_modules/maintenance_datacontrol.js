@@ -338,7 +338,7 @@ async function loadSupplements() {
       seenProducts.add(product.product_id);
 
       // Align columns with HTML listtitletexts for Supplements tab:
-      // [Product ID, Product Name, Quantity, Price, Measurement, Measurement Unit, Quantity Sold, Total Sales, Date]
+      // [Product ID, Product Name, Quantity, Price, Measurement, Measurement Unit, Quantity Sold, Total Sales, Expiration Date, Date]
       const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
       const displayId =
         String(product.product_id || '')
@@ -354,6 +354,13 @@ async function loadSupplements() {
         String(product.measurement_unit || ''),
         String(aggregate.quantity || 0),
         main.encodePrice(aggregate.total || 0),
+        product.expiration_date
+          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          : 'No expiration',
         'custom_date_' +
           (product.created_at
             ? new Date(product.created_at).toLocaleDateString('en-US', {
