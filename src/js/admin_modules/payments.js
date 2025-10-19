@@ -807,7 +807,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
 }
 
 // Opens a follow-up modal (same size) when Process is clicked
-function openProcessConsolidatedModal() {
+async function openProcessConsolidatedModal() {
   // Build rows from selected keys
   const ids = Array.from(consolidatedSelected)
     .map((k) => (k || '').split(':')[1])
@@ -815,30 +815,69 @@ function openProcessConsolidatedModal() {
 
   const uniqueIds = Array.from(new Set(ids));
 
-  // Using uniqueIds, fetch the payments table of database to select their purpose and amount
+  // Fetch purposes and amounts for each unique ID
   const purposes = [];
   const amounts = [];
-  uniqueIds.forEach((id) => {
-    fetch(`${API_BASE_URL}/payment/complete/${id}`)
+  let grandTotal = 0;
+
+  // Create an array of fetch promises for each uniqueId
+  const fetchPromises = uniqueIds.map(async (id) => {
+    return fetch(`${API_BASE_URL}/payment/complete/${id}`)
       .then((res) => res.json())
       .then((data) => {
-        purposes.push(data.result.purpose);
-        amounts.push(data.result.amount);
+        const salesTransaction = data.result[0].payment_purpose.includes('<b>');
+        if (salesTransaction) {
+          let purposeStr = '';
+          let amountStr = '';
+
+          let cleanStr = data.result[0].payment_purpose.replace(/Purchasing /, '');
+          let regex = /(\d+)x <b>(.*?)<\/b>₱([\d,\.]+)/g;
+          let match;
+          while ((match = regex.exec(cleanStr)) !== null) {
+            let quantity = parseInt(match[1]);
+            let itemName = match[2];
+            let price = parseFloat(match[3].replace(/,/g, ''));
+            let totalPrice = +price / +quantity;
+            purposeStr += `${itemName}<br>`;
+            if (quantity > 1) {
+              amountStr += `x${quantity} * ${main.encodePrice(totalPrice)} = <b>${main.encodePrice(price)}</b><br>`;
+            } else {
+              amountStr += `<b>${main.encodePrice(price)}</b><br>`;
+            }
+            grandTotal += price;
+          }
+
+          purposes.push(purposeStr);
+          amounts.push(amountStr);
+        } else {
+          purposes.push(data.result[0].payment_purpose);
+          amounts.push('<b>' + main.encodePrice(data.result[0].payment_amount_to_pay) + '</b>');
+          grandTotal += +data.result[0].payment_amount_to_pay;
+        }
+      })
+      .catch((error) => {
+        console.error(`Error fetching data for ID ${id}:`, error);
       });
   });
+  await Promise.all(fetchPromises);
 
   const rowsHTML = uniqueIds.length === 0
     ? '<tr><td colspan="3" class="px-3 py-2 text-sm text-gray-500 text-center">No transactions selected</td></tr>'
     : uniqueIds
         .map(
-          (id) => `
+          (id, index) => `
             <tr class="border-b last:border-0 hover:bg-gray-50">
               <td class="px-3 py-2 text-sm text-gray-900">${id}</td>
-              <td class="px-3 py-2 text-sm text-gray-600"></td>
-              <td class="px-3 py-2 text-sm text-gray-600"></td>
+              <td class="px-3 py-2 text-sm text-gray-600">${purposes[index]}</td>
+              <td class="px-3 py-2 text-sm text-gray-600 text-right">${amounts[index]}</td>
             </tr>`
         )
         .join('');
+  const grandTotalRow = `
+    <tr class="border-t bg-gray-50">
+      <td colspan="2" class="px-3 py-2 text-sm font-semibold text-gray-900 text-right">Grand Total</td>
+      <td class="px-3 py-2 text-sm text-gray-600 text-right"><b>${main.encodePrice(grandTotal)}</b></td>
+    </tr>`;
 
   const modalHTML = `
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-30 hidden" id="consolidateProcessModal">
@@ -849,18 +888,19 @@ function openProcessConsolidatedModal() {
         </div>
         <div class="p-4">
           <div class="overflow-x-auto rounded-lg border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table id="consolidateProcessTable" class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Transaction ID</th>
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Particulars</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Amount</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody class="bg-white">${rowsHTML}</tbody>
+              <tbody class="bg-white">${rowsHTML}${grandTotalRow}</tbody>
             </table>
           </div>
           <div class="flex justify-end gap-2 mt-4">
+            <button type="button" id="exportProcessConsolidateBtn" class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500">Export</button>
             <button type="button" id="closeProcessConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
           </div>
         </div>
@@ -884,6 +924,40 @@ function openProcessConsolidatedModal() {
   const handleEscape = (e) => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', handleEscape);
   modal.dataset.escapeHandler = 'true';
+
+  // Export handler
+  const exportBtn = document.getElementById('exportProcessConsolidateBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const table = document.getElementById('consolidateProcessTable');
+      if (!table) return;
+      const printWin = window.open('', '', 'width=900,height=700');
+      if (!printWin) return;
+      const styles = `
+        <style>
+          body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; padding: 16px; }
+          h2 { margin: 0 0 12px 0; font-size: 18px; font-weight: 600; }
+          table { width: 100%; border-collapse: collapse; }
+          thead th { background: #f9fafb; color: #374151; font-size: 12px; text-align: left; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+          tbody td { font-size: 13px; color: #374151; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+          tfoot td { font-weight: 600; }
+          .text-right { text-align: right; }
+          @media print { button { display: none; } }
+        </style>`;
+      const generatedAt = new Date().toLocaleString();
+      printWin.document.write(`<!doctype html><html><head><meta charset=\"utf-8\"><title>Fitworx Gym</title>${styles}</head><body>`);
+      printWin.document.write(`<h2>Fitworx Gym</h2>`);
+      // Clone table and remove Tailwind-only classes for cleaner print (optional)
+      const tableClone = table.cloneNode(true);
+      printWin.document.body.appendChild(tableClone);
+      printWin.document.write(`<div style=\"margin-top:12px; text-align:right; font-size:12px; color:#6b7280;\">Generated: ${generatedAt}</div>`);
+      printWin.document.write('</body></html>');
+      printWin.document.close();
+      // Give the window a moment to render before printing
+      printWin.focus();
+      setTimeout(() => { try { printWin.print(); } catch (_) {} try { printWin.close(); } catch (_) {} }, 250);
+    });
+  }
 }
 
 function closeProcessConsolidatedModal() {
