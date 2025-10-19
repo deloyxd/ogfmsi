@@ -155,7 +155,7 @@ function createAnnouncementElement(announcement, index) {
   if (clickableElement) {
     clickableElement.addEventListener('click', () => {
       // Navigate to customer login or specific page
-      window.location.href = '/src/html/customer_side/login.html';
+      window.location.href = '/login';
     });
   }
 

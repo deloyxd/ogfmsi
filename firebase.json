@@ -6,6 +6,36 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/src/html/_admin_main.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/src/html/customer_login.html"
+      },
+      {
+        "source": "/dashboard",
+        "destination": "/src/html/customer_dashboard.html"
+      },
+      {
+        "source": "/about",
+        "destination": "/src/html/apt_about_us.html"
+      },
+      {
+        "source": "/privacy",
+        "destination": "/src/html/apt_privacy_policy.html"
+      },
+      {
+        "source": "/terms",
+        "destination": "/src/html/apt_terms_of_service.html"
+      }
     ]
   }
 }

@@ -184,7 +184,7 @@ function setupLoginForm() {
             position: 'center',
             backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
             stopOnFocus: true,
-            callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
+            callback: () => (window.location.href = '/dashboard'),
           }).showToast();
         } catch (error) {
           console.error('Error creating customer:', error);
@@ -221,7 +221,7 @@ function setupLoginForm() {
             position: 'center',
             backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
             stopOnFocus: true,
-            callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
+            callback: () => (window.location.href = '/dashboard'),
           }).showToast();
         } catch (error) {
           console.error('Error fetching customer:', error);
@@ -348,7 +348,7 @@ async function submitClicked(e) {
           position: 'center',
           backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
           stopOnFocus: true,
-          callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
+          callback: () => (window.location.href = '/dashboard'),
         }).showToast();
       } catch (error) {
         console.error('Error creating customer:', error);
@@ -390,7 +390,7 @@ async function submitClicked(e) {
           position: 'center',
           backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
           stopOnFocus: true,
-          callback: () => (window.location.href = '/src/html/customer_dashboard.html'),
+          callback: () => (window.location.href = '/dashboard'),
         }).showToast();
       } catch (error) {
         console.error('Error fetching customer:', error);

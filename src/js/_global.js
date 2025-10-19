@@ -58,7 +58,7 @@ function setupClientLogo() {
   });
   document.querySelectorAll('.redirect-to-login').forEach((button) => {
     button.addEventListener('click', function () {
-      window.location.href = '/src/html/customer_login.html';
+      window.location.href = '/login';
     });
   });
   document.querySelectorAll('.redirect-to-demo').forEach((button) => {
