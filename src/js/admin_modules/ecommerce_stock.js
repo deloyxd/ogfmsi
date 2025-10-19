@@ -1148,6 +1148,7 @@ window.confirmDisposeProduct = async function (productId) {
         measurement_value: productRow.dataset.custom5,
         measurement_unit: productRow.dataset.custom6,
         category: productRow.dataset.custom7,
+        expiration_date: productRow.dataset.custom8,
         image_url: productRow.dataset.image,
       }),
     });
