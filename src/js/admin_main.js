@@ -1747,7 +1747,7 @@ export function getAllSectionOne(sectionName, tabIndex, callback) {
 export function getAllSectionTwo(sectionName, callback) {}
 
 export function findAtSectionOne(sectionName, findValue, findType, tabIndex, callback) {
-  if (findValue.trim() === '') {
+  if (!findValue || findValue.trim() === '') {
     callback(null);
     return;
   }

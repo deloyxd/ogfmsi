@@ -1080,7 +1080,7 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
   const rate = 'Regular';
 
   // Generate ids similar to admin-side conventions
-  const customerId = `U${Date.now()}`;
+  const customerId = sessionStorage.getItem('id');
   const transactionId = `T${Date.now()}`;
 
   const fullName = String(regData.get('customerName') || '').trim();

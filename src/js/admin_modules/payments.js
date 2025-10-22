@@ -107,7 +107,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               if (findResult) {
                 imageSrc = findResult.dataset.image || '';
                 customerIdText = findResult.dataset.id || customerIdText;
-                try { fullName = main.decodeName(findResult.dataset.text).fullName; } catch (_) {}
+                try {
+                  fullName = main.decodeName(findResult.dataset.text).fullName;
+                } catch (_) {}
               } else {
                 // fallback: fetch from backend in case DOM not yet populated
                 try {
@@ -136,10 +138,24 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     main.encodeDate(
                       pendingPayment.created_at,
                       main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                    ) + ' - ' + main.encodeTime(pendingPayment.created_at),
+                    ) +
+                    ' - ' +
+                    main.encodeTime(pendingPayment.created_at),
                 ],
                 1,
-                (createResult) => {
+                async (createResult) => {
+                  const isOnlineTransaction = pendingPayment.payment_purpose.includes('facility');
+                  let customer;
+                  if (isOnlineTransaction) {
+                    try {
+                      const resp = await fetch(
+                        `${API_BASE_URL}/inquiry/customers/${pendingPayment.payment_customer_id}`
+                      );
+                      if (resp.ok) {
+                        customer = await resp.json();
+                      }
+                    } catch (_) {}
+                  }
                   seenPendingPaymentIds.add(pendingPayment.payment_id);
                   if (fromCustomerPortal && refFromPortal) {
                     createResult.dataset.refnum = refFromPortal;
@@ -147,12 +163,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
                     completePayment(
-                      pendingPayment.payment_purpose.includes('facility') ? 'reservations' : 'customers',
+                      isOnlineTransaction ? 'reservations' : 'customers',
                       createResult.dataset.id,
-                      createResult.dataset.image,
-                      createResult.dataset.text,
+                      isOnlineTransaction ? customer.customer_image_url : createResult.dataset.image,
+                      isOnlineTransaction ? pendingPayment.payment_customer_id : createResult.dataset.text,
                       createResult.dataset.custom2,
-                      fullName,
+                      isOnlineTransaction ? customer.customer_first_name + ' ' + customer.customer_last_name : fullName,
                       Number(pendingPayment.payment_amount_to_pay) || 0,
                       pendingPayment.payment_rate,
                       { methodHint, refFromPortal, displayId: pendingPayment.payment_id }
@@ -198,7 +214,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         // Use for...of to support async/await
         for (const completePayment of completePayments.result) {
           const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
-          
+
           // First, add to the original Service Transactions tab (tab 3) - shows all service transactions
           main.createAtSectionOne(
             SECTION_NAME,
@@ -225,16 +241,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             3, // Service Transactions tab (all service transactions)
             (createResult) => {
               const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-              transactionDetailsBtn.addEventListener('click', () =>
-                openTransactionDetails('services', createResult)
-              );
+              transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
             }
           );
-          
+
           // Determine which specific tab to place the transaction based on payment method
           const paymentMethod = completePayment.payment_method?.toLowerCase() || '';
           let tabIndex;
-          
+
           if (paymentMethod === 'cash') {
             tabIndex = 4; // Service (Cash) tab
           } else if (paymentMethod === 'cashless') {
@@ -267,12 +281,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               4, // Service (Cash) tab
               (createResult) => {
                 const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () =>
-                  openTransactionDetails('services', createResult)
-                );
+                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
               }
             );
-            
+
             // Then, add to cashless tab (only cashless portion)
             main.createAtSectionOne(
               SECTION_NAME,
@@ -299,9 +311,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               5, // Service (Cashless) tab
               (createResult) => {
                 const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () =>
-                  openTransactionDetails('services', createResult)
-                );
+                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
               }
             );
             continue; // Skip the regular creation below for hybrid payments
@@ -309,7 +319,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             // Default to cash tab for unknown payment methods
             tabIndex = 4;
           }
-          
+
           // Add to specific payment method tab (cash or cashless)
           if (paymentMethod !== 'hybrid') {
             main.createAtSectionOne(
@@ -337,9 +347,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               tabIndex,
               (createResult) => {
                 const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () =>
-                  openTransactionDetails('services', createResult)
-                );
+                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
               }
             );
           }
@@ -387,7 +395,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   : findResult
                     ? `${main.decodeName(findResult.dataset.text).fullName} | ${customerIdSafe}`
                     : customerIdSafe;
-              
+
               // First, add to the original Sales Transactions tab (tab 6) - shows all sales transactions
               main.createAtSectionOne(
                 SECTION_NAME,
@@ -416,11 +424,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
                 }
               );
-              
+
               // Determine which specific tab to place the transaction based on payment method
               const paymentMethod = completePayment.payment_method?.toLowerCase() || '';
               let tabIndex;
-              
+
               if (paymentMethod === 'cash') {
                 tabIndex = 7; // Sales (Cash) tab
               } else if (paymentMethod === 'cashless') {
@@ -452,10 +460,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   7, // Sales (Cash) tab
                   (createResult) => {
                     const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                    transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
+                    transactionDetailsBtn.addEventListener('click', () =>
+                      openTransactionDetails('sales', createResult)
+                    );
                   }
                 );
-                
+
                 // Then, add to cashless tab (only cashless portion)
                 main.createAtSectionOne(
                   SECTION_NAME,
@@ -481,7 +491,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   8, // Sales (Cashless) tab
                   (createResult) => {
                     const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                    transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
+                    transactionDetailsBtn.addEventListener('click', () =>
+                      openTransactionDetails('sales', createResult)
+                    );
                   }
                 );
                 return; // Skip the regular creation below for hybrid payments
@@ -489,7 +501,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 // Default to cash tab for unknown payment methods
                 tabIndex = 7;
               }
-              
+
               // Add to specific payment method tab (cash or cashless)
               if (paymentMethod !== 'hybrid') {
                 main.createAtSectionOne(
@@ -516,7 +528,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   tabIndex,
                   (createResult) => {
                     const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                    transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
+                    transactionDetailsBtn.addEventListener('click', () =>
+                      openTransactionDetails('sales', createResult)
+                    );
                   }
                 );
               }
@@ -538,55 +552,49 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
         const list = Array.isArray(canceledPayments.result) ? canceledPayments.result : [];
         list.forEach((payment) => {
-          main.findAtSectionOne(
-            'inquiry-customers',
-            payment.payment_customer_id,
-            'equal_id',
-            1,
-            (findResult) => {
-              const customerImage = findResult ? findResult.dataset.image : '';
-              const customerIdSafe = findResult ? findResult.dataset.id : payment.payment_customer_id;
-              const customerName = findResult ? main.decodeName(findResult.dataset.text).fullName : '';
-              main.createAtSectionOne(
-                SECTION_NAME,
-                [
-                  'id_' + payment.payment_id,
-                  {
-                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                    data: [
-                      customerImage,
-                      customerIdSafe,
-                      payment.payment_purpose || 'N/A',
-                      main.formatPrice(payment.payment_amount_to_pay || 0),
-                      main.formatPrice(0),
-                      main.formatPrice(0),
-                      main.formatPrice(0),
-                      main.fixText(payment.payment_rate || 'N/A'),
-                      'canceled',
-                      `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
-                    ],
-                  },
-                  payment.payment_purpose || 'N/A',
-                  `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
-                ],
-                2,
-                (createResult) => {
-                  // Set the proper data attributes for the details modal
-                  createResult.dataset.purpose = payment.payment_purpose || 'N/A';
-                  createResult.dataset.amounttopay = main.formatPrice(payment.payment_amount_to_pay || 0);
-                  createResult.dataset.amountpaidcash = main.formatPrice(0);
-                  createResult.dataset.amountpaidcashless = main.formatPrice(0);
-                  createResult.dataset.changeamount = main.formatPrice(0);
-                  createResult.dataset.pricerate = payment.payment_rate || 'N/A';
-                  createResult.dataset.paymentmethod = 'canceled';
-                  createResult.dataset.datetime = `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`;
-                  
-                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                  transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('canceled', createResult));
-                }
-              );
-            }
-          );
+          main.findAtSectionOne('inquiry-customers', payment.payment_customer_id, 'equal_id', 1, (findResult) => {
+            const customerImage = findResult ? findResult.dataset.image : '';
+            const customerIdSafe = findResult ? findResult.dataset.id : payment.payment_customer_id;
+            const customerName = findResult ? main.decodeName(findResult.dataset.text).fullName : '';
+            main.createAtSectionOne(
+              SECTION_NAME,
+              [
+                'id_' + payment.payment_id,
+                {
+                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                  data: [
+                    customerImage,
+                    customerIdSafe,
+                    payment.payment_purpose || 'N/A',
+                    main.formatPrice(payment.payment_amount_to_pay || 0),
+                    main.formatPrice(0),
+                    main.formatPrice(0),
+                    main.formatPrice(0),
+                    main.fixText(payment.payment_rate || 'N/A'),
+                    'canceled',
+                    `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
+                  ],
+                },
+                payment.payment_purpose || 'N/A',
+                `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`,
+              ],
+              2,
+              (createResult) => {
+                // Set the proper data attributes for the details modal
+                createResult.dataset.purpose = payment.payment_purpose || 'N/A';
+                createResult.dataset.amounttopay = main.formatPrice(payment.payment_amount_to_pay || 0);
+                createResult.dataset.amountpaidcash = main.formatPrice(0);
+                createResult.dataset.amountpaidcashless = main.formatPrice(0);
+                createResult.dataset.changeamount = main.formatPrice(0);
+                createResult.dataset.pricerate = payment.payment_rate || 'N/A';
+                createResult.dataset.paymentmethod = 'canceled';
+                createResult.dataset.datetime = `${main.encodeDate(payment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(payment.created_at, 'long')}`;
+
+                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('canceled', createResult));
+              }
+            );
+          });
         });
       } catch (error) {
         console.error('Error fetching canceled payments:', error);
@@ -703,9 +711,13 @@ function closeConsolidateTransactionsModal() {
   const modal = document.getElementById('consolidateTransactionsModal');
   if (!modal) return;
   // Clear all selections when closing the consolidate modal
-  try { consolidatedSelected.clear(); } catch (_) {}
+  try {
+    consolidatedSelected.clear();
+  } catch (_) {}
   // Also ensure the Process button state is reset
-  try { updateSelectedCountUI(); } catch (_) {}
+  try {
+    updateSelectedCountUI();
+  } catch (_) {}
   modal.classList.remove('opacity-100');
   modal.children[0].classList.add('-translate-y-6');
   modal.children[0].classList.remove('scale-100');
@@ -845,7 +857,8 @@ function renderConsolidatedTransactions(service, sales, query = '') {
   const matcher = (tx) => {
     if (!normalizedQuery) return true;
     const id = (tx.payment_id || '').toLowerCase();
-    const dateStr = `${main.encodeDate(tx.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(tx.created_at, 'long')}`.toLowerCase();
+    const dateStr =
+      `${main.encodeDate(tx.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(tx.created_at, 'long')}`.toLowerCase();
     return id.includes(normalizedQuery) || dateStr.includes(normalizedQuery);
   };
 
@@ -859,7 +872,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     // Sync Select All header checkbox state (checked/indeterminate)
     const serviceSelectAll = document.getElementById('serviceSelectAll');
     if (serviceSelectAll) {
-      const selectedCount = filtered.reduce((acc, tx) => acc + (consolidatedSelected.has(`service:${tx.payment_id}`) ? 1 : 0), 0);
+      const selectedCount = filtered.reduce(
+        (acc, tx) => acc + (consolidatedSelected.has(`service:${tx.payment_id}`) ? 1 : 0),
+        0
+      );
       serviceSelectAll.indeterminate = selectedCount > 0 && selectedCount < filtered.length;
       serviceSelectAll.checked = filtered.length > 0 && selectedCount === filtered.length;
       // Click to select/deselect all visible
@@ -891,7 +907,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (serviceSelectAll) {
           const filtered = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
           const total = filtered.length;
-          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          const selected = filtered.reduce(
+            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
+            0
+          );
           serviceSelectAll.indeterminate = selected > 0 && selected < total;
           serviceSelectAll.checked = total > 0 && selected === total;
         }
@@ -914,7 +933,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (serviceSelectAll) {
           const filtered = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
           const total = filtered.length;
-          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          const selected = filtered.reduce(
+            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
+            0
+          );
           serviceSelectAll.indeterminate = selected > 0 && selected < total;
           serviceSelectAll.checked = total > 0 && selected === total;
         }
@@ -931,7 +953,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     // Sync Select All header checkbox state (checked/indeterminate)
     const salesSelectAll = document.getElementById('salesSelectAll');
     if (salesSelectAll) {
-      const selectedCount = filtered.reduce((acc, tx) => acc + (consolidatedSelected.has(`sales:${tx.payment_id}`) ? 1 : 0), 0);
+      const selectedCount = filtered.reduce(
+        (acc, tx) => acc + (consolidatedSelected.has(`sales:${tx.payment_id}`) ? 1 : 0),
+        0
+      );
       salesSelectAll.indeterminate = selectedCount > 0 && selectedCount < filtered.length;
       salesSelectAll.checked = filtered.length > 0 && selectedCount === filtered.length;
       // Click to select/deselect all visible
@@ -962,7 +987,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (salesSelectAll) {
           const filtered = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
           const total = filtered.length;
-          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          const selected = filtered.reduce(
+            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
+            0
+          );
           salesSelectAll.indeterminate = selected > 0 && selected < total;
           salesSelectAll.checked = total > 0 && selected === total;
         }
@@ -984,7 +1012,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (salesSelectAll) {
           const filtered = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
           const total = filtered.length;
-          const selected = filtered.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          const selected = filtered.reduce(
+            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
+            0
+          );
           salesSelectAll.indeterminate = selected > 0 && selected < total;
           salesSelectAll.checked = total > 0 && selected === total;
         }
@@ -1050,18 +1081,19 @@ async function openProcessConsolidatedModal() {
   });
   await Promise.all(fetchPromises);
 
-  const rowsHTML = uniqueIds.length === 0
-    ? '<tr><td colspan="3" class="px-3 py-2 text-sm text-gray-500 text-center">No transactions selected</td></tr>'
-    : uniqueIds
-        .map(
-          (id, index) => `
+  const rowsHTML =
+    uniqueIds.length === 0
+      ? '<tr><td colspan="3" class="px-3 py-2 text-sm text-gray-500 text-center">No transactions selected</td></tr>'
+      : uniqueIds
+          .map(
+            (id, index) => `
             <tr class="border-b last:border-0 hover:bg-gray-50">
               <td class="px-3 py-2 text-sm text-gray-900">${id}</td>
               <td class="px-3 py-2 text-sm text-gray-600">${purposes[index]}</td>
               <td class="px-3 py-2 text-sm text-gray-600 text-right">${amounts[index]}</td>
             </tr>`
-        )
-        .join('');
+          )
+          .join('');
   const grandTotalRow = `
     <tr class="border-t bg-gray-50">
       <td colspan="2" class="px-3 py-2 text-sm font-semibold text-gray-900 text-right">Grand Total</td>
@@ -1110,7 +1142,9 @@ async function openProcessConsolidatedModal() {
   const closeBtn = document.getElementById('closeProcessConsolidateBtn');
   if (closeBtn) closeBtn.addEventListener('click', close);
   // Overlay click disabled by request; only Close button and Escape key will close
-  const handleEscape = (e) => { if (e.key === 'Escape') close(); };
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') close();
+  };
   document.addEventListener('keydown', handleEscape);
   modal.dataset.escapeHandler = 'true';
 
@@ -1134,17 +1168,28 @@ async function openProcessConsolidatedModal() {
           @media print { button { display: none; } }
         </style>`;
       const generatedAt = new Date().toLocaleString();
-      printWin.document.write(`<!doctype html><html><head><meta charset=\"utf-8\"><title>Fitworx Gym</title>${styles}</head><body>`);
+      printWin.document.write(
+        `<!doctype html><html><head><meta charset=\"utf-8\"><title>Fitworx Gym</title>${styles}</head><body>`
+      );
       printWin.document.write(`<h2>Fitworx Gym</h2>`);
       // Clone table and remove Tailwind-only classes for cleaner print (optional)
       const tableClone = table.cloneNode(true);
       printWin.document.body.appendChild(tableClone);
-      printWin.document.write(`<div style=\"margin-top:12px; text-align:right; font-size:12px; color:#6b7280;\">Generated: ${generatedAt}</div>`);
+      printWin.document.write(
+        `<div style=\"margin-top:12px; text-align:right; font-size:12px; color:#6b7280;\">Generated: ${generatedAt}</div>`
+      );
       printWin.document.write('</body></html>');
       printWin.document.close();
       // Give the window a moment to render before printing
       printWin.focus();
-      setTimeout(() => { try { printWin.print(); } catch (_) {} try { printWin.close(); } catch (_) {} }, 250);
+      setTimeout(() => {
+        try {
+          printWin.print();
+        } catch (_) {}
+        try {
+          printWin.close();
+        } catch (_) {}
+      }, 250);
     });
   }
 }
@@ -1177,7 +1222,9 @@ export function processCheckinPayment(customerId, image, fullName, isMonthlyType
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
     // Prevent duplicate insertion when polling picks up this newly-created pending
-    try { seenPendingPaymentIds.add(createResult.dataset.id); } catch (_) {}
+    try {
+      seenPendingPaymentIds.add(createResult.dataset.id);
+    } catch (_) {}
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(
@@ -1371,7 +1418,13 @@ function activeRadioListener(title, input, container, inputGroup) {
 }
 
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
-  const isOnlineTransaction = purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
+  const isOnlineTransaction =
+    purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
+  if (isOnlineTransaction) {
+    const purposeParts = purpose.split();
+    purpose = purposeParts[1];
+    purpose = purposeParts[1];
+  }
   const effectiveId = opts.displayId || id;
   const inputs = {
     header: {
@@ -1389,7 +1442,11 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: !isOnlineTransaction },
       { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic' },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
-      { placeholder: 'Reference number', value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A', required: true },
+      {
+        placeholder: 'Reference number',
+        value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
+        required: true,
+      },
     ],
     radio: [
       { label: 'Payment method', selected: isOnlineTransaction ? 2 : 1, autoformat: { type: 'short', index: 11 } },
@@ -1416,24 +1473,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main: `Complete payment transaction ${getEmoji('🔏')}`,
     },
   };
-
-  // Prefill for customer portal pending monthly payments
-  setTimeout(() => {
-    try {
-      if (opts && opts.methodHint === 'cashless') {
-        const cashlessRadio = document.querySelector('#input-radio-3');
-        cashlessRadio?.click();
-      }
-      if (opts && opts.refFromPortal) {
-        const refInput = document.querySelector('#input-short-12');
-        if (refInput) refInput.value = opts.refFromPortal;
-      }
-      // Amount tendered fields now default to 0 instead of auto-filling with amountToPay
-      const cashlessInput = document.querySelector('#input-short-8');
-      const cashInput = document.querySelector('#input-short-7');
-      // Fields are already initialized to 0 in the modal configuration, no need to set them here
-    } catch (_) {}
-  }, 0);
 
   main.openModal('yellow', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
@@ -1491,7 +1530,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           main.fixText(priceRate),
           main.fixText(paymentMethod),
           dateTimeText,
-        ],  
+        ],
       },
       // For service transactions (non-cart), insert Customer Name column before date/time
       ...(type === 'cart' ? [] : [fullName]),
@@ -1524,17 +1563,17 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               main.fixText(priceRate),
               'Cash (Hybrid)',
               dateTimeText,
-            ],  
+            ],
           },
           dateTimeText,
         ];
-        
+
         main.createAtSectionOne(SECTION_NAME, cashColumnsData, 7, (createResult) => {
           createResult.dataset.refnum = refNum;
           const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
           transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
         });
-        
+
         // Then, create cashless entry
         const cashlessColumnsData = [
           'id_' + id + '_cashless',
@@ -1551,25 +1590,27 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               main.fixText(priceRate),
               'Cashless (Hybrid)',
               dateTimeText,
-            ],  
+            ],
           },
           dateTimeText,
         ];
-        
+
         main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 8, (createResult) => {
           createResult.dataset.refnum = refNum;
           const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
           transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
         });
-        
+
         // Continue with the rest of the completion logic
         main.toast(`Transaction successfully completed!`, 'success');
         main.createNotifDot(SECTION_NAME, 'main');
         main.createNotifDot(SECTION_NAME, 7);
         main.createNotifDot(SECTION_NAME, 8);
         main.deleteAtSectionOne(SECTION_NAME, 1, id);
-        try { seenPendingPaymentIds.delete(effectiveId); } catch (_) {}
-        
+        try {
+          seenPendingPaymentIds.delete(effectiveId);
+        } catch (_) {}
+
         main.closeModal(() => {
           switch (type) {
             case 'customers':
@@ -1601,28 +1642,34 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               );
           }
         });
-        
+
         // Handle backend operations asynchronously
         (async () => {
           try {
             // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-            await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }).catch(()=>{});
+            await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+            }).catch(() => {});
 
-            const response = await fetch(`${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                payment_amount_to_pay: Number(amountToPay) || 0,
-                payment_amount_paid_cash: result.short[2].value,
-                payment_amount_paid_cashless: result.short[3].value,
-                payment_amount_change: main.decodePrice(change),
-                payment_method: paymentMethod,
-                payment_ref: refNum,
-                payment_rate: priceRate,
-              }),
-            });
+            const response = await fetch(
+              `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
+              {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  payment_amount_to_pay: Number(amountToPay) || 0,
+                  payment_amount_paid_cash: result.short[2].value,
+                  payment_amount_paid_cashless: result.short[3].value,
+                  payment_amount_change: main.decodePrice(change),
+                  payment_method: paymentMethod,
+                  payment_ref: refNum,
+                  payment_rate: priceRate,
+                }),
+              }
+            );
 
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
@@ -1663,7 +1710,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             console.error('Error creating complete payment:', error);
           }
         })();
-        
+
         return; // Exit early for hybrid sales
       } else {
         completedTabIndex = 7; // Default to cash tab
@@ -1692,18 +1739,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               main.fixText(priceRate),
               'Cash (Hybrid)',
               dateTimeText,
-            ],  
+            ],
           },
           fullName,
           dateTimeText,
         ];
-        
+
         main.createAtSectionOne(SECTION_NAME, cashColumnsData, 4, async (createResult) => {
           createResult.dataset.refnum = refNum;
           const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
           transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
         });
-        
+
         // Then, create cashless entry
         const cashlessColumnsData = [
           'id_' + id + '_cashless',
@@ -1720,26 +1767,28 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               main.fixText(priceRate),
               'Cashless (Hybrid)',
               dateTimeText,
-            ],  
+            ],
           },
           fullName,
           dateTimeText,
         ];
-        
+
         main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 5, async (createResult) => {
           createResult.dataset.refnum = refNum;
           const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
           transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
         });
-        
+
         // Continue with the rest of the completion logic
         main.toast(`Transaction successfully completed!`, 'success');
         main.createNotifDot(SECTION_NAME, 'main');
         main.createNotifDot(SECTION_NAME, 4);
         main.createNotifDot(SECTION_NAME, 5);
         main.deleteAtSectionOne(SECTION_NAME, 1, id);
-        try { seenPendingPaymentIds.delete(effectiveId); } catch (_) {}
-        
+        try {
+          seenPendingPaymentIds.delete(effectiveId);
+        } catch (_) {}
+
         main.closeModal(() => {
           switch (type) {
             case 'customers':
@@ -1771,28 +1820,34 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               );
           }
         });
-        
+
         // Handle backend operations asynchronously
         (async () => {
           try {
             // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-            await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }).catch(()=>{});
+            await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+            }).catch(() => {});
 
-            const response = await fetch(`${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                payment_amount_to_pay: Number(amountToPay) || 0,
-                payment_amount_paid_cash: result.short[2].value,
-                payment_amount_paid_cashless: result.short[3].value,
-                payment_amount_change: main.decodePrice(change),
-                payment_method: paymentMethod,
-                payment_ref: refNum,
-                payment_rate: priceRate,
-              }),
-            });
+            const response = await fetch(
+              `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
+              {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  payment_amount_to_pay: Number(amountToPay) || 0,
+                  payment_amount_paid_cash: result.short[2].value,
+                  payment_amount_paid_cashless: result.short[3].value,
+                  payment_amount_change: main.decodePrice(change),
+                  payment_method: paymentMethod,
+                  payment_ref: refNum,
+                  payment_rate: priceRate,
+                }),
+              }
+            );
 
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
@@ -1833,7 +1888,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             console.error('Error creating complete payment:', error);
           }
         })();
-        
+
         return; // Exit early for hybrid services
       } else {
         completedTabIndex = 4; // Default to cash tab
@@ -1857,7 +1912,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.createNotifDot(SECTION_NAME, originalTabIndex);
       main.createNotifDot(SECTION_NAME, completedTabIndex);
       main.deleteAtSectionOne(SECTION_NAME, 1, id);
-      try { seenPendingPaymentIds.delete(effectiveId); } catch (_) {}
+      try {
+        seenPendingPaymentIds.delete(effectiveId);
+      } catch (_) {}
 
       const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
       transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -1896,23 +1953,29 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
       try {
         // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-        await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }).catch(()=>{});
+        await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }).catch(() => {});
 
-        const response = await fetch(`${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            payment_amount_to_pay: Number(amountToPay) || 0,
-            payment_amount_paid_cash: result.short[2].value,
-            payment_amount_paid_cashless: result.short[3].value,
-            payment_amount_change: main.decodePrice(change),
-            payment_method: paymentMethod,
-            payment_ref: refNum,
-            payment_rate: priceRate,
-          }),
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              payment_amount_to_pay: Number(amountToPay) || 0,
+              payment_amount_paid_cash: result.short[2].value,
+              payment_amount_paid_cashless: result.short[3].value,
+              payment_amount_change: main.decodePrice(change),
+              payment_method: paymentMethod,
+              payment_ref: refNum,
+              payment_rate: priceRate,
+            }),
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -2006,7 +2069,9 @@ export function cancelCheckinPayment(transactionId) {
 
     // Remove from pending list
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-    try { seenPendingPaymentIds.delete(transactionId); } catch (_) {}
+    try {
+      seenPendingPaymentIds.delete(transactionId);
+    } catch (_) {}
     main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
   });
 }
@@ -2027,7 +2092,9 @@ export function processReservationPayment(reservation, callback = () => {}) {
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
     // Prevent duplicate insertion when polling picks up this newly-created pending
-    try { seenPendingPaymentIds.add(createResult.dataset.id); } catch (_) {}
+    try {
+      seenPendingPaymentIds.add(createResult.dataset.id);
+    } catch (_) {}
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(
@@ -2133,7 +2200,9 @@ export function cancelReservationPayment(transactionId) {
     main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
 
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
-    try { seenPendingPaymentIds.delete(transactionId); } catch (_) {}
+    try {
+      seenPendingPaymentIds.delete(transactionId);
+    } catch (_) {}
     main.toast(`${transactionId}, successfully cancelled pending transaction!`, 'error');
   });
 }
@@ -2301,7 +2370,9 @@ export function processCheckoutPayment(purpose, amountToPay, productImage = '') 
   ];
   main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
     // Prevent duplicate insertion when polling picks up this newly-created pending
-    try { seenPendingPaymentIds.add(createResult.dataset.id); } catch (_) {}
+    try {
+      seenPendingPaymentIds.add(createResult.dataset.id);
+    } catch (_) {}
     const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
     transactionProcessBtn.addEventListener('click', () => {
       completePayment(

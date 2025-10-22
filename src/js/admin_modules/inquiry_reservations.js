@@ -380,7 +380,7 @@ async function loadExistingReservations() {
       existingReservations.map((reservation) => {
         return new Promise((resolveCreate) => {
           const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
-          const { fullName } = main.decodeName(customerName);
+          const { fullName } = main.decodeName(customerName?.trim() || '');
 
           // collect customerId
           customerIdSet.add(customerId);
