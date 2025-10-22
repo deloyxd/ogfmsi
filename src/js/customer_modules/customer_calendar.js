@@ -577,13 +577,6 @@ function mount() {
         const startMins = toMinutes(startVal);
         const endMins = toMinutes(endVal);
 
-        if (endMins <= startMins) {
-          e.preventDefault();
-          showError('Please select an end time later than the start time.');
-          endInput?.focus();
-          return;
-        }
-
         if (startMins < WORK_START || startMins > WORK_END) {
           e.preventDefault();
           showError('Start time must be between 7:00 AM and 11:00 PM.');
