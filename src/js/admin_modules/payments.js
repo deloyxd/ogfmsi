@@ -1424,14 +1424,13 @@ function activeRadioListener(title, input, container, inputGroup) {
 }
 
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
-  console.log(purpose.split(' from Account: ')[1] + ': ' + purpose.split(' - Reference: ')[1].split(' from Account: ')[0])
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
   const effectiveId = opts.displayId || id;
   const inputs = {
     header: {
       title: `Transaction ID: ${effectiveId} ${getEmoji('🔏', 26)}`,
-      subtitle: `Purpose: ${purpose.split(' - Reference: ')[0]}`,
+      subtitle: `Purpose: ${isOnlineTransaction ? purpose.split(' - Reference: ')[0] : purpose}`,
     },
     short: [
       {
@@ -1457,10 +1456,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
       {
-        placeholder: 'Reference number',
-        value: isOnlineTransaction
-          ? purpose.split(' from Account: ')[1] + ': ' + purpose.split(' - Reference: ')[1].split(' from Account: ')[0]
-          : 'N/A',
+        placeholder: `Reference number${isOnlineTransaction ? ` from: ${purpose.split(' from Account: ')[1]}` : ''}`,
+        value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
         required: true,
         locked: isOnlineTransaction,
       },
