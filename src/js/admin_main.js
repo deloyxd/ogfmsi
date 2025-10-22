@@ -1201,41 +1201,41 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color);
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
-      if (!input.locked) clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
-      clone.addEventListener('click', function () {
-        if (input.locked) return;
+      if (!input.locked) {
+        clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
+        clone.addEventListener('click', function () {
+          radioClones.forEach((radioClone) => {
+            if (radioClone == clone) {
+              radioClone.classList.add(radioClone.dataset.color);
+              radioClone.classList.add(radioClone.dataset.color.replace('border', 'bg') + '/50');
+              radioClone.classList.add(radioClone.dataset.color.replace('border', 'hover:bg') + '/50');
+            } else {
+              radioClone.classList.remove(radioClone.dataset.color);
+              radioClone.classList.remove(radioClone.dataset.color.replace('border', 'bg') + '/50');
+              radioClone.classList.add(radioClone.dataset.color.replace('border', 'hover:bg') + '/50');
+            }
+          });
 
-        radioClones.forEach((radioClone) => {
-          if (radioClone == clone) {
-            radioClone.classList.add(radioClone.dataset.color);
-            radioClone.classList.add(radioClone.dataset.color.replace('border', 'bg') + '/50');
-            radioClone.classList.add(radioClone.dataset.color.replace('border', 'hover:bg') + '/50');
-          } else {
-            radioClone.classList.remove(radioClone.dataset.color);
-            radioClone.classList.remove(radioClone.dataset.color.replace('border', 'bg') + '/50');
-            radioClone.classList.add(radioClone.dataset.color.replace('border', 'hover:bg') + '/50');
+          inputs.radio[0].selected = index;
+
+          if (autoformatType != '') {
+            if (autoformatType.includes('footer')) {
+              if (autoformatText != '') {
+                input.listener(input.title, tempModalContainer.querySelector(`#modalMainBtn`), autoformatText);
+              }
+            } else {
+              if (autoformatIndex > 0) {
+                input.listener(
+                  input.title,
+                  tempModalContainer.querySelector(`#input-${autoformatType}-${autoformatIndex}`),
+                  tempModalContainer,
+                  inputs
+                );
+              }
+            }
           }
         });
-
-        inputs.radio[0].selected = index;
-
-        if (autoformatType != '') {
-          if (autoformatType.includes('footer')) {
-            if (autoformatText != '') {
-              input.listener(input.title, tempModalContainer.querySelector(`#modalMainBtn`), autoformatText);
-            }
-          } else {
-            if (autoformatIndex > 0) {
-              input.listener(
-                input.title,
-                tempModalContainer.querySelector(`#input-${autoformatType}-${autoformatIndex}`),
-                tempModalContainer,
-                inputs
-              );
-            }
-          }
-        }
-      });
+      }
       if (index == inputs.radio[0].selected) clone.dispatchEvent(new Event('click'));
     });
 
