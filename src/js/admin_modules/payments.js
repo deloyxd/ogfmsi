@@ -1512,18 +1512,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.toast('No amount tendered', 'error');
       return;
     }
-    if (!main.isValidPaymentAmount(+result.short[2].value) && paymentMethod == 'cash') {
-      main.toast(`Invalid payment amount (cash): ${result.short[2].value}`, 'error');
+    if (!main.isValidPaymentAmount(+cashVal) && paymentMethod == 'cash') {
+      main.toast(`Invalid payment amount (cash): ${cashVal}`, 'error');
       return;
     }
     if (
-      !main.isValidPaymentAmount(+result.short[3].value) &&
+      !main.isValidPaymentAmount(cashlessVal) &&
       (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))
     ) {
-      main.toast(`Invalid payment amount (cashless): ${result.short[3].value}`, 'error');
+      main.toast(`Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)}`, 'error');
       return;
     }
-    let amountPaid = Number(result.short[2].value) + Number(result.short[3].value);
+    let amountPaid = Number(cashVal) + cashlessVal;
     if (!main.isValidPaymentAmount(+amountPaid) || +amountPaid < +amountToPay) {
       main.toast(`Invalid payment amount (total): ${amountPaid}`, 'error');
       return;
@@ -1559,8 +1559,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                 customerId,
                 purpose,
                 main.formatPrice(amountToPay),
-                main.formatPrice(result.short[2].value),
-                main.formatPrice(result.short[3].value),
+                main.formatPrice(cashVal),
+                main.formatPrice(cashlessVal),
                 main.formatPrice(main.decodePrice(change)),
                 main.fixText(priceRate),
                 main.fixText(paymentMethod),
@@ -1592,7 +1592,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     customerId,
                     purpose,
                     main.formatPrice(amountToPay),
-                    main.formatPrice(result.short[2].value),
+                    main.formatPrice(cashVal),
                     main.formatPrice(0), // No cashless for cash tab
                     main.formatPrice(main.decodePrice(change)),
                     main.fixText(priceRate),
@@ -1620,7 +1620,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     purpose,
                     main.formatPrice(amountToPay),
                     main.formatPrice(0), // No cash for cashless tab
-                    main.formatPrice(result.short[3].value),
+                    main.formatPrice(cashlessVal),
                     main.formatPrice(main.decodePrice(change)),
                     main.fixText(priceRate),
                     'Cashless (Hybrid)',
@@ -1671,7 +1671,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     cart.completeProcessCheckout(
                       amountToPay,
                       main.fixText(paymentMethod),
-                      result.short[2].value + result.short[3].value,
+                      cashVal + cashlessVal,
                       main.decodePrice(change),
                       refNum
                     );
@@ -1696,8 +1696,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                       },
                       body: JSON.stringify({
                         payment_amount_to_pay: Number(amountToPay) || 0,
-                        payment_amount_paid_cash: result.short[2].value,
-                        payment_amount_paid_cashless: result.short[3].value,
+                        payment_amount_paid_cash: cashVal,
+                        payment_amount_paid_cashless: cashlessVal,
                         payment_amount_change: main.decodePrice(change),
                         payment_method: paymentMethod,
                         payment_ref: refNum,
@@ -1717,8 +1717,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     const nowIso = new Date().toISOString();
                     completedPaymentsCache.push({
                       payment_id: id,
-                      payment_amount_paid_cash: Number(result.short[2].value) || 0,
-                      payment_amount_paid_cashless: Number(result.short[3].value) || 0,
+                      payment_amount_paid_cash: Number(cashVal) || 0,
+                      payment_amount_paid_cashless: Number(cashlessVal) || 0,
                       payment_method: paymentMethod,
                       created_at: nowIso,
                     });
@@ -1768,7 +1768,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     customerId,
                     purpose,
                     main.formatPrice(amountToPay),
-                    main.formatPrice(result.short[2].value),
+                    main.formatPrice(cashVal),
                     main.formatPrice(0), // No cashless for cash tab
                     main.formatPrice(main.decodePrice(change)),
                     main.fixText(priceRate),
@@ -1797,7 +1797,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     purpose,
                     main.formatPrice(amountToPay),
                     main.formatPrice(0), // No cash for cashless tab
-                    main.formatPrice(result.short[3].value),
+                    main.formatPrice(cashlessVal),
                     main.formatPrice(main.decodePrice(change)),
                     main.fixText(priceRate),
                     'Cashless (Hybrid)',
@@ -1849,7 +1849,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     cart.completeProcessCheckout(
                       amountToPay,
                       main.fixText(paymentMethod),
-                      result.short[2].value + result.short[3].value,
+                      cashVal + cashlessVal,
                       main.decodePrice(change),
                       refNum
                     );
@@ -1874,8 +1874,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                       },
                       body: JSON.stringify({
                         payment_amount_to_pay: Number(amountToPay) || 0,
-                        payment_amount_paid_cash: result.short[2].value,
-                        payment_amount_paid_cashless: result.short[3].value,
+                        payment_amount_paid_cash: cashVal,
+                        payment_amount_paid_cashless: cashlessVal,
                         payment_amount_change: main.decodePrice(change),
                         payment_method: paymentMethod,
                         payment_ref: refNum,
@@ -1895,8 +1895,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                     const nowIso = new Date().toISOString();
                     completedPaymentsCache.push({
                       payment_id: id,
-                      payment_amount_paid_cash: Number(result.short[2].value) || 0,
-                      payment_amount_paid_cashless: Number(result.short[3].value) || 0,
+                      payment_amount_paid_cash: Number(cashVal) || 0,
+                      payment_amount_paid_cashless: Number(cashlessVal) || 0,
                       payment_method: paymentMethod,
                       created_at: nowIso,
                     });
@@ -1979,7 +1979,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   cart.completeProcessCheckout(
                     amountToPay,
                     main.fixText(paymentMethod),
-                    result.short[2].value + result.short[3].value,
+                    cashVal + cashlessVal,
                     main.decodePrice(change),
                     refNum
                   );
@@ -2002,8 +2002,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   },
                   body: JSON.stringify({
                     payment_amount_to_pay: Number(amountToPay) || 0,
-                    payment_amount_paid_cash: result.short[2].value,
-                    payment_amount_paid_cashless: result.short[3].value,
+                    payment_amount_paid_cash: cashVal,
+                    payment_amount_paid_cashless: cashlessVal,
                     payment_amount_change: main.decodePrice(change),
                     payment_method: paymentMethod,
                     payment_ref: refNum,
@@ -2023,8 +2023,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                 const nowIso = new Date().toISOString();
                 completedPaymentsCache.push({
                   payment_id: id,
-                  payment_amount_paid_cash: Number(result.short[2].value) || 0,
-                  payment_amount_paid_cashless: Number(result.short[3].value) || 0,
+                  payment_amount_paid_cash: Number(cashVal) || 0,
+                  payment_amount_paid_cashless: Number(cashlessVal) || 0,
                   payment_method: paymentMethod,
                   created_at: nowIso,
                 });
