@@ -1426,17 +1426,11 @@ function activeRadioListener(title, input, container, inputGroup) {
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
-  console.log('isOnlineTransaction', isOnlineTransaction);
-  // if (isOnlineTransaction) {
-  //   const purposeParts = purpose.split('');
-  //   purpose = purposeParts[1];
-  //   purpose = purposeParts[1];
-  // }
   const effectiveId = opts.displayId || id;
   const inputs = {
     header: {
       title: `Transaction ID: ${effectiveId} ${getEmoji('🔏', 26)}`,
-      subtitle: `Purpose: ${purpose}`,
+      subtitle: `Purpose: ${purpose.split(' - Reference: ')[0]}`,
     },
     short: [
       {
@@ -1463,7 +1457,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
       {
         placeholder: 'Reference number',
-        value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
+        value: isOnlineTransaction
+          ? purpose.split(' from Account: ')[1] + ': ' + purpose.split(' - Reference: ')[1].split(' from Account: ')[0]
+          : 'N/A',
         required: true,
         locked: isOnlineTransaction,
       },
@@ -1530,12 +1526,16 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     }
     const change = result.short[4].value;
 
-    const refNum = result.short[6].value;
+    let refNum = result.short[6].value;
     if (result.radio[0].selected > 1) {
-      const refDigits = String(refNum || '').replace(/\D/g, '');
-      if (refNum == 'N/A' || refDigits.length !== 13) {
-        main.toast('Reference number must be exactly 13 digits', 'error');
-        return;
+      if (!isOnlineTransaction) {
+        const refDigits = String(refNum || '').replace(/\D/g, '');
+        if (refNum == 'N/A' || refDigits.length !== 13) {
+          main.toast('Reference number must be exactly 13 digits', 'error');
+          return;
+        }
+      } else {
+        refNum = purpose.split(' - Reference: ')[1].split(' from Account: ')[0];
       }
     } else if (refNum != 'N/A') {
       main.toast(`Cash payment method doesn't need reference number: ${refNum}`, 'error');
