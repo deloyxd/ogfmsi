@@ -1420,11 +1420,11 @@ function activeRadioListener(title, input, container, inputGroup) {
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
-  if (isOnlineTransaction) {
-    const purposeParts = purpose.split();
-    purpose = purposeParts[1];
-    purpose = purposeParts[1];
-  }
+  // if (isOnlineTransaction) {
+  //   const purposeParts = purpose.split('');
+  //   purpose = purposeParts[1];
+  //   purpose = purposeParts[1];
+  // }
   const effectiveId = opts.displayId || id;
   const inputs = {
     header: {

@@ -500,18 +500,18 @@ async function submitMonthlyRegistration(regData, payData) {
   });
 
   // 2) Create monthly record (pending)
-  // await fetch(`${API_BASE_URL}/inquiry/monthly`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({
-  //     customer_id: customerId,
-  //     customer_start_date: startDate,
-  //     customer_end_date: endDate,
-  //     customer_months: 1,
-  //     customer_tid: transactionId,
-  //     customer_pending: 1,
-  //   }),
-  // });
+  await fetch(`${API_BASE_URL}/inquiry/monthly`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_id: customerId,
+      customer_start_date: startDate,
+      customer_end_date: endDate,
+      customer_months: 1,
+      customer_tid: transactionId,
+      customer_pending: 1,
+    }),
+  });
 
   // 3) Create pending payment with cashless hint and reference number
   await fetch(`${API_BASE_URL}/payment/pending`, {
