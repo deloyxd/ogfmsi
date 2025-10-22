@@ -1412,7 +1412,11 @@ function activeRadioListener(title, input, container, inputGroup) {
         inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     }
   }
-  if (!inputGroup.short[0].locked) cashlessInput.value = main.encodePrice(0);
+  if (inputGroup.short[0].locked) {
+    cashlessInput.value = main.encodePrice(amountToPay);
+  } else {
+    cashlessInput.value = main.encodePrice(0);
+  }
   cashInput.dispatchEvent(new Event('input'));
   cashlessInput.dispatchEvent(new Event('input'));
 
@@ -1442,7 +1446,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
       {
         placeholder: 'Amount tendered',
-        value: isOnlineTransaction ? main.encodePrice(amountToPay) : 0,
+        value: isOnlineTransaction ? amountToPay : 0,
         required: !isOnlineTransaction,
         hidden: !isOnlineTransaction,
         locked: isOnlineTransaction,
