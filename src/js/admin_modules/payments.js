@@ -1418,8 +1418,10 @@ function activeRadioListener(title, input, container, inputGroup) {
   cashlessInput.dispatchEvent(new Event('input'));
 
   // Ensure quick editing UX: auto-select contents on focus/click
-  attachSelectAll(cashInput);
-  attachSelectAll(cashlessInput);
+  if (!inputGroup.short[0].locked) {
+    attachSelectAll(cashInput);
+    attachSelectAll(cashlessInput);
+  }
 }
 
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
@@ -2045,15 +2047,17 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   });
 
   setTimeout(() => {
-    const cashInput = document.querySelector('#input-short-7');
-    const cashlessInput = document.querySelector('#input-short-8');
-    attachSelectAll(cashInput);
-    attachSelectAll(cashlessInput);
-    // Auto-focus visible payment field on open (default cash)
-    if (cashInput && !cashInput.parentElement.classList.contains('hidden')) {
-      cashInput.focus();
-    } else if (cashlessInput && !cashlessInput.parentElement.classList.contains('hidden')) {
-      cashlessInput.focus();
+    if (!isOnlineTransaction) {
+      const cashInput = document.querySelector('#input-short-7');
+      const cashlessInput = document.querySelector('#input-short-8');
+      attachSelectAll(cashInput);
+      attachSelectAll(cashlessInput);
+      // Auto-focus visible payment field on open (default cash)
+      if (cashInput && !cashInput.parentElement.classList.contains('hidden')) {
+        cashInput.focus();
+      } else if (cashlessInput && !cashlessInput.parentElement.classList.contains('hidden')) {
+        cashlessInput.focus();
+      }
     }
   }, 0);
 }
