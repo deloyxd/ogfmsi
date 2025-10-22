@@ -570,12 +570,33 @@ function mount() {
         }
       };
 
-      // Basic end > start enforcement
-      if (startVal && endVal && toMinutes(endVal) <= toMinutes(startVal)) {
-        e.preventDefault();
-        showError('Please select an end time later than the start time.');
-        endInput?.focus();
-        return;
+      const WORK_START = toMinutes('07:00'); // 7:00 AM
+      const WORK_END = toMinutes('23:00'); // 11:00 PM
+
+      if (startVal && endVal) {
+        const startMins = toMinutes(startVal);
+        const endMins = toMinutes(endVal);
+
+        if (endMins <= startMins) {
+          e.preventDefault();
+          showError('Please select an end time later than the start time.');
+          endInput?.focus();
+          return;
+        }
+
+        if (startMins < WORK_START || startMins > WORK_END) {
+          e.preventDefault();
+          showError('Start time must be between 7:00 AM and 11:00 PM.');
+          startInput?.focus();
+          return;
+        }
+
+        if (endMins < WORK_START || endMins > WORK_END) {
+          e.preventDefault();
+          showError('End time must be between 7:00 AM and 11:00 PM.');
+          endInput?.focus();
+          return;
+        }
       }
 
       // Resolve selected date in mm-dd-yyyy
