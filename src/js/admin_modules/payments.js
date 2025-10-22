@@ -1503,7 +1503,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   main.openModal('yellow', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
     const cashVal = Number(result.short[2].value) || 0;
-    const cashlessVal = Number(result.short[3].value) || 0;
+    const cashlessVal = result.short[3].value.includes('₱')
+      ? +main.decodePrice(result.short[3].value)
+      : Number(result.short[3].value) || 0;
 
     // Show specific message when no amount entered at all
     if (cashVal === 0 && cashlessVal === 0) {
