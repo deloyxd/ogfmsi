@@ -52,6 +52,10 @@ OGFMSI (Online Gym Facility Management with Sales and Inventory) is a comprehens
 - `git reset --hard ORIG_HEAD`
 - `git clean -fd`
 
-**Other commands:**
+**Database connection:**
 
-Powershell: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
+host: `mysql-110826b3-gymfacilitymanagement.b.aivencloud.com`
+username: `avnadmin`
+database: `defaultdb`
+port: `26818`
+password: `AVNS_SvAOkqPaEQUpBykhli9`
