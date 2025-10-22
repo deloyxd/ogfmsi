@@ -1638,7 +1638,7 @@ function setupModalBase(defaultData, inputs, callback) {
                   dataFunctionOutput -= +decodePrice(thirdIndexInput.value);
                   break;
               }
-              input.value = encodePrice(dataFunctionOutput);
+              input.value = dataFunctionOutput <= 0 ? encodePrice(0) : encodePrice(dataFunctionOutput);
               data.value = input.value;
               break;
             case 'range':
