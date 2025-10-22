@@ -1421,6 +1421,7 @@ function activeRadioListener(title, input, container, inputGroup) {
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
+  console.log('isOnlineTransaction', isOnlineTransaction);
   // if (isOnlineTransaction) {
   //   const purposeParts = purpose.split('');
   //   purpose = purposeParts[1];
@@ -1442,8 +1443,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
       {
         placeholder: 'Amount tendered',
-        value: isOnlineTransaction ? amountToPay : 0,
-        required: true,
+        value: isOnlineTransaction ? main.encodePrice(amountToPay) : 0,
+        required: !isOnlineTransaction,
         hidden: !isOnlineTransaction,
         locked: isOnlineTransaction,
       },
