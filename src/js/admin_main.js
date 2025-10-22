@@ -1201,7 +1201,7 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color);
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
-      if (!input.locked) {
+      if (!inputs.radio.locked) {
         clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
         clone.addEventListener('click', function () {
           radioClones.forEach((radioClone) => {
@@ -1235,8 +1235,8 @@ function setupModalBase(defaultData, inputs, callback) {
             }
           }
         });
+        if (index == inputs.radio[0].selected) clone.dispatchEvent(new Event('click'));
       }
-      if (index == inputs.radio[0].selected) clone.dispatchEvent(new Event('click'));
     });
 
     radioContainer.classList.remove('hidden');
