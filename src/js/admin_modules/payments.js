@@ -1424,6 +1424,7 @@ function activeRadioListener(title, input, container, inputGroup) {
 }
 
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
+  console.log(purpose.split(' from Account: ')[1] + ': ' + purpose.split(' - Reference: ')[1].split(' from Account: ')[0])
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
   const effectiveId = opts.displayId || id;
