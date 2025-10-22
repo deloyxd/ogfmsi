@@ -1456,9 +1456,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
       {
-        placeholder: `Reference number${isOnlineTransaction ? ` from: ${purpose.split(' from Account: ')[1]}` : ''}`,
+        placeholder: `Reference number${isOnlineTransaction ? ` from: <b>${purpose.split(' from Account: ')[1]}</b>` : ''}`,
         value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
-        required: true,
+        required: !isOnlineTransaction,
         locked: isOnlineTransaction,
       },
     ],
