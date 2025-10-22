@@ -1403,7 +1403,6 @@ function activeRadioListener(title, input, container, inputGroup) {
   if (inputGroup.short[3].hidden) {
     cashlessInput.previousElementSibling.innerHTML =
       inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
-    cashlessInput.value = main.encodePrice(0);
   } else {
     if (title.toLowerCase() == 'hybrid') {
       cashlessInput.previousElementSibling.innerHTML =
@@ -1412,8 +1411,8 @@ function activeRadioListener(title, input, container, inputGroup) {
       cashlessInput.previousElementSibling.innerHTML =
         inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     }
-    cashlessInput.value = main.encodePrice(0);
   }
+  if (!inputGroup.short[0].locked) cashlessInput.value = main.encodePrice(0);
   cashInput.dispatchEvent(new Event('input'));
   cashlessInput.dispatchEvent(new Event('input'));
 
