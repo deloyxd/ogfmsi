@@ -1444,7 +1444,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         placeholder: 'Amount tendered',
         value: isOnlineTransaction ? amountToPay : 0,
         required: true,
-        autoformat: 'price',
         hidden: !isOnlineTransaction,
         locked: isOnlineTransaction,
       },
@@ -1492,6 +1491,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main: `Complete payment transaction ${getEmoji('🔏')}`,
     },
   };
+  if (!isOnlineTransaction) {
+    inputs.short[3].autoformat = 'price';
+  }
 
   main.openModal('yellow', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
