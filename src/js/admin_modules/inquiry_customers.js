@@ -46,6 +46,8 @@ let activated = false,
   mainBtn,
   subBtn;
 
+const seenCustomerIds = new Set();
+
 document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
@@ -66,6 +68,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await clearDuplicateMonthlyEntries();
     updateCustomerStats();
 
+    setInterval(() => {
+      if (main.sharedState.sectionName === SECTION_NAME) {
+        fetchAllCustomers();
+      }
+    }, 5000);
+
     async function fetchAllCustomers() {
       try {
         const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
@@ -75,6 +83,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         const customers = await response.json();
 
         customers.result.forEach((customer) => {
+          if (!customer || !customer.customer_id) return;
+          if (seenCustomerIds.has(customer.customer_id)) return;
           main.createAtSectionOne(
             SECTION_NAME,
             [
@@ -97,6 +107,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
             ],
             1,
             (createResult) => {
+              seenCustomerIds.add(customer.customer_id);
               createResult.dataset.text = customer.customer_first_name + ':://' + customer.customer_last_name;
               if (customer.customer_type.includes('monthly')) {
                 if (customer.customer_pending == 1) {
@@ -783,6 +794,7 @@ function mainBtnFunction(
               main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
                 main.createNotifDot(SECTION_NAME, 4);
                 main.deleteAtSectionOne(SECTION_NAME, 1, customer.id);
+                seenCustomerIds.delete(customer.id);
 
                 const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
                 customerDetailsBtn.addEventListener('click', () =>
@@ -1033,6 +1045,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
     main.toast(`${firstName}, successfully ${isCreating ? 'registered' : 'updated'}!`, 'success');
     if (isCreating) {
       main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+        seenCustomerIds.add(customerId);
         if (isMonthlyCustomer) {
           if (callback) {
             callback(createResult);
@@ -1770,6 +1783,7 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
             ];
 
             main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+              seenCustomerIds.add(customerId);
               const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
               customerProcessBtn.addEventListener('click', () =>
                 customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
