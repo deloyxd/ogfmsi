@@ -152,7 +152,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                         `${API_BASE_URL}/inquiry/customers/${pendingPayment.payment_customer_id}`
                       );
                       if (resp.ok) {
-                        customer = await resp.json();
+                        const data = await resp.json();
+                        customer = data.result;
                         console.log(customer)
                       }
                     } catch (_) {}
