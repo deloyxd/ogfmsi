@@ -1179,7 +1179,6 @@ function setupModalBase(defaultData, inputs, callback) {
     container.classList.add(`grid-cols-${inputs.radio.length - 1}`);
 
     const radioClones = [];
-    const isLocked = inputs.radio[0].locked;
     inputs.radio.forEach((input, index) => {
       if (index == 0) {
         return;
@@ -1202,8 +1201,8 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color);
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
-      if (!isLocked) {
-        clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
+      clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
+      if (!inputs.radio[0].locked) {
         clone.addEventListener('click', function () {
           radioClones.forEach((radioClone) => {
             if (radioClone == clone) {

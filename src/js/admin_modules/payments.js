@@ -1440,8 +1440,21 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       },
       { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
       { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
-      { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: !isOnlineTransaction },
-      { placeholder: 'Change amount', value: main.encodePrice(0), locked: true, live: '1|+2|-3:arithmetic', hidden: isOnlineTransaction },
+      {
+        placeholder: 'Amount tendered',
+        value: isOnlineTransaction ? amountToPay : 0,
+        required: true,
+        autoformat: 'price',
+        hidden: !isOnlineTransaction,
+        locked: isOnlineTransaction,
+      },
+      {
+        placeholder: 'Change amount',
+        value: main.encodePrice(0),
+        locked: true,
+        live: '1|+2|-3:arithmetic',
+        hidden: isOnlineTransaction,
+      },
       { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
       {
         placeholder: 'Reference number',
@@ -1450,7 +1463,12 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       },
     ],
     radio: [
-      { label: 'Payment method', selected: isOnlineTransaction ? 2 : 1, autoformat: { type: 'short', index: 11 }, locked: isOnlineTransaction },
+      {
+        label: 'Payment method',
+        selected: isOnlineTransaction ? 2 : 1,
+        autoformat: { type: 'short', index: 11 },
+        locked: isOnlineTransaction,
+      },
       {
         icon: `${getEmoji('💵', 26)}`,
         title: 'Cash',
