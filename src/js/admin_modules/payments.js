@@ -153,6 +153,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       );
                       if (resp.ok) {
                         customer = await resp.json();
+                        console.log(customer)
                       }
                     } catch (_) {}
                   }
