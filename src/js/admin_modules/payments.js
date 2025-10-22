@@ -1987,12 +1987,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             });
 
             try {
-              // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-              await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-              }).catch(() => {});
-
               const response = await fetch(
                 `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
                 {
@@ -2033,20 +2027,22 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
-              try {
-                await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
-                });
-              } catch (_) {}
-              try {
-                await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
-                });
-              } catch (_) {}
+              if (type === 'customers') {
+                try {
+                  await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
+                  });
+                } catch (_) {}
+                try {
+                  await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
+                  });
+                } catch (_) {}
+              }
             } catch (error) {
               console.error('Error creating complete payment:', error);
             }
