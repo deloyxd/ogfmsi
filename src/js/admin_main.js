@@ -1201,8 +1201,10 @@ function setupModalBase(defaultData, inputs, callback) {
         clone.classList.add(clone.dataset.color);
         clone.classList.add(clone.dataset.color.replace('border', 'bg') + '/50');
       }
-      clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
+      if (!input.locked) clone.classList.add(clone.dataset.color.replace('border', 'hover:bg') + '/50');
       clone.addEventListener('click', function () {
+        if (input.locked) return;
+
         radioClones.forEach((radioClone) => {
           if (radioClone == clone) {
             radioClone.classList.add(radioClone.dataset.color);
