@@ -708,9 +708,13 @@ function openConsolidateTransactionsModal() {
         </div>
         <div class="p-4">
           <div class="mb-3">
-            <label class="mb-1 block text-sm font-medium text-gray-700">Search transactions by date</label>
-            <input type="date" id="consolidateSearchInput" 
-                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <label class="mb-1 block text-sm font-medium text-gray-700">Filter transactions by date range</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="date" id="consolidateStartDate" 
+                     class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <input type="date" id="consolidateEndDate" 
+                     class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="consolidateGrid">
             <div class="flex flex-col gap-2 border rounded-lg p-3" id="serviceCol">
@@ -776,22 +780,29 @@ function openConsolidateTransactionsModal() {
 
   // Fetch and render first 10 of each
   fetchFirstFiveTransactions();
+  // Wire up date range pickers
+  const startInput = document.getElementById('consolidateStartDate');
+  const endInput = document.getElementById('consolidateEndDate');
+  const onRangeChange = debounce(() => {
+    const startVal = (startInput?.value || '').trim();
+    const endVal = (endInput?.value || '').trim();
+    consolidateRange.start = startVal ? new Date(startVal) : null;
+    consolidateRange.end = endVal ? new Date(endVal) : null;
 
-  // Wire up search
-  const searchInput = document.getElementById('consolidateSearchInput');
-  if (searchInput) {
-    const debounced = debounce(async () => {
-      const q = (searchInput.value || '').trim();
-      if (!q) {
-        // Empty search: re-fetch the first ten recents and render
-        fetchFirstFiveTransactions();
-        return;
-      }
-      setConsolidateListsLoading();
-      await fetchConsolidatedByQuery(q);
-    }, 300);
-    searchInput.addEventListener('input', debounced);
-  }
+    // Swap if out of order
+    if (consolidateRange.start && consolidateRange.end && consolidateRange.start > consolidateRange.end) {
+      const tmp = consolidateRange.start;
+      consolidateRange.start = consolidateRange.end;
+      consolidateRange.end = tmp;
+    }
+
+    // Prune selections that are outside the current range
+    pruneSelectionsByRange(consolidatedServiceData, consolidatedSalesData, consolidateRange);
+    // Re-render using cached data
+    renderConsolidatedTransactions(consolidatedServiceData, consolidatedSalesData, '');
+  }, 200);
+  if (startInput) startInput.addEventListener('input', onRangeChange);
+  if (endInput) endInput.addEventListener('input', onRangeChange);
 }
 
 function closeConsolidateTransactionsModal() {
@@ -818,6 +829,8 @@ function closeConsolidateTransactionsModal() {
 // Cache for search filtering
 let consolidatedServiceData = [];
 let consolidatedSalesData = [];
+// Current active date range filter for consolidate modal
+let consolidateRange = { start: null, end: null };
 // Track selected items across renders (key format: `${type}:${payment_id}`)
 const consolidatedSelected = new Set();
 
@@ -836,6 +849,42 @@ function setConsolidateListsLoading() {
   const salesListEl = document.getElementById('salesList');
   if (serviceListEl) serviceListEl.innerHTML = '<div class="text-sm text-gray-600">Loading...</div>';
   if (salesListEl) salesListEl.innerHTML = '<div class="text-sm text-gray-600">Loading...</div>';
+}
+
+// Remove any selected transactions that are not within the given date range
+function pruneSelectionsByRange(serviceList, salesList, range) {
+  const toKeep = new Set();
+  const within = (tx) => {
+    const start = range.start;
+    const end = range.end;
+    const d = new Date(tx.created_at);
+    const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (start && end) {
+      const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      return t.getTime() >= s.getTime() && t.getTime() <= e.getTime();
+    }
+    if (start) {
+      const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      return t.getTime() >= s.getTime();
+    }
+    if (end) {
+      const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      return t.getTime() <= e.getTime();
+    }
+    return true;
+  };
+  (Array.isArray(serviceList) ? serviceList : []).forEach((tx) => {
+    if (within(tx)) toKeep.add(`service:${tx.payment_id}`);
+  });
+  (Array.isArray(salesList) ? salesList : []).forEach((tx) => {
+    if (within(tx)) toKeep.add(`sales:${tx.payment_id}`);
+  });
+  // Delete anything not in toKeep
+  Array.from(consolidatedSelected).forEach((key) => {
+    if (!toKeep.has(key)) consolidatedSelected.delete(key);
+  });
+  updateSelectedCountUI();
 }
 
 // Fetch filtered service and sales lists from backend using a query
@@ -914,10 +963,13 @@ async function fetchConsolidatedByQuery(query) {
 
     consolidatedServiceData = serviceList;
     consolidatedSalesData = salesList;
-    renderConsolidatedTransactions(serviceList, salesList, query);
+    // When using search-by-date, map it into range for consistent filtering
+    consolidateRange = { start: query ? new Date(query) : null, end: query ? new Date(query) : null };
+    pruneSelectionsByRange(consolidatedServiceData, consolidatedSalesData, consolidateRange);
+    renderConsolidatedTransactions(serviceList, salesList, '');
   } catch (error) {
     console.error('Error fetching consolidated transactions by query:', error);
-    renderConsolidatedTransactions([], [], query);
+    renderConsolidatedTransactions([], [], '');
   }
 }
 
@@ -991,16 +1043,26 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       </div>`;
   };
 
-  const searchDate = query ? new Date(query) : null;
   const matcher = (tx) => {
-    if (!searchDate || isNaN(searchDate.getTime())) return true;
-
-    // Check if the transaction date matches the search date (same day)
+    const start = consolidateRange.start;
+    const end = consolidateRange.end;
+    if (!start && !end) return true;
     const txDate = new Date(tx.created_at);
-    const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
-    const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
-
-    return txDateOnly.getTime() === searchDateOnly.getTime();
+    const txOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+    if (start && end) {
+      const sOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const eOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      return txOnly.getTime() >= sOnly.getTime() && txOnly.getTime() <= eOnly.getTime();
+    }
+    if (start) {
+      const sOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      return txOnly.getTime() >= sOnly.getTime();
+    }
+    if (end) {
+      const eOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      return txOnly.getTime() <= eOnly.getTime();
+    }
+    return true;
   };
 
   if (serviceListEl) {
