@@ -780,6 +780,54 @@ async function fetchConsolidatedByQuery(query) {
       }
     } catch (_) {}
 
+    // Filter out selected transactions that don't match the search date
+    const searchDate = query ? new Date(query) : null;
+    if (searchDate && !isNaN(searchDate.getTime())) {
+      // Remove selected transactions that don't match the search date
+      const selectedToRemove = new Set();
+      
+      // Check service transactions
+      serviceList = serviceList.filter(tx => {
+        const txDate = new Date(tx.created_at);
+        const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+        const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
+        const matchesDate = txDateOnly.getTime() === searchDateOnly.getTime();
+        
+        if (!matchesDate) {
+          const key = `service:${tx.payment_id}`;
+          if (consolidatedSelected.has(key)) {
+            selectedToRemove.add(key);
+          }
+        }
+        return matchesDate;
+      });
+      
+      // Check sales transactions
+      salesList = salesList.filter(tx => {
+        const txDate = new Date(tx.created_at);
+        const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+        const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
+        const matchesDate = txDateOnly.getTime() === searchDateOnly.getTime();
+        
+        if (!matchesDate) {
+          const key = `sales:${tx.payment_id}`;
+          if (consolidatedSelected.has(key)) {
+            selectedToRemove.add(key);
+          }
+        }
+        return matchesDate;
+      });
+      
+      // Remove selected transactions that don't match the date
+      const removedCount = selectedToRemove.size;
+      selectedToRemove.forEach(key => consolidatedSelected.delete(key));
+      
+      // Notify user if transactions were removed from selection
+      if (removedCount > 0) {
+        main.toast(`${removedCount} selected transaction${removedCount > 1 ? 's' : ''} removed (not from search date)`, 'info');
+      }
+    }
+
     consolidatedServiceData = serviceList;
     consolidatedSalesData = salesList;
     renderConsolidatedTransactions(serviceList, salesList, query);
