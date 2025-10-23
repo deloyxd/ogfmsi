@@ -166,10 +166,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     completePayment(
                       isOnlineTransaction ? 'reservations' : 'customers',
                       createResult.dataset.id,
-                      isOnlineTransaction ? customer.customer_image_url : createResult.dataset.image,
+                      isOnlineTransaction ? (customer?.customer_image_url || '') : createResult.dataset.image,
                       isOnlineTransaction ? pendingPayment.payment_customer_id : createResult.dataset.text,
                       createResult.dataset.custom2,
-                      isOnlineTransaction ? customer.customer_first_name + ' ' + customer.customer_last_name : fullName,
+                      isOnlineTransaction ? (customer ? customer.customer_first_name + ' ' + customer.customer_last_name : '') : fullName,
                       Number(pendingPayment.payment_amount_to_pay) || 0,
                       pendingPayment.payment_rate,
                       { methodHint, refFromPortal, displayId: pendingPayment.payment_id }
