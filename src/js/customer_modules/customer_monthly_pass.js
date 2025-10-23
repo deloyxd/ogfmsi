@@ -201,6 +201,13 @@ function openRegistrationModal() {
       const type = getSelectedMembershipType();
       if (type === 'student') studentFields.classList.remove('hidden');
       else studentFields.classList.add('hidden');
+      // Update red border state for studentId when toggling
+      const studentInput = /** @type {HTMLInputElement|null} */ (form.querySelector('#studentId'));
+      const studentBox = studentInput?.parentElement;
+      if (studentBox) {
+        const needs = type === 'student' && !(studentInput?.files && studentInput.files.length);
+        studentBox.classList.toggle('border-red-500', !!needs);
+      }
     };
     typeInputs.forEach((i) => i.addEventListener('change', updateVariant));
     updateVariant();
@@ -214,8 +221,30 @@ function openRegistrationModal() {
       if (label && label.tagName === "SPAN") {
         label.textContent = fileName;
       }
+      // Toggle red border on file box when empty
+      const box = target.parentElement;
+      if (box) {
+        const empty = !(target.files && target.files.length);
+        box.classList.toggle('border-red-500', empty);
+      }
     }
   });
+
+  // Initialize red border state for required file inputs
+  (function initFileBorders() {
+    const profileInput = /** @type {HTMLInputElement|null} */ (form?.querySelector('#profile'));
+    const profileBox = profileInput?.parentElement;
+    if (profileBox) {
+      const empty = !(profileInput?.files && profileInput.files.length);
+      profileBox.classList.toggle('border-red-500', empty);
+    }
+    const studentInput = /** @type {HTMLInputElement|null} */ (form?.querySelector('#studentId'));
+    const studentBox = studentInput?.parentElement;
+    if (studentBox) {
+      const needs = getSelectedMembershipType() === 'student' && !(studentInput?.files && studentInput.files.length);
+      studentBox.classList.toggle('border-red-500', !!needs);
+    }
+  })();
 
   document.getElementById('mpRegSubmit').addEventListener('click', () => {
     const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
@@ -238,10 +267,14 @@ function openRegistrationModal() {
     // }
     if (!profile) {
       msg.textContent = 'Profile Picture is required.';
+      const profileBox = /** @type {HTMLDivElement|null} */ (form.querySelector('#profile'))?.parentElement;
+      if (profileBox) profileBox.classList.add('border-red-500');
       return;
     }
     if (membershipType === 'student' && !studentId) {
       msg.textContent = 'Student ID Picture is required for Student Membership.';
+      const studentBox = /** @type {HTMLDivElement|null} */ (form.querySelector('#studentId'))?.parentElement;
+      if (studentBox) studentBox.classList.add('border-red-500');
       return;
     }
 
@@ -318,6 +351,21 @@ function openPaymentModal(preparedRegistrationData) {
 
   // 13-digit limit for GCash Reference Number
   const gcashRefInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashRef'));
+  // Add real-time empty-field highlighting for payment inputs
+  const gcashNameInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashName'));
+  const gcashAmountInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashAmount'));
+  [gcashRefInput, gcashNameInput, gcashAmountInput].forEach((el) => {
+    if (!el) return;
+    el.addEventListener('input', () => {
+      if (String(el.value).trim()) {
+        el.classList.remove('border-red-500');
+      }
+    });
+    el.addEventListener('blur', () => {
+      const empty = !String(el.value).trim();
+      el.classList.toggle('border-red-500', empty);
+    });
+  });
   if (gcashRefInput) {
     try {
       gcashRefInput.maxLength = 13;
@@ -415,6 +463,12 @@ function openPaymentModal(preparedRegistrationData) {
 
     if (!gcashRef || !gcashName || !gcashAmountRaw) {
       msg.textContent = 'Please fill in all payment details.';
+      const refEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashRef'));
+      const nameEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashName'));
+      const amtEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashAmount'));
+      if (refEl && !String(refEl.value).trim()) refEl.classList.add('border-red-500');
+      if (nameEl && !String(nameEl.value).trim()) nameEl.classList.add('border-red-500');
+      if (amtEl && !String(amtEl.value).trim()) amtEl.classList.add('border-red-500');
       return;
     }
 
@@ -446,10 +500,14 @@ function openPaymentModal(preparedRegistrationData) {
     const gcashAmountNum = normalizeAmount(gcashAmountRaw);
     if (!Number.isFinite(gcashAmountNum)) {
       msg.textContent = 'Please enter a valid amount (numbers only).';
+      const amtEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashAmount'));
+      if (amtEl) amtEl.classList.add('border-red-500');
       return;
     }
     if (Math.abs(gcashAmountNum - totalAmount) > 0.009) {
       msg.textContent = `Amount must be exactly ₱${totalAmount}.`;
+      const amtEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashAmount'));
+      if (amtEl) amtEl.classList.add('border-red-500');
       return;
     }
 
