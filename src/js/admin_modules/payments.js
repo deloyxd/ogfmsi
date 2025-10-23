@@ -1215,27 +1215,88 @@ async function openProcessConsolidatedModal() {
       if (!printWin) return;
       const styles = `
         <style>
-          body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; padding: 16px; }
-          h2 { margin: 0 0 12px 0; font-size: 18px; font-weight: 600; }
-          table { width: 100%; border-collapse: collapse; }
-          thead th { background: #f9fafb; color: #374151; font-size: 12px; text-align: left; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
-          tbody td { font-size: 13px; color: #374151; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
-          tfoot td { font-weight: 600; }
-          .text-right { text-align: right; }
-          @media print { button { display: none; } }
+          * { box-sizing: border-box; }
+          body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; padding: 28px; color:#111827; }
+          .header { text-align:center; line-height:1.35; margin-bottom:20px; }
+          .header .name { font-weight:600; font-size:14px; }
+          .header .small { font-size:11px; color:#374151; }
+          .header .title { margin-top:4px; font-size:12px; color:#111827; }
+          table { width:100%; border-collapse:collapse; margin-top:14px; }
+          thead th { font-size:11px; font-weight:600; color:#111827; padding:8px 10px; text-align:left; border-bottom:1px solid #e5e7eb; }
+          tbody td { font-size:11px; color:#111827; padding:8px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
+          .amount { text-align:right; white-space:pre-line; }
+          .footer { margin-top:36px; display:flex; justify-content:space-between; align-items:flex-start; font-size:11px; }
+          .footer .left { max-width:50%; }
+          .footer .right { text-align:right; }
+          .footer .label { color:#374151; }
+          .footer .value { font-weight:600; }
+          @media print { @page { margin: 16mm; } }
         </style>`;
+
+      // Build rows for export (exclude the last grand total row from table)
+      const tbody = table.querySelector('tbody');
+      const tableRows = Array.from(tbody ? tbody.rows : []);
+      const hasRows = tableRows.length > 0;
+      const grandTotalCell = hasRows ? tableRows[tableRows.length - 1].cells[2] : null;
+      const grandTotalText = grandTotalCell ? grandTotalCell.textContent.trim() : '';
+      const printableRows = hasRows ? tableRows.slice(0, -1) : [];
+      const rowsHtml = printableRows
+        .map((tr) => {
+          const c0 = tr.cells[0] ? tr.cells[0].textContent : '';
+          const c1 = tr.cells[1] ? tr.cells[1].innerHTML : '';
+          const c2 = tr.cells[2] ? tr.cells[2].innerHTML : '';
+          
+          // Clean up the amount formatting - replace HTML line breaks with actual line breaks
+          const cleanAmount = c2
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]*>/g, '');
+          
+          return `<tr><td>${c0}</td><td>${c1}</td><td class=\"amount\">${cleanAmount}</td></tr>`;
+        })
+        .join('');
+
       const generatedAt = new Date().toLocaleString();
-      printWin.document.write(
-        `<!doctype html><html><head><meta charset=\"utf-8\"><title>Fitworx Gym</title>${styles}</head><body>`
-      );
-      printWin.document.write(`<h2>Fitworx Gym</h2>`);
-      // Clone table and remove Tailwind-only classes for cleaner print (optional)
-      const tableClone = table.cloneNode(true);
-      printWin.document.body.appendChild(tableClone);
-      printWin.document.write(
-        `<div style=\"margin-top:12px; text-align:right; font-size:12px; color:#6b7280;\">Generated: ${generatedAt}</div>`
-      );
-      printWin.document.write('</body></html>');
+      const preparedName = sessionStorage.getItem('systemUserFullname') || 'Cashier or admin';
+      const preparedRole = sessionStorage.getItem('systemUserRole') || '';
+      const preparedBy = preparedRole ? `${preparedName} (${preparedRole})` : preparedName;
+      const reportHtml = `
+        <!doctype html>
+        <html></html>
+          <head>
+            <meta charset=\"utf-8\" />
+            <title>Consolidated Reports</title>
+            ${styles}
+          </head>
+          <body>
+            <div class=\"header\">
+              <div class=\"name\">Fitworx Gym</div>
+              <div class=\"small\">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
+              <div class=\"small\">0939 874 5377</div>
+              <div class=\"title\">Consolidated Reports</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Particulars</th>
+                  <th class=\"amount\">Amount</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+            <div class=\"footer\">
+              <div class=\"left\">
+                <span class=\"label\">Prepared by:</span> <span class=\"value\">${preparedBy}</span>
+              </div>
+              <div class=\"right\">
+                <div><span class=\"label\">Grand Total:</span> <span class=\"value\">${grandTotalText}</span></div>
+                <div><span class=\"label\">Generated:</span> <span class=\"value\">${generatedAt}</span></div>
+              </div>
+            </div>
+          </body>
+        </html>`;
+
+      printWin.document.write(reportHtml);
       printWin.document.close();
       // Give the window a moment to render before printing
       printWin.focus();
