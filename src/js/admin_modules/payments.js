@@ -626,8 +626,8 @@ function openConsolidateTransactionsModal() {
         </div>
         <div class="p-4">
           <div class="mb-3">
-            <label class="mb-1 block text-sm font-medium text-gray-700">Search transactions</label>
-            <input type="text" id="consolidateSearchInput" placeholder="Search by Transaction ID or Date"
+            <label class="mb-1 block text-sm font-medium text-gray-700">Search transactions by date</label>
+            <input type="date" id="consolidateSearchInput" 
                    class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="consolidateGrid">
@@ -748,6 +748,7 @@ function debounce(fn, delay) {
   };
 }
 
+
 // Set lists to loading state during search/fetch
 function setConsolidateListsLoading() {
   const serviceListEl = document.getElementById('serviceList');
@@ -858,13 +859,16 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       </div>`;
   };
 
-  const normalizedQuery = (query || '').toLowerCase().trim();
+  const searchDate = query ? new Date(query) : null;
   const matcher = (tx) => {
-    if (!normalizedQuery) return true;
-    const id = (tx.payment_id || '').toLowerCase();
-    const dateStr =
-      `${main.encodeDate(tx.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(tx.created_at, 'long')}`.toLowerCase();
-    return id.includes(normalizedQuery) || dateStr.includes(normalizedQuery);
+    if (!searchDate || isNaN(searchDate.getTime())) return true;
+    
+    // Check if the transaction date matches the search date (same day)
+    const txDate = new Date(tx.created_at);
+    const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+    const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
+    
+    return txDateOnly.getTime() === searchDateOnly.getTime();
   };
 
   if (serviceListEl) {
