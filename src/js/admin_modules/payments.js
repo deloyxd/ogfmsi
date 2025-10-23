@@ -296,10 +296,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
         // Use for...of to support async/await
         for (const completePayment of completePayments.result) {
-          if (!completePayment.payment_customer_id.startsWith('U')) return;
+          if (!completePayment.payment_customer_id.startsWith('U')) continue;
           const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
           if (customerInfo.name === '') {
-            return;
+            continue;
           }
 
           // First, add to the original Service Transactions tab (tab 3) - shows all service transactions
