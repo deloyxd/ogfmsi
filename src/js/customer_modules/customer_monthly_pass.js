@@ -323,7 +323,8 @@ function openPaymentModal(preparedRegistrationData) {
       gcashRefInput.maxLength = 13;
     } catch (_) {}
     gcashRefInput.setAttribute('inputmode', 'numeric');
-    gcashRefInput.addEventListener('input', () => {
+    let refCheckAbort = null;
+    gcashRefInput.addEventListener('input', async () => {
       const digitsOnly = String(gcashRefInput.value).replace(/\D/g, '');
       if (digitsOnly.length > 13) {
         try {
@@ -340,6 +341,47 @@ function openPaymentModal(preparedRegistrationData) {
         } catch (_) {}
       }
       gcashRefInput.value = digitsOnly.slice(0, 13);
+
+      // Early uniqueness check when exactly 13 digits
+      const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
+      const msg = /** @type {HTMLParagraphElement|null} */ (document.querySelector('#paymentForm .inline-validation-msg'));
+      // reset UI state unless we detect duplicate below
+      if (submitBtn) submitBtn.disabled = false;
+      gcashRefInput.classList.remove('border-red-500');
+      if (msg) msg.textContent = '';
+
+      if (gcashRefInput.value.length === 13) {
+        try {
+          // cancel any in-flight check
+          if (refCheckAbort && typeof refCheckAbort.abort === 'function') refCheckAbort.abort();
+          refCheckAbort = new AbortController();
+          const resp = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(gcashRefInput.value)}`, {
+            signal: refCheckAbort.signal,
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.used) {
+              if (submitBtn) submitBtn.disabled = true;
+              gcashRefInput.classList.add('border-red-500');
+              if (msg) msg.textContent = 'This reference number has already been used. Please enter a valid one.';
+              try {
+                if (typeof Toastify === 'function') {
+                  Toastify({
+                    text: 'This reference number has already been used. Please enter a valid one.',
+                    duration: 3000,
+                    gravity: 'top',
+                    position: 'right',
+                    close: true,
+                    backgroundColor: '#dc2626',
+                  }).showToast();
+                }
+              } catch (_) {}
+            }
+          }
+        } catch (e) {
+          // ignore aborted/failed checks silently
+        }
+      }
     });
   }
 
@@ -359,6 +401,11 @@ function openPaymentModal(preparedRegistrationData) {
   // });
   document.getElementById('mpPayCancel').addEventListener('click', close);
   document.getElementById('mpPaySubmit').addEventListener('click', () => {
+    // If early uniqueness check disabled the button, do nothing
+    const earlySubmitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
+    if (earlySubmitBtn && earlySubmitBtn.disabled) {
+      return;
+    }
     const form = /** @type {HTMLFormElement|null} */ (document.getElementById('paymentForm'));
     const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
     if (!form || !msg) return;
@@ -439,7 +486,13 @@ function openPaymentModal(preparedRegistrationData) {
       })
       .catch((err) => {
         console.error('[MonthlyPass] Submission failed', err);
-        if (msg) msg.textContent = 'Submission failed. Please try again.';
+        if (msg) {
+          if (String(err && err.message) === 'DUPLICATE_REF') {
+            msg.textContent = 'This reference number has already been used. Please enter a valid one.';
+          } else {
+            msg.textContent = 'Submission failed. Please try again.';
+          }
+        }
         // Re-enable buttons on failure
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -519,20 +572,28 @@ async function submitMonthlyRegistration(regData, payData) {
   });
 
   // 3) Create pending payment with cashless hint and reference number
-  await fetch(`${API_BASE_URL}/payment/pending`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      payment_id: transactionId,
-      payment_customer_id: customerId,
-      payment_purpose: `Online monthly registration fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
-      payment_amount_to_pay: amount,
-      payment_rate: isStudent ? 'Student' : 'Regular',
-      payment_method_hint: 'cashless',
-      payment_ref: String(payData.get('gcashRef') || ''),
-      payment_source: 'customer_portal',
-    }),
-  });
+  {
+    const resp = await fetch(`${API_BASE_URL}/payment/pending`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_id: transactionId,
+        payment_customer_id: customerId,
+        payment_purpose: `Online monthly registration fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
+        payment_amount_to_pay: amount,
+        payment_rate: isStudent ? 'Student' : 'Regular',
+        payment_method_hint: 'cashless',
+        payment_ref: String(payData.get('gcashRef') || ''),
+        payment_source: 'customer_portal',
+      }),
+    });
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        throw new Error('DUPLICATE_REF');
+      }
+      throw new Error(`HTTP_${resp.status}`);
+    }
+  }
 }
 
 function openConfirmationModal(membershipType) {

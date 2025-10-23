@@ -1794,6 +1794,20 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               // Handle backend operations asynchronously
               (async () => {
                 try {
+                  // Pre-check reference uniqueness before updating backend
+                  if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+                    try {
+                      const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
+                      if (refChk.ok) {
+                        const data = await refChk.json();
+                        if (data.used) {
+                          main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                          return;
+                        }
+                      }
+                    } catch (_) {}
+                  }
+
                   // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
                   await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
                     method: 'DELETE',
@@ -1820,6 +1834,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   );
 
                   if (!response.ok) {
+                    if (response.status === 409) {
+                      main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                      return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                   }
 
@@ -1972,6 +1990,20 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               // Handle backend operations asynchronously
               (async () => {
                 try {
+                  // Pre-check reference uniqueness before updating backend
+                  if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+                    try {
+                      const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
+                      if (refChk.ok) {
+                        const data = await refChk.json();
+                        if (data.used) {
+                          main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                          return;
+                        }
+                      }
+                    } catch (_) {}
+                  }
+
                   // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
                   await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
                     method: 'DELETE',
@@ -1998,6 +2030,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   );
 
                   if (!response.ok) {
+                    if (response.status === 409) {
+                      main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                      return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                   }
 
@@ -2100,6 +2136,20 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             });
 
             try {
+              // Pre-check reference uniqueness before updating backend
+              if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+                try {
+                  const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
+                  if (refChk.ok) {
+                    const data = await refChk.json();
+                    if (data.used) {
+                      main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                      return;
+                    }
+                  }
+                } catch (_) {}
+              }
+
               const response = await fetch(
                 `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
                 {
@@ -2120,6 +2170,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               );
 
               if (!response.ok) {
+                if (response.status === 409) {
+                  main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                  return;
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
 

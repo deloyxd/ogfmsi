@@ -23,16 +23,27 @@ router.get('/pending', async (req, res) => {
 
 // POST new payment
 router.post('/pending', async (req, res) => {
-  const { payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate } = req.body;
+  const { payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_ref } = req.body;
 
-  const query = `
-    INSERT INTO payment_tbl
-    (payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_type)
-    VALUES (?, ?, ?, ?, ?, 'pending')
-  `;
-
+  // If a reference is provided, ensure it's unique across all payments
   try {
-    await db.query(query, [payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate]);
+    if (payment_ref && String(payment_ref).trim() !== '') {
+      const dup = await db.query(
+        'SELECT payment_id FROM payment_tbl WHERE payment_ref = ? LIMIT 1',
+        [payment_ref]
+      );
+      if (dup && dup.length > 0) {
+        return res.status(409).json({ error: 'This reference number has already been used. Please enter a valid one.' });
+      }
+    }
+
+    const query = `
+      INSERT INTO payment_tbl
+      (payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_ref, payment_type)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending')
+    `;
+
+    await db.query(query, [payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_ref || null]);
     return res.status(201).json({
       message: 'Payment created successfully',
       result: {
@@ -41,6 +52,7 @@ router.post('/pending', async (req, res) => {
         payment_purpose,
         payment_amount_to_pay,
         payment_rate,
+        payment_ref: payment_ref || null,
       },
     });
   } catch (error) {

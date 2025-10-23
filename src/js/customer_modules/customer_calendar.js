@@ -896,6 +896,8 @@ function openPaymentModal(reservation, preparedRegistrationData) {
   // });
   document.getElementById('mpPayCancel').addEventListener('click', close);
   document.getElementById('mpPaySubmit').addEventListener('click', () => {
+    const earlyBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
+    if (earlyBtn && earlyBtn.disabled) return; // blocked by early duplicate check
     if (document.getElementById('mpPaySubmit').disabled) {
       return;
     }
@@ -977,8 +979,13 @@ function openPaymentModal(reservation, preparedRegistrationData) {
       })
       .catch((err) => {
         console.error('[MonthlyPass] Submission failed', err);
-        if (msg) msg.textContent = 'Submission failed. Please try again.';
-        // Re-enable buttons on failure
+        if (msg) {
+          if (String(err && err.message) === 'DUPLICATE_REF') {
+            msg.textContent = 'This reference number has already been used. Please enter a valid one.';
+          } else {
+            msg.textContent = 'Submission failed. Please try again.';
+          }
+        }
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Submit Payment';
@@ -1108,20 +1115,28 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
   await createReservationFE(reservation);
 
   // 3) Create pending payment with cashless hint and reference number
-  await fetch(`${API_BASE_URL}/payment/pending`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      payment_id: transactionId,
-      payment_customer_id: customerId,
-      payment_purpose: `Online facility reservation fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
-      payment_amount_to_pay: amount,
-      payment_rate: rate,
-      payment_method_hint: 'cashless',
-      payment_ref: String(payData.get('gcashRef') || ''),
-      payment_source: 'customer_portal',
-    }),
-  });
+  {
+    const resp = await fetch(`${API_BASE_URL}/payment/pending`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_id: transactionId,
+        payment_customer_id: customerId,
+        payment_purpose: `Online facility reservation fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
+        payment_amount_to_pay: amount,
+        payment_rate: rate,
+        payment_method_hint: 'cashless',
+        payment_ref: String(payData.get('gcashRef') || ''),
+        payment_source: 'customer_portal',
+      }),
+    });
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        throw new Error('DUPLICATE_REF');
+      }
+      throw new Error(`HTTP_${resp.status}`);
+    }
+  }
 }
 
 function openConfirmationModal() {
