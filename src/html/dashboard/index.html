@@ -138,19 +138,17 @@
 
           <!-- logout -->
           <div class="ml-6">
+            <button
+              id="openNotif"
+              class="inline-flex items-center rounded-full bg-white px-3 py-2 text-xs font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
+            >
+              🔔 Notifications
+            </button>
             <a
               href=""
-              class="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-xs font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
+              class="inline-flex items-center rounded-full bg-white px-3 py-2 text-xs font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
             >
-              <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              Logout
+              🟥 Logout
             </a>
           </div>
         </div>
@@ -208,19 +206,17 @@
           </div>
 
           <!-- logout -->
-          <div class="ms-auto max-w-[100px]">
+          <div class="flex justify-between">
+            <button
+              id="openNotifMobile"
+              class="inline-flex items-center rounded-full bg-white px-3 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
+            >
+              Notifications
+            </button>
             <a
               href=""
-              class="flex items-center rounded-full bg-white px-3 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
+              class="inline-flex items-center rounded-full bg-white px-3 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
             >
-              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
               Logout
             </a>
           </div>
@@ -359,6 +355,36 @@
       </section>
 
       <!-- Calendar and Quick Info Container -->
+
+      <!-- Notification Panel -->
+      <div
+        id="notificationPanel"
+        class="fixed right-0 top-16 z-40 h-full w-80 translate-x-0 translate-x-full transform border-l border-orange-300 bg-white/70 shadow-2xl backdrop-blur-md transition-transform duration-500 ease-in-out"
+      >
+        <div class="flex items-center justify-between border-b border-orange-200 bg-orange-100 p-3">
+          <h2 class="flex items-center gap-2 font-semibold text-orange-700">
+            📢 Notifications
+            <span id="notifCount" class="rounded-full bg-orange-200 px-2 py-0.5 text-xs text-orange-700">0</span>
+          </h2>
+          <button
+            id="closeNotif"
+            class="rounded-full bg-orange-200 px-2 py-1 text-sm text-orange-700 transition hover:bg-orange-300"
+            aria-label="Close Notifications"
+          >
+            ✖
+          </button>
+        </div>
+
+        <div class="h-[calc(100%-3rem)] overflow-y-auto p-3">
+          <ul id="notifList" class="space-y-2 text-sm text-gray-700">
+            <li class="hidden border-b border-orange-100 pb-2">
+              <b>Title</b>
+              <p class="text-xs text-gray-500">Some first part of the message...</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+
       <section id="calendarSection" class="flex flex-1 flex-col lg:flex-row">
         <!-- Calendar Container -->
         <div class="w-full flex-1">

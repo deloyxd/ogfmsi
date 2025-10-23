@@ -55,7 +55,87 @@ function setupLogout() {
   });
 }
 
-import { DEV_MODE } from './_global.js';
+import { DEV_MODE, API_BASE_URL } from './_global.js';
+
+function loadCustomerNotifications() {
+  const listEl = document.getElementById('notifList');
+  const countEl = document.getElementById('notifCount');
+
+  if (!listEl || !countEl) return;
+
+  const showMessage = (message, className = 'text-xs text-gray-500') => {
+    listEl.innerHTML = '';
+    const li = document.createElement('li');
+    li.className = className;
+    li.textContent = message;
+    listEl.appendChild(li);
+  };
+
+  try {
+    const customerId = sessionStorage.getItem('id');
+    if (!customerId) {
+      countEl.textContent = '0';
+      showMessage('No notifications');
+      return;
+    }
+
+    fetch(`${API_BASE_URL}/notif/${encodeURIComponent(customerId)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        const items = Array.isArray(data) ? data : Array.isArray(data.result) ? data.result : [];
+        countEl.textContent = String(items.length);
+        listEl.innerHTML = '';
+
+        if (items.length === 0) {
+          showMessage('No notifications');
+          return;
+        }
+
+        const frag = document.createDocumentFragment();
+
+        items.forEach((n) => {
+          const li = document.createElement('li');
+          li.className = 'border-b border-orange-100 pb-2';
+
+          const b = document.createElement('b');
+          b.textContent = n.notif_title || n.title || 'Notification';
+
+          const p = document.createElement('p');
+          p.className = 'text-xs text-gray-500';
+
+          const msg = n.notif_body || n.message || '';
+          const dt = n.created_at || n.createdAt || n.created || '';
+          let dateStr = '';
+          if (dt) {
+            const d = new Date(dt);
+            dateStr = isNaN(d.getTime()) ? String(dt) : d.toLocaleString();
+          }
+          p.textContent = dateStr ? `${msg} • ${dateStr}` : msg;
+
+          li.appendChild(b);
+          li.appendChild(p);
+          frag.appendChild(li);
+        });
+
+        listEl.appendChild(frag);
+      })
+      .catch((err) => {
+        console.error('Failed to load notifications:', err);
+        countEl.textContent = '0';
+        showMessage('Failed to load notifications', 'text-xs text-red-600');
+      });
+  } catch (err) {
+    console.error('Failed to load notifications:', err);
+    countEl.textContent = '0';
+    showMessage('Failed to load notifications', 'text-xs text-red-600');
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   let fullName = sessionStorage.getItem('full_name') || 'Guest';
@@ -75,6 +155,34 @@ document.addEventListener('DOMContentLoaded', function () {
   setupMobileDropdown();
   setupLogout();
   document.getElementById('welcomeUser').innerText = fullName;
+
+  const notifPanel = document.getElementById('notificationPanel');
+  const closeNotif = document.getElementById('closeNotif');
+  const openNotif = document.getElementById('openNotif');
+  const openNotifMobile = document.getElementById('openNotifMobile');
+
+  // Close animation: slide to right
+  closeNotif.addEventListener('click', () => {
+    notifPanel.classList.add('translate-x-full');
+  });
+
+  // Open animation: slide back in
+  openNotif.addEventListener('click', () => {
+    if (!notifPanel.classList.contains('translate-x-full')) {
+      closeNotif.dispatchEvent(new Event('click'));
+      return;
+    }
+    notifPanel.classList.remove('translate-x-full');
+  });
+
+  // Open animation: slide back in
+  openNotifMobile.addEventListener('click', () => {
+    if (!notifPanel.classList.contains('translate-x-full')) {
+      closeNotif.dispatchEvent(new Event('click'));
+      return;
+    }
+    notifPanel.classList.remove('translate-x-full');
+  });
 
   const openMessage = document.getElementById('openMessage');
   const hoursMessage = document.getElementById('hoursMessage');
@@ -146,4 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   startTimeInput.addEventListener('change', updateEndTime);
   durationSelect.addEventListener('change', updateEndTime);
+
+  // Load notifications on dashboard init
+  loadCustomerNotifications();
 });

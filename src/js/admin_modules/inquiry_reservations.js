@@ -461,7 +461,7 @@ async function loadExistingReservations() {
     // Below we try a few sensible approaches (in order). If your DOM structure differs, adjust the selector.
     createdRows.forEach(({ reservation, createdItem }) => {
       const cid = reservation.customerId;
-      const img = imageByCustomerId[cid] || '';
+      const img = imageByCustomerId[cid] || '/src/images/client_logo.jpg';
 
       createdItem.querySelector('img').src = img;
     });
@@ -1056,8 +1056,12 @@ function getReservationCountForTab(tabIndex) {
   const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
   if (!emptyText) return 0;
   const items = emptyText.parentElement.parentElement.children;
-  // Skip header/placeholder row
-  return Math.max(0, items.length - 1);
+  const filteredItems = items.filter((item, index) => {
+    if (index === 0) return false;
+    const datetime = item.dataset.datetime?.toLowerCase() || '';
+    return !datetime.includes('pending');
+  });
+  return filteredItems.length;
 }
 
 function updateReservationStats() {

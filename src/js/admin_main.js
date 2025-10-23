@@ -1475,7 +1475,6 @@ function setupModalBase(defaultData, inputs, callback) {
         });
 
         input.addEventListener('focus', () => {
-          console.log(input)
           if (data.autoformat.includes('price')) {
             input.value = decodePrice(input.value);
             data.value = input.value;

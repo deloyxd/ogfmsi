@@ -1525,7 +1525,7 @@ function activeRadioListener(title, input, container, inputGroup) {
         inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     }
   }
-  if (inputGroup.short[0].locked) {
+  if (inputGroup.radio[0].locked) {
     cashlessInput.value = main.encodePrice(amountToPay);
   } else {
     cashlessInput.value = main.encodePrice(0);
@@ -1534,7 +1534,7 @@ function activeRadioListener(title, input, container, inputGroup) {
   cashlessInput.dispatchEvent(new Event('input'));
 
   // Ensure quick editing UX: auto-select contents on focus/click
-  if (!inputGroup.short[0].locked) {
+  if (!inputGroup.radio[0].locked) {
     attachSelectAll(cashInput);
     attachSelectAll(cashlessInput);
   }
