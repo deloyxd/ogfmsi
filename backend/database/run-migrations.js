@@ -101,6 +101,16 @@ async function addIndex(def) {
   await pool.query(sql);
 }
 
+async function addUniqueIndex(table, index, column) {
+  const sql = `ALTER TABLE \`${table}\` ADD UNIQUE INDEX \`${index}\` (\`${column}\`)`;
+  await pool.query(sql);
+}
+
+async function addColumn(table, column, definition) {
+  const sql = `ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`;
+  await pool.query(sql);
+}
+
 async function run() {
   console.log('==> Running DB index migration (information_schema-guarded)');
 
@@ -109,6 +119,39 @@ async function run() {
   let skipped = 0;
   let warnings = 0;
   let fatalError = null;
+
+  // Ensure payment_ref column exists on payment_tbl
+  try {
+    const hasPayment = await tableExists('payment_tbl');
+    if (hasPayment) {
+      const missing = await columnsMissing('payment_tbl', ['payment_ref']);
+      if (missing.length > 0) {
+        await addColumn('payment_tbl', 'payment_ref', 'VARCHAR(50) NULL');
+        console.log('[ADDED] payment_tbl.payment_ref column');
+      }
+      // Ensure unique index on payment_ref
+      const hasUniq = await indexExists('payment_tbl', 'uniq_payment_ref');
+      if (!hasUniq) {
+        await addUniqueIndex('payment_tbl', 'uniq_payment_ref', 'payment_ref');
+        console.log('[ADDED] payment_tbl.uniq_payment_ref (payment_ref)');
+      }
+    } else {
+      console.warn('[SKIP] payment_tbl.payment_ref - table not found');
+    }
+  } catch (err) {
+    const code = err && (err.code || err.errno);
+    if (code === 'ER_DUP_FIELDNAME' || code === 1060) {
+      console.log('[EXISTS] payment_tbl.payment_ref (detected during ALTER)');
+    } else if (code === 'ER_DUP_KEYNAME' || code === 1061) {
+      console.log('[EXISTS] payment_tbl.uniq_payment_ref (detected during ALTER)');
+    } else if (code === 'ER_NO_SUCH_TABLE' || code === 1146) {
+      console.warn('[SKIP] payment_tbl.payment_ref - table not found during ALTER');
+    } else if (code === 'ER_BAD_FIELD_ERROR' || code === 1054) {
+      console.warn('[SKIP] payment_tbl.payment_ref - column missing during ALTER');
+    } else {
+      console.error('[ERROR] payment_tbl.payment_ref - unexpected SQL error', err.message);
+    }
+  }
 
   for (const def of INDEX_DEFS) {
     try {

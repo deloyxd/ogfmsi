@@ -24,18 +24,29 @@ router.get('/sales', async (req, res) => {
 // PUT new sales payment
 router.put('/sales/:id', async (req, res) => {
   const { id } = req.params;
-  const { payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method } = req.body;
+  const { payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method, payment_ref } = req.body;
 
-  const query = `
+  const updateQuery = `
     UPDATE payment_tbl 
-    SET payment_amount_paid_cash = ?, payment_amount_paid_cashless = ?, payment_amount_change = ?, payment_method = ?, payment_type = 'sales'
+    SET payment_amount_paid_cash = ?, payment_amount_paid_cashless = ?, payment_amount_change = ?, payment_method = ?, payment_ref = ?, payment_type = 'sales'
     WHERE payment_id = ?
   `;
 
   try {
+    // If a reference is provided, ensure it's unique across all payments except this one
+    if (payment_ref && String(payment_ref).trim() !== '') {
+      const dup = await db.query(
+        'SELECT payment_id FROM payment_tbl WHERE payment_ref = ? AND payment_id <> ? LIMIT 1',
+        [payment_ref, id]
+      );
+      if (dup && dup.length > 0) {
+        return res.status(409).json({ error: 'This reference number has already been used. Please enter a valid one.' });
+      }
+    }
+
     await db.query(
-      query,
-      [payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method, id]
+      updateQuery,
+      [payment_amount_paid_cash, payment_amount_paid_cashless, payment_amount_change, payment_method, payment_ref || null, id]
     );
     return res.status(201).json({
       message: 'Payment created successfully',
@@ -45,6 +56,7 @@ router.put('/sales/:id', async (req, res) => {
         payment_amount_paid_cashless,
         payment_amount_change,
         payment_method,
+        payment_ref: payment_ref || null,
       },
     });
   } catch (error) {

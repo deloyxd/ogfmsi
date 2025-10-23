@@ -34,4 +34,20 @@ router.get('/complete/:id', async (req, res) => {
   }
 });
 
+// GET check if reference number is already used
+router.get('/ref/check/:ref', async (req, res) => {
+  const { ref } = req.params;
+  if (!ref || String(ref).trim() === '') {
+    return res.status(400).json({ error: 'Reference is required' });
+  }
+  try {
+    const rows = await db.query('SELECT payment_id FROM payment_tbl WHERE payment_ref = ? LIMIT 1', [ref]);
+    const used = Array.isArray(rows) && rows.length > 0;
+    return res.status(200).json({ message: 'Reference check ok', used });
+  } catch (error) {
+    console.error('Reference check error:', error);
+    return res.status(500).json({ error: 'Reference check failed' });
+  }
+});
+
 module.exports = router;

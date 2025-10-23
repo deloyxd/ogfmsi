@@ -169,6 +169,7 @@ CREATE TABLE IF NOT EXISTS payment_tbl (
     payment_amount_change VARCHAR(255),
     payment_amount_refund VARCHAR(255),
     payment_method VARCHAR(255),
+    payment_ref VARCHAR(50) NULL,
     payment_rate VARCHAR(255),
     payment_type ENUM('pending', 'canceled', 'service', 'sales', 'refund') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -252,6 +253,7 @@ ALTER TABLE inquiry_checkins_monthly_tbl ADD INDEX idx_checkins_monthly_created 
 
 ALTER TABLE payment_tbl ADD INDEX idx_payment_type_created (payment_type, created_at);
 ALTER TABLE payment_tbl ADD INDEX idx_payment_customer (payment_customer_id);
+ALTER TABLE payment_tbl ADD UNIQUE INDEX uniq_payment_ref (payment_ref);
 
 -- Admin users table
 CREATE TABLE IF NOT EXISTS admin_users_tbl (
