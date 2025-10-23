@@ -922,7 +922,9 @@ function openPaymentModal(reservation, preparedRegistrationData) {
 
       // Reset UI state unless a duplicate is detected below
       const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
-      const msg = /** @type {HTMLParagraphElement|null} */ (document.querySelector('#paymentForm .inline-validation-msg'));
+      const msg = /** @type {HTMLParagraphElement|null} */ (
+        document.querySelector('#paymentForm .inline-validation-msg')
+      );
       if (submitBtn) submitBtn.disabled = false;
       gcashRefInput.classList.remove('border-red-500');
       if (msg) msg.textContent = '';
@@ -1200,28 +1202,27 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
   const endDate = String(regData.get('endDate'));
 
   // Create pending payment first; only create reservation after backend accepts it
-  {
-    const resp = await fetch(`${API_BASE_URL}/payment/pending`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        payment_id: transactionId,
-        payment_customer_id: customerId,
-        payment_purpose: `Online facility reservation fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
-        payment_amount_to_pay: amount,
-        payment_rate: rate,
-        payment_method_hint: 'cashless',
-        payment_ref: String(payData.get('gcashRef') || ''),
-        payment_source: 'customer_portal',
-      }),
-    });
-    if (!resp.ok) {
-      if (resp.status === 409) {
-        // Duplicate reference: do not create a reservation entry
-        throw new Error('DUPLICATE_REF');
-      }
-      throw new Error(`HTTP_${resp.status}`);
+
+  const resp = await fetch(`${API_BASE_URL}/payment/pending`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      payment_id: transactionId,
+      payment_customer_id: customerId,
+      payment_purpose: `Online facility reservation fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
+      payment_amount_to_pay: amount,
+      payment_rate: rate,
+      payment_method_hint: 'cashless',
+      payment_ref: String(payData.get('gcashRef') || ''),
+      payment_source: 'customer_portal',
+    }),
+  });
+  if (!resp.ok) {
+    if (resp.status === 409) {
+      // Duplicate reference: do not create a reservation entry
+      throw new Error('DUPLICATE_REF');
     }
+    throw new Error(`HTTP_${resp.status}`);
   }
 
   // Backend accepted the payment pending record; now persist the reservation
