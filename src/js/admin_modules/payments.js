@@ -5,6 +5,17 @@ import cart from './ecommerce_cart.js';
 import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
+import { db } from '../firebase.js';
+import {
+  collection,
+  onSnapshot,
+  query,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
 const SECTION_NAME = 'payments';
 const MODULE_NAME = 'Payments';
 
@@ -144,7 +155,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 ],
                 1,
                 async (createResult) => {
-                  const isOnlineTransaction = pendingPayment.payment_purpose.includes('facility');
+                  const isOnlineTransaction = pendingPayment.payment_purpose.toLowerCase().includes('online');
+                  const isOnlineFacility = pendingPayment.payment_purpose.toLowerCase().includes('facility');
                   let customer;
                   if (isOnlineTransaction) {
                     try {
@@ -164,12 +176,18 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
                     completePayment(
-                      isOnlineTransaction ? 'reservations' : 'customers',
+                      isOnlineFacility ? 'reservations' : 'customers',
                       createResult.dataset.id,
-                      isOnlineTransaction ? (customer?.customer_image_url || '') : createResult.dataset.image,
+                      isOnlineTransaction
+                        ? customer?.customer_image_url || '/src/images/client_logo.jpg'
+                        : createResult.dataset.image,
                       isOnlineTransaction ? pendingPayment.payment_customer_id : createResult.dataset.text,
                       createResult.dataset.custom2,
-                      isOnlineTransaction ? (customer ? customer.customer_first_name + ' ' + customer.customer_last_name : '') : fullName,
+                      isOnlineTransaction
+                        ? customer
+                          ? customer.customer_first_name + ' ' + customer.customer_last_name
+                          : ''
+                        : fullName,
                       Number(pendingPayment.payment_amount_to_pay) || 0,
                       pendingPayment.payment_rate,
                       { methodHint, refFromPortal, displayId: pendingPayment.payment_id }
@@ -178,8 +196,72 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
                   transactionCancelBtn.addEventListener('click', () => {
                     main.openConfirmationModal(
-                      'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
+                      isOnlineTransaction
+                        ? `
+                        Cancel pending transaction. Cannot be undone.<br><br>
+                        ID: ${createResult.dataset.id}<br><br>
+                        <label for="cancelReasonSelect"><b>Reason for cancellation:</b></label><br>
+                        <select id="cancelReasonSelect" style="
+                          width: 100%;
+                          margin-top: 8px;
+                          padding: 6px;
+                          border-radius: 6px;
+                          border: 1px solid #000000ff;
+                          background-color: black;
+                        ">
+                          <option value="" disabled selected>Select a reason...</option>
+                          <option value="ref-num-issue">Invalid reference number</option>
+                          <option value="payment-issue">Payment insufficient amount</option>
+                        </select>
+                      `
+                        : 'Cancel pending transaction. Cannot be undone.<br><br>ID: ' + createResult.dataset.id,
                       () => {
+                        if (isOnlineTransaction) {
+                          const reasonSelect = document.getElementById('cancelReasonSelect');
+                          const selectedReason = reasonSelect ? reasonSelect.value : '';
+
+                          if (!selectedReason) {
+                            alert('Please select a reason for cancellation.');
+                            return;
+                          }
+
+                          const transactionId = createResult.dataset.id;
+
+                          // Listen for reservations and find matching one by tid
+                          onSnapshot(query(collection(db, 'reservations')), async (snapshot) => {
+                            const reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+                            const matchingReservation = reservations.find((r) => r.tid === transactionId);
+
+                            if (!matchingReservation) {
+                              alert('No matching reservation found for this transaction.');
+                              return;
+                            }
+
+                            const reservationId = matchingReservation.id;
+                            const fullReason = `${reservationId}:ID:facility:${selectedReason}`;
+
+                            try {
+                              await fetch(`${API_BASE_URL}/notif`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  notif_customer_id: pendingPayment.payment_customer_id,
+                                  notif_title: 'Your Transaction has been Cancelled',
+                                  notif_body: 'Reason: ' + selectedReason + '<br><br>TID: ' + createResult.dataset.id,
+                                  notif_type: '',
+                                }),
+                              });
+
+                              cancelCheckinPayment(transactionId, fullReason);
+                            } catch (_) {}
+                            main.closeConfirmationModal();
+                          });
+
+                          return;
+                        }
+
                         cancelCheckinPayment(createResult.dataset.id);
                         main.closeConfirmationModal();
                       }
@@ -748,7 +830,6 @@ function debounce(fn, delay) {
   };
 }
 
-
 // Set lists to loading state during search/fetch
 function setConsolidateListsLoading() {
   const serviceListEl = document.getElementById('serviceList');
@@ -785,14 +866,14 @@ async function fetchConsolidatedByQuery(query) {
     if (searchDate && !isNaN(searchDate.getTime())) {
       // Remove selected transactions that don't match the search date
       const selectedToRemove = new Set();
-      
+
       // Check service transactions
-      serviceList = serviceList.filter(tx => {
+      serviceList = serviceList.filter((tx) => {
         const txDate = new Date(tx.created_at);
         const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
         const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
         const matchesDate = txDateOnly.getTime() === searchDateOnly.getTime();
-        
+
         if (!matchesDate) {
           const key = `service:${tx.payment_id}`;
           if (consolidatedSelected.has(key)) {
@@ -801,14 +882,14 @@ async function fetchConsolidatedByQuery(query) {
         }
         return matchesDate;
       });
-      
+
       // Check sales transactions
-      salesList = salesList.filter(tx => {
+      salesList = salesList.filter((tx) => {
         const txDate = new Date(tx.created_at);
         const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
         const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
         const matchesDate = txDateOnly.getTime() === searchDateOnly.getTime();
-        
+
         if (!matchesDate) {
           const key = `sales:${tx.payment_id}`;
           if (consolidatedSelected.has(key)) {
@@ -817,14 +898,17 @@ async function fetchConsolidatedByQuery(query) {
         }
         return matchesDate;
       });
-      
+
       // Remove selected transactions that don't match the date
       const removedCount = selectedToRemove.size;
-      selectedToRemove.forEach(key => consolidatedSelected.delete(key));
-      
+      selectedToRemove.forEach((key) => consolidatedSelected.delete(key));
+
       // Notify user if transactions were removed from selection
       if (removedCount > 0) {
-        main.toast(`${removedCount} selected transaction${removedCount > 1 ? 's' : ''} removed (not from search date)`, 'info');
+        main.toast(
+          `${removedCount} selected transaction${removedCount > 1 ? 's' : ''} removed (not from search date)`,
+          'info'
+        );
       }
     }
 
@@ -910,12 +994,12 @@ function renderConsolidatedTransactions(service, sales, query = '') {
   const searchDate = query ? new Date(query) : null;
   const matcher = (tx) => {
     if (!searchDate || isNaN(searchDate.getTime())) return true;
-    
+
     // Check if the transaction date matches the search date (same day)
     const txDate = new Date(tx.created_at);
     const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
     const searchDateOnly = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate());
-    
+
     return txDateOnly.getTime() === searchDateOnly.getTime();
   };
 
@@ -1245,12 +1329,10 @@ async function openProcessConsolidatedModal() {
           const c0 = tr.cells[0] ? tr.cells[0].textContent : '';
           const c1 = tr.cells[1] ? tr.cells[1].innerHTML : '';
           const c2 = tr.cells[2] ? tr.cells[2].innerHTML : '';
-          
+
           // Clean up the amount formatting - replace HTML line breaks with actual line breaks
-          const cleanAmount = c2
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<[^>]*>/g, '');
-          
+          const cleanAmount = c2.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '');
+
           return `<tr><td>${c0}</td><td>${c1}</td><td class=\"amount\">${cleanAmount}</td></tr>`;
         })
         .join('');
@@ -1809,10 +1891,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   }
 
                   // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-                  await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                  }).catch(() => {});
 
                   const response = await fetch(
                     `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
@@ -2005,10 +2083,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   }
 
                   // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-                  await fetch(`${API_BASE_URL}/payment/pending/${effectiveId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                  }).catch(() => {});
 
                   const response = await fetch(
                     `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
@@ -2235,7 +2309,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   }, 0);
 }
 
-export function cancelCheckinPayment(transactionId) {
+export function cancelCheckinPayment(transactionId, reason = '') {
   customers.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, async (findResult) => {
     if (!findResult) return;
@@ -2245,6 +2319,20 @@ export function cancelCheckinPayment(transactionId) {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     } catch (e) {
       console.error('Error marking payment as canceled:', e);
+    }
+
+    if (reason !== '') {
+      if (reason.includes('facility')) {
+        const reservationId = reason.split(':ID:')[0];
+        main.sharedState.moduleLoad = SECTION_NAME;
+        window.showGlobalLoading?.();
+        try {
+          await deleteDoc(doc(db, 'reservations', reservationId));
+        } catch (e) {
+        } finally {
+          window.hideGlobalLoading?.();
+        }
+      }
     }
 
     // Reflect in UI: move to Canceled Transactions Log (tab index 2)
