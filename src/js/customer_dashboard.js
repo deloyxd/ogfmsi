@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
       sessionStorage.setItem('last_name', 'Biboy');
       sessionStorage.setItem('full_name', 'Team Biboy');
       sessionStorage.setItem('email', 'teambiboy@gmail.com');
+      fullName = sessionStorage.getItem('full_name');
     } else {
       window.location.href = '/';
       return;
