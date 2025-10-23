@@ -17,15 +17,15 @@ let activated = false,
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
   let systemUserRole = sessionStorage.getItem('systemUserRole') || '';
-  if (systemUserRole === '') {
-      if (DEV_MODE) {
-        sessionStorage.setItem('systemUserRole', 'developer');
-        sessionStorage.setItem('systemUserFullname', 'Team Biboy');
-        systemUserRole = sessionStorage.getItem('systemUserRole');
-      } else {
-        window.location.href = '/';
-        return;
-      }
+  if (DEV_MODE) {
+    sessionStorage.setItem('systemUserRole', 'developer');
+    sessionStorage.setItem('systemUserFullname', 'Team Biboy');
+    systemUserRole = sessionStorage.getItem('systemUserRole');
+  } else {
+    if (systemUserRole === '') {
+      window.location.href = '/';
+      return;
+    }
   }
   const roleElement = document.getElementById('role');
   if (roleElement) {

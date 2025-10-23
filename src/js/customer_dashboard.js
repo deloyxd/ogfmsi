@@ -55,19 +55,19 @@ function setupLogout() {
   });
 }
 
-import { DEV_MODE } from '../_global.js';
+import { DEV_MODE } from './_global.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   let fullName = sessionStorage.getItem('full_name') || 'Guest';
-  if (fullName === 'Guest') {
-    if (DEV_MODE) {
-      sessionStorage.setItem('id', 'U123');
-      sessionStorage.setItem('first_name', 'Team');
-      sessionStorage.setItem('last_name', 'Biboy');
-      sessionStorage.setItem('full_name', 'Team Biboy');
-      sessionStorage.setItem('email', 'teambiboy@gmail.com');
-      fullName = sessionStorage.getItem('full_name');
-    } else {
+  if (DEV_MODE) {
+    sessionStorage.setItem('id', 'U123');
+    sessionStorage.setItem('first_name', 'Team');
+    sessionStorage.setItem('last_name', 'Biboy');
+    sessionStorage.setItem('full_name', 'Team Biboy');
+    sessionStorage.setItem('email', 'teambiboy@gmail.com');
+    fullName = sessionStorage.getItem('full_name');
+  } else {
+    if (fullName === 'Guest') {
       window.location.href = '/';
       return;
     }
