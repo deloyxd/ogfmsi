@@ -1,6 +1,6 @@
 import main from '../admin_main.js';
 import accesscontrol from './maintenance_accesscontrol.js';
-import { API_BASE_URL, getEmoji } from '../_global.js';
+import { API_BASE_URL, DEV_MODE, getEmoji } from '../_global.js';
 import {
   createAnnouncement,
   updateAnnouncement,
@@ -16,10 +16,16 @@ let activated = false,
   subBtn;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
-  const systemUserRole = sessionStorage.getItem('systemUserRole') || '';
+  let systemUserRole = sessionStorage.getItem('systemUserRole') || '';
   if (systemUserRole === '') {
-    window.location.href = '/';
-    return;
+      if (DEV_MODE) {
+        sessionStorage.setItem('systemUserRole', 'developer');
+        sessionStorage.setItem('systemUserFullname', 'Team Biboy');
+        systemUserRole = sessionStorage.getItem('systemUserRole');
+      } else {
+        window.location.href = '/';
+        return;
+      }
   }
   const roleElement = document.getElementById('role');
   if (roleElement) {

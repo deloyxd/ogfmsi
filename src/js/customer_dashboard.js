@@ -55,11 +55,21 @@ function setupLogout() {
   });
 }
 
+import { DEV_MODE } from '../_global.js';
+
 document.addEventListener('DOMContentLoaded', function () {
-  const fullName = sessionStorage.getItem('full_name') || 'Guest';
+  let fullName = sessionStorage.getItem('full_name') || 'Guest';
   if (fullName === 'Guest') {
-    window.location.href = '/';
-    return;
+    if (DEV_MODE) {
+      sessionStorage.setItem('id', 'U123');
+      sessionStorage.setItem('first_name', 'Team');
+      sessionStorage.setItem('last_name', 'Biboy');
+      sessionStorage.setItem('full_name', 'Team Biboy');
+      sessionStorage.setItem('email', 'teambiboy@gmail.com');
+    } else {
+      window.location.href = '/';
+      return;
+    }
   }
   setupMobileDropdown();
   setupLogout();
@@ -126,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const startDate = new Date();
     startDate.setHours(hours, minutes, 0, 0);
     const durationHours = parseInt(durationValue);
-    console.log(durationHours)
+    console.log(durationHours);
     startDate.setHours(startDate.getHours() + durationHours);
     const endHours = startDate.getHours().toString().padStart(2, '0');
     const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
