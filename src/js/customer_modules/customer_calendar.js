@@ -880,6 +880,70 @@ function openPaymentModal(reservation, preparedRegistrationData) {
     modal.children[0].classList.add('scale-100');
   }, 10);
 
+  // 13-digit limit for GCash Reference Number with early duplicate check
+  const gcashRefInput = /** @type {HTMLInputElement|null} */ (document.getElementById('gcashRef'));
+  if (gcashRefInput) {
+    try {
+      gcashRefInput.maxLength = 13;
+    } catch (_) {}
+    gcashRefInput.setAttribute('inputmode', 'numeric');
+    let refCheckAbort = null;
+    gcashRefInput.addEventListener('input', async () => {
+      const digitsOnly = String(gcashRefInput.value).replace(/\D/g, '');
+      if (digitsOnly.length > 13) {
+        try {
+          if (typeof Toastify === 'function') {
+            Toastify({
+              text: 'GCash Reference must be 13 digits',
+              duration: 2500,
+              gravity: 'top',
+              position: 'right',
+              close: true,
+            }).showToast();
+          }
+        } catch (_) {}
+      }
+      gcashRefInput.value = digitsOnly.slice(0, 13);
+
+      // Reset UI state unless a duplicate is detected below
+      const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
+      const msg = /** @type {HTMLParagraphElement|null} */ (document.querySelector('#paymentForm .inline-validation-msg'));
+      if (submitBtn) submitBtn.disabled = false;
+      gcashRefInput.classList.remove('border-red-500');
+      if (msg) msg.textContent = '';
+
+      // Early uniqueness check when exactly 13 digits
+      if (gcashRefInput.value.length === 13) {
+        try {
+          if (refCheckAbort && typeof refCheckAbort.abort === 'function') refCheckAbort.abort();
+          refCheckAbort = new AbortController();
+          const resp = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(gcashRefInput.value)}`, {
+            signal: refCheckAbort.signal,
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.used) {
+              if (submitBtn) submitBtn.disabled = true;
+              gcashRefInput.classList.add('border-red-500');
+              if (msg) msg.textContent = 'This reference number has already been used. Please enter a valid one.';
+              try {
+                if (typeof Toastify === 'function') {
+                  Toastify({
+                    text: 'Reference already used',
+                    duration: 3000,
+                    gravity: 'top',
+                    position: 'right',
+                    close: true,
+                  }).showToast();
+                }
+              } catch (_) {}
+            }
+          }
+        } catch (e) {}
+      }
+    });
+  }
+
   const close = () => {
     modal.classList.remove('opacity-100');
     modal.children[0].classList.add('-translate-y-6');
@@ -1110,11 +1174,7 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
   const startDate = String(regData.get('startDate'));
   const endDate = String(regData.get('endDate'));
 
-  reservation.customerId = customerId;
-  reservation.tid = transactionId;
-  await createReservationFE(reservation);
-
-  // 3) Create pending payment with cashless hint and reference number
+  // Create pending payment first; only create reservation after backend accepts it
   {
     const resp = await fetch(`${API_BASE_URL}/payment/pending`, {
       method: 'POST',
@@ -1132,11 +1192,17 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
     });
     if (!resp.ok) {
       if (resp.status === 409) {
+        // Duplicate reference: do not create a reservation entry
         throw new Error('DUPLICATE_REF');
       }
       throw new Error(`HTTP_${resp.status}`);
     }
   }
+
+  // Backend accepted the payment pending record; now persist the reservation
+  reservation.customerId = customerId;
+  reservation.tid = transactionId;
+  await createReservationFE(reservation);
 }
 
 function openConfirmationModal() {
