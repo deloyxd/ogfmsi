@@ -221,7 +221,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                           const selectedReason = reasonSelect ? reasonSelect.value : '';
 
                           if (!selectedReason) {
-                            alert('Please select a reason for cancellation.');
+                            main.toast('Please select a reason for cancellation.', 'error');
                             return;
                           }
 
@@ -233,7 +233,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                             const matchingReservation = reservations.find((r) => r.tid === transactionId);
 
                             if (!matchingReservation) {
-                              alert('No matching reservation found for this transaction.');
+                              main.toast('No matching reservation found for this transaction.', 'error');
                               return;
                             }
 
@@ -816,6 +816,19 @@ function closeConsolidateTransactionsModal() {
   try {
     updateSelectedCountUI();
   } catch (_) {}
+  
+  // Reset date range inputs
+  const startInput = document.getElementById('consolidateStartDate');
+  const endInput = document.getElementById('consolidateEndDate');
+  if (startInput) startInput.value = '';
+  if (endInput) endInput.value = '';
+  
+  // Reset the date range filter
+  consolidateRange = { start: null, end: null };
+  
+  // Re-fetch and display the original first 10 transactions
+  fetchFirstFiveTransactions();
+  
   modal.classList.remove('opacity-100');
   modal.children[0].classList.add('-translate-y-6');
   modal.children[0].classList.remove('scale-100');
