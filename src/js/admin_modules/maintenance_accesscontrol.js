@@ -33,7 +33,20 @@ async function fetchAllSystemUsers() {
         },
         main.fixText(systemUser.admin_role),
       ];
-      main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {});
+      main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
+        // Add event listeners for Update and Delete buttons
+        const btns = createResult.children[createResult.children.length - 1].children[0];
+        const updateBtn = btns.querySelector('#userUpdateBtn');
+        const deleteBtn = btns.querySelector('#userDeleteBtn');
+        
+        if (updateBtn) {
+          updateBtn.addEventListener('click', () => handleUpdateUser(systemUser));
+        }
+        
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => handleDeleteUser(systemUser));
+        }
+      });
     });
   } catch (err) {}
 }
@@ -172,6 +185,171 @@ export function log(action, data) {
 }
 
 export default { log };
+
+function handleUpdateUser(systemUser) {
+  const inputs = {
+    header: {
+      title: `Update System User ${getEmoji('🔧', 26)}`,
+      subtitle: 'Edit User Information',
+    },
+    image: {
+      src: systemUser.admin_image_url,
+      type: 'normal',
+      short: [
+        {
+          placeholder: 'Full Name',
+          value: systemUser.admin_full_name,
+          required: true,
+        },
+        {
+          placeholder: 'Username',
+          value: systemUser.admin_username,
+          required: true,
+        },
+        {
+          placeholder: 'Password (leave blank to keep current)',
+          value: '',
+          required: false,
+        },
+      ],
+    },
+    spinner: [
+      {
+        label: 'User Role',
+        placeholder: 'Select user role',
+        selected: USER_ROLES.findIndex(role => role.value === systemUser.admin_role),
+        required: true,
+        options: USER_ROLES,
+      },
+    ],
+  };
+
+  main.openModal(mainBtn, inputs, (result) => {
+    main.closeModal(() => {
+      const fullName = result.image.short[0].value;
+      const username = result.image.short[1].value;
+      const password = result.image.short[2].value;
+      const role = main.getSelectedSpinner(result.spinner[0]);
+
+      if (!fullName || !username || !role) {
+        main.toast('Please fill all required fields', 'error');
+        return;
+      }
+
+      try {
+        main.sharedState.moduleLoad = SECTION_NAME;
+        window.showGlobalLoading?.();
+        
+        const updateData = {
+          admin_id: systemUser.admin_id,
+          admin_image_url: result.image.src,
+          admin_full_name: fullName,
+          admin_username: username,
+          admin_role: role,
+        };
+
+        // Only include password if provided
+        if (password && password.trim() !== '') {
+          updateData.admin_password = password;
+        }
+
+        fetch(`${API_BASE_URL}/admin/users/${systemUser.admin_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        })
+        .then(resp => resp.json())
+        .then(data => {
+          if (!data.error) {
+            main.toast('User updated successfully!', 'success');
+            fetchAllSystemUsers(); // Refresh the list
+          } else {
+            throw new Error(data.error);
+          }
+        })
+        .catch(err => {
+          console.error('Update user error:', err);
+          main.toast(String(err.message || err), 'error');
+        })
+        .finally(() => {
+          window.hideGlobalLoading?.();
+        });
+      } catch (e) {
+        console.error('Update user error:', e);
+        main.toast(String(e.message || e), 'error');
+        window.hideGlobalLoading?.();
+      }
+    });
+  });
+}
+
+function handleDeleteUser(systemUser) {
+  const inputs = {
+    header: {
+      title: `Delete System User ${getEmoji('🔧', 26)}`,
+      subtitle: 'Confirm User Deletion',
+    },
+    image: {
+      src: systemUser.admin_image_url,
+      type: 'normal',
+      locked: true,
+      short: [
+        { placeholder: 'Full Name', value: systemUser.admin_full_name, locked: true },
+        { placeholder: 'Username', value: systemUser.admin_username, locked: true },
+        { placeholder: 'Role', value: systemUser.admin_role, locked: true },
+      ],
+    },
+    short: [
+      {
+        placeholder: 'Warning',
+        value: 'This action cannot be undone. The user will be permanently deleted.',
+        locked: true,
+      },
+    ],
+    footer: {
+      main: 'Confirm Delete',
+      sub: 'Cancel',
+    },
+  };
+
+  main.openModal(mainBtn, inputs, (result) => {
+    if (result.footer.main) {
+      main.closeModal(() => {
+        try {
+          main.sharedState.moduleLoad = SECTION_NAME;
+          window.showGlobalLoading?.();
+          
+          fetch(`${API_BASE_URL}/admin/users/${systemUser.admin_id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+          })
+          .then(resp => resp.json())
+          .then(data => {
+            if (!data.error) {
+              main.toast('User deleted successfully!', 'success');
+              fetchAllSystemUsers(); // Refresh the list
+            } else {
+              throw new Error(data.error);
+            }
+          })
+          .catch(err => {
+            console.error('Delete user error:', err);
+            main.toast(String(err.message || err), 'error');
+          })
+          .finally(() => {
+            window.hideGlobalLoading?.();
+          });
+        } catch (e) {
+          console.error('Delete user error:', e);
+          main.toast(String(e.message || e), 'error');
+          window.hideGlobalLoading?.();
+        }
+      });
+    } else {
+      main.closeModal();
+    }
+  });
+}
 
 function getInputs(actionData) {
   if (actionData.type.includes('user')) {
