@@ -161,11 +161,20 @@ router.post('/users', async (req, res) => {
 
     // Check duplicate username
     const [dupes] = await db.query(
-      'SELECT id FROM admin_users_tbl WHERE admin_username = ? LIMIT 1',
+      'SELECT admin_id FROM admin_users_tbl WHERE admin_username = ? LIMIT 1',
       [admin_username]
     );
     if (dupes && dupes.length > 0) {
       return res.status(409).json({ error: 'Username already exists' });
+    }
+
+    // Check duplicate admin_id
+    const [idDupes] = await db.query(
+      'SELECT admin_id FROM admin_users_tbl WHERE admin_id = ? LIMIT 1',
+      [admin_id]
+    );
+    if (idDupes && idDupes.length > 0) {
+      return res.status(409).json({ error: 'Admin ID already exists' });
     }
 
     const admin_password_hash = hashPassword(String(admin_password));

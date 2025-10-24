@@ -100,8 +100,8 @@ function mainBtnFunction() {
     ],
   };
 
-  main.openModal(mainBtn, inputs, (result) => {
-    main.closeModal(() => {
+  main.openModal(mainBtn, inputs, async (result) => {
+    main.closeModal(async () => {
       const fullName = result.image.short[0].value;
       const username = result.image.short[1].value;
       const password = result.image.short[2].value;
@@ -113,42 +113,38 @@ function mainBtnFunction() {
       }
 
       try {
-        const columnsData = [
-          'id_A_random',
-          {
-            type: 'object_username',
-            data: [result.image.src, fullName, username],
-          },
-          main.fixText(role),
-        ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
-          main.sharedState.moduleLoad = SECTION_NAME;
-          window.showGlobalLoading?.();
-          try {
-            const resp = await fetch(`${API_BASE_URL}/admin/users`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                admin_id: createResult.dataset.id,
-                admin_image_url: result.image.src,
-                admin_full_name: fullName,
-                admin_username: username,
-                admin_role: role,
-                admin_password: password,
-              }),
-            });
-            const data = await resp.json();
-            if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
-            const systemUser = data.result;
-            main.toast('Admin user created successfully!', 'success');
-          } catch (err) {
-          } finally {
-            window.hideGlobalLoading?.();
-          }
+        main.sharedState.moduleLoad = SECTION_NAME;
+        window.showGlobalLoading?.();
+        
+        // Generate a unique ID for the new user
+        const adminId = 'A' + Date.now() + Math.floor(Math.random() * 1000);
+        
+        const resp = await fetch(`${API_BASE_URL}/admin/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            admin_id: adminId,
+            admin_image_url: result.image.src,
+            admin_full_name: fullName,
+            admin_username: username,
+            admin_role: role,
+            admin_password: password,
+          }),
         });
+        
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+        
+        main.toast('Admin user created successfully!', 'success');
+        
+        // Refresh the entire user list to show the new user
+        fetchAllSystemUsers();
+        
       } catch (e) {
         console.error('Create admin error:', e);
         main.toast(String(e.message || e), 'error');
+      } finally {
+        window.hideGlobalLoading?.();
       }
     });
   });
