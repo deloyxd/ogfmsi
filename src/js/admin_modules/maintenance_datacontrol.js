@@ -25,6 +25,7 @@ let lastLoadedTab = null,
   lastLoadedAt = 0;
 
 let reservationsUnsubscribe = null;
+let reservationsLoadedOnce = false;
 
 // Initialize module when admin main is loaded
 document.addEventListener('ogfmsiAdminMainLoaded', async function () {
@@ -130,6 +131,7 @@ async function loadTabData(tabIndex) {
 
 // Fetch and display monthly users
 async function loadMonthlyUsers() {
+  let hadError = false;
   try {
     const response = await fetch(`${API_BASE_URL}/inquiry/monthly`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -145,6 +147,10 @@ async function loadMonthlyUsers() {
       if (seenMonthly.has(user.customer_id)) continue;
       seenMonthly.add(user.customer_id);
       const customerData = await getCustomerData(user.customer_id);
+      // Exclude archived customers from Monthly Users tab
+      if (String(customerData?.customer_type || '').toLowerCase() === 'archived') {
+        continue;
+      }
       const fullName = customerData
         ? `${customerData.customer_first_name} ${customerData.customer_last_name}`
         : 'Unknown';
@@ -184,11 +190,15 @@ async function loadMonthlyUsers() {
   } catch (error) {
     console.error('Error loading monthly users:', error);
     main.toast('Error loading monthly users', 'error');
+    hadError = true;
+  } finally {
+    try { if (!hadError) main.toast('Monthly Users loaded', 'success'); } catch (_) {}
   }
 }
 
 // Fetch and display regular/daily users
 async function loadRegularUsers() {
+  let hadError = false;
   try {
     const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -259,6 +269,9 @@ async function loadRegularUsers() {
   } catch (error) {
     console.error('Error loading regular users:', error);
     main.toast('Error loading regular users', 'error');
+    hadError = true;
+  } finally {
+    try { if (!hadError) main.toast('Daily Check-ins loaded', 'success'); } catch (_) {}
   }
 }
 
@@ -307,11 +320,14 @@ async function loadStudents() {
   } catch (error) {
     console.error('Error loading students:', error);
     main.toast('Error loading students', 'error');
+  } finally {
+    try { /* optional student-only toast if this tab is used */ } catch (_) {}
   }
 }
 
 // Fetch and display supplement products
 async function loadSupplements() {
+  let hadError = false;
   try {
     const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -385,6 +401,9 @@ async function loadSupplements() {
   } catch (error) {
     console.error('Error loading supplements:', error);
     main.toast('Error loading supplements', 'error');
+    hadError = true;
+  } finally {
+    try { if (!hadError) main.toast('Supplements / Products loaded', 'success'); } catch (_) {}
   }
 }
 
@@ -426,6 +445,7 @@ async function getProductSalesAggregates() {
 // Fetch and display upcoming reservations
 async function loadReservations() {
   try {
+    reservationsLoadedOnce = false;
     if (typeof reservationsUnsubscribe === 'function') {
       try {
         reservationsUnsubscribe();
@@ -521,6 +541,10 @@ async function loadReservations() {
               setupRowEditing(createResult, 'reservation', reservation);
             });
           });
+          if (!reservationsLoadedOnce) {
+            reservationsLoadedOnce = true;
+            try { main.toast('Reservations loaded', 'success'); } catch (_) {}
+          }
         } catch (e) {
           console.error('Reservations listener processing error:', e);
         }
