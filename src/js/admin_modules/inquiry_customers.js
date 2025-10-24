@@ -84,6 +84,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
         customers.result.forEach((customer) => {
           if (!customer || !customer.customer_id) return;
+          // Skip archived customers from the "All Registered Customers" tab
+          const customerTypeLower = String(customer.customer_type || '').toLowerCase();
+          if (customerTypeLower.includes('archiv')) return;
           if (seenCustomerIds.has(customer.customer_id)) return;
           main.createAtSectionOne(
             SECTION_NAME,
