@@ -508,8 +508,23 @@ function hasReachedStartDate(customer) {
   }
 }
 
-// Listener for modal inputs: auto-correct casing on every input change
+// Utility: Remove special characters and numbers from name input
+function sanitizeNameInput(str = '') {
+  // Remove all characters except letters, spaces, hyphens, and apostrophes
+  return String(str).replace(/[^a-zA-Z\s\-']/g, '');
+}
+
+// Listener for modal inputs: auto-correct casing and remove invalid characters on every input change
 function nameAutoCaseListener(inputEl) {
+  // First sanitize the input to remove special characters and numbers
+  const sanitized = sanitizeNameInput(inputEl.value);
+  if (inputEl.value !== sanitized) {
+    inputEl.value = sanitized;
+    // Trigger input to sync bound data structures; guard ensures no infinite loop
+    inputEl.dispatchEvent(new Event('input'));
+  }
+  
+  // Then apply title case formatting
   const corrected = toTitleCaseName(inputEl.value);
   if (inputEl.value !== corrected) {
     inputEl.value = corrected;
@@ -521,6 +536,17 @@ function nameAutoCaseListener(inputEl) {
 // Validate customer registration for similar names
 async function validateCustomerRegistration(firstName, lastName, customerId = null) {
   try {
+    // Validate name format - only letters, spaces, hyphens, and apostrophes allowed
+    const nameRegex = /^[a-zA-Z\s\-']+$/;
+    if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+      return { isValid: false, error: 'Names can only contain letters, spaces, hyphens, and apostrophes' };
+    }
+    
+    // Check for minimum length
+    if (firstName.trim().length < 2 || lastName.trim().length < 2) {
+      return { isValid: false, error: 'First and last names must be at least 2 characters long' };
+    }
+    
     const newNameNorm = normalizeCustomerName(firstName, lastName);
     if (newNameNorm.length < 3) {
       return { isValid: true, similarCustomer: null };
@@ -707,6 +733,10 @@ function mainBtnFunction(
         // Validate for similar customers before proceeding
         const validation = await validateCustomerRegistration(firstName, lastName, customer?.id);
         if (!validation.isValid) {
+          if (validation.error) {
+            main.toast(validation.error, 'error');
+            return;
+          }
           showSimilarCustomerModal(validation.similarCustomer, firstName, lastName);
           return;
         }
