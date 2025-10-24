@@ -355,6 +355,17 @@ async function submitClicked(e) {
         }).showToast();
       } catch (error) {
         console.error('Error creating customer:', error);
+        Swal.fire({
+          title: 'Sign Up Failed',
+          text: error?.message || 'We could not complete your registration. Please try again.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#ef4444',
+        });
+        submitBtn.innerHTML = oldSubmitBtn;
+        submitBtn.disabled = false;
+        // Ensure Google button remains clickable after errors
+        if (googleSignInBtn) googleSignInBtn.disabled = false;
       }
     } else {
       if (!sanitizedEmail || !sanitizedPassword) {
@@ -418,6 +429,24 @@ async function submitClicked(e) {
         }).showToast();
       } catch (error) {
         console.error('Error fetching customer:', error);
+        let message = 'Login failed. Please check your email and password.';
+        const code = error?.code || '';
+        if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') message = 'Incorrect email or password.';
+        else if (code === 'auth/user-not-found') message = 'No account found with this email.';
+        else if (code === 'auth/too-many-requests') message = 'Too many attempts. Try again later.';
+
+        Swal.fire({
+          title: 'Unable to Sign In',
+          text: message,
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#ef4444',
+        });
+        submitBtn.innerHTML = oldSubmitBtn;
+        submitBtn.disabled = false;
+        // Ensure Google button remains clickable after errors
+        if (googleSignInBtn) googleSignInBtn.disabled = false;
+        return;
       }
     }
   } catch (error) {
@@ -431,6 +460,8 @@ async function submitClicked(e) {
     });
     submitBtn.innerHTML = oldSubmitBtn;
     submitBtn.disabled = false;
+    // Ensure Google button remains clickable after errors
+    if (googleSignInBtn) googleSignInBtn.disabled = false;
   }
 }
 
