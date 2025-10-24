@@ -731,9 +731,27 @@ function exportToPDF() {
   headerSection.style.borderBottom = '2px solid #333333';
   headerSection.style.paddingBottom = '20px';
 
+  // Gym Name and Address (Top)
+  const gymName = document.createElement('div');
+  gymName.textContent = 'Fitworx Gym';
+  gymName.style.textAlign = 'center';
+  gymName.style.margin = '0';
+  gymName.style.fontSize = '20px';
+  gymName.style.fontWeight = '700';
+  gymName.style.color = '#1a1a1a';
+  gymName.style.letterSpacing = '0.3px';
+
+  const gymAddress = document.createElement('div');
+  gymAddress.textContent = 'Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila 0939 874 5377';
+  gymAddress.style.textAlign = 'center';
+  gymAddress.style.margin = '4px 0 12px 0';
+  gymAddress.style.fontSize = '12px';
+  gymAddress.style.color = '#4a4a4a';
+  gymAddress.style.fontWeight = '500';
+
   const title = document.createElement('h1');
   title.textContent = `${currentTabName} Report`;
-  title.style.textAlign = 'left';
+  title.style.textAlign = 'center';
   title.style.margin = '0 0 8px 0';
   title.style.fontSize = '24px';
   title.style.fontWeight = '600';
@@ -742,12 +760,14 @@ function exportToPDF() {
 
   const subtitle = document.createElement('div');
   subtitle.textContent = main.getDateOrTimeOrBoth().datetime;
-  subtitle.style.textAlign = 'left';
+  subtitle.style.textAlign = 'center';
   subtitle.style.margin = '0';
   subtitle.style.fontSize = '13px';
   subtitle.style.color = '#666666';
   subtitle.style.fontWeight = '400';
 
+  headerSection.appendChild(gymName);
+  headerSection.appendChild(gymAddress);
   headerSection.appendChild(title);
   headerSection.appendChild(subtitle);
 
@@ -1025,21 +1045,36 @@ function exportToExcel() {
   const sanitizedTabName = currentTabName.replace(/[*?:\\/\[\]]/g, '-');
   const ws = wb.addWorksheet(sanitizedTabName);
 
-  // Excel Title Styling - Clean Corporate
+  // Excel Header: Gym name, address, and centered title with timestamp
+  const gymNameText = 'Fitworx Gym';
+  const gymAddrText = 'Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila 0939 874 5377';
   const titleText = `${currentTabName} Report - ${main.getDateOrTimeOrBoth().datetime}`;
-  ws.addRow([titleText]);
-  ws.mergeCells(1, 1, 1, headers.length);
-  const titleCell = ws.getCell(1, 1);
+
+  const gymNameRow = ws.addRow([gymNameText]);
+  ws.mergeCells(gymNameRow.number, 1, gymNameRow.number, headers.length);
+  const gymNameCell = ws.getCell(gymNameRow.number, 1);
+  gymNameCell.font = { bold: true, size: 16, color: { argb: 'FF1a1a1a' } };
+  gymNameCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  const gymAddrRow = ws.addRow([gymAddrText]);
+  ws.mergeCells(gymAddrRow.number, 1, gymAddrRow.number, headers.length);
+  const gymAddrCell = ws.getCell(gymAddrRow.number, 1);
+  gymAddrCell.font = { bold: false, size: 11, color: { argb: 'FF4a4a4a' } };
+  gymAddrCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  const titleRow = ws.addRow([titleText]);
+  ws.mergeCells(titleRow.number, 1, titleRow.number, headers.length);
+  const titleCell = ws.getCell(titleRow.number, 1);
   titleCell.font = { bold: true, size: 14, color: { argb: 'FF1a1a1a' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFf5f5f5' } };
-  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
   titleCell.border = {
     top: { style: 'thin', color: { argb: 'FF333333' } },
     left: { style: 'thin', color: { argb: 'FF333333' } },
     bottom: { style: 'medium', color: { argb: 'FF333333' } },
     right: { style: 'thin', color: { argb: 'FF333333' } },
   };
-  ws.getRow(1).height = 30;
+  ws.getRow(titleRow.number).height = 30;
 
   // Add spacing row
   ws.addRow([]);
