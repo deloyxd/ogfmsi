@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { app } from './firebase.js';
 import { API_BASE_URL } from './_global.js';
@@ -77,6 +78,7 @@ const toggleButton = document.getElementById('toggleForm');
 const welcomeText = document.getElementById('welcomeText');
 const submitBtnLabel = document.getElementById('submitBtnLabel');
 const googleSignInBtn = document.getElementById('googleSignInBtn');
+const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
 function setupLoginForm() {
   googleSignInBtn.addEventListener('click', async () => {
@@ -247,6 +249,7 @@ function setupLoginForm() {
   showPassword1Button.addEventListener('click', showPassword1Clicked);
   showPassword2Button.addEventListener('click', showPassword2Clicked);
   toggleButton.addEventListener('click', toggleFormClicked);
+  forgotPasswordLink.addEventListener('click', forgotPasswordClicked);
 }
 
 function resetInputFields() {
@@ -447,6 +450,52 @@ function showPassword2Clicked() {
   this.querySelector('i').classList.toggle('fa-eye-slash');
 }
 
+async function forgotPasswordClicked() {
+  try {
+    const candidate = (username.value || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    let email = candidate;
+    if (!emailRegex.test(candidate)) {
+      const { value, isConfirmed } = await Swal.fire({
+        title: 'Reset password',
+        input: 'email',
+        inputLabel: 'Enter your account email',
+        inputValue: candidate,
+        inputAttributes: { autocapitalize: 'off' },
+        showCancelButton: true,
+        confirmButtonText: 'Send reset link',
+        confirmButtonColor: '#f97316',
+        cancelButtonText: 'Cancel',
+        preConfirm: (val) => {
+          if (!emailRegex.test((val || '').trim())) {
+            Swal.showValidationMessage('Please enter a valid email address.');
+            return false;
+          }
+          return (val || '').trim();
+        },
+      });
+      if (!isConfirmed) return;
+      email = value;
+    }
+
+    await sendPasswordResetEmail(auth, email);
+    Swal.fire({
+      icon: 'success',
+      title: 'Email sent',
+      text: 'If an account exists for this email, a reset link has been sent.',
+      confirmButtonColor: '#22c55e',
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Unable to send reset email',
+      text: error.message,
+      confirmButtonColor: '#ef4444',
+    });
+  }
+}
+
 function toggleFormClicked(e) {
   e.preventDefault();
 
@@ -487,6 +536,9 @@ function toggleFormClicked(e) {
   }
 
   submitBtnLabel.innerText = isLoginMode ? 'Sign Up' : 'Sign In';
+
+  const newIsLoginMode = !isLoginMode;
+  forgotPasswordLink.classList.toggle('hidden', !newIsLoginMode);
 }
 
 function updatePanelText(isLoginMode) {
