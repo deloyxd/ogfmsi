@@ -163,7 +163,9 @@ function hasTimeConflict(newStartTime, newEndTime, newDate) {
     const existingStart = new Date(year, month - 1, day, existingStartHour, existingStartMinute, 0, 0);
     const existingEnd = new Date(year, month - 1, day, existingEndHour, existingEndMinute, 0, 0);
 
-    return newStart < existingEnd && newEnd > existingStart;
+    // Treat boundary times as conflicts to enforce 1-minute buffer via main rule
+    // e.g., if an event ends at 15:00, starting at 15:00 is considered conflicting
+    return newStart <= existingEnd && newEnd >= existingStart;
   });
 }
 
@@ -722,7 +724,20 @@ function sectionTwoMainBtnFunction() {
                 )}`
               : 'the same time';
 
-            throw new Error(`This time slot is already booked by ${conflictingCustomerName} (${conflictingTime})`);
+            // Suggest the next available time (existing end + 1 minute)
+            let suggestion = '';
+            if (conflictingReservation) {
+              const [eh, em] = conflictingReservation.endTime.split(':').map(Number);
+              const s = new Date(1970, 0, 1, eh, em, 0, 0);
+              const next = new Date(s.getTime() + 60000);
+              const h = next.getHours().toString().padStart(2, '0');
+              const m = next.getMinutes().toString().padStart(2, '0');
+              suggestion = ` Next booking is available at ${main.decodeTime(`${h}:${m}`)}.`;
+            }
+
+            throw new Error(
+              `This time slot is already booked by ${conflictingCustomerName} (${conflictingTime}).${suggestion}`
+            );
           }
 
           if (hasMinimumGap(startTime, endTime, reservationDate)) {
