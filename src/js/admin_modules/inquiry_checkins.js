@@ -89,16 +89,29 @@ async function loadAllCheckins() {
     ]);
 
     if (regularResp.ok) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 1);
       const data = await regularResp.json();
-      data.result.forEach((r) => renderCheckinFromBackend(r, 1));
+      data.result.forEach((r) => {
+        if (isToday(r.created_at)) renderCheckinFromBackend(r, 1);
+      });
     }
     if (monthlyResp.ok) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 2);
       const data = await monthlyResp.json();
-      data.result.forEach((r) => renderCheckinFromBackend(r, 2));
+      data.result.forEach((r) => {
+        if (isToday(r.created_at)) renderCheckinFromBackend(r, 2);
+      });
     }
   } catch (error) {
     console.error('Failed to load check-ins:', error);
   }
+}
+
+function isToday(date) {
+  date = date.split('T')[0];
+  const today = new Date();
+  const checkinDate = new Date(date);
+  return today.toDateString() === checkinDate.toDateString();
 }
 
 function renderCheckinFromBackend(record, tabIndex) {
@@ -158,7 +171,8 @@ function setupMidnightClear() {
   const today = now.toDateString();
 
   if (lastClearDate !== today) {
-    clearAllCheckins();
+    // clearAllCheckins();
+     loadAllCheckins();
     localStorage.setItem('monthlyCheckinsLastCleared', today);
   }
 
@@ -169,7 +183,8 @@ function setupMidnightClear() {
     // refresh lastClearDate from storage to avoid stale closure value
     lastClearDate = localStorage.getItem('monthlyCheckinsLastCleared');
     if (lastClearDate !== currentDate) {
-      clearAllCheckins();
+      // clearAllCheckins();
+     loadAllCheckins();
       localStorage.setItem('monthlyCheckinsLastCleared', currentDate);
     }
   }, 60000); // 1 minute interval
