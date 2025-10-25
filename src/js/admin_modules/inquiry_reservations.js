@@ -582,7 +582,18 @@ function sectionTwoMainBtnFunction() {
                 if (!/^\d{2}:\d{2}$/.test(start)) return;
 
                 const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-                const endMinutes = (h * 60 + m + selectedDuration * 60) % 1440;
+                const endTotalMinutes = h * 60 + m + selectedDuration * 60;
+                // Block if computed end crosses midnight (beyond 23:59 of the same day)
+                if (endTotalMinutes > 23 * 60 + 59) {
+                  main.toast('Reservation cannot end after 11:59 PM', 'error');
+                  const endInputBlock = container.querySelector('#input-short-36');
+                  if (endInputBlock) {
+                    endInputBlock.value = '';
+                    endInputBlock.dispatchEvent(new Event('input'));
+                  }
+                  return;
+                }
+                const endMinutes = endTotalMinutes;
                 const endH = Math.floor(endMinutes / 60)
                   .toString()
                   .padStart(2, '0');
@@ -613,7 +624,18 @@ function sectionTwoMainBtnFunction() {
                 const selectedDuration = DURATION_OPTIONS[durationSelect?.selectedIndex - 1]?.value || 1;
 
                 const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-                const endMinutes = (h * 60 + m + selectedDuration * 60) % 1440;
+                const endTotalMinutes = h * 60 + m + selectedDuration * 60;
+                // Block if computed end crosses midnight (beyond 23:59 of the same day)
+                if (endTotalMinutes > 23 * 60 + 59) {
+                  main.toast('Reservation cannot end after 11:59 PM', 'error');
+                  const endInputBlock = container.querySelector('#input-short-36');
+                  if (endInputBlock) {
+                    endInputBlock.value = '';
+                    endInputBlock.dispatchEvent(new Event('input'));
+                  }
+                  return;
+                }
+                const endMinutes = endTotalMinutes;
                 const endH = Math.floor(endMinutes / 60)
                   .toString()
                   .padStart(2, '0');
@@ -703,8 +725,13 @@ function sectionTwoMainBtnFunction() {
             throw new Error('Reservation cannot start before 9:00 AM');
           }
 
-          if (endHour > 23 || (endHour === 23 && endMinutes === 60)) {
-            throw new Error('Reservation cannot end after 11:59 PM');
+          // Enforce hard cutoff at 11:59 PM regardless of UI listeners
+          {
+            const [sh, sm] = startTime.split(':').map((n) => parseInt(n, 10));
+            const computedEndTotalMinutes = sh * 60 + sm + selectedDuration * 60;
+            if (computedEndTotalMinutes > 23 * 60 + 59) {
+              throw new Error('Reservation cannot end after 11:59 PM');
+            }
           }
 
           const todayFormatted = main.encodeDate(new Date(), '2-digit');
