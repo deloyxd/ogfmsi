@@ -1817,6 +1817,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.toast(`Cash payment method doesn't need reference number: ${refNum}`, 'error');
       return;
     }
+    if (refNum === 'N/A') refNum = '';
 
     function continueProcessPayment() {
           const dateTimeText = `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`;
