@@ -1305,7 +1305,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
     function continueCustomerProcessBtnFunction() {
       main.openModal('yellow', inputs, (result) => {
-        const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
+        const isMonthlyCustomer = customer.dataset.custom4.toLowerCase().includes('days') || customer.dataset.custom2.toLowerCase().includes('active');
         const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
         const priceRate = customer.dataset.custom3.toLowerCase();
         let amount =
