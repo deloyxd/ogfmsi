@@ -154,7 +154,8 @@ function hasTimeConflict(newStartTime, newEndTime, newDate) {
   const newEnd = new Date(year, month - 1, day, newEndHour, newEndMinute, 0, 0);
 
   return existingReservations.some((reservation) => {
-    if (reservation.date !== newDate) return false;
+    const [rm, rd, ry] = (reservation.date || '').split('-').map(Number);
+    if (!(rm === month && rd === day && ry === year)) return false;
 
     const [existingStartHour, existingStartMinute] = reservation.startTime.split(':').map(Number);
     const [existingEndHour, existingEndMinute] = reservation.endTime.split(':').map(Number);
@@ -227,7 +228,8 @@ function getConflictingReservation(newStartTime, newEndTime, newDate) {
   const newEnd = new Date(year, month - 1, day, newEndHour, newEndMinute, 0, 0);
 
   return existingReservations.find((reservation) => {
-    if (reservation.date !== newDate) return false;
+    const [rm, rd, ry] = (reservation.date || '').split('-').map(Number);
+    if (!(rm === month && rd === day && ry === year)) return false;
 
     const [existingStartHour, existingStartMinute] = reservation.startTime.split(':').map(Number);
     const [existingEndHour, existingEndMinute] = reservation.endTime.split(':').map(Number);
@@ -257,10 +259,12 @@ function hasMinimumGap(newStartTime, newEndTime, newDate) {
     const existingStart = new Date(year, month - 1, day, existingStartHour, existingStartMinute, 0, 0);
     const existingEnd = new Date(year, month - 1, day, existingEndHour, existingEndMinute, 0, 0);
 
-    const gapAfter = newStart - existingEnd >= 60000;
-    const gapBefore = existingStart - newEnd >= 60000;
+    const gapAfterMs = newStart - existingEnd;
+    const gapBeforeMs = existingStart - newEnd;
+    const violatesAfter = gapAfterMs >= 0 && gapAfterMs < 60000; // starts within 1 min after existing end
+    const violatesBefore = gapBeforeMs >= 0 && gapBeforeMs < 60000; // ends within 1 min before existing start
 
-    return !gapAfter && !gapBefore;
+    return violatesAfter || violatesBefore;
   });
 }
 
@@ -282,10 +286,12 @@ function getConflictingReservationForGap(newStartTime, newEndTime, newDate) {
     const existingStart = new Date(year, month - 1, day, existingStartHour, existingStartMinute, 0, 0);
     const existingEnd = new Date(year, month - 1, day, existingEndHour, existingEndMinute, 0, 0);
 
-    const gapAfter = newStart - existingEnd >= 60000;
-    const gapBefore = existingStart - newEnd >= 60000;
+    const gapAfterMs = newStart - existingEnd;
+    const gapBeforeMs = existingStart - newEnd;
+    const violatesAfter = gapAfterMs >= 0 && gapAfterMs < 60000;
+    const violatesBefore = gapBeforeMs >= 0 && gapBeforeMs < 60000;
 
-    return !gapAfter && !gapBefore;
+    return violatesAfter || violatesBefore;
   });
 }
 
