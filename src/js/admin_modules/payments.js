@@ -1772,7 +1772,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
   main.openModal('yellow', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
-    const cashVal = Number(result.short[2].value) || 0;
+    const cashVal = result.short[2].value.includes('₱')
+      ? +main.decodePrice(result.short[2].value)
+      : Number(result.short[2].value) || 0;
     const cashlessVal = result.short[3].value.includes('₱')
       ? +main.decodePrice(result.short[3].value)
       : Number(result.short[3].value) || 0;
@@ -1816,9 +1818,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       return;
     }
 
-    if (isOnlineTransaction) {
-      main.openConfirmationModal('Confirming the gcash reference number is valid', () => {
-        main.closeConfirmationModal(() => {
+    function continueProcessPayment() {
           const dateTimeText = `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`;
           const columnsData = [
             'id_' + id,
@@ -2363,8 +2363,16 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               console.error('Error creating complete payment:', error);
             }
           });
+    }
+
+    if (isOnlineTransaction) {
+      main.openConfirmationModal('Confirming the gcash reference number is valid', () => {
+        main.closeConfirmationModal(() => {
+          continueProcessPayment();
         });
       });
+    } else {
+      continueProcessPayment();
     }
   });
 
