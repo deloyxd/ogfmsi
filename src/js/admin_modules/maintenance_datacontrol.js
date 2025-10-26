@@ -84,7 +84,7 @@ async function switchToTab(tabIndex) {
     activeTab.classList.add('bg-gray-300', 'text-gray-800');
   }
 
-  // await loadTabData(tabIndex);
+  await loadTabData(tabIndex);
 }
 
 // Load data for specified tab with throttle guard
@@ -196,82 +196,86 @@ async function loadMonthlyUsers() {
   }
 }
 
-// Fetch and display regular/daily users
+// Fetch and display Daily Check-ins (today) from both Regular and Monthly check-ins
 async function loadRegularUsers() {
   let hadError = false;
   try {
-    const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    // Load today's Regular and Monthly check-ins from backend
+    const [regularResp, monthlyResp] = await Promise.all([
+      fetch(`${API_BASE_URL}/inquiry/checkins/regular`),
+      fetch(`${API_BASE_URL}/inquiry/checkins/monthly`),
+    ]);
+    if (!regularResp.ok) throw new Error(`HTTP error! status: ${regularResp.status}`);
+    if (!monthlyResp.ok) throw new Error(`HTTP error! status: ${monthlyResp.status}`);
 
-    const data = await response.json();
-    const all = (data.result || []).filter(Boolean);
-    // Daily users
-    const dailyUsers = all.filter(
-      (user) => String(user.customer_type || '').toLowerCase() === 'daily'
-    );
-    // Students (by rate)
-    const studentUsers = all.filter(
-      (user) => String(user.customer_rate || '').toLowerCase() === 'student'
-    );
+    const regularData = await regularResp.json();
+    const monthlyData = await monthlyResp.json();
+    const regularAll = (regularData.result || []).filter(Boolean).map((r) => ({ ...r, _src: 'regular' }));
+    const monthlyAll = (monthlyData.result || []).filter(Boolean).map((r) => ({ ...r, _src: 'monthly' }));
 
-    // Merge (union by customer_id), prefer daily record details if duplicate
-    const combinedById = new Map();
-    studentUsers.forEach((u) => {
-      if (u && u.customer_id) combinedById.set(u.customer_id, u);
-    });
-    dailyUsers.forEach((u) => {
-      if (u && u.customer_id) combinedById.set(u.customer_id, u);
-    });
+    const isToday = (iso) => {
+      try {
+        const d = new Date(iso);
+        const t = new Date();
+        return (
+          d.getFullYear() === t.getFullYear() &&
+          d.getMonth() === t.getMonth() &&
+          d.getDate() === t.getDate()
+        );
+      } catch (_) { return false; }
+    };
 
-    const combined = Array.from(combinedById.values());
-    tableData.regularUsers = combined;
+    const todays = [...regularAll, ...monthlyAll].filter((r) => isToday(r.created_at));
+    tableData.regularUsers = todays; // keep combined for potential reuse
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
 
-    const seen = new Set();
-    combined.forEach((user) => {
-      if (!user || !user.customer_id) return;
-      if (seen.has(user.customer_id)) return;
-      seen.add(user.customer_id);
+    for (const record of todays) {
+      const customerId = record.customer_id || record.checkin_id;
+      if (!customerId) continue;
 
-      const isDaily = String(user.customer_type || '').toLowerCase() === 'daily';
-      const isStudentRate = String(user.customer_rate || '').toLowerCase() === 'student';
-      // Amount: Daily -> 60 (student) / 70 (regular); Otherwise (non-daily student) -> 850
-      const amount = isDaily ? (isStudentRate ? 60 : 70) : 850;
+      // Enrich with customer data to get rate and contact
+      const c = await getCustomerData(customerId);
+      const isStudentRate = String(c?.customer_rate || '').toLowerCase() === 'student';
       const priceRateLabel = isStudentRate ? 'Student' : 'Regular';
-      const typeLabel = isDaily ? 'Daily' : 'Student';
+      const typeLabel = record._src === 'monthly' ? 'Monthly' : 'Daily';
+      const amount =
+        record._src === 'monthly'
+          ? (isStudentRate ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular)
+          : (isStudentRate ? 60 : 70);
 
       const columnsData = [
-        'id_' + user.customer_id,
+        'id_' + customerId,
         typeLabel,
         {
           type: 'object_contact',
           data: [
-            user.customer_image_url || '/src/images/client_logo.jpg',
-            `${user.customer_first_name} ${user.customer_last_name}`,
-            user.customer_contact || '',
+            (c?.customer_image_url || record.customer_image_url || '/src/images/client_logo.jpg'),
+            (c ? `${c.customer_first_name} ${c.customer_last_name}` : record.customer_name_encoded),
+            (c?.customer_contact || record.customer_contact || ''),
           ],
         },
-        // Use full datetime to align with "Log Date & Time" (from created_at if available)
-        'custom_datetime_' + main.encodeDate(user.created_at, 'long') + ' - ' + main.encodeTime(user.created_at),
+        // Log Date & Time (from record)
+        'custom_datetime_' + main.encodeDate(record.created_at, 'long') + ' - ' + main.encodeTime(record.created_at, 'long'),
         priceRateLabel,
         main.encodePrice(amount),
       ];
 
       const existing = document
         .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
-        ?.parentElement?.parentElement?.querySelector(`[data-id="${user.customer_id}"]`);
-      if (existing) return;
+        ?.parentElement?.parentElement?.querySelector(`[data-id="${customerId}"]`);
+      if (existing) continue;
+
       main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        setupRowEditing(createResult, isDaily ? 'regular' : 'student', user);
+        setupRowEditing(createResult, 'regular', record);
       });
-    });
+    }
   } catch (error) {
-    console.error('Error loading regular users:', error);
-    main.toast('Error loading regular users', 'error');
+    console.error('Error loading daily check-ins:', error);
+    main.toast('Error loading daily check-ins', 'error');
     hadError = true;
   } finally {
-    try { if (!hadError) main.toast('Daily Check-ins loaded', 'success'); } catch (_) {}
+    try { if (!hadError) main.toast('Daily Check-ins (Today: Regular + Monthly) loaded', 'success'); } catch (_) {}
   }
 }
 
@@ -726,7 +730,111 @@ function subBtnFunction() {
 }
 
 // Export current tab data to PDF
-function exportToPDF() {
+// Open a simple date-range filter modal; resolves to { start: Date|null, end: Date|null } | null (export all) | undefined (cancel)
+function openDateRangeFilterModal(title = 'Filter by date range before export') {
+  return new Promise((resolve) => {
+    const modalHTML = `
+      <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-30 hidden" id="dcExportFilterModal">
+        <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
+          <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
+            <p class="text-base font-semibold">${title}</p>
+            <p class="text-xs">Leave blank to skip filtering or choose Export All</p>
+          </div>
+          <div class="p-4">
+            <label class="mb-1 block text-sm font-medium text-gray-700">Date range</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="date" id="dcExportStart" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <input type="date" id="dcExportEnd" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div class="mt-4 flex items-center justify-end gap-2">
+              <button type="button" id="dcExportFilteredBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">Export Filtered</button>
+              <button type="button" id="dcExportAllBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Export All</button>
+              <button type="button" id="dcExportCancelBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('dcExportFilterModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => {
+      modal.classList.add('opacity-100');
+      modal.children[0].classList.remove('-translate-y-6');
+      modal.children[0].classList.add('scale-100');
+    }, 10);
+
+    const cleanup = () => {
+      modal.classList.remove('opacity-100');
+      modal.children[0].classList.add('-translate-y-6');
+      modal.children[0].classList.remove('scale-100');
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); modal.remove(); }, 300);
+    };
+
+    document.getElementById('dcExportAllBtn').addEventListener('click', () => {
+      cleanup();
+      resolve(null);
+    });
+    document.getElementById('dcExportCancelBtn').addEventListener('click', () => {
+      cleanup();
+      resolve(undefined);
+    });
+    document.getElementById('dcExportFilteredBtn').addEventListener('click', () => {
+      const s = (document.getElementById('dcExportStart').value || '').trim();
+      const e = (document.getElementById('dcExportEnd').value || '').trim();
+      let start = s ? new Date(s) : null;
+      let end = e ? new Date(e) : null;
+      if (start && end && start > end) {
+        const t = start; start = end; end = t;
+      }
+      cleanup();
+      resolve({ start, end });
+    });
+  });
+}
+
+function findDateColumnIndices(headers = []) {
+  const idxs = [];
+  headers.forEach((h, i) => {
+    if (/date/i.test(h)) idxs.push(i);
+  });
+  return idxs;
+}
+
+function parseDateCell(value = '') {
+  try {
+    const text = String(value).trim();
+    const onlyDate = text.split(' - ')[0];
+    if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(onlyDate)) {
+      const [m, d, y] = onlyDate.split('-').map((n) => parseInt(n, 10));
+      return new Date(y, m - 1, d);
+    }
+    const dt = new Date(onlyDate);
+    if (!isNaN(dt.getTime())) return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  } catch (_) {}
+  return null;
+}
+
+function isWithinRange(d, start, end) {
+  if (!d) return false;
+  const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  if (start && end) {
+    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const e = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    return t >= s && t <= e;
+  }
+  if (start) {
+    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    return t >= s;
+  }
+  if (end) {
+    const e = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    return t <= e;
+  }
+  return true;
+}
+
+async function exportToPDF() {
   const tabNames = ['Monthly Users', 'Regular/Daily & Students', 'Supplements', 'Reservations'];
   const activeIndex = Number(main.sharedState.activeTab) || currentTab || 1;
   const currentTabName = tabNames[activeIndex - 1] || 'Report';
@@ -738,6 +846,10 @@ function exportToPDF() {
     main.toast('No data to export', 'error');
     return;
   }
+
+  // Ask for optional date range filter
+  const range = await openDateRangeFilterModal('Filter rows by date range before PDF export');
+  if (typeof range === 'undefined') return; // cancelled
 
   const tempContainer = document.createElement('div');
   tempContainer.style.position = 'absolute';
@@ -807,6 +919,24 @@ function exportToPDF() {
       if (emptyCell) {
         const emptyRow = emptyCell.closest('tr');
         if (emptyRow) emptyRow.remove();
+      }
+      // Apply date filtering if provided
+      if (range && (range.start || range.end)) {
+        const headers = Array.from(clonedContent.querySelectorAll('thead th')).map((th) => (th.textContent || '').trim());
+        const dateCols = findDateColumnIndices(headers);
+        if (dateCols.length > 0) {
+          Array.from(tbody.querySelectorAll('tr')).forEach((tr) => {
+            const cells = Array.from(tr.querySelectorAll('td'));
+            if (!cells.length) return;
+            // keep row if ANY date column falls within range
+            const anyMatch = dateCols.some((ci) => {
+              const val = (cells[ci]?.textContent || '').trim();
+              const d = parseDateCell(val);
+              return isWithinRange(d, range.start, range.end);
+            });
+            if (!anyMatch) tr.remove();
+          });
+        }
       }
       tbody.querySelectorAll('tr').forEach((tr) => {
         const last = tr.lastElementChild;
@@ -1032,7 +1162,7 @@ function exportToPDF() {
 }
 
 // Export current tab data to Excel
-function exportToExcel() {
+async function exportToExcel() {
   const tabNames = ['Monthly Users', 'Regular/Daily & Students', 'Supplements', 'Reservations'];
   const activeIndex = Number(main.sharedState.activeTab) || currentTab || 1;
   const currentTabName = tabNames[activeIndex - 1] || 'Report';
@@ -1042,6 +1172,10 @@ function exportToExcel() {
     main.toast('No data to export', 'error');
     return;
   }
+
+  // Ask for optional date range filter
+  const range = await openDateRangeFilterModal('Filter rows by date range before Excel export');
+  if (typeof range === 'undefined') return; // cancelled
 
   const headers = Array.from(table.querySelectorAll('thead th'))
     .slice(0, -1)
@@ -1057,7 +1191,18 @@ function exportToExcel() {
       const cells = Array.from(row.querySelectorAll('td'))
         .slice(0, -1)
         .map((td) => td.textContent.trim());
-      if (cells.length) rows.push(cells);
+      if (!cells.length) return;
+      if (range && (range.start || range.end)) {
+        const dateCols = findDateColumnIndices(headers);
+        if (dateCols.length > 0) {
+          const anyMatch = dateCols.some((ci) => {
+            const d = parseDateCell(cells[ci]);
+            return isWithinRange(d, range.start, range.end);
+          });
+          if (!anyMatch) return;
+        }
+      }
+      rows.push(cells);
     });
   }
 
