@@ -758,18 +758,16 @@ function mount() {
       if (hasTimeConflict(dateMMDDYYYY, startVal, endVal)) {
         e.preventDefault();
         const conflict = getConflictingReservation(dateMMDDYYYY, startVal, endVal);
-        const conflictName = conflict?.customerName || 'Another customer';
-        const conflictTime = conflict ? `${conflict.startTime} to ${conflict.endTime}` : 'this time';
-        showError(`This time slot is already booked by ${conflictName} (${conflictTime}).`);
+        const conflictTime = conflict ? `${conflict.startTime} to ${conflict.endTime}` : 'the selected time';
+        showError(`This time overlaps with an existing booking (${conflictTime}). Please choose a different time.`);
         return;
       }
 
       if (hasMinimumGap(dateMMDDYYYY, startVal, endVal)) {
         e.preventDefault();
         const conflict = getConflictingReservationForGap(dateMMDDYYYY, startVal, endVal);
-        const conflictName = conflict?.customerName || 'Another customer';
         const nextTime = getNextAvailableTime(dateMMDDYYYY, startVal, durationHours) || 'later';
-        showError(`This hour is booked by ${conflictName}. Next booking is available at ${nextTime}.`);
+        showError(`Selected time is too close to another booking. Earliest available start: ${nextTime}.`);
         return;
       }
 
