@@ -14,7 +14,8 @@ import customers from './inquiry_customers.js';
 // default codes:
 let activated = false,
   mainBtn,
-  subBtn;
+  subBtn,
+  logout;
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
   let systemUserRole = sessionStorage.getItem('systemUserRole') || '';
@@ -38,6 +39,37 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     mainBtn.addEventListener('click', mainBtnFunction);
     subBtn = document.querySelector(`.section-sub-btn[data-section="${main.sharedState.sectionName}"]`);
     subBtn.addEventListener('click', subBtnFunction);
+    logout = document.getElementById('logout');
+    logout.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      Swal.fire({
+        title: 'Logout',
+        text: 'Are you sure you want to log out?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Logout',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await signOut(auth);
+            sessionStorage.clear();
+            window.location.href = '/';
+          } catch (error) {
+            console.error('Logout Error:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Logout Failed',
+              text: error.message,
+              confirmButtonColor: '#ef4444',
+            });
+          }
+        }
+      });
+    });
     activated = true;
     setupChartOne();
     setupChartTwo();
