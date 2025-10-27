@@ -121,7 +121,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 try {
                   fullName = main.decodeName(findResult.dataset.text).fullName;
                 } catch (_) {}
-              } else {
+              } else if (pendingPayment.payment_customer_id !== 'U123') {
                 // fallback: fetch from backend in case DOM not yet populated
                 try {
                   const resp = await fetch(`${API_BASE_URL}/inquiry/customers/${encodeURIComponent(customerIdText)}`);
@@ -158,7 +158,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const isOnlineTransaction = pendingPayment.payment_purpose.toLowerCase().includes('online');
                   const isOnlineFacility = pendingPayment.payment_purpose.toLowerCase().includes('facility');
                   let customer;
-                  if (isOnlineTransaction) {
+                  if (isOnlineTransaction && pendingPayment.payment_customer_id !== 'U123') {
                     try {
                       const resp = await fetch(
                         `${API_BASE_URL}/inquiry/customers/${pendingPayment.payment_customer_id}`
