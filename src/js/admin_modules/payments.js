@@ -1305,7 +1305,7 @@ async function openProcessConsolidatedModal() {
             (id, index) => `
             <tr class="border-b last:border-0 hover:bg-gray-50">
               <td class="px-3 py-2 text-sm text-gray-900">${id}</td>
-              <td class="px-3 py-2 text-sm text-gray-600">${purposes[index]}</td>
+              <td class="px-3 py-2 text-sm text-gray-600">${purposes[index].toLowerCase().includes('online') ? purposes[index].split(' - Reference:')[0] : purposes[index]}</td>
               <td class="px-3 py-2 text-sm text-gray-600 text-right">${amounts[index]}</td>
             </tr>`
           )
@@ -1429,7 +1429,30 @@ async function openProcessConsolidatedModal() {
               <div class=\"name\">Fitworx Gym</div>
               <div class=\"small\">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
               <div class=\"small\">0939 874 5377</div>
-              <div class=\"title\">Consolidated Reports</div>
+              <div class=\"title\">
+                Consolidated Transaction${
+                  (() => {
+                    const s = consolidateRange.start;
+                    const e = consolidateRange.end;
+                    if (!s && !e) return '';
+                    const fmt = (d) =>
+                      main.encodeDate(
+                        d,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY'
+                          ? 'numeric'
+                          : 'long'
+                      );
+                    if (s && e) {
+                      const same =
+                        s.getFullYear() === e.getFullYear() &&
+                        s.getMonth() === e.getMonth() &&
+                        s.getDate() === e.getDate();
+                      return same ? ` — ${fmt(s)}` : ` — ${fmt(s)} to ${fmt(e)}`;
+                    }
+                    return s ? ` — from ${fmt(s)}` : ` — until ${fmt(e)}`;
+                  })()
+                }
+              </div>
             </div>
             <table>
               <thead>
