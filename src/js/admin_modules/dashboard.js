@@ -10,6 +10,8 @@ import {
   getAnnouncements,
 } from '../landing_modules/announcements.js';
 import customers from './inquiry_customers.js';
+import { auth } from '../customer_login.js';
+import { signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 // default codes:
 let activated = false,
