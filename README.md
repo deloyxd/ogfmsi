@@ -59,3 +59,8 @@ username: `avnadmin`
 database: `defaultdb`
 port: `26818`
 password: `AVNS_SvAOkqPaEQUpBykhli9`
+
+**Admin account:**
+
+username: `geraldluna`
+password: `qMxs68YJnFp9`
