@@ -225,7 +225,8 @@ async function loadRegularUsers() {
       } catch (_) { return false; }
     };
 
-    const todays = [...regularAll, ...monthlyAll].filter((r) => isToday(r.created_at));
+    // const todays = [...regularAll, ...monthlyAll].filter((r) => isToday(r.created_at));
+    const todays = [...regularAll, ...monthlyAll];
     tableData.regularUsers = todays; // keep combined for potential reuse
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
@@ -533,7 +534,6 @@ async function loadReservations() {
               startTime ? main.decodeTime(startTime) : 'N/A',
               endTime ? main.decodeTime(endTime) : 'N/A',
               dateStr ? main.decodeDate(dateStr) : main.decodeDate(new Date()),
-              '0',
               main.encodePrice(amount),
             ];
 
