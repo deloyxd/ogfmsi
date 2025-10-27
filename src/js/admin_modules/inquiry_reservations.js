@@ -361,14 +361,20 @@ function cleanupExpiredReservations() {
   expiredReservations.forEach((reservation) => {
     main.findAtSectionOne(SECTION_NAME, reservation.id, 'equal_id', 2, (findResult) => {
       if (findResult) {
-        main.moveToPastSchedules(SECTION_NAME, findResult, reservation);
+        const {_,__,fullName} = main.decodeName(reservation.customerName);
+        const columnsData = [
+          'id_' + reservation.id,
+          {
+            type: 'object_cid',
+            data: ['/src/images/client_logo.jpg', fullName, reservation.customerId], // image is empty now
+          },
+          reservation.reservationType,
+          `${main.decodeDate(reservation.date)} - ${main.decodeTime(reservation.startTime)} to ${main.decodeTime(reservation.endTime)}`,
+          `custom_datetime_${reservation.status}`,
+        ];
+        main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {main.toast('A reservation has expired')});
       }
     });
-  });
-
-  existingReservations = existingReservations.filter((reservation) => {
-    const reservationEnd = new Date(`${reservation.date}T${reservation.endTime}`);
-    return reservationEnd > now;
   });
 
   render();
@@ -388,7 +394,7 @@ async function loadExistingReservations() {
       existingReservations.map((reservation) => {
         return new Promise((resolveCreate) => {
           const { id, customerId, customerName, reservationType, date, startTime, endTime, status, tid } = reservation;
-          const { fullName } = main.decodeName(customerName?.trim() || '');
+          const { firstName, lastName, fullName } = main.decodeName(customerName?.trim() || '');
 
           // collect customerId
           customerIdSet.add(customerId);
@@ -520,7 +526,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
 function mainBtnFunction() {}
 
 // Handles the Reserve Facility button click - opens the reservation form modal
-function sectionTwoMainBtnFunction() {
+async function sectionTwoMainBtnFunction() {
   if (!selectedDate) {
     if (main.sharedState.reserveCustomerId === '') {
       main.toast('Please select a customer at customers module first!', 'error');
@@ -1127,11 +1133,11 @@ function updateReservationStats() {
 }
 
 // Public function to initiate reservation process
-export function reserveCustomer() {
+export async function reserveCustomer() {
   autoselect = true;
   main.showSection(SECTION_NAME);
+  await sectionTwoMainBtnFunction();
   render();
-  sectionTwoMainBtnFunction();
 }
 
 // Handles cancellation of pending payment transactions
