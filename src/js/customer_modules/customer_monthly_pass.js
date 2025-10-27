@@ -517,13 +517,11 @@ function openPaymentModal(preparedRegistrationData) {
       gcashAmount: String(totalAmount),
       totalAmount,
     });
-    console.log('[MonthlyPass] Prepared Payment FormData', debugFormData(paymentData));
 
     // Example merging for future submission
     const unified = new FormData();
     preparedRegistrationData.forEach((v, k) => unified.set('reg_' + k, v));
     paymentData.forEach((v, k) => unified.set('pay_' + k, v));
-    console.log('[MonthlyPass] Unified FormData ready for API', debugFormData(unified));
 
     // Provide user feedback during submission
     const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));

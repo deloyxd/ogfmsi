@@ -776,7 +776,6 @@ async function loadUpcomingRenewals() {
       });
     }
 
-    console.log('Upcoming renewals loaded:', upcomingRenewals);
   } catch (error) {
     console.error('Failed to load upcoming renewals:', error);
     const tabContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="2"]');

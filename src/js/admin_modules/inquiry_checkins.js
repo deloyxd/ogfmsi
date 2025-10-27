@@ -205,7 +205,6 @@ async function clearMonthlyCheckins() {
             '<p class="text-sm text-gray-400 text-center py-4">No monthly customer check-ins yet</p>';
         }
       }
-      console.log('Monthly check-ins cleared for new day');
     }
   } catch (error) {
     console.error('Failed to clear monthly check-ins:', error);
@@ -227,7 +226,6 @@ async function clearRegularCheckins() {
             '<p class="text-sm text-gray-400 text-center py-4">No regular customer check-ins yet</p>';
         }
       }
-      console.log('Regular check-ins cleared for new day');
     }
   } catch (error) {
     console.error('Failed to clear regular check-ins:', error);

@@ -815,7 +815,6 @@ function mount() {
         openPaymentModal(reservation, prepared);
       } catch (err) {
         e.preventDefault();
-        console.log(err);
         showError('Error creating reservation. Please try again.');
       }
     });

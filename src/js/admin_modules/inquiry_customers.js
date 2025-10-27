@@ -435,7 +435,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         const result = await response.json();
 
         if (result.archived_count > 0) {
-          console.log(`Auto-archived ${result.archived_count} inactive customers`);
           main.toast(`Auto-archived ${result.archived_count} inactive customers (3+ months)`, 'success');
 
           // Refresh the archived customers list to show newly archived customers
@@ -474,7 +473,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
           });
 
           if (rowsToRemove.length > 0) {
-            console.log(`Cleared ${rowsToRemove.length} duplicate monthly customer entries`);
             updateCustomerStats();
           }
         }
@@ -1073,7 +1071,6 @@ function validateCustomer(
                     }
 
                     const createdCustomer = await response.json();
-                    console.log('Monthly customer created:', createdCustomer);
                   } catch (error) {
                     console.error('Error creating monthly customer:', error);
                   }
@@ -1184,7 +1181,6 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
           }
 
           const newCustomer = await response.json();
-          console.log('New customer created:', newCustomer);
         } catch (error) {
           console.error('Error creating customer:', error);
         }
