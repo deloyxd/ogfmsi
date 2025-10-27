@@ -234,7 +234,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
                             if (!matchingReservation) {
                               main.toast('No matching reservation found for this transaction.', 'error');
-                              cancelCheckinPayment(null);
+                              cancelCheckinPayment(transactionId);
                             main.closeConfirmationModal();
                               return;
                             }
@@ -2419,7 +2419,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 }
 
 export function cancelCheckinPayment(transactionId, reason = '') {
-  if (transactionId !== null) customers.cancelPendingTransaction(transactionId);
+  customers.cancelPendingTransaction(transactionId);
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_id', 1, async (findResult) => {
     if (!findResult) return;
 
