@@ -1198,7 +1198,10 @@ async function renderDisposalList() {
             }
           }
           const btn = frontendResult.querySelector('#disposeConfirmBtn');
-          if (btn) {
+          if (sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) {
+            btn.classList.add('hidden');
+          }
+          if (btn && !sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) {
             btn.addEventListener('click', () => confirmDisposeItem(item));
           }
         });

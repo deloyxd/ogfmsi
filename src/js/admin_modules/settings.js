@@ -11,13 +11,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   subBtn.addEventListener('click', () => {});
 
   renderPreferencesUI();
+  handleSavePreferences();
 });
 
 function getUserPrefs() {
   try {
     return (
       JSON.parse(localStorage.getItem('ogfmsi_user_prefs')) || {
-        hiddenSections: [],
+        hiddenSections: sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff') ? ['maintenance-accesscontrol'] : [],
         compactSidebar: false,
         timeFormat: '12h',
         dateFormat: 'MM-DD-YYYY',
@@ -27,7 +28,7 @@ function getUserPrefs() {
     );
   } catch (_e) {
     return {
-      hiddenSections: [],
+      hiddenSections: sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff') ? ['maintenance-accesscontrol'] : [],
       compactSidebar: false,
       timeFormat: '12h',
       dateFormat: 'MM-DD-YYYY',
@@ -149,7 +150,6 @@ function renderPreferencesUI() {
 function handleSavePreferences() {
   const panel = document.getElementById('userPreferencesPanel');
   if (!panel) {
-    main.toast('Nothing to save.', 'info');
     return;
   }
 
@@ -158,6 +158,7 @@ function handleSavePreferences() {
     .filter((cb) => !cb.checked)
     .map((cb) => cb.dataset.key)
     .filter((key) => key !== 'settings' && key !== 'dashboard');
+    if (sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) hiddenSections.push('maintenance-accesscontrol');
 
   const compactSidebar = !!panel.querySelector('#ogfmsi-compact-sidebar')?.checked;
   const timeFormat = panel.querySelector('#ogfmsi-time-format')?.value || '12h';
@@ -168,6 +169,4 @@ function handleSavePreferences() {
   setUserPrefs({ hiddenSections, compactSidebar, timeFormat, dateFormat, baseFontSize, rememberLast });
 
   document.dispatchEvent(new CustomEvent('ogfmsiPreferencesUpdated'));
-
-  main.toast('Settings saved!', 'success');
 }
