@@ -192,7 +192,7 @@ async function loadMonthlyUsers() {
     main.toast('Error loading monthly users', 'error');
     hadError = true;
   } finally {
-    try { if (!hadError) main.toast('Monthly Users loaded', 'success'); } catch (_) {}
+    // try { if (!hadError) main.toast('Monthly Users loaded', 'success'); } catch (_) {}
   }
 }
 

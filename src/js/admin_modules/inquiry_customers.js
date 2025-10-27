@@ -47,6 +47,7 @@ let activated = false,
   subBtn;
 
 const seenCustomerIds = new Set();
+const fetchingCustomerIds = new Set();
 
 document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
@@ -62,6 +63,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
+    await autoArchiveAllCustomerDiscrepancy();
     await fetchAllPastMonthlyCustomers();
     await fetchAllArchivedCustomers();
     await autoArchiveInactiveCustomers();
@@ -120,6 +122,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 } else {
                   createResult.dataset.status = 'fetching';
                   createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Fetching';
+                  fetchingCustomerIds.add(customer.customer_id);
                 }
                 createResult.children[2].textContent = createResult.dataset.custom2;
               } else {
@@ -164,6 +167,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
           main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
+              if (fetchingCustomerIds.has(customer.customer_id)) {
+                fetchingCustomerIds.delete(customer.customer_id);
+              }
               if (findResult.dataset.custom2 === 'Daily') {
                 return;
               }
@@ -291,6 +297,28 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
       } catch (error) {
         console.error('Error fetching customers:', error);
       }
+    }
+
+    async function autoArchiveAllCustomerDiscrepancy() {
+      fetchingCustomerIds.forEach(async (customerId) => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/inquiry/archived/${customerId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          await response.json();
+        } catch (error) {
+          console.error('Error archiving customer:', error);
+        }
+        fetchingCustomerIds.delete(customerId);
+      });
     }
 
     async function fetchAllPastMonthlyCustomers() {
@@ -526,7 +554,7 @@ function nameAutoCaseListener(inputEl) {
     // Trigger input to sync bound data structures; guard ensures no infinite loop
     inputEl.dispatchEvent(new Event('input'));
   }
-  
+
   // Then apply title case formatting
   const corrected = toTitleCaseName(inputEl.value);
   if (inputEl.value !== corrected) {
@@ -544,12 +572,12 @@ async function validateCustomerRegistration(firstName, lastName, customerId = nu
     if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
       return { isValid: false, error: 'Names can only contain letters, spaces, hyphens, and apostrophes' };
     }
-    
+
     // Check for minimum length
     if (firstName.trim().length < 2 || lastName.trim().length < 2) {
       return { isValid: false, error: 'First and last names must be at least 2 characters long' };
     }
-    
+
     const newNameNorm = normalizeCustomerName(firstName, lastName);
     if (newNameNorm.length < 3) {
       return { isValid: true, similarCustomer: null };
@@ -734,63 +762,81 @@ function mainBtnFunction(
         const priceRate = main.getSelectedSpinner(result.spinner[1]);
 
         // Validate for similar customers before proceeding
-        const validation = await validateCustomerRegistration(firstName, lastName, customer?.id);
-        if (!validation.isValid) {
-          if (validation.error) {
-            main.toast(validation.error, 'error');
+        main.sharedState.moduleLoad = SECTION_NAME;
+        window.showGlobalLoading?.();
+        try {
+          const validation = await validateCustomerRegistration(firstName, lastName, customer?.id);
+          if (!validation.isValid) {
+            if (validation.error) {
+              main.toast(validation.error, 'error');
+              return;
+            }
+            showSimilarCustomerModal(validation.similarCustomer, firstName, lastName);
             return;
           }
-          showSimilarCustomerModal(validation.similarCustomer, firstName, lastName);
-          return;
+
+          const columnsData = [
+            'id_' + (isCreating ? 'U_random' : customer.id),
+            {
+              type: 'object_contact',
+              data: [image, name, contact],
+            },
+            main.fixText(customerType),
+            main.fixText(priceRate),
+            'custom_date_' + (isCreating ? 'today' : customer.date),
+          ];
+
+          const goBackCallback = () => {
+            if (isCreating) {
+              mainBtnFunction(null, image, firstName, lastName, contact, customerType, priceRate);
+            } else {
+              customer = {
+                id: customer.id,
+                image,
+                firstName,
+                lastName,
+                contact,
+                customerType,
+                priceRate,
+                date: customer.date,
+                tid: customer.tid,
+              };
+              mainBtnFunction(customer);
+            }
+          };
+
+          main.findAtSectionOne(SECTION_NAME, name, 'equal_text', 1, (findResult) => {
+            if (findResult && findResult.dataset.id != customer?.id) {
+              const { _, __, fullName } = main.decodeName(findResult.dataset.text);
+
+              main.openConfirmationModal(
+                `Data duplication - Customer with same details:<br><br>ID: ${findResult.dataset.id}<br>Name: ${fullName}`,
+                () => {
+                  main.closeConfirmationModal(() => {
+                    main.closeModal(() => {
+                      validateCustomer(
+                        findResult.dataset.id,
+                        columnsData,
+                        goBackCallback,
+                        null,
+                        true,
+                        !isMonthlyCustomerAlready
+                      );
+                    });
+                  });
+                }
+              );
+              return;
+            }
+
+            main.closeModal(() => {
+              validateCustomer(null, columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
+            });
+          });
+        } catch (e) {
+        } finally {
+          window.hideGlobalLoading?.();
         }
-
-        const columnsData = [
-          'id_' + (isCreating ? 'U_random' : customer.id),
-          {
-            type: 'object_contact',
-            data: [image, name, contact],
-          },
-          main.fixText(customerType),
-          main.fixText(priceRate),
-          'custom_date_' + (isCreating ? 'today' : customer.date),
-        ];
-
-        const goBackCallback = () => {
-          if (isCreating) {
-            mainBtnFunction(null, image, firstName, lastName, contact, customerType, priceRate);
-          } else {
-            customer = {
-              id: customer.id,
-              image,
-              firstName,
-              lastName,
-              contact,
-              customerType,
-              priceRate,
-              date: customer.date,
-              tid: customer.tid,
-            };
-            mainBtnFunction(customer);
-          }
-        };
-
-        main.findAtSectionOne(SECTION_NAME, name, 'equal_text', 1, (findResult) => {
-          if (findResult && findResult.dataset.id != customer?.id) {
-            const { _, __, fullName } = main.decodeName(findResult.dataset.text);
-
-            main.openConfirmationModal(
-              `Data duplication - Customer with same details:<br><br>ID: ${findResult.dataset.id}<br>Name: ${fullName}`,
-              () => {
-                main.closeConfirmationModal(() => {
-                  validateCustomer(columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
-                });
-              }
-            );
-            return;
-          }
-
-          validateCustomer(columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
-        });
       },
       () => {
         main.openConfirmationModal('Archive customer. Cannot be undone.<br><br>ID: ' + customer.id, async () => {
@@ -869,6 +915,7 @@ function checkIfSameData(newData, oldData) {
 const STUDENT_VERIFICATION_MESSAGE = `Verification of student discount rate via:<br><br>${getEmoji('📌')} Student ID's picture matches the customer's face<br>${getEmoji('📌')} Student ID's school name is legitimate<br>${getEmoji('📌')} Student ID's validity duration still not expired yet`;
 
 function validateCustomer(
+  customerId,
   columnsData,
   goBackCallback,
   renewalData = null,
@@ -879,7 +926,7 @@ function validateCustomer(
   if (checkPriceRate) {
     if (priceRate.toLowerCase().includes('student')) {
       main.openConfirmationModal(STUDENT_VERIFICATION_MESSAGE, () => {
-        validateCustomer(columnsData, goBackCallback, renewalData, false, checkCustomerType);
+        validateCustomer(customerId, columnsData, goBackCallback, renewalData, false, checkCustomerType);
         main.closeConfirmationModal();
       });
       return;
@@ -970,7 +1017,7 @@ function validateCustomer(
               () => {
                 main.closeConfirmationModal();
                 columnsData[2] += ' - Pending';
-                registerNewCustomer(columnsData, true, price, priceRate, async (createResult) => {
+                registerNewCustomer(customerId, columnsData, true, price, priceRate, async (createResult) => {
                   createResult.dataset.startdate = main.decodeDate(startDateNormalized);
                   createResult.dataset.enddate = main.decodeDate(endDate);
                   createResult.dataset.days = months * 30;
@@ -1048,6 +1095,7 @@ function validateCustomer(
   }
 
   registerNewCustomer(
+    customerId,
     columnsData,
     customerType.toLowerCase().includes('monthly'),
     PRICES_AUTOFILL[`${priceRate}_daily`],
@@ -1064,11 +1112,7 @@ function activeShortListener(monthInput, container) {
   totalPriceInput.dispatchEvent(new Event('input'));
 }
 
-function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
-  // Extract the full ID after the 'id_' prefix without splitting on underscores in the ID itself
-  const customerId = String(columnsData[0]).startsWith('id_')
-    ? String(columnsData[0]).slice(3)
-    : String(columnsData[0]);
+function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
   const { firstName } = main.decodeName(columnsData[1].data[1]);
   main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult) => {
     let isCreating = true;
@@ -1078,7 +1122,7 @@ function registerNewCustomer(columnsData, isMonthlyCustomer, amount, priceRate, 
     main.toast(`${firstName}, successfully ${isCreating ? 'registered' : 'updated'}!`, 'success');
     if (isCreating) {
       main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
-        seenCustomerIds.add(customerId);
+        seenCustomerIds.add(createResult.dataset.id);
         if (isMonthlyCustomer) {
           if (callback) {
             callback(createResult);
@@ -1305,7 +1349,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
     function continueCustomerProcessBtnFunction() {
       main.openModal('yellow', inputs, (result) => {
-        const isMonthlyCustomer = (customer.dataset.custom4 && customer.dataset.custom4.toLowerCase().includes('days')) || customer.dataset.custom2.toLowerCase().includes('active');
+        const isMonthlyCustomer =
+          (customer.dataset.custom4 && customer.dataset.custom4.toLowerCase().includes('days')) ||
+          customer.dataset.custom2.toLowerCase().includes('active');
         const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
         const priceRate = customer.dataset.custom3.toLowerCase();
         let amount =
@@ -1401,6 +1447,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                     'custom_date_' + customer.dataset.date,
                   ];
                   validateCustomer(
+                    customer.dataset.id,
                     columnsData,
                     continueCustomerProcessBtnFunction,
                     selectedProcess.includes('renew')
@@ -1492,6 +1539,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
               'custom_date_' + customer.dataset.date,
             ];
             validateCustomer(
+              customer.dataset.id,
               columnsData,
               continueCustomerProcessBtnFunction,
               selectedProcess.includes('renew')
