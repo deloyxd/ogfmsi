@@ -3,7 +3,7 @@
 import modal from './modal.js';
 
 export const API_BASE_URL = 'https://ogfmsi.onrender.com/api';
-export const DEV_MODE = true;
+export const DEV_MODE = false;
 
 export const playSFX = (sfxid) => {
   const sfx = document.getElementById(sfxid);
