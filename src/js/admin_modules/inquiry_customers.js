@@ -984,105 +984,118 @@ function validateCustomer(
         },
       };
 
-      main.openModal(
-        'blue',
-        inputs,
-        (result) => {
-          const startDate = result.short[3].value;
-          if (!main.isValidDate(startDate) || main.isPastDate(startDate)) {
-            main.toast(`Invalid start date: ${startDate}`, 'error');
-            return;
-          }
-          const months = +result.short[4].value;
-          if (!main.isValidPaymentAmount(months)) {
-            main.toast(`Invalid days: ${months}`, 'error');
-            return;
-          }
-          const price = main.decodePrice(result.short[0].value);
-
-          const [month, day, year] = startDate.split('-').map(Number);
-          const startDateObj = new Date(year, month - 1, day);
-          const endDateObj = new Date(startDateObj);
-          endDateObj.setDate(endDateObj.getDate() + months * 30);
-          const endDate = endDateObj.toLocaleString('en-US', {
-            month: '2-digit',
-            day: '2-digit',
-            year: 'numeric',
-          });
-          const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
-          const startDateNormalized = String(startDate).replace(/-/g, '/');
-          main.openConfirmationModal(
-            `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDateNormalized)}<br>to ${main.decodeDate(endDate)}<br>lasts ${months * 30} days<br>total price: ${main.encodePrice(price)}`,
-            () => {
-              main.closeConfirmationModal();
-              columnsData[2] += ' - Pending';
-              registerNewCustomer(customerId, columnsData, true, price, priceRate, async (createResult) => {
-                createResult.dataset.startdate = main.decodeDate(startDateNormalized);
-                createResult.dataset.enddate = main.decodeDate(endDate);
-                createResult.dataset.days = months * 30;
-                createResult.dataset.status = 'pending';
-
-                try {
-                  const response = await fetch(`${API_BASE_URL}/inquiry/customers/pending/${createResult.dataset.id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      customer_type: 'monthly',
-                      customer_tid: '',
-                      customer_pending: 1,
-                    }),
-                  });
-
-                  if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                  }
-
-                  await response.json();
-                } catch (error) {
-                  console.error('Error creating monthly customer:', error);
-                }
-
-                try {
-                  const response = await fetch(`${API_BASE_URL}/inquiry/monthly`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      customer_id: createResult.dataset.id,
-                      customer_start_date: main
-                        .encodeDate(startDate.replace(/\//g, '-'), '2-digit')
-                        .replace(/^(\d{2})-(\d{2})-(\d{4})$/, '$3-$1-$2'),
-                      customer_end_date: main
-                        .encodeDate(endDate.replace(/\//g, '-'), '2-digit')
-                        .replace(/^(\d{2})-(\d{2})-(\d{4})$/, '$3-$1-$2'),
-                      customer_months: months,
-                      customer_tid: '',
-                      customer_pending: 1,
-                    }),
-                  });
-
-                  if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                  }
-
-                  const createdCustomer = await response.json();
-                  console.log('Monthly customer created:', createdCustomer);
-                } catch (error) {
-                  console.error('Error creating monthly customer:', error);
-                }
-              });
+      function continueValidateCustomer() {
+        main.openModal(
+          'blue',
+          inputs,
+          (result) => {
+            const startDate = result.short[3].value;
+            if (!main.isValidDate(startDate) || main.isPastDate(startDate)) {
+              main.toast(`Invalid start date: ${startDate}`, 'error');
+              return;
             }
-          );
-        },
-        () => {
-          main.closeModal(() => {
-            goBackCallback();
-          });
-        }
-      );
+            const months = +result.short[4].value;
+            if (!main.isValidPaymentAmount(months)) {
+              main.toast(`Invalid days: ${months}`, 'error');
+              return;
+            }
+            const price = main.decodePrice(result.short[0].value);
+
+            const [month, day, year] = startDate.split('-').map(Number);
+            const startDateObj = new Date(year, month - 1, day);
+            const endDateObj = new Date(startDateObj);
+            endDateObj.setDate(endDateObj.getDate() + months * 30);
+            const endDate = endDateObj.toLocaleString('en-US', {
+              month: '2-digit',
+              day: '2-digit',
+              year: 'numeric',
+            });
+            const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
+            const startDateNormalized = String(startDate).replace(/-/g, '/');
+            main.openConfirmationModal(
+              `Monthly ${renewalData ? 'renewal' : 'registration'} details:<br><br><span class="text-lg">${fullName}</span><br>from ${main.decodeDate(startDateNormalized)}<br>to ${main.decodeDate(endDate)}<br>lasts ${months * 30} days<br>total price: ${main.encodePrice(price)}`,
+              () => {
+                main.closeConfirmationModal();
+                columnsData[2] += ' - Pending';
+                registerNewCustomer(customerId, columnsData, true, price, priceRate, async (createResult) => {
+                  createResult.dataset.startdate = main.decodeDate(startDateNormalized);
+                  createResult.dataset.enddate = main.decodeDate(endDate);
+                  createResult.dataset.days = months * 30;
+                  createResult.dataset.status = 'pending';
+
+                  try {
+                    const response = await fetch(
+                      `${API_BASE_URL}/inquiry/customers/pending/${createResult.dataset.id}`,
+                      {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          customer_type: 'monthly',
+                          customer_tid: '',
+                          customer_pending: 1,
+                        }),
+                      }
+                    );
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    await response.json();
+                  } catch (error) {
+                    console.error('Error creating monthly customer:', error);
+                  }
+
+                  try {
+                    const response = await fetch(`${API_BASE_URL}/inquiry/monthly`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        customer_id: createResult.dataset.id,
+                        customer_start_date: main
+                          .encodeDate(startDate.replace(/\//g, '-'), '2-digit')
+                          .replace(/^(\d{2})-(\d{2})-(\d{4})$/, '$3-$1-$2'),
+                        customer_end_date: main
+                          .encodeDate(endDate.replace(/\//g, '-'), '2-digit')
+                          .replace(/^(\d{2})-(\d{2})-(\d{4})$/, '$3-$1-$2'),
+                        customer_months: months,
+                        customer_tid: '',
+                        customer_pending: 1,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const createdCustomer = await response.json();
+                    console.log('Monthly customer created:', createdCustomer);
+                  } catch (error) {
+                    console.error('Error creating monthly customer:', error);
+                  }
+                });
+              }
+            );
+          },
+          () => {
+            main.closeModal(() => {
+              goBackCallback();
+            });
+          }
+        );
+      }
+
+      if (renewalData) {
+        main.closeModal(() => {
+          continueValidateCustomer();
+        });
+      } else {
+        continueValidateCustomer();
+      }
 
       return;
     }
@@ -2042,4 +2055,19 @@ function updateCustomerStats() {
   } catch (e) {}
 }
 
-export default { completeCheckinPayment, customerDetailsBtnFunction, cancelPendingTransaction, getReserveCustomer };
+export function startRenewCustomer(customerId) {
+  main.showSection(SECTION_NAME);
+  main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult) => {
+    if (findResult) {
+      customerProcessBtnFunction(findResult, main.decodeName(findResult.dataset.text));
+    }
+  });
+}
+
+export default {
+  completeCheckinPayment,
+  customerDetailsBtnFunction,
+  cancelPendingTransaction,
+  getReserveCustomer,
+  startRenewCustomer,
+};

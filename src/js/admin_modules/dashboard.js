@@ -9,6 +9,7 @@ import {
   getAnnouncementCount,
   getAnnouncements,
 } from '../landing_modules/announcements.js';
+import customers from './inquiry_customers.js';
 
 // default codes:
 let activated = false,
@@ -730,7 +731,7 @@ async function loadUpcomingRenewals() {
         main.createAtSectionOne('dashboard', columnsData, 2, (createResult) => {
           const renewBtn = createResult.querySelector('#renewBtn');
           if (renewBtn) {
-            renewBtn.addEventListener('click', () => handleRenewal(customer.customer_id));
+            renewBtn.addEventListener('click', () => customers.startRenewCustomer(customer.customer_id));
           }
 
           createResult.dataset.customerId = customer.customer_id;
@@ -752,11 +753,6 @@ async function loadUpcomingRenewals() {
       emptyText.classList.remove('hidden');
     }
   }
-}
-
-// Handles customer renewal actions
-function handleRenewal(customerId) {
-  main.toast(`Renewal process initiated for customer ${customerId}`, 'info');
 }
 
 // ===== Dashboard Stats Calculation =====
