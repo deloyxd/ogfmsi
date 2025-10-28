@@ -43,7 +43,7 @@ router.get('/ref/check/:ref', async (req, res) => {
   try {
     const rows = await db.query('SELECT payment_id FROM payment_tbl WHERE payment_ref = ? LIMIT 1', [ref]);
     const used = Array.isArray(rows) && rows.length > 0;
-    return res.status(200).json({ message: 'Reference check ok', used });
+    return res.status(200).json({ message: 'Reference check ok', rows, used });
   } catch (error) {
     console.error('Reference check error:', error);
     return res.status(500).json({ error: 'Reference check failed' });

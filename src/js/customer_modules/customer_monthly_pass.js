@@ -128,11 +128,11 @@ function openRegistrationModal() {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-gray-700 mb-1" for="startDate">Start Date</label>
-              <input id="startDate" name="startDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${today}" readonly />
+              <input disabled=true id="startDate" name="startDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${today}" readonly />
             </div>
             <div>
               <label class="block text-xs font-semibold text-gray-700 mb-1" for="endDate">End Date</label>
-              <input id="endDate" name="endDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${endDate}" readonly />
+              <input disabled=true id="endDate" name="endDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${endDate}" readonly />
             </div>
           </div>
         </div>

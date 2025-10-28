@@ -2318,6 +2318,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   if (refChk.ok) {
                     const data = await refChk.json();
                     if (data.used) {
+                      console.log(data.rows);
                       main.toast('This reference number has already been used. Please enter a valid one.', 'error');
                       return;
                     }
