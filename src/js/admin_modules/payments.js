@@ -101,6 +101,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         pendingPayments.result.forEach((pendingPayment) => {
           if (!pendingPayment || !pendingPayment.payment_id) return;
           if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
+          seenPendingPaymentIds.add(pendingPayment.payment_id);
           // Normalize optional fields coming from customer portal
           const refFromPortal = pendingPayment.payment_ref || pendingPayment.payment_reference || '';
           const methodHint = (pendingPayment.payment_method_hint || '').toLowerCase();
@@ -169,7 +170,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       }
                     } catch (_) {}
                   }
-                  seenPendingPaymentIds.add(pendingPayment.payment_id);
                   if (fromCustomerPortal && refFromPortal) {
                     createResult.dataset.refnum = refFromPortal;
                   }
