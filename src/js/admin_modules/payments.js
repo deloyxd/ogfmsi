@@ -2317,8 +2317,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
                   if (refChk.ok) {
                     const data = await refChk.json();
-                    if (data.used) {
-                      console.log(data.rows);
+                    if (data.rows[0].payment_id !== id && data.used) {
                       main.toast('This reference number has already been used. Please enter a valid one.', 'error');
                       return;
                     }
