@@ -21,6 +21,7 @@ let activated = false,
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
   let systemUserRole = sessionStorage.getItem('systemUserRole') || '';
+  console.log(DEV_MODE)
   if (DEV_MODE) {
     sessionStorage.setItem('systemUserRole', 'developer');
     sessionStorage.setItem('systemUserFullname', 'Team Biboy');
