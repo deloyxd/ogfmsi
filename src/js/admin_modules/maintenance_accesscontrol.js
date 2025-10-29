@@ -99,6 +99,9 @@ function mainBtnFunction() {
         options: USER_ROLES,
       },
     ],
+    footer: {
+      main: 'Create System User',
+    },
   };
 
   main.openModal(mainBtn, inputs, async (result) => {
@@ -219,6 +222,9 @@ function handleUpdateUser(systemUser) {
         options: USER_ROLES,
       },
     ],
+    footer: {
+      main: 'Update System User',
+    },
   };
 
   main.openModal(mainBtn, inputs, (result) => {
