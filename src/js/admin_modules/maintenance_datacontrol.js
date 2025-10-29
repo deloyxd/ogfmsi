@@ -823,6 +823,10 @@ function isWithinRange(d, start, end) {
     const e = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
     return t >= s && t <= e;
   }
+  if (start && !end) {
+    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    return t <= s;
+  }
   if (start) {
     const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
     return t >= s;
@@ -835,7 +839,7 @@ function isWithinRange(d, start, end) {
 }
 
 async function exportToPDF() {
-  const tabNames = ['Monthly Users', 'Regular/Daily & Students', 'Supplements', 'Reservations'];
+  const tabNames = ['Monthly Users', 'All Check-ins', 'Products', 'Reservations'];
   const activeIndex = Number(main.sharedState.activeTab) || currentTab || 1;
   const currentTabName = tabNames[activeIndex - 1] || 'Report';
 
@@ -1163,7 +1167,7 @@ async function exportToPDF() {
 
 // Export current tab data to Excel
 async function exportToExcel() {
-  const tabNames = ['Monthly Users', 'Regular/Daily & Students', 'Supplements', 'Reservations'];
+  const tabNames = ['Monthly Users', 'All Check-ins', 'Products', 'Reservations'];
   const activeIndex = Number(main.sharedState.activeTab) || currentTab || 1;
   const currentTabName = tabNames[activeIndex - 1] || 'Report';
 
