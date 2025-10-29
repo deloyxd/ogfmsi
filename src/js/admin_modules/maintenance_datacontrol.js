@@ -906,10 +906,39 @@ async function exportToPDF() {
   subtitle.style.color = '#666666';
   subtitle.style.fontWeight = '400';
 
+  // Date range line (shown only if user selected a range)
+  let rangeLine = null;
+  if (range && (range.start || range.end)) {
+    const fmt = (d) =>
+      d
+        ? d.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })
+        : '';
+    let rangeText = '';
+    if (range.start && range.end) {
+      rangeText = `${fmt(range.start)} - ${fmt(range.end)}`;
+    } else if (range.start) {
+      rangeText = `From ${fmt(range.start)}`;
+    } else if (range.end) {
+      rangeText = `Until ${fmt(range.end)}`;
+    }
+    rangeLine = document.createElement('div');
+    rangeLine.textContent = rangeText;
+    rangeLine.style.textAlign = 'center';
+    rangeLine.style.margin = '4px 0 0 0';
+    rangeLine.style.fontSize = '12px';
+    rangeLine.style.color = '#4a4a4a';
+    rangeLine.style.fontWeight = '500';
+  }
+
   headerSection.appendChild(gymName);
   headerSection.appendChild(gymAddress);
   headerSection.appendChild(title);
   headerSection.appendChild(subtitle);
+  if (rangeLine) headerSection.appendChild(rangeLine);
 
   const clonedContent = tableEl.cloneNode(true);
   try {
@@ -1248,6 +1277,31 @@ async function exportToExcel() {
     right: { style: 'thin', color: { argb: 'FF333333' } },
   };
   ws.getRow(titleRow.number).height = 30;
+
+  // If user selected a date range, show it under the title
+  if (range && (range.start || range.end)) {
+    const fmt = (d) =>
+      d
+        ? d.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })
+        : '';
+    let rangeText = '';
+    if (range.start && range.end) {
+      rangeText = `${fmt(range.start)} - ${fmt(range.end)}`;
+    } else if (range.start) {
+      rangeText = `From ${fmt(range.start)}`;
+    } else if (range.end) {
+      rangeText = `Until ${fmt(range.end)}`;
+    }
+    const rangeRow = ws.addRow([rangeText]);
+    ws.mergeCells(rangeRow.number, 1, rangeRow.number, headers.length);
+    const rangeCell = ws.getCell(rangeRow.number, 1);
+    rangeCell.font = { bold: true, size: 11, color: { argb: 'FF4a4a4a' } };
+    rangeCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
 
   // Add spacing row
   ws.addRow([]);
