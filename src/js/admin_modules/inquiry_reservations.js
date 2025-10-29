@@ -591,7 +591,7 @@ async function sectionTwoMainBtnFunction() {
                 const endTotalMinutes = h * 60 + m + selectedDuration * 60;
                 // Block if computed end crosses midnight (beyond 23:59 of the same day)
                 if (endTotalMinutes > 23 * 60 + 59) {
-                  main.toast('Reservation cannot end after 11:59 PM', 'error');
+                  main.toast('The reservation must finish before midnight.', 'error');
                   const endInputBlock = container.querySelector('#input-short-36');
                   if (endInputBlock) {
                     endInputBlock.value = '';
@@ -633,7 +633,7 @@ async function sectionTwoMainBtnFunction() {
                 const endTotalMinutes = h * 60 + m + selectedDuration * 60;
                 // Block if computed end crosses midnight (beyond 23:59 of the same day)
                 if (endTotalMinutes > 23 * 60 + 59) {
-                  main.toast('Reservation cannot end after 11:59 PM', 'error');
+                  main.toast('The reservation must finish before midnight.', 'error');
                   const endInputBlock = container.querySelector('#input-short-36');
                   if (endInputBlock) {
                     endInputBlock.value = '';
@@ -736,7 +736,7 @@ async function sectionTwoMainBtnFunction() {
             const [sh, sm] = startTime.split(':').map((n) => parseInt(n, 10));
             const computedEndTotalMinutes = sh * 60 + sm + selectedDuration * 60;
             if (computedEndTotalMinutes > 23 * 60 + 59) {
-              throw new Error('Reservation cannot end after 11:59 PM');
+              throw new Error('The reservation must finish before midnight.');
             }
           }
 
