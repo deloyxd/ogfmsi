@@ -1820,8 +1820,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       return;
     }
     let amountPaid = Number(cashVal) + cashlessVal;
-    if (!main.isValidPaymentAmount(+amountPaid) || +amountPaid < +amountToPay) {
-      main.toast(`Invalid payment amount (total): ${amountPaid}`, 'error');
+    // Validate numeric/format first
+    if (!main.isValidPaymentAmount(+amountPaid)) {
+      main.toast(`Invalid payment amount: ${amountPaid}`, 'error');
+      return;
+    }
+    // Then check for insufficiency against amount due
+    if (+amountPaid < +amountToPay) {
+      const shortBy = (+amountToPay) - (+amountPaid);
+      main.toast(
+        `Insufficient payment amount. Short by ${main.encodePrice(shortBy)} (Required: ${main.encodePrice(amountToPay)}, Tendered: ${main.encodePrice(amountPaid)})`,
+        'error'
+      );
       return;
     }
     const change = result.short[4].value;
