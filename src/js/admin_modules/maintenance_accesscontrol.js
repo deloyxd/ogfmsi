@@ -10,6 +10,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName != SECTION_NAME) return;
 
   if (!activated) {
+    activated = true;
     mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
     mainBtn.addEventListener('click', mainBtnFunction);
 
