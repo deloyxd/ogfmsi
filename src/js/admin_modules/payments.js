@@ -1398,7 +1398,7 @@ async function openProcessConsolidatedModal() {
       const tbody = table.querySelector('tbody');
       const tableRows = Array.from(tbody ? tbody.rows : []);
       const hasRows = tableRows.length > 0;
-      const grandTotalText = `Grand Total: <b>${main.encodePrice(grandTotal)}</b>`;
+      const grandTotalText = `<b>${main.encodePrice(grandTotal)}</b>`;
       const printableRows = hasRows ? tableRows.slice(0, -1) : [];
       const rowsHtml = printableRows
         .map((tr) => {
