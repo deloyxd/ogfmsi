@@ -1109,10 +1109,10 @@ function isToday(year, month, day) {
 function getReservationCountForTab(tabIndex) {
   const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
   if (!emptyText) return 0;
-  const items = emptyText.parentElement.parentElement.children;
+  const items = Array.from(emptyText.parentElement?.parentElement?.children || []);
   const filteredItems = items.filter((item, index) => {
     if (index === 0) return false;
-    const datetime = item.dataset.datetime?.toLowerCase() || '';
+    const datetime = item?.dataset?.datetime?.toLowerCase() || '';
     return !datetime.includes('pending');
   });
   return filteredItems.length;
