@@ -1630,6 +1630,12 @@ function activeRadioListener(title, input, container, inputGroup) {
   const cashInput = container.querySelector(`#input-short-7`);
   const cashlessInput = container.querySelector(`#input-short-8`);
   const refInput = container.querySelector(`#input-short-11`);
+  const titleLower = title.toLowerCase();
+  // Clean up any previous hybrid auto-fill listener to prevent duplicates
+  if (cashInput && cashInput.__autoFillListener) {
+    cashInput.removeEventListener('input', cashInput.__autoFillListener);
+    cashInput.__autoFillListener = null;
+  }
   switch (title.toLowerCase()) {
     case 'cash':
       if (input.value.trim() == '') input.value = 'N/A';
@@ -1658,6 +1664,10 @@ function activeRadioListener(title, input, container, inputGroup) {
       requestAnimationFrame(() => {
         if (cashlessInput) cashlessInput.focus();
       });
+      // Autofill cashless tendered to the full amount due when Cashless is selected
+      if (cashlessInput) {
+        cashlessInput.value = main.encodePrice(amountToPay);
+      }
       break;
     case 'hybrid':
       if (input.value == 'N/A') input.value = '';
@@ -1672,6 +1682,22 @@ function activeRadioListener(title, input, container, inputGroup) {
       requestAnimationFrame(() => {
         if (cashInput) cashInput.focus();
       });
+      // In Hybrid: set cashless to the remaining needed (amountToPay - cash)
+      if (cashInput && cashlessInput) {
+        const updateCashlessRemaining = () => {
+          const cashVal = cashInput.value.includes('₱')
+            ? +main.decodePrice(cashInput.value)
+            : Number(cashInput.value) || 0;
+          const remaining = Math.max(0, Number(amountToPay) - cashVal);
+          cashlessInput.value = main.encodePrice(remaining);
+          cashlessInput.dispatchEvent(new Event('input'));
+        };
+        // Attach and remember the listener for cleanup on next switch
+        cashInput.__autoFillListener = updateCashlessRemaining;
+        cashInput.addEventListener('input', updateCashlessRemaining);
+        // Initialize once immediately
+        updateCashlessRemaining();
+      }
       break;
   }
   inputGroup.short[2].hidden = cashInput.parentElement.classList.contains('hidden');
@@ -1706,10 +1732,15 @@ function activeRadioListener(title, input, container, inputGroup) {
         inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
     }
   }
-  if (inputGroup.radio[0].locked) {
-    cashlessInput.value = main.encodePrice(amountToPay);
-  } else {
-    cashlessInput.value = main.encodePrice(0);
+  // Default autofill behavior after visibility/labels are set
+  // If payment is locked (online) OR Cashless tab is selected, autofill cashless with amount to pay.
+  // Hybrid is handled above with a live listener, so do not override here for hybrid.
+  if (titleLower !== 'hybrid') {
+    if (inputGroup.radio[0].locked || titleLower === 'cashless') {
+      cashlessInput.value = main.encodePrice(amountToPay);
+    } else {
+      cashlessInput.value = main.encodePrice(0);
+    }
   }
   cashInput.dispatchEvent(new Event('input'));
   cashlessInput.dispatchEvent(new Event('input'));
