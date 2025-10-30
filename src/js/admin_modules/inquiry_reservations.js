@@ -1028,8 +1028,8 @@ function createDayElement(day, month, year, isToday) {
               <div class="flex-1 min-w-0">
                   <h3 class="font-bold text-wrap text-lg">${fullName}</h3>
                   <p class="text-sm text-gray-500">Date: ${reservationAtTargetDate.date}</p>
-                  <p class="text-sm text-gray-500">Start time: ${reservationAtTargetDate.startTime}</p>
-                  <p class="text-sm text-gray-500">End time: ${reservationAtTargetDate.endTime}</p>
+                  <p class="text-sm text-gray-500">Start time: ${main.decodeTime(reservationAtTargetDate.startTime)}</p>
+                  <p class="text-sm text-gray-500">End time: ${main.decodeTime(reservationAtTargetDate.endTime)}</p>
                   <p class="text-sm text-gray-500">Type: ${main.fixText(reservationAtTargetDate.reservationType)}</p>
               </div>
         `;
