@@ -10,14 +10,14 @@
 
   <div
     id="ecommerceCartProduct"
-    class="group relative mx-auto hidden w-full max-w-sm overflow-hidden rounded-2xl border border-yellow-200 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-500/80"
+    class="group relative mx-auto hidden w-full max-w-sm overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-sky-50 to-blue-50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/80"
   >
     <div class="relative overflow-hidden rounded-t-2xl">
       <div
         class="${productMeasurementStatus} absolute left-0 top-0 z-10 m-2 rounded-lg border border-white/20 bg-black/80 px-2 shadow-lg backdrop-blur-md"
       >
         <span
-          class="bg-gradient-to-r from-yellow-300 to-amber-300 bg-clip-text text-xs font-semibold uppercase tracking-wide text-transparent 2xl:text-sm 2xl:font-bold"
+          class="bg-gradient-to-r from-blue-300 to-sky-300 bg-clip-text text-xs font-semibold uppercase tracking-wide text-transparent 2xl:text-sm 2xl:font-bold"
         >
           ${productMeasurement} ${productMeasurementUnit}
         </span>
@@ -29,7 +29,7 @@
       <div
         class="absolute bottom-3 right-3 rounded-lg border border-white/20 bg-black/80 px-3 py-2 shadow-lg backdrop-blur-md"
       >
-        <span class="bg-gradient-to-r from-yellow-300 to-amber-300 bg-clip-text text-xl font-bold text-transparent">
+        <span class="bg-gradient-to-r from-blue-300 to-sky-300 bg-clip-text text-xl font-bold text-transparent">
           ${productPrice}
         </span>
       </div>
@@ -58,14 +58,14 @@
             type="number"
             min="0"
             value="1"
-            class="quantity-input h-8 w-12 bg-white text-center text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 appearance-none"
+            class="quantity-input h-8 w-12 bg-white text-center text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 appearance-none"
             aria-label="Quantity"
             oninput="this.value = this.value.replace(/[^0-9]/g, '');"
             style="-moz-appearance: textfield;"
           />
           <button
             type="button"
-            class="increase-btn flex h-8 w-8 items-center justify-center rounded-r-md bg-gradient-to-r from-yellow-400 to-amber-500 text-sm font-bold text-white transition-colors duration-200 hover:from-yellow-500 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+            class="increase-btn flex h-8 w-8 items-center justify-center rounded-r-md bg-gradient-to-r from-green-400 to-lime-500 text-sm font-bold text-white transition-colors duration-200 hover:from-green-500 hover:to-lime-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
           >
             +
           </button>
@@ -73,7 +73,7 @@
       </div>
 
       <button
-        class="add-to-cart-btn relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 py-3 text-base font-bold text-white transition-all duration-500 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-600 hover:shadow-lg hover:shadow-yellow-200/50"
+        class="add-to-cart-btn relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-400 via-sky-400 to-blue-500 py-3 text-base font-bold text-white transition-all duration-500 hover:from-blue-500 hover:via-sky-500 hover:to-blue-600 hover:shadow-lg hover:shadow-blue-200/50"
       >
         <span class="relative z-10">Add to Cart 🛒</span>
         <div
