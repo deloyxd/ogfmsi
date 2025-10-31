@@ -235,7 +235,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                             if (!matchingReservation) {
                               main.toast('No matching reservation found for this transaction.', 'error');
                               cancelCheckinPayment(transactionId);
-                            main.closeConfirmationModal();
+                              main.closeConfirmationModal();
                               return;
                             }
 
@@ -818,19 +818,19 @@ function closeConsolidateTransactionsModal() {
   try {
     updateSelectedCountUI();
   } catch (_) {}
-  
+
   // Reset date range inputs
   const startInput = document.getElementById('consolidateStartDate');
   const endInput = document.getElementById('consolidateEndDate');
   if (startInput) startInput.value = '';
   if (endInput) endInput.value = '';
-  
+
   // Reset the date range filter
   consolidateRange = { start: null, end: null };
-  
+
   // Re-fetch and display the original first 10 transactions
   fetchFirstFiveTransactions();
-  
+
   modal.classList.remove('opacity-100');
   modal.children[0].classList.add('-translate-y-6');
   modal.children[0].classList.remove('scale-100');
@@ -1256,6 +1256,7 @@ async function openProcessConsolidatedModal() {
   // Fetch purposes and amounts for each unique ID
   const purposes = [];
   const amounts = [];
+  let startDate, endDate;
   let grandTotal = 0;
 
   // Create an array of fetch promises for each uniqueId
@@ -1292,6 +1293,13 @@ async function openProcessConsolidatedModal() {
           amounts.push('<b>' + main.encodePrice(data.result[0].payment_amount_to_pay) + '</b>');
           grandTotal += +data.result[0].payment_amount_to_pay;
         }
+
+        if (!startDate || startDate > new Date(data.result[0].created_at)) {
+          startDate = new Date(data.result[0].created_at);
+        }
+        if (!endDate || endDate < new Date(data.result[0].created_at)) {
+          endDate = new Date(data.result[0].created_at);
+        }
       })
       .catch((error) => {
         console.error(`Error fetching data for ID ${id}:`, error);
@@ -1319,32 +1327,34 @@ async function openProcessConsolidatedModal() {
     </tr>`;
 
   const modalHTML = `
-    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-30 hidden" id="consolidateProcessModal">
-      <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
-        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
-          <p class="text-xl font-medium">Process Consolidated Transactions</p>
-          <p class="text-xs">Selected: ${consolidatedSelected.size}</p>
-        </div>
-        <div class="p-4">
+  <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-30 hidden" id="consolidateProcessModal">
+    <div class="m-auto w-full max-w-4xl max-h-[80vh] -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300 flex flex-col" onclick="event.stopPropagation()">
+      <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
+        <p class="text-xl font-medium">Process Consolidated Transactions</p>
+        <p class="text-xs">Selected: ${consolidatedSelected.size}</p>
+      </div>
+      <div class="flex-1 p-4 flex flex-col min-h-0 overflow-hidden">
+        <div class="flex-1 overflow-auto min-h-0">
           <div class="overflow-x-auto rounded-lg border border-gray-200">
             <table id="consolidateProcessTable" class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+              <thead class="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Transaction ID</th>
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Particulars</th>
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody class="bg-white">${rowsHTML}${grandTotalRow}</tbody>
+              <tbody class="bg-white divide-y divide-gray-200">${rowsHTML}${grandTotalRow}</tbody>
             </table>
           </div>
-          <div class="flex justify-end gap-2 mt-4">
-            <button type="button" id="exportProcessConsolidateBtn" class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500">Export</button>
-            <button type="button" id="closeProcessConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
-          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200 mt-4">
+          <button type="button" id="exportProcessConsolidateBtn" class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500">Export</button>
+          <button type="button" id="closeProcessConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
         </div>
       </div>
-    </div>`;
+    </div>
+  </div>`;
 
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const modal = document.getElementById('consolidateProcessModal');
@@ -1417,6 +1427,19 @@ async function openProcessConsolidatedModal() {
       const preparedName = sessionStorage.getItem('systemUserFullname') || 'Cashier or admin';
       const preparedRole = sessionStorage.getItem('systemUserRole') || '';
       const preparedBy = preparedRole ? `${preparedName} (${preparedRole})` : preparedName;
+      const dateRange = () => {
+        const s = startDate;
+        const e = endDate;
+        if (!s && !e) return '';
+        const fmt = (d) => main.encodeDate(d, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long');
+        console.log(fmt(startDate), fmt(endDate));
+        if (s && e) {
+          const same =
+            s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth() && s.getDate() === e.getDate();
+          return same ? ` — ${fmt(s)}` : ` — ${fmt(s)} to ${fmt(e)}`;
+        }
+        return s ? ` — from ${fmt(s)}` : ` — until ${fmt(e)}`;
+      };
       const reportHtml = `
         <!doctype html>
         <html></html>
@@ -1431,28 +1454,7 @@ async function openProcessConsolidatedModal() {
               <div class=\"small\">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
               <div class=\"small\">0939 874 5377</div>
               <div class=\"title\">
-                Consolidated Transaction${
-                  (() => {
-                    const s = consolidateRange.start;
-                    const e = consolidateRange.end;
-                    if (!s && !e) return '';
-                    const fmt = (d) =>
-                      main.encodeDate(
-                        d,
-                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY'
-                          ? 'numeric'
-                          : 'long'
-                      );
-                    if (s && e) {
-                      const same =
-                        s.getFullYear() === e.getFullYear() &&
-                        s.getMonth() === e.getMonth() &&
-                        s.getDate() === e.getDate();
-                      return same ? ` — ${fmt(s)}` : ` — ${fmt(s)} to ${fmt(e)}`;
-                    }
-                    return s ? ` — from ${fmt(s)}` : ` — until ${fmt(e)}`;
-                  })()
-                }
+                Consolidated Transaction${dateRange()}
               </div>
             </div>
             <table>
@@ -1858,7 +1860,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     }
     // Then check for insufficiency against amount due
     if (+amountPaid < +amountToPay) {
-      const shortBy = (+amountToPay) - (+amountPaid);
+      const shortBy = +amountToPay - +amountPaid;
       main.toast(
         `Insufficient payment amount. Short by ${main.encodePrice(shortBy)} (Required: ${main.encodePrice(amountToPay)}, Tendered: ${main.encodePrice(amountPaid)})`,
         'error'
@@ -1885,9 +1887,42 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     if (refNum === 'N/A') refNum = '';
 
     function continueProcessPayment() {
-          const dateTimeText = `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`;
-          const columnsData = [
-            'id_' + id,
+      const dateTimeText = `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`;
+      const columnsData = [
+        'id_' + id,
+        {
+          type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+          data: [
+            image,
+            customerId,
+            purpose,
+            main.formatPrice(amountToPay),
+            main.formatPrice(cashVal),
+            main.formatPrice(cashlessVal),
+            main.formatPrice(main.decodePrice(change)),
+            main.fixText(priceRate),
+            main.fixText(paymentMethod),
+            dateTimeText,
+          ],
+        },
+        // For service transactions (non-cart), insert Customer Name column before date/time
+        ...(type === 'cart' ? [] : [fullName]),
+        dateTimeText,
+      ];
+
+      // Determine which tab to place the completed transaction based on payment method
+      let completedTabIndex;
+      if (type === 'cart') {
+        // For sales transactions
+        if (paymentMethod === 'cash') {
+          completedTabIndex = 7; // Sales (Cash) tab
+        } else if (paymentMethod === 'cashless') {
+          completedTabIndex = 8; // Sales (Cashless) tab
+        } else if (paymentMethod === 'hybrid') {
+          // For hybrid sales, we'll create entries in both tabs
+          // First, create cash entry
+          const cashColumnsData = [
+            'id_' + id + '_cash',
             {
               type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
               data: [
@@ -1896,460 +1931,93 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                 purpose,
                 main.formatPrice(amountToPay),
                 main.formatPrice(cashVal),
-                main.formatPrice(cashlessVal),
+                main.formatPrice(0), // No cashless for cash tab
                 main.formatPrice(main.decodePrice(change)),
                 main.fixText(priceRate),
-                main.fixText(paymentMethod),
+                'Cash (Hybrid)',
                 dateTimeText,
               ],
             },
-            // For service transactions (non-cart), insert Customer Name column before date/time
-            ...(type === 'cart' ? [] : [fullName]),
             dateTimeText,
           ];
 
-          // Determine which tab to place the completed transaction based on payment method
-          let completedTabIndex;
-          if (type === 'cart') {
-            // For sales transactions
-            if (paymentMethod === 'cash') {
-              completedTabIndex = 7; // Sales (Cash) tab
-            } else if (paymentMethod === 'cashless') {
-              completedTabIndex = 8; // Sales (Cashless) tab
-            } else if (paymentMethod === 'hybrid') {
-              // For hybrid sales, we'll create entries in both tabs
-              // First, create cash entry
-              const cashColumnsData = [
-                'id_' + id + '_cash',
-                {
-                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                  data: [
-                    image,
-                    customerId,
-                    purpose,
-                    main.formatPrice(amountToPay),
-                    main.formatPrice(cashVal),
-                    main.formatPrice(0), // No cashless for cash tab
-                    main.formatPrice(main.decodePrice(change)),
-                    main.fixText(priceRate),
-                    'Cash (Hybrid)',
-                    dateTimeText,
-                  ],
-                },
-                dateTimeText,
-              ];
-
-              main.createAtSectionOne(SECTION_NAME, cashColumnsData, 7, (createResult) => {
-                createResult.dataset.refnum = refNum;
-                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
-              });
-
-              // Then, create cashless entry
-              const cashlessColumnsData = [
-                'id_' + id + '_cashless',
-                {
-                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                  data: [
-                    image,
-                    customerId,
-                    purpose,
-                    main.formatPrice(amountToPay),
-                    main.formatPrice(0), // No cash for cashless tab
-                    main.formatPrice(cashlessVal),
-                    main.formatPrice(main.decodePrice(change)),
-                    main.fixText(priceRate),
-                    'Cashless (Hybrid)',
-                    dateTimeText,
-                  ],
-                },
-                dateTimeText,
-              ];
-
-              main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 8, (createResult) => {
-                createResult.dataset.refnum = refNum;
-                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
-              });
-
-              // Continue with the rest of the completion logic
-              main.toast(`Transaction successfully completed!`, 'success');
-              main.createNotifDot(SECTION_NAME, 'main');
-              main.createNotifDot(SECTION_NAME, 7);
-              main.createNotifDot(SECTION_NAME, 8);
-              main.deleteAtSectionOne(SECTION_NAME, 1, id);
-              try {
-                seenPendingPaymentIds.delete(effectiveId);
-              } catch (_) {}
-
-              main.closeModal(() => {
-                switch (type) {
-                  case 'customers':
-                    customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
-                    // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
-                    try {
-                      // Update DOM by ID as backup
-                      main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
-                        if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
-                          const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
-                          row.dataset.custom2 = baseType + ' - Active';
-                          row.children[2].textContent = row.dataset.custom2;
-                          row.dataset.status = 'active';
-                          row.dataset.tid = '';
-                        }
-                      });
-                    } catch (_) {}
-                    break;
-                  case 'reservations':
-                    reservations.completeReservationPayment(id);
-                    break;
-                  case 'cart':
-                    cart.completeProcessCheckout(
-                      amountToPay,
-                      main.fixText(paymentMethod),
-                      cashVal + cashlessVal,
-                      main.decodePrice(change),
-                      refNum
-                    );
-                }
-              });
-
-              // Handle backend operations asynchronously
-              (async () => {
-                try {
-                  // Pre-check reference uniqueness before updating backend
-                  if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
-                    try {
-                      const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
-                      if (refChk.ok) {
-                        const data = await refChk.json();
-                        if (data.used) {
-                          main.toast('This reference number has already been used. Please enter a valid one.', 'error');
-                          return;
-                        }
-                      }
-                    } catch (_) {}
-                  }
-
-                  // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-
-                  const response = await fetch(
-                    `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
-                    {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        payment_amount_to_pay: Number(amountToPay) || 0,
-                        payment_amount_paid_cash: cashVal,
-                        payment_amount_paid_cashless: cashlessVal,
-                        payment_amount_change: main.decodePrice(change),
-                        payment_method: paymentMethod,
-                        payment_ref: refNum,
-                        payment_rate: priceRate,
-                      }),
-                    }
-                  );
-
-                  if (!response.ok) {
-                    if (response.status === 409) {
-                      main.toast('This reference number has already been used. Please enter a valid one.', 'error');
-                      return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                  }
-
-                  await response.json();
-
-                  // Reflect the newly completed transaction in stats immediately
-                  try {
-                    const nowIso = new Date().toISOString();
-                    completedPaymentsCache.push({
-                      payment_id: id,
-                      payment_amount_paid_cash: Number(cashVal) || 0,
-                      payment_amount_paid_cashless: Number(cashlessVal) || 0,
-                      payment_method: paymentMethod,
-                      created_at: nowIso,
-                    });
-                    computeAndUpdatePaymentStats(completedPaymentsCache);
-                    await refreshDashboardStats();
-                  } catch (_) {}
-
-                  // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
-                  try {
-                    await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
-                    });
-                  } catch (_) {}
-                  try {
-                    await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
-                    });
-                  } catch (_) {}
-                } catch (error) {
-                  console.error('Error creating complete payment:', error);
-                }
-              })();
-
-              return; // Exit early for hybrid sales
-            } else {
-              completedTabIndex = 7; // Default to cash tab
-            }
-          } else {
-            // For service transactions
-            if (paymentMethod === 'cash') {
-              completedTabIndex = 4; // Service (Cash) tab
-            } else if (paymentMethod === 'cashless') {
-              completedTabIndex = 5; // Service (Cashless) tab
-            } else if (paymentMethod === 'hybrid') {
-              // For hybrid services, we'll create entries in both tabs
-              // First, create cash entry
-              const cashColumnsData = [
-                'id_' + id + '_cash',
-                {
-                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                  data: [
-                    image,
-                    customerId,
-                    purpose,
-                    main.formatPrice(amountToPay),
-                    main.formatPrice(cashVal),
-                    main.formatPrice(0), // No cashless for cash tab
-                    main.formatPrice(main.decodePrice(change)),
-                    main.fixText(priceRate),
-                    'Cash (Hybrid)',
-                    dateTimeText,
-                  ],
-                },
-                fullName,
-                dateTimeText,
-              ];
-
-              main.createAtSectionOne(SECTION_NAME, cashColumnsData, 4, async (createResult) => {
-                createResult.dataset.refnum = refNum;
-                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
-              });
-
-              // Then, create cashless entry
-              const cashlessColumnsData = [
-                'id_' + id + '_cashless',
-                {
-                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                  data: [
-                    image,
-                    customerId,
-                    purpose,
-                    main.formatPrice(amountToPay),
-                    main.formatPrice(0), // No cash for cashless tab
-                    main.formatPrice(cashlessVal),
-                    main.formatPrice(main.decodePrice(change)),
-                    main.fixText(priceRate),
-                    'Cashless (Hybrid)',
-                    dateTimeText,
-                  ],
-                },
-                fullName,
-                dateTimeText,
-              ];
-
-              main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 5, async (createResult) => {
-                createResult.dataset.refnum = refNum;
-                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
-              });
-
-              // Continue with the rest of the completion logic
-              main.toast(`Transaction successfully completed!`, 'success');
-              main.createNotifDot(SECTION_NAME, 'main');
-              main.createNotifDot(SECTION_NAME, 4);
-              main.createNotifDot(SECTION_NAME, 5);
-              main.deleteAtSectionOne(SECTION_NAME, 1, id);
-              try {
-                seenPendingPaymentIds.delete(effectiveId);
-              } catch (_) {}
-
-              main.closeModal(() => {
-                switch (type) {
-                  case 'customers':
-                    customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
-                    // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
-                    try {
-                      // Update DOM by ID as backup
-                      main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
-                        if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
-                          const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
-                          row.dataset.custom2 = baseType + ' - Active';
-                          row.children[2].textContent = row.dataset.custom2;
-                          row.dataset.status = 'active';
-                          row.dataset.tid = '';
-                        }
-                      });
-                    } catch (_) {}
-                    break;
-                  case 'reservations':
-                    reservations.completeReservationPayment(id);
-                    break;
-                  case 'cart':
-                    cart.completeProcessCheckout(
-                      amountToPay,
-                      main.fixText(paymentMethod),
-                      cashVal + cashlessVal,
-                      main.decodePrice(change),
-                      refNum
-                    );
-                }
-              });
-
-              // Handle backend operations asynchronously
-              (async () => {
-                try {
-                  // Pre-check reference uniqueness before updating backend
-                  if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
-                    try {
-                      const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
-                      if (refChk.ok) {
-                        const data = await refChk.json();
-                        if (data.used) {
-                          main.toast('This reference number has already been used. Please enter a valid one.', 'error');
-                          return;
-                        }
-                      }
-                    } catch (_) {}
-                  }
-
-                  // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
-
-                  const response = await fetch(
-                    `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
-                    {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        payment_amount_to_pay: Number(amountToPay) || 0,
-                        payment_amount_paid_cash: cashVal,
-                        payment_amount_paid_cashless: cashlessVal,
-                        payment_amount_change: main.decodePrice(change),
-                        payment_method: paymentMethod,
-                        payment_ref: refNum,
-                        payment_rate: priceRate,
-                      }),
-                    }
-                  );
-
-                  if (!response.ok) {
-                    if (response.status === 409) {
-                      main.toast('This reference number has already been used. Please enter a valid one.', 'error');
-                      return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                  }
-
-                  await response.json();
-
-                  // Reflect the newly completed transaction in stats immediately
-                  try {
-                    const nowIso = new Date().toISOString();
-                    completedPaymentsCache.push({
-                      payment_id: id,
-                      payment_amount_paid_cash: Number(cashVal) || 0,
-                      payment_amount_paid_cashless: Number(cashlessVal) || 0,
-                      payment_method: paymentMethod,
-                      created_at: nowIso,
-                    });
-                    computeAndUpdatePaymentStats(completedPaymentsCache);
-                    await refreshDashboardStats();
-                  } catch (_) {}
-
-                  // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
-                  try {
-                    await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
-                    });
-                  } catch (_) {}
-                  try {
-                    await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
-                    });
-                  } catch (_) {}
-                } catch (error) {
-                  console.error('Error creating complete payment:', error);
-                }
-              })();
-
-              return; // Exit early for hybrid services
-            } else {
-              completedTabIndex = 4; // Default to cash tab
-            }
-          }
-
-          // Create entry in the original Service/Sales Transactions tab first
-          const originalTabIndex = type === 'cart' ? 6 : 3; // Sales Transactions (tab 6) or Service Transactions (tab 3)
-          main.createAtSectionOne(SECTION_NAME, columnsData, originalTabIndex, async (createResult) => {
+          main.createAtSectionOne(SECTION_NAME, cashColumnsData, 7, (createResult) => {
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
           });
 
-          // Then create entry in the specific payment method tab
-          main.createAtSectionOne(SECTION_NAME, columnsData, completedTabIndex, async (createResult) => {
+          // Then, create cashless entry
+          const cashlessColumnsData = [
+            'id_' + id + '_cashless',
+            {
+              type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+              data: [
+                image,
+                customerId,
+                purpose,
+                main.formatPrice(amountToPay),
+                main.formatPrice(0), // No cash for cashless tab
+                main.formatPrice(cashlessVal),
+                main.formatPrice(main.decodePrice(change)),
+                main.fixText(priceRate),
+                'Cashless (Hybrid)',
+                dateTimeText,
+              ],
+            },
+            dateTimeText,
+          ];
+
+          main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 8, (createResult) => {
             createResult.dataset.refnum = refNum;
-
-            main.toast(`Transaction successfully completed!`, 'success');
-            main.createNotifDot(SECTION_NAME, 'main');
-            main.createNotifDot(SECTION_NAME, originalTabIndex);
-            main.createNotifDot(SECTION_NAME, completedTabIndex);
-            main.deleteAtSectionOne(SECTION_NAME, 1, id);
-            try {
-              seenPendingPaymentIds.delete(effectiveId);
-            } catch (_) {}
-
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
+          });
 
-            main.closeModal(() => {
-              switch (type) {
-                case 'customers':
-                  customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
-                  // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
-                  try {
-                    // Update DOM by ID as backup
-                    main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
-                      if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
-                        const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
-                        row.dataset.custom2 = baseType + ' - Active';
-                        row.children[2].textContent = row.dataset.custom2;
-                        row.dataset.status = 'active';
-                        row.dataset.tid = '';
-                      }
-                    });
-                  } catch (_) {}
-                  break;
-                case 'reservations':
-                  reservations.completeReservationPayment(id);
-                  break;
-                case 'cart':
-                  cart.completeProcessCheckout(
-                    amountToPay,
-                    main.fixText(paymentMethod),
-                    cashVal + cashlessVal,
-                    main.decodePrice(change),
-                    refNum
-                  );
-              }
-            });
+          // Continue with the rest of the completion logic
+          main.toast(`Transaction successfully completed!`, 'success');
+          main.createNotifDot(SECTION_NAME, 'main');
+          main.createNotifDot(SECTION_NAME, 7);
+          main.createNotifDot(SECTION_NAME, 8);
+          main.deleteAtSectionOne(SECTION_NAME, 1, id);
+          try {
+            seenPendingPaymentIds.delete(effectiveId);
+          } catch (_) {}
 
+          main.closeModal(() => {
+            switch (type) {
+              case 'customers':
+                customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
+                // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
+                try {
+                  // Update DOM by ID as backup
+                  main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
+                    if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
+                      const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
+                      row.dataset.custom2 = baseType + ' - Active';
+                      row.children[2].textContent = row.dataset.custom2;
+                      row.dataset.status = 'active';
+                      row.dataset.tid = '';
+                    }
+                  });
+                } catch (_) {}
+                break;
+              case 'reservations':
+                reservations.completeReservationPayment(id);
+                break;
+              case 'cart':
+                cart.completeProcessCheckout(
+                  amountToPay,
+                  main.fixText(paymentMethod),
+                  cashVal + cashlessVal,
+                  main.decodePrice(change),
+                  refNum
+                );
+            }
+          });
+
+          // Handle backend operations asynchronously
+          (async () => {
             try {
               // Pre-check reference uniqueness before updating backend
               if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
@@ -2357,13 +2025,15 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
                   if (refChk.ok) {
                     const data = await refChk.json();
-                    if (data.rows[0].payment_id !== id && data.used) {
+                    if (data.used) {
                       main.toast('This reference number has already been used. Please enter a valid one.', 'error');
                       return;
                     }
                   }
                 } catch (_) {}
               }
+
+              // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
 
               const response = await fetch(
                 `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
@@ -2409,26 +2079,358 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
-              if (type === 'customers') {
-                try {
-                  await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
-                  });
-                } catch (_) {}
-                try {
-                  await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
-                  });
-                } catch (_) {}
-              }
+              try {
+                await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
+                });
+              } catch (_) {}
+              try {
+                await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
+                });
+              } catch (_) {}
             } catch (error) {
               console.error('Error creating complete payment:', error);
             }
+          })();
+
+          return; // Exit early for hybrid sales
+        } else {
+          completedTabIndex = 7; // Default to cash tab
+        }
+      } else {
+        // For service transactions
+        if (paymentMethod === 'cash') {
+          completedTabIndex = 4; // Service (Cash) tab
+        } else if (paymentMethod === 'cashless') {
+          completedTabIndex = 5; // Service (Cashless) tab
+        } else if (paymentMethod === 'hybrid') {
+          // For hybrid services, we'll create entries in both tabs
+          // First, create cash entry
+          const cashColumnsData = [
+            'id_' + id + '_cash',
+            {
+              type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+              data: [
+                image,
+                customerId,
+                purpose,
+                main.formatPrice(amountToPay),
+                main.formatPrice(cashVal),
+                main.formatPrice(0), // No cashless for cash tab
+                main.formatPrice(main.decodePrice(change)),
+                main.fixText(priceRate),
+                'Cash (Hybrid)',
+                dateTimeText,
+              ],
+            },
+            fullName,
+            dateTimeText,
+          ];
+
+          main.createAtSectionOne(SECTION_NAME, cashColumnsData, 4, async (createResult) => {
+            createResult.dataset.refnum = refNum;
+            const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+            transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
           });
+
+          // Then, create cashless entry
+          const cashlessColumnsData = [
+            'id_' + id + '_cashless',
+            {
+              type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+              data: [
+                image,
+                customerId,
+                purpose,
+                main.formatPrice(amountToPay),
+                main.formatPrice(0), // No cash for cashless tab
+                main.formatPrice(cashlessVal),
+                main.formatPrice(main.decodePrice(change)),
+                main.fixText(priceRate),
+                'Cashless (Hybrid)',
+                dateTimeText,
+              ],
+            },
+            fullName,
+            dateTimeText,
+          ];
+
+          main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 5, async (createResult) => {
+            createResult.dataset.refnum = refNum;
+            const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+            transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
+          });
+
+          // Continue with the rest of the completion logic
+          main.toast(`Transaction successfully completed!`, 'success');
+          main.createNotifDot(SECTION_NAME, 'main');
+          main.createNotifDot(SECTION_NAME, 4);
+          main.createNotifDot(SECTION_NAME, 5);
+          main.deleteAtSectionOne(SECTION_NAME, 1, id);
+          try {
+            seenPendingPaymentIds.delete(effectiveId);
+          } catch (_) {}
+
+          main.closeModal(() => {
+            switch (type) {
+              case 'customers':
+                customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
+                // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
+                try {
+                  // Update DOM by ID as backup
+                  main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
+                    if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
+                      const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
+                      row.dataset.custom2 = baseType + ' - Active';
+                      row.children[2].textContent = row.dataset.custom2;
+                      row.dataset.status = 'active';
+                      row.dataset.tid = '';
+                    }
+                  });
+                } catch (_) {}
+                break;
+              case 'reservations':
+                reservations.completeReservationPayment(id);
+                break;
+              case 'cart':
+                cart.completeProcessCheckout(
+                  amountToPay,
+                  main.fixText(paymentMethod),
+                  cashVal + cashlessVal,
+                  main.decodePrice(change),
+                  refNum
+                );
+            }
+          });
+
+          // Handle backend operations asynchronously
+          (async () => {
+            try {
+              // Pre-check reference uniqueness before updating backend
+              if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+                try {
+                  const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
+                  if (refChk.ok) {
+                    const data = await refChk.json();
+                    if (data.used) {
+                      main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                      return;
+                    }
+                  }
+                } catch (_) {}
+              }
+
+              // First, remove from pending in backend (mark type/service) to avoid resurrecting after reload
+
+              const response = await fetch(
+                `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    payment_amount_to_pay: Number(amountToPay) || 0,
+                    payment_amount_paid_cash: cashVal,
+                    payment_amount_paid_cashless: cashlessVal,
+                    payment_amount_change: main.decodePrice(change),
+                    payment_method: paymentMethod,
+                    payment_ref: refNum,
+                    payment_rate: priceRate,
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                if (response.status === 409) {
+                  main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                  return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+
+              await response.json();
+
+              // Reflect the newly completed transaction in stats immediately
+              try {
+                const nowIso = new Date().toISOString();
+                completedPaymentsCache.push({
+                  payment_id: id,
+                  payment_amount_paid_cash: Number(cashVal) || 0,
+                  payment_amount_paid_cashless: Number(cashlessVal) || 0,
+                  payment_method: paymentMethod,
+                  created_at: nowIso,
+                });
+                computeAndUpdatePaymentStats(completedPaymentsCache);
+                await refreshDashboardStats();
+              } catch (_) {}
+
+              // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
+              try {
+                await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
+                });
+              } catch (_) {}
+              try {
+                await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
+                });
+              } catch (_) {}
+            } catch (error) {
+              console.error('Error creating complete payment:', error);
+            }
+          })();
+
+          return; // Exit early for hybrid services
+        } else {
+          completedTabIndex = 4; // Default to cash tab
+        }
+      }
+
+      // Create entry in the original Service/Sales Transactions tab first
+      const originalTabIndex = type === 'cart' ? 6 : 3; // Sales Transactions (tab 6) or Service Transactions (tab 3)
+      main.createAtSectionOne(SECTION_NAME, columnsData, originalTabIndex, async (createResult) => {
+        createResult.dataset.refnum = refNum;
+        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+        transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
+      });
+
+      // Then create entry in the specific payment method tab
+      main.createAtSectionOne(SECTION_NAME, columnsData, completedTabIndex, async (createResult) => {
+        createResult.dataset.refnum = refNum;
+
+        main.toast(`Transaction successfully completed!`, 'success');
+        main.createNotifDot(SECTION_NAME, 'main');
+        main.createNotifDot(SECTION_NAME, originalTabIndex);
+        main.createNotifDot(SECTION_NAME, completedTabIndex);
+        main.deleteAtSectionOne(SECTION_NAME, 1, id);
+        try {
+          seenPendingPaymentIds.delete(effectiveId);
+        } catch (_) {}
+
+        const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+        transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
+
+        main.closeModal(() => {
+          switch (type) {
+            case 'customers':
+              customers.completeCheckinPayment(effectiveId, amountPaid, priceRate);
+              // Fallback: ensure All Registered Customers is marked Active if TID lookup fails
+              try {
+                // Update DOM by ID as backup
+                main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (row) => {
+                  if (row && (row.dataset.custom2 || '').toLowerCase().includes('pending')) {
+                    const baseType = (row.dataset.custom2 || '').split(' - ')[0] || 'Monthly';
+                    row.dataset.custom2 = baseType + ' - Active';
+                    row.children[2].textContent = row.dataset.custom2;
+                    row.dataset.status = 'active';
+                    row.dataset.tid = '';
+                  }
+                });
+              } catch (_) {}
+              break;
+            case 'reservations':
+              reservations.completeReservationPayment(id);
+              break;
+            case 'cart':
+              cart.completeProcessCheckout(
+                amountToPay,
+                main.fixText(paymentMethod),
+                cashVal + cashlessVal,
+                main.decodePrice(change),
+                refNum
+              );
+          }
+        });
+
+        try {
+          // Pre-check reference uniqueness before updating backend
+          if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+            try {
+              const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
+              if (refChk.ok) {
+                const data = await refChk.json();
+                if (data.rows[0].payment_id !== id && data.used) {
+                  main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+                  return;
+                }
+              }
+            } catch (_) {}
+          }
+
+          const response = await fetch(
+            `${API_BASE_URL}/payment/${type === 'cart' ? 'sales' : 'service'}/${effectiveId}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                payment_amount_to_pay: Number(amountToPay) || 0,
+                payment_amount_paid_cash: cashVal,
+                payment_amount_paid_cashless: cashlessVal,
+                payment_amount_change: main.decodePrice(change),
+                payment_method: paymentMethod,
+                payment_ref: refNum,
+                payment_rate: priceRate,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            if (response.status === 409) {
+              main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+              return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          await response.json();
+
+          // Reflect the newly completed transaction in stats immediately
+          try {
+            const nowIso = new Date().toISOString();
+            completedPaymentsCache.push({
+              payment_id: id,
+              payment_amount_paid_cash: Number(cashVal) || 0,
+              payment_amount_paid_cashless: Number(cashlessVal) || 0,
+              payment_method: paymentMethod,
+              created_at: nowIso,
+            });
+            computeAndUpdatePaymentStats(completedPaymentsCache);
+            await refreshDashboardStats();
+          } catch (_) {}
+
+          // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
+          if (type === 'customers') {
+            try {
+              await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_type: 'monthly', customer_tid: '', customer_pending: 0 }),
+              });
+            } catch (_) {}
+            try {
+              await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(customerId)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
+              });
+            } catch (_) {}
+          }
+        } catch (error) {
+          console.error('Error creating complete payment:', error);
+        }
+      });
     }
 
     if (isOnlineTransaction) {
