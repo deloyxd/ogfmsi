@@ -76,7 +76,12 @@ function listenToReservationsFE() {
 // Count reservations for a given mm-dd-yyyy date
 function getReservationCountForDate(mmddyyyy) {
   try {
-    return state.reservations.filter((r) => r?.date === mmddyyyy).length;
+    const now = new Date();
+    return state.reservations.filter((r) => {
+      if (!r || r.date !== mmddyyyy) return false;
+      const end = parseDateTime(r.date, r.endTime);
+      return end > now;
+    }).length;
   } catch (e) {
     return 0;
   }
@@ -570,7 +575,7 @@ function mount() {
         }
       };
 
-      const WORK_START = toMinutes('07:00'); // 7:00 AM
+      const WORK_START = toMinutes('09:00'); // 9:00 AM
       const WORK_END = toMinutes('23:00'); // 11:00 PM
 
       if (startVal && endVal) {
@@ -579,14 +584,14 @@ function mount() {
 
         if (startMins < WORK_START || startMins > WORK_END) {
           e.preventDefault();
-          showError('Start time must be between 7:00 AM and 11:00 PM.');
+          showError('Start time is outside our operating hours (9:00 AM - 11:00 PM). Please choose a start time within this range.');
           startInput?.focus();
           return;
         }
 
         if (endMins < WORK_START || endMins > WORK_END) {
           e.preventDefault();
-          showError('End time must be between 7:00 AM and 11:00 PM.');
+          showError('Start time is outside our operating hours (9:00 AM - 11:00 PM). Please choose a start time within this range.');
           endInput?.focus();
           return;
         }
@@ -711,9 +716,9 @@ function mount() {
         return { valid: true, message: '' };
       }
 
-      if (startMins < 7 * 60) {
+      if (startMins < 9 * 60) {
         e.preventDefault();
-        showError('Reservation cannot start before 07:00.');
+        showError('Reservation cannot start before 09:00.');
         return;
       }
       if (endMins > 23 * 60 + 59) {
@@ -839,7 +844,7 @@ function openPaymentModal(reservation, preparedRegistrationData) {
             </div>
             <div class="space-y-1">
               <p class="font-semibold">Account Details:</p>
-              <p>Name: Enzo Daniela</p>
+              <p>Name: Gerald Luna</p>
               <p>Number: 09633226873</p>
             </div>
             <form id="paymentForm" class="space-y-3">
@@ -1100,8 +1105,25 @@ function openDateReservationsModal(dateMMDDYYYY) {
       return `${monthNames[mIdx]} ${dNum}, ${yNum}`;
     })();
 
+    const to12h = (s) => {
+      const str = String(s || '').trim();
+      const m = str.match(/^(\d{1,2})(?::(\d{2}))$/);
+      if (!m) return '--:--';
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2] || '0', 10);
+      if (!Number.isFinite(h) || !Number.isFinite(min)) return '--:--';
+      if (h < 0 || h > 23 || min < 0 || min > 59) return '--:--';
+      const ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      if (h === 0) h = 12;
+      const mm2 = String(min).padStart(2, '0');
+      return `${h}:${mm2} ${ap}`;
+    };
+
+    const now = new Date();
     const reservationsForDay = state.reservations
       .filter((r) => r?.date === dateMMDDYYYY)
+      .filter((r) => parseDateTime(r.date, r.endTime) > now)
       .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 
     const listItems = reservationsForDay.length
@@ -1112,7 +1134,7 @@ function openDateReservationsModal(dateMMDDYYYY) {
               status === 'Pending'
                 ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
                 : 'bg-green-100 text-green-800 border-green-200';
-            const time = `${r.startTime || '--:--'} – ${r.endTime || '--:--'}`;
+            const time = `${to12h(r.startTime)} – ${to12h(r.endTime)}`;
             const type = r.reservationType || '—';
             return `
               <li class="flex items-start justify-between gap-3 rounded-md border p-3 text-sm">

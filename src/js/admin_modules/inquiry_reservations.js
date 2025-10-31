@@ -32,6 +32,7 @@ let existingReservations = [];
 let selectedDate = null;
 const today = new Date();
 const currentDate = new Date();
+let buildVersion = 0; // guards against overlapping snapshot rebuilds
 
 const monthNames = [
   'January',
@@ -142,6 +143,13 @@ function isTimeInPast(date, time) {
   const currentDateTime = new Date();
   currentDateTime.setMinutes(currentDateTime.getMinutes() - 1);
   return selectedDateTime < currentDateTime;
+}
+
+// Safely build a Date from 'mm-dd-yyyy' and 'HH:mm'
+function buildDateTime(dateStr, timeStr) {
+  const [m, d, y] = (dateStr || '').split('-').map(Number);
+  const [hh, mm] = (timeStr || '').split(':').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
 }
 
 // Checks if a new reservation conflicts with existing ones
@@ -341,7 +349,7 @@ function getNextAvailableTime(newStartTime, newEndTime, newDate) {
 function removeExpiredReservations() {
   const now = new Date();
   existingReservations = existingReservations.filter((reservation) => {
-    const reservationEnd = new Date(`${reservation.date}T${reservation.endTime}`);
+    const reservationEnd = buildDateTime(reservation.date, reservation.endTime);
     return reservationEnd > now;
   });
 }
@@ -352,28 +360,35 @@ function cleanupExpiredReservations() {
   const expiredReservations = [];
 
   existingReservations.forEach((reservation) => {
-    const reservationEnd = new Date(`${reservation.date}T${reservation.endTime}`);
+    const reservationEnd = buildDateTime(reservation.date, reservation.endTime);
     if (reservationEnd <= now) {
       expiredReservations.push(reservation);
     }
   });
 
   expiredReservations.forEach((reservation) => {
-    main.findAtSectionOne(SECTION_NAME, reservation.id, 'equal_id', 2, (findResult) => {
-      if (findResult) {
-        const {_,__,fullName} = main.decodeName(reservation.customerName);
-        const columnsData = [
-          'id_' + reservation.id,
-          {
-            type: 'object_cid',
-            data: ['/src/images/client_logo.jpg', fullName, reservation.customerId], // image is empty now
-          },
-          reservation.reservationType,
-          `${main.decodeDate(reservation.date)} - ${main.decodeTime(reservation.startTime)} to ${main.decodeTime(reservation.endTime)}`,
-          `custom_datetime_${reservation.status}`,
-        ];
-        main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {main.toast('A reservation has expired')});
-      }
+    main.findAtSectionOne(SECTION_NAME, reservation.id, 'equal_id', 3, (alreadyPast) => {
+      if (alreadyPast) return;
+      main.findAtSectionOne(SECTION_NAME, reservation.id, 'equal_id', 2, (findResult) => {
+        if (findResult) {
+          const {_,__,fullName} = main.decodeName(reservation.customerName);
+          const columnsData = [
+            'id_' + reservation.id,
+            {
+              type: 'object_cid',
+              data: ['/src/images/client_logo.jpg', fullName, reservation.customerId],
+            },
+            reservation.reservationType,
+            `${main.decodeDate(reservation.date)} - ${main.decodeTime(reservation.startTime)} to ${main.decodeTime(reservation.endTime)}`,
+            `custom_datetime_${reservation.status}`,
+          ];
+          try { findResult.remove?.(); } catch (e) {}
+          main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
+            try { createResult.dataset.id = reservation.id; } catch (e) {}
+            main.toast('A reservation has expired');
+          });
+        }
+      });
     });
   });
 
@@ -383,12 +398,15 @@ function cleanupExpiredReservations() {
 async function loadExistingReservations() {
   listenToReservationsFE(async (reservations) => {
     existingReservations = reservations;
+    const myBuild = ++buildVersion;
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
+    main.deleteAllAtSectionOne(SECTION_NAME, 3);
 
     // 1) Create rows first with placeholder images and collect customerIds
     const createdRows = []; // { reservation, createdItem }
     const customerIdSet = new Set();
+    const processedIds = new Set();
 
     await Promise.all(
       existingReservations.map((reservation) => {
@@ -399,9 +417,22 @@ async function loadExistingReservations() {
           // collect customerId
           customerIdSet.add(customerId);
 
-          const reservationEnd = new Date(`${date}T${endTime}`);
+          const reservationEnd = buildDateTime(date, endTime);
           const isPast = reservationEnd <= new Date();
           const tabIndex = isPast ? 3 : 2;
+
+          // Remove any existing row with same id in both tabs before creating
+          try {
+            main.findAtSectionOne(SECTION_NAME, id, 'equal_id', 2, (dup) => { try { dup?.remove?.(); } catch (e) {} });
+            main.findAtSectionOne(SECTION_NAME, id, 'equal_id', 3, (dup) => { try { dup?.remove?.(); } catch (e) {} });
+          } catch (e) {}
+
+          // Skip if this build became stale
+          if (myBuild !== buildVersion) return resolveCreate();
+
+          // Per-build de-duplication by id
+          if (processedIds.has(id)) return resolveCreate();
+          processedIds.add(id);
 
           const reservationTypeText =
             typeof reservationType === 'number'
@@ -420,7 +451,13 @@ async function loadExistingReservations() {
             `custom_datetime_${status}`,
           ];
 
+          if (myBuild !== buildVersion) return resolveCreate();
           main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createdItem) => {
+            if (myBuild !== buildVersion) {
+              try { createdItem.remove?.(); } catch (e) {}
+              return resolveCreate();
+            }
+            try { createdItem.dataset.id = id; } catch (e) {}
             createdItem.dataset.tid = tid || '';
 
             // Add event listeners (unchanged)
@@ -455,6 +492,9 @@ async function loadExistingReservations() {
     );
 
     // 2) Fetch images for all unique customerIds in parallel
+    // Skip if stale
+    if (myBuild !== buildVersion) return;
+
     const customerIds = Array.from(customerIdSet);
     const imageByCustomerId = {}; // { [customerId]: imageString }
 
@@ -473,6 +513,7 @@ async function loadExistingReservations() {
     // 3) Update created rows with fetched images
     // Implementation depends slightly on how your object_cid cell is rendered inside createdItem.
     // Below we try a few sensible approaches (in order). If your DOM structure differs, adjust the selector.
+    if (myBuild !== buildVersion) return;
     createdRows.forEach(({ reservation, createdItem }) => {
       const cid = reservation.customerId;
       const img = imageByCustomerId[cid] || '/src/images/client_logo.jpg';
@@ -480,7 +521,10 @@ async function loadExistingReservations() {
       createdItem.querySelector('img').src = img;
     });
 
-    // Finally, render now that images are applied
+    // Finally, dedupe and render now that images are applied
+    if (myBuild !== buildVersion) return;
+    dedupeSectionOneTab(2);
+    dedupeSectionOneTab(3);
     render();
   });
 }
@@ -488,7 +532,12 @@ async function loadExistingReservations() {
 // Counts how many reservations exist for a specific date
 function getReservationCountForDate(date) {
   const targetDate = main.encodeDate(new Date(date), '2-digit');
-  return existingReservations.filter((reservation) => reservation.date === targetDate).length;
+  const now = new Date();
+  return existingReservations.filter((reservation) => {
+    if (reservation.date !== targetDate) return false;
+    const reservationEnd = buildDateTime(reservation.date, reservation.endTime);
+    return reservationEnd > now;
+  }).length;
 }
 
 function getReservationsForDate(date) {
@@ -1004,7 +1053,13 @@ function createDayElement(day, month, year, isToday) {
 
     main.deleteAllAtSectionTwo(SECTION_NAME);
     const reservationsAtTargetDate = getReservationsForDate(dateString);
-    reservationsAtTargetDate.forEach((reservationAtTargetDate) => {
+    // Only show reservations that have not yet ended
+    const now = new Date();
+    const upcomingReservations = reservationsAtTargetDate.filter((r) => {
+      const end = buildDateTime(r.date, r.endTime);
+      return end > now;
+    });
+    upcomingReservations.forEach((reservationAtTargetDate) => {
       const data = {
         id: reservationAtTargetDate.id,
         action: {
@@ -1129,6 +1184,29 @@ function updateReservationStats() {
     const totalEl = statElements[1]?.querySelector('.section-stats-c');
     if (activeEl) activeEl.textContent = activeCount;
     if (totalEl) totalEl.textContent = totalCount;
+  } catch (e) {}
+}
+
+// Remove any accidental duplicate DOM rows by dataset.id in a Section One tab
+function dedupeSectionOneTab(tabIndex) {
+  try {
+    const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
+    if (!emptyText) return;
+    const listRoot = emptyText.parentElement?.parentElement;
+    if (!listRoot || !listRoot.children || listRoot.children.length <= 1) return;
+    const seen = new Set();
+    const toRemove = [];
+    Array.from(listRoot.children)
+      .slice(1)
+      .forEach((item) => {
+        const id = item?.dataset?.id;
+        if (!id) return;
+        if (seen.has(id)) toRemove.push(item);
+        else seen.add(id);
+      });
+    toRemove.forEach((el) => {
+      try { el.remove(); } catch (e) {}
+    });
   } catch (e) {}
 }
 
