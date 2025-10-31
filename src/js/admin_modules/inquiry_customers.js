@@ -271,6 +271,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           } else {
                             findResult.dataset.status = 'incoming';
                             findResult.dataset.custom2 = 'Monthly - Incoming';
+                            findResult.dataset.start_date = main.encodeDate(
+                              customer.customer_start_date,
+                              main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                            );
                             createResult.remove();
                           }
                           findResult.children[2].innerText = findResult.dataset.custom2;
@@ -1281,27 +1285,15 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
   // If it's a monthly customer and start date hasn't been reached, show a message
   if (customer.dataset.custom2.toLowerCase().includes('incoming') || !hasReachedStart) {
-    let startDateStr = customer.dataset.custom2.toLowerCase().includes('incoming') ? 'N/A' : customer.dataset.custom2;
-    if (startDateStr === 'N/A') {
-      main.findAtSectionOne(SECTION_NAME, customer.dataset.id, 'equal_id', 2, (findResult) => {
-        if (findResult) {
-          startDateStr = findResult.dataset.custom2;
-          main.openConfirmationModal(
-            `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
-            () => {
-              main.closeConfirmationModal(() => continueCustomerProcess());
-            }
-          );
-        }
-      });
-    } else {
-      main.openConfirmationModal(
-        `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
-        () => {
-          main.closeConfirmationModal(() => continueCustomerProcess());
-        }
-      );
-    }
+    const startDateStr = customer.dataset.custom2.toLowerCase().includes('incoming')
+      ? customer.dataset.start_date
+      : customer.dataset.custom2;
+    main.openConfirmationModal(
+      `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
+      () => {
+        main.closeConfirmationModal(() => continueCustomerProcess());
+      }
+    );
     return;
   }
 
