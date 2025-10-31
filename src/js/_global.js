@@ -535,7 +535,80 @@ window.closeImageModal = function () {
   }
 };
 
-/* add new functions above 👆 */
+function setupAutoCasing() {
+  function toTitleCaseName(str = '') {
+    const lower = String(str).toLowerCase();
+    return lower.replace(/(^|[\s\-\'])([a-z\u00C0-\u017F])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+  }
+
+  function sanitizeNameInput(str = '') {
+    return String(str).replace(/[^a-zA-Z\s\-']/g, '');
+  }
+
+  function shouldAutoCase(el) {
+    if (!el) return false;
+    if (el.dataset.autocase === 'off') return false;
+    if (el.readOnly || el.disabled) return false;
+    const type = (el.type || '').toLowerCase();
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
+    const disallowed = new Set([
+      'email',
+      'password',
+      'url',
+      'number',
+      'tel',
+      'date',
+      'datetime-local',
+      'time',
+      'month',
+      'week',
+      'color',
+      'file',
+      'range',
+      'hidden',
+    ]);
+    if (el instanceof HTMLInputElement && type && disallowed.has(type)) return false;
+    return true;
+  }
+
+  function isNameField(el) {
+    if (!el) return false;
+    if (el.dataset.autocase === 'name') return true;
+    const hay = `${el.name || ''} ${el.id || ''} ${el.placeholder || ''}`.toLowerCase();
+    return /\b(first|last|name|fullname|full name)\b/.test(hay);
+  }
+
+  document.addEventListener('input', (e) => {
+    if (!e.isTrusted) return; // ignore synthetic events to prevent loops
+    const el = e.target;
+    if (!shouldAutoCase(el)) return;
+    const isTextual = el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && (!el.type || el.type.toLowerCase() === 'text' || el.type.toLowerCase() === 'search'));
+    if (!isTextual) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    let value = el.value;
+    if (isNameField(el)) {
+      const sanitized = sanitizeNameInput(value);
+      if (sanitized !== value) value = sanitized;
+    }
+    const corrected = toTitleCaseName(value);
+    if (el.value !== corrected) {
+      el.value = corrected;
+      try {
+        if (typeof start === 'number' && typeof end === 'number') el.setSelectionRange(corrected.length < (end || 0) ? corrected.length : start, corrected.length < (end || 0) ? corrected.length : end);
+      } catch (_) {}
+    }
+  }, true);
+}
+
+/* add new functions above */
+
+// Ensure auto-casing is active across all pages/modals regardless of the '#_global' guard
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupAutoCasing, { once: true });
+} else {
+  try { setupAutoCasing(); } catch (_) {}
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   if (checkIfJsShouldNotRun('_global')) return;
