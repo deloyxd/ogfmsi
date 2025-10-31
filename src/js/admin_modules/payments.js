@@ -1305,7 +1305,14 @@ async function openProcessConsolidatedModal() {
         console.error(`Error fetching data for ID ${id}:`, error);
       });
   });
-  await Promise.all(fetchPromises);
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
+  try {
+    await Promise.all(fetchPromises);
+  } catch (e) {
+  } finally {
+    window.hideGlobalLoading?.();
+  }
 
   const rowsHTML =
     uniqueIds.length === 0
