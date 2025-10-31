@@ -60,8 +60,8 @@ function displayAnnouncements(announcements) {
   const announcementsToShow = announcements.slice(0, MAX_DISPLAY_ANNOUNCEMENTS);
 
   if (announcementsToShow.length > 0) {
-    announcementsToShow.forEach((announcement, index) => {
-      const announcementElement = createAnnouncementElement(announcement, index);
+    announcementsToShow.forEach((announcement) => {
+      const announcementElement = createAnnouncementElement(announcement);
       container.appendChild(announcementElement);
     });
   } else {
@@ -110,47 +110,42 @@ function displayNoAnnouncementsMessage(container) {
  * @param {number} index - Index for styling
  * @returns {HTMLElement} - Announcement element
  */
-function createAnnouncementElement(announcement, index) {
+function createAnnouncementElement(announcement) {
   const newsItem = document.createElement('div');
   newsItem.className = 'news-item';
 
-  // Determine colors and classes based on index
-  const colorConfig = getColorConfig(index);
-  
-  // Build an optional image block to render UNDER the text content
-  const hasImage = announcement && announcement.image && announcement.image.src;
-  const altTitle = [
-    announcement?.title?.top || '',
-    announcement?.title?.highlight || '',
-    announcement?.title?.bottom || '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
-  const imageBlock = hasImage
-    ? `
-      <img
-        src="${announcement.image.src}"
-        alt="${altTitle || 'Announcement image'}"
-        class="mt-4 w-full rounded-lg object-cover max-h-56"
-      />
-    `
-    : '';
-
   const announcementHTML = `
     <div
-      data-color="${colorConfig.color}"
-      class="${colorConfig.classes}"
+      data-color="'black'"
+      class="announcement-modal relative w-full max-w-4xl mx-auto overflow-hidden rounded-2xl border-4 border-white shadow-2xl duration-300 hover:scale-105 p-6 transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-black dark:hover:shadow-orange-600"
     >
-      <!-- Icon removed as requested -->
-      <div class="hidden"></div>
-      <h3 class="mb-3 text-3xl font-bold ${colorConfig.titleColor}">
-        ${announcement.title.top}
-      </h3>
-      <p class="text-xl ${colorConfig.textColor} mb-4">
-        ${announcement.description}
-      </p>
-      ${imageBlock}
+      <!-- Background Image with Overlay -->
+      <div class="absolute inset-0">
+        <img 
+          src="${announcement.image.src || '/src/images/carousel_image_2.jpg'}" 
+          class="h-full w-full object-cover" 
+        />
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[3px]"></div>
+      </div>
+
+      <!-- Content -->
+      <div class="relative z-10 p-8 text-center">
+        <!-- Title Section -->
+        <div class="mb-6 flex justify-center">
+          <h3 class="text-5xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <span">${announcement.title.top}</span>
+            <span class="text-6xl text-yellow-400 drop-shadow-[0_2px_4px_rgba(255,215,0,0.9)] mx-4">
+              ${announcement.title.highlight}
+            </span>
+            <span">${announcement.title.bottom}</span>
+          </h3>
+        </div>
+
+        <!-- Description -->
+        <p class="text-2xl font-semibold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] leading-relaxed">
+          ${announcement.description}
+        </p>
+      </div>
     </div>
   `;
 
@@ -166,46 +161,6 @@ function createAnnouncementElement(announcement, index) {
   }
 
   return newsItem;
-}
-
-/**
- * Get color configuration based on index
- * @param {number} index - Index for styling
- * @returns {Object} - Color configuration
- */
-function getColorConfig(index) {
-  const configs = [
-    {
-      color: 'orange',
-      classes:
-        'redirect-to-demo rounded-lg border border-orange-500 bg-orange-200 p-6 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-600 dark:hover:shadow-orange-300',
-      iconBg: 'bg-gradient-to-br from-orange-500 to-red-500',
-      titleColor: 'text-red-500',
-      textColor: 'text-red-500 text-opacity-70',
-      iconPath: 'M13 10V3L4 14h7v7l9-11h-7z',
-    },
-    {
-      color: 'black',
-      classes:
-        'redirect-to-login transform rounded-lg border border-gray-900 bg-gradient-to-br from-orange-500 to-red-500 p-6 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black dark:hover:shadow-orange-600',
-      iconBg: 'bg-white',
-      titleColor: 'text-white',
-      textColor: 'text-white text-opacity-70',
-      iconPath:
-        'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-    },
-    {
-      color: 'orange',
-      classes:
-        'redirect-to-demo transform rounded-lg border border-orange-500 bg-orange-200 p-6 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-600 dark:hover:shadow-orange-300',
-      iconBg: 'bg-gradient-to-br from-orange-500 to-red-500',
-      titleColor: 'text-red-500',
-      textColor: 'text-red-500 text-opacity-70',
-      iconPath: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-    },
-  ];
-
-  return configs[index % configs.length];
 }
 
 // Auto-initialize when script loads
