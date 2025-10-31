@@ -1086,13 +1086,9 @@ function validateCustomer(
         );
       }
 
-      if (renewalData) {
-        main.closeModal(() => {
-          continueValidateCustomer();
-        });
-      } else {
+      main.closeModal(() => {
         continueValidateCustomer();
-      }
+      });
 
       return;
     }
