@@ -268,6 +268,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           if (startDate <= today) {
                             findResult.dataset.status = 'active';
                             findResult.dataset.custom2 = 'Monthly - Active';
+                          } else {
+                            findResult.dataset.status = 'incoming';
+                            findResult.dataset.custom2 = 'Monthly - Incoming';
+                            createResult.remove();
+                          }
+                          findResult.children[2].innerText = findResult.dataset.custom2;
                           const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
                           customerProcessBtn.addEventListener('click', () =>
                             customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
@@ -276,12 +282,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           customerEditDetailsBtn.addEventListener('click', () =>
                             customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
                           );
-                          } else {
-                            findResult.dataset.status = 'incoming';
-                            findResult.dataset.custom2 = 'Monthly - Incoming';
-                            createResult.remove();
-                          }
-                          findResult.children[2].innerText = findResult.dataset.custom2;
                           updateCustomerStats();
                         }
                       );
