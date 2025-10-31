@@ -137,16 +137,26 @@ async function loadExistingAnnouncements() {
         const announcementBtn = document.querySelector('.announcementBtn').cloneNode(true);
 
         const result = {
+          header: {
+            title: `Update Announcement ${getEmoji('📌', 26)}`,
+            subtitle: 'Announcement form',
+          },
           image: {
             src: announcement.image.src,
             type: announcement.image.type,
             short: [
-              { value: announcement.title.top },
-              { value: announcement.title.highlight },
-              { value: announcement.title.bottom },
+              { placeholder: 'Title - Top', value: announcement.title.top, required: true },
+              { placeholder: 'Title - Highlight', value: announcement.title.highlight, required: true },
+              { placeholder: 'Title - Bottom', value: announcement.title.bottom, required: true },
             ],
           },
-          large: [{ value: announcement.description }],
+          large: [
+            {
+              placeholder: 'Description',
+              value: announcement.description,
+              required: true,
+            },
+          ],
           header: {
             title: announcement.header.title,
             subtitle: announcement.header.subtitle,
@@ -304,23 +314,23 @@ async function deleteAnnouncementHandler(element) {
 }
 
 // ✅ make injectDataToAnnouncementItem globally available
-function injectDataToAnnouncementItem(element, result, announcementId = null) {
-  element.children[0].src = result.image.src;
+function injectDataToAnnouncementItem(element, inputs, announcementId = null) {
+  element.children[0].src = inputs.image.src;
   let title = '';
   element.children[2].querySelectorAll('p').forEach((p, i) => {
-    result.image.short.forEach((input, index) => {
+    inputs.image.short.forEach((input, index) => {
       if (index == i) {
         title += ' ' + input.value;
         p.textContent = input.value;
       }
     });
   });
-  result.header.title = `Update Announcement ${getEmoji('📌', 26)}`;
-  result.header.subtitle = 'Announcement form';
-  result.footer = {};
-  result.footer.main = `Update ${getEmoji('📌')}`;
-  result.footer.sub = `Delete ${getEmoji('⚠️')}`;
-  element.dataset.description = result.large[0].value;
+  inputs.header.title = `Update Announcement ${getEmoji('📌', 26)}`;
+  inputs.header.subtitle = 'Announcement form';
+  inputs.footer = {};
+  inputs.footer.main = `Update ${getEmoji('📌')}`;
+  inputs.footer.sub = `Delete ${getEmoji('⚠️')}`;
+  element.dataset.description = inputs.large[0].value;
 
   if (announcementId) {
     element.dataset.announcementId = announcementId;
@@ -332,7 +342,7 @@ function injectDataToAnnouncementItem(element, result, announcementId = null) {
   element.onclick = () => {
     main.openModal(
       element,
-      result,
+      inputs,
       (updatedResult) => {
         main.openConfirmationModal('Update announcement: ' + title, async () => {
           await updateAnnouncementHandler(element, updatedResult);
@@ -377,7 +387,9 @@ function injectDataToAnnouncementItem(element, result, announcementId = null) {
 }
 
 // Handles sub button logic
-function subBtnFunction() {}
+function subBtnFunction() {
+  window.open('/', '_blank');
+}
 
 // Fetches announcements from backend
 async function fetchAnnouncements() {
