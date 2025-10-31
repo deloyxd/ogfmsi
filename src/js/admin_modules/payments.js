@@ -1276,14 +1276,14 @@ async function openProcessConsolidatedModal() {
             let quantity = parseInt(match[1]);
             let itemName = match[2];
             let price = parseFloat(match[3].replace(/,/g, ''));
-            let totalPrice = +price / +quantity;
+            let totalPrice = +price * +quantity;
             purposeStr += `${itemName}<br>`;
             if (quantity > 1) {
-              amountStr += `x${quantity} * ${main.encodePrice(totalPrice)} = <b>${main.encodePrice(price)}</b><br>`;
+              amountStr += `x${quantity} * ${main.encodePrice(price)} = <b>${main.encodePrice(totalPrice)}</b><br>`;
             } else {
-              amountStr += `<b>${main.encodePrice(price)}</b><br>`;
+              amountStr += `<b>${main.encodePrice(totalPrice)}</b><br>`;
             }
-            grandTotal += price;
+            grandTotal += totalPrice;
           }
 
           purposes.push(purposeStr);
