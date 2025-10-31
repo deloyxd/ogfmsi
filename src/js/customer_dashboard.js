@@ -37,9 +37,9 @@ function setupLogout() {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            await signOut(auth);
             sessionStorage.clear();
             window.location.href = '/';
+            await signOut(auth);
           } catch (error) {
             console.error('Logout Error:', error);
             Swal.fire({

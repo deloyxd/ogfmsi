@@ -179,8 +179,8 @@ function setupLoginForm() {
           sessionStorage.setItem('email', user.email);
 
           Toastify({
-            text: 'Login successful!',
-            duration: 3000,
+            text: 'Logging in, please wait...',
+            duration: 1500,
             close: true,
             gravity: 'top',
             position: 'center',
@@ -216,8 +216,8 @@ function setupLoginForm() {
           sessionStorage.setItem('email', user.email);
 
           Toastify({
-            text: 'Login successful!',
-            duration: 3000,
+            text: 'Logging in, please wait...',
+            duration: 1500,
             close: true,
             gravity: 'top',
             position: 'center',
@@ -344,7 +344,7 @@ async function submitClicked(e) {
         sessionStorage.setItem('email', sanitizedEmail);
 
         Toastify({
-          text: 'Account created successfully!',
+          text: 'Account created successfully! Please wait...',
           duration: 3000,
           close: true,
           gravity: 'top',
@@ -418,8 +418,8 @@ async function submitClicked(e) {
         sessionStorage.setItem('email', user.email);
 
         Toastify({
-          text: 'Login successful!',
-          duration: 3000,
+          text: 'Logging in, please wait...',
+          duration: 1500,
           close: true,
           gravity: 'top',
           position: 'center',
