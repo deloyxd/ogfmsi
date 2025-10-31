@@ -143,7 +143,7 @@ function createAnnouncementElement(announcement) {
 
         <!-- Description -->
         <p class="text-lg font-black text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] leading-relaxed">
-          ${announcement.description}
+          ${announcement.description.replaceAll('\n', '<br>')}
         </p>
       </div>
     </div>
