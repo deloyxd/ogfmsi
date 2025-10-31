@@ -521,7 +521,7 @@ async function setupChartTwo() {
             {
               label: 'Customer Rate Distribution',
               data: [rateData.regular, rateData.student],
-              backgroundColor: ['rgb(249, 115, 22)', 'rgb(194, 65, 12)'],
+              backgroundColor: ['rgba(219, 99, 12, 1)', 'rgb(194, 65, 12)'],
               borderWidth: 0,
             },
           ],

@@ -1825,7 +1825,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     inputs.short[3].autoformat = 'price';
   }
 
-  main.openModal('yellow', inputs, (result) => {
+  main.openModal('green', inputs, (result) => {
     const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
     const cashVal = result.short[2].value.includes('₱')
       ? +main.decodePrice(result.short[2].value)

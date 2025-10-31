@@ -380,7 +380,8 @@ async function loadSectionSilently(sectionName) {
                 break;
               case 'highlighttexts':
                 statsTexts.innerHTML =
-                  statsTexts.innerHTML + ` <b class="text-${dataset.mainColor}-500">${dataset[field][i]}</b>`;
+                  statsTexts.innerHTML +
+                  ` <b class="px-[1px] text-${dataset.mainColor}-300 [text-shadow:-1px_-1px_0_black,1px_-1px_0_black,-1px_1px_0_black,1px_1px_0_black]">${dataset[field][i]}</b>`;
                 break;
               case 'endingtexts':
                 statsTexts.innerHTML = statsTexts.innerHTML + ' ' + dataset[field][i];
@@ -2260,8 +2261,8 @@ export function getStockStatus(quantity) {
   if (typeof quantity != 'number') quantity = +quantity;
   if (quantity === 0) return `<div class="emoji text-gray-800 font-bold">Out of Stock ${getEmoji('⚠️')}</div>`;
   if (quantity <= 10) return `<div class="emoji text-red-700 font-bold">Super Low Stock ${getEmoji('‼️')}</div>`;
-  if (quantity <= 50) return `<div class="emoji text-amber-500 font-bold">Low Stock ${getEmoji('⚠️')}</div>`;
-  return `<div class="emoji text-emerald-600 font-bold">High Stock ${getEmoji('✅')}</div>`;
+  if (quantity <= 50) return `<div class="emoji text-amber-700 font-bold">Low Stock ${getEmoji('⚠️')}</div>`;
+  return `<div class="emoji text-emerald-700 font-bold">High Stock ${getEmoji('✅')}</div>`;
 }
 
 export function validateStockInputs(price, quantity, measurement) {
