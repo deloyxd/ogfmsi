@@ -536,6 +536,8 @@ window.closeImageModal = function () {
 };
 
 function setupAutoCasing() {
+  // Skip auto-casing on the customer login page
+  if (document.getElementById('customer_login')) return;
   function toTitleCaseName(str = '') {
     const lower = String(str).toLowerCase();
     return lower.replace(/(^|[\s\-\'])([a-z\u00C0-\u017F])/g, (m, p1, p2) => p1 + p2.toUpperCase());
