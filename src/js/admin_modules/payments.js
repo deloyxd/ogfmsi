@@ -1765,13 +1765,17 @@ async function seePhotoProvidedListener(title, paymentId) {
     const response = await fetch(`/api/payments/pending/${paymentId}/urls`);
     const data = await response.json();
 
+    console.log(data)
     if (response.ok) {
       const titleLower = title.toLowerCase();
-      let imgSrc = '/src/images/client_logo.jpg';
+      let imgSrc;
       if (titleLower.includes('monthly')) {
         imgSrc = data.result.payment_monthly_url;
       } else if (titleLower.includes('student')) {
         imgSrc = data.result.payment_student_url;
+      }
+      if (imgSrc === '') {
+        imgSrc = '/src/images/client_logo.jpg';
       }
       window.showImageModal(imgSrc, title);
     } else {

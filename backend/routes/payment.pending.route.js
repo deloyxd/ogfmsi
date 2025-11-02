@@ -80,16 +80,17 @@ router.post('/pending', async (req, res) => {
   }
 });
 
-router.get('/pending/:payment_id/urls', async (req, res) => {
-  const { payment_id } = req.params;
+router.get('/pending/:id/urls', async (req, res) => {
+  const { id } = req.params;
 
   try {
     const sql = `SELECT payment_monthly_url, payment_student_url 
                  FROM payment_tbl 
-                 WHERE payment_id = ? AND payment_type = 'pending'`;
+                 WHERE payment_id = ?`;
 
-    const rows = await db.query(sql, [payment_id]);
+    const rows = await db.query(sql, [id]);
 
+    console.log(rows)
     if (rows && rows.length > 0) {
       return res.status(200).json({
         message: 'Payment URLs fetched successfully',
