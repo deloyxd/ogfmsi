@@ -1838,7 +1838,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     radio: [
       {
         label: isOnlineTransaction ? 'Pictures provided' : 'Payment method',
-        selected: 1,
+        selected: isOnlineTransaction && !isStudent ? 2 : 1,
       },
     ],
     footer: {
@@ -1872,17 +1872,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   //     listener: activeRadioListener,
   //   },
   // ],
-  if (isOnlineTransaction && !isOnlineFacility) {
+  if (isOnlineTransaction && !isOnlineFacility && isStudent) {
     inputs.radio[0].donotautoclick = true;
     inputs.radio[0].autoformat = { type: 'online' };
-    inputs.radio.push({
-      icon: `${getEmoji('📸', 26)}`,
-      title: 'Monthly Registrant Photo',
-      subtitle: 'Validate before confirming',
-      id: effectiveId,
-      listener: seePhotoProvidedListener,
-    });
-    if (isStudent) {
       inputs.radio.push({
         icon: `${getEmoji('🆔', 26)}`,
         title: 'Student ID Photo',
@@ -1890,7 +1882,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         id: effectiveId,
         listener: seePhotoProvidedListener,
       });
-    }
   } else {
     inputs.short[3].autoformat = 'price';
     inputs.radio[0].autoformat = { type: 'short', index: 11 };
@@ -1919,7 +1910,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     if (
       isOnlineTransaction &&
       !isOnlineFacility &&
-      (!approvalStatus || !approvalStatus.approvals.monthly || (isStudent && !approvalStatus.approvals.student))
+      (!approvalStatus || (isStudent && !approvalStatus.approvals.student))
     ) {
       main.toast('You need to approve the image provided by the customer!', 'error');
       return;

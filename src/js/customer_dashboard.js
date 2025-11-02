@@ -124,6 +124,9 @@ function loadCustomerNotifications() {
         });
 
         listEl.appendChild(frag);
+
+        const openNotif = document.getElementById('openNotif');
+        openNotif.dispatchEvent(new Event('click'));
       })
       .catch((err) => {
         console.error('Failed to load notifications:', err);
