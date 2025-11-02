@@ -596,6 +596,7 @@ async function submitMonthlyRegistration(regData, payData) {
     });
   }
   const profileDataUrl = await toDataUrl(/** @type {File|null} */ (regData.get('profile')));
+  const studentIdDataUrl = await toDataUrl(/** @type {File|null} */ (regData.get('studentId')));
 
   // 1) Create customer (pending monthly)
   await fetch(`${API_BASE_URL}/inquiry/customers/${customerId}`, {
@@ -638,9 +639,9 @@ async function submitMonthlyRegistration(regData, payData) {
         payment_purpose: `Online monthly registration fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
         payment_amount_to_pay: amount,
         payment_rate: isStudent ? 'Student' : 'Regular',
-        payment_method_hint: 'cashless',
         payment_ref: String(payData.get('gcashRef') || ''),
-        payment_source: 'customer_portal',
+        payment_monthly_url: profileDataUrl,
+        payment_student_url: studentIdDataUrl
       }),
     });
     if (!resp.ok) {

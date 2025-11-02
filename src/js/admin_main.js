@@ -1224,6 +1224,8 @@ function setupModalBase(defaultData, inputs, callback) {
               if (autoformatText != '') {
                 input.listener(input.title, tempModalContainer.querySelector(`#modalMainBtn`), autoformatText);
               }
+            } else if (autoformatType.includes('online')) {
+              input.listener(input.title);
             } else {
               if (autoformatIndex > 0) {
                 input.listener(
@@ -1236,7 +1238,8 @@ function setupModalBase(defaultData, inputs, callback) {
             }
           }
         });
-        if (index == inputs.radio[0].selected) clone.dispatchEvent(new Event('click'));
+        if (index == inputs.radio[0].selected && !inputs.radio[0].donotautoclick)
+          clone.dispatchEvent(new Event('click'));
       }
     });
 

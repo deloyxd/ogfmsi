@@ -170,6 +170,8 @@ CREATE TABLE IF NOT EXISTS payment_tbl (
     payment_amount_refund VARCHAR(255),
     payment_method VARCHAR(255),
     payment_ref VARCHAR(50) NULL,
+    payment_monthly_url LONGTEXT,
+    payment_student_url LONGTEXT,
     payment_rate VARCHAR(255),
     payment_type ENUM('pending', 'canceled', 'service', 'sales', 'refund') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -277,3 +279,7 @@ CREATE TABLE IF NOT EXISTS notif_tbl (
     notif_type VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE payment_tbl 
+ADD COLUMN payment_monthly_url LONGTEXT AFTER payment_ref,
+ADD COLUMN payment_student_url LONGTEXT AFTER payment_monthly_url;

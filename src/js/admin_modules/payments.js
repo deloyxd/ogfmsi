@@ -104,8 +104,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           seenPendingPaymentIds.add(pendingPayment.payment_id);
           // Normalize optional fields coming from customer portal
           const refFromPortal = pendingPayment.payment_ref || pendingPayment.payment_reference || '';
-          const methodHint = (pendingPayment.payment_method_hint || '').toLowerCase();
-          const fromCustomerPortal = String(pendingPayment.payment_source || '') === 'customer_portal';
 
           main.findAtSectionOne(
             'inquiry-customers',
@@ -170,7 +168,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       }
                     } catch (_) {}
                   }
-                  if (fromCustomerPortal && refFromPortal) {
+                  if (isOnlineTransaction && refFromPortal) {
                     createResult.dataset.refnum = refFromPortal;
                   }
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
@@ -189,8 +187,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                           : ''
                         : fullName,
                       Number(pendingPayment.payment_amount_to_pay) || 0,
-                      pendingPayment.payment_rate,
-                      { methodHint, refFromPortal, displayId: pendingPayment.payment_id }
+                      pendingPayment.payment_rate
                     );
                   });
                   const transactionCancelBtn = createResult.querySelector('#transactionCancelBtn');
@@ -1761,10 +1758,36 @@ function activeRadioListener(title, input, container, inputGroup) {
   }
 }
 
-function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate, opts = {}) {
+async function seePhotoProvidedListener(title, paymentId) {
+  main.sharedState.moduleLoad = SECTION_NAME;
+  window.showGlobalLoading?.();
+  try {
+    const response = await fetch(`/api/payments/pending/${paymentId}/urls`);
+    const data = await response.json();
+
+    if (response.ok) {
+      const titleLower = title.toLowerCase();
+      let imgSrc = '/src/images/client_logo.jpg';
+      if (titleLower.includes('monthly')) {
+        imgSrc = data.result.payment_monthly_url;
+      } else if (titleLower.includes('student')) {
+        imgSrc = data.result.payment_student_url;
+      }
+      window.showImageModal(imgSrc, title);
+    } else {
+      console.error('Error:', data.error);
+    }
+  } catch (error) {
+    console.error('Request failed:', error);
+  } finally {
+    window.hideGlobalLoading?.();
+  }
+}
+
+function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate) {
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
-  const effectiveId = opts.displayId || id;
+  const effectiveId = id;
   const inputs = {
     header: {
       title: `Transaction ID: ${effectiveId} ${getEmoji('🔏', 26)}`,
@@ -1802,36 +1825,77 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     ],
     radio: [
       {
-        label: 'Payment method',
-        selected: isOnlineTransaction ? 2 : 1,
-        autoformat: { type: 'short', index: 11 },
-        locked: isOnlineTransaction,
-      },
-      {
-        icon: `${getEmoji('💵', 26)}`,
-        title: 'Cash',
-        subtitle: 'Traditional payment method',
-        listener: activeRadioListener,
-      },
-      {
-        icon: `${getEmoji('💳', 26)}`,
-        title: 'Cashless',
-        subtitle: 'Digital payment method',
-        listener: activeRadioListener,
-      },
-      {
-        icon: `${getEmoji('💵', 20)} + ${getEmoji('💳', 20)}`,
-        title: 'Hybrid',
-        subtitle: 'Both physical and digital payment method',
-        listener: activeRadioListener,
+        label: isOnlineTransaction ? 'Pictures provided' : 'Payment method',
+        selected: 1,
       },
     ],
     footer: {
       main: `Complete payment transaction ${getEmoji('🔏')}`,
     },
   };
-  if (!isOnlineTransaction) {
+
+  // radio: [
+  //   {
+  //     label: 'Payment method',
+  //     selected: isOnlineTransaction ? 2 : 1,
+  //     autoformat: { type: 'short', index: 11 },
+  //     locked: isOnlineTransaction,
+  //   },
+  //   {
+  //     icon: `${getEmoji('💵', 26)}`,
+  //     title: 'Cash',
+  //     subtitle: 'Traditional payment method',
+  //     listener: activeRadioListener,
+  //   },
+  //   {
+  //     icon: `${getEmoji('💳', 26)}`,
+  //     title: 'Cashless',
+  //     subtitle: 'Digital payment method',
+  //     listener: activeRadioListener,
+  //   },
+  //   {
+  //     icon: `${getEmoji('💵', 20)} + ${getEmoji('💳', 20)}`,
+  //     title: 'Hybrid',
+  //     subtitle: 'Both physical and digital payment method',
+  //     listener: activeRadioListener,
+  //   },
+  // ],
+  if (isOnlineTransaction) {
+    inputs.radio[0].donotautoclick = true;
+    inputs.radio[0].autoformat = { type: 'online' };
+    inputs.radio.push({
+      icon: `${getEmoji('📸', 26)}`,
+      title: 'Monthly Registrant Photo',
+      subtitle: 'Validate before confirming',
+      listener: seePhotoProvidedListener,
+    });
+    inputs.radio.push({
+      icon: `${getEmoji('🆔', 26)}`,
+      title: 'Student ID Photo',
+      subtitle: 'Validate before confirming',
+      listener: seePhotoProvidedListener,
+    });
+  } else {
     inputs.short[3].autoformat = 'price';
+    inputs.radio[0].autoformat = { type: 'short', index: 11 };
+    inputs.radio.push({
+      icon: `${getEmoji('💵', 26)}`,
+      title: 'Cash',
+      subtitle: 'Traditional payment method',
+      listener: activeRadioListener,
+    });
+    inputs.radio.push({
+      icon: `${getEmoji('💳', 26)}`,
+      title: 'Cashless',
+      subtitle: 'Digital payment method',
+      listener: activeRadioListener,
+    });
+    inputs.radio.push({
+      icon: `${getEmoji('💵', 20)} + ${getEmoji('💳', 20)}`,
+      title: 'Hybrid',
+      subtitle: 'Both physical and digital payment method',
+      listener: activeRadioListener,
+    });
   }
 
   main.openModal('green', inputs, (result) => {

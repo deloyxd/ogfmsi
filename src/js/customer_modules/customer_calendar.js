@@ -1234,9 +1234,7 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
       payment_purpose: `Online facility reservation fee - Reference: ${payData.get('gcashRef')} from Account: ${payData.get('gcashName')}`,
       payment_amount_to_pay: amount,
       payment_rate: rate,
-      payment_method_hint: 'cashless',
       payment_ref: String(payData.get('gcashRef') || ''),
-      payment_source: 'customer_portal',
     }),
   });
   if (!resp.ok) {
