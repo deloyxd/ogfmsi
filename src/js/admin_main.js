@@ -2240,7 +2240,7 @@ export function isPastDate(dateString) {
 export function isIncomingDate(date) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return new Date(date) >= today;
+  return new Date(date) > today;
 }
 
 export function encodePrice(price) {
