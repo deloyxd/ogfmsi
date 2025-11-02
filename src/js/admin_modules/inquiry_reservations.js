@@ -58,6 +58,7 @@ import {
   onSnapshot,
   query,
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -149,7 +150,7 @@ function isTimeInPast(date, time) {
 function buildDateTime(dateStr, timeStr) {
   const [m, d, y] = (dateStr || '').split('-').map(Number);
   const [hh, mm] = (timeStr || '').split(':').map(Number);
-  return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
+  return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0);
 }
 
 // Checks if a new reservation conflicts with existing ones
@@ -397,7 +398,10 @@ function cleanupExpiredReservations() {
 
 async function loadExistingReservations() {
   listenToReservationsFE(async (reservations) => {
-    existingReservations = reservations;
+    // Exclude 'Canceled' reservations from UI and conflict checks
+    existingReservations = (reservations || []).filter(
+      (r) => (r.status || '').toLowerCase() !== 'canceled'
+    );
     const myBuild = ++buildVersion;
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
@@ -480,6 +484,13 @@ async function loadExistingReservations() {
                     main.toast(`Error voiding reservation: ${error.message}`, 'error');
                   }
                 });
+              });
+            }
+
+            const reschedBtn = createdItem.querySelector('[id^="reservationReschedBtn"]');
+            if (reschedBtn) {
+              reschedBtn.addEventListener('click', () => {
+                rescheduleReservation(reservation);
               });
             }
 
@@ -1165,12 +1176,8 @@ function getReservationCountForTab(tabIndex) {
   const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
   if (!emptyText) return 0;
   const items = Array.from(emptyText.parentElement?.parentElement?.children || []);
-  const filteredItems = items.filter((item, index) => {
-    if (index === 0) return false;
-    const datetime = item?.dataset?.datetime?.toLowerCase() || '';
-    return !datetime.includes('pending');
-  });
-  return filteredItems.length;
+  // Count all rows except the header empty-text row
+  return Math.max(0, items.length - 1);
 }
 
 function updateReservationStats() {
@@ -1222,7 +1229,27 @@ export async function reserveCustomer() {
 export async function cancelPendingTransaction(transactionId) {
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, async (findResult) => {
     if (findResult) {
-      await updateReservationFE(findResult.dataset.id, { status: 'Canceled', tid: '' });
+      try {
+        const resId = findResult.dataset.id;
+        const snap = await getDoc(doc(db, 'reservations', resId));
+        const data = snap.exists() ? snap.data() : {};
+        const statusLc = String(data.status || '').toLowerCase();
+        // If this is a newly created reservation awaiting initial payment, remove it entirely
+        if (statusLc === 'pending' && !data.pendingDate && !data.pendingStartTime && !data.pendingEndTime) {
+          await deleteReservationFE(resId);
+          try { main.toast('Pending reservation canceled and removed. Slot is now available.', 'info'); } catch (_) {}
+        } else {
+          // Otherwise it's a reschedule payment cancel: clear pending fields and keep original schedule
+          await updateReservationFE(resId, {
+            tid: '',
+            pendingDate: '',
+            pendingStartTime: '',
+            pendingEndTime: '',
+            pendingAmount: 0,
+          });
+          try { main.toast('Reschedule canceled. Original schedule retained.', 'info'); } catch (_) {}
+        }
+      } catch (_) {}
     }
   });
 }
@@ -1230,10 +1257,30 @@ export async function cancelPendingTransaction(transactionId) {
 // Completes the reservation payment process and updates status
 export async function completeReservationPayment(transactionId) {
   main.showSection(SECTION_NAME, 2);
-  const { date, time, datetime } = main.getDateOrTimeOrBoth();
+  const { datetime } = main.getDateOrTimeOrBoth();
   main.findAtSectionOne(SECTION_NAME, transactionId, 'equal_tid', 2, async (findResult) => {
-    if (findResult) {
-      await updateReservationFE(findResult.dataset.id, { status: datetime, tid: '' });
+    if (!findResult) return;
+    try {
+      const snap = await getDoc(doc(db, 'reservations', findResult.dataset.id));
+      const data = snap.exists() ? snap.data() : {};
+      const newDate = data.pendingDate || data.date;
+      const newStart = data.pendingStartTime || data.startTime;
+      const newEnd = data.pendingEndTime || data.endTime;
+      const newAmount = typeof data.pendingAmount === 'number' && data.pendingAmount > 0 ? data.pendingAmount : data.amount;
+      await updateReservationFE(findResult.dataset.id, {
+        date: newDate,
+        startTime: newStart,
+        endTime: newEnd,
+        amount: newAmount,
+        status: datetime,
+        tid: '',
+        pendingDate: '',
+        pendingStartTime: '',
+        pendingEndTime: '',
+        pendingAmount: 0,
+      });
+    } catch (e) {
+      try { main.toast('Payment completed but failed to apply schedule update. Please refresh.', 'error'); } catch (_) {}
     }
   });
 }
@@ -1287,8 +1334,8 @@ function editReservation(reservation) {
         placeholder: 'Select duration',
         selected:
           DURATION_OPTIONS.findIndex((d) => {
-            const start = new Date(`1970-01-01T${startTime}`);
-            const end = new Date(`1970-01-01T${endTime}`);
+            const start = new Date(`1970-01-01T${startTime}:00`);
+            const end = new Date(`1970-01-01T${endTime}:00`);
             return d.value === (end - start) / (1000 * 60 * 60);
           }) + 1,
         required: true,
@@ -1351,6 +1398,267 @@ function editReservation(reservation) {
     } catch (error) {
       main.toast(`Error updating reservation: ${error.message}`, 'error');
     }
+  });
+}
+
+function rescheduleReservation(reservation) {
+  const { id, customerId, customerName, date, startTime, endTime } = reservation;
+  const { fullName } = main.decodeName(customerName);
+
+  // Disallow rescheduling for Pending reservations
+  try {
+    const statusLc = (reservation.status || '').toLowerCase();
+    if (statusLc === 'pending') {
+      main.toast('Cannot reschedule a Pending reservation.', 'error');
+      return;
+    }
+  } catch (e) {}
+
+  // Block rescheduling if the reservation is currently ongoing
+  try {
+    const now = new Date();
+    const startDt = buildDateTime(date, startTime);
+    const endDt = buildDateTime(date, endTime);
+    if (now >= startDt && now <= endDt) {
+      main.toast('Cannot reschedule an ongoing reservation.', 'error');
+      return;
+    }
+  } catch (e) {}
+
+  // Restrict rescheduling to at least 1 day before the scheduled start time
+  try {
+    const now = new Date();
+    const originalStart = buildDateTime(date, startTime);
+    const cutoff = new Date(originalStart.getTime() - 24 * 60 * 60 * 1000);
+    if (now > cutoff) {
+      main.toast('Rescheduling is only allowed at least 1 day before the scheduled date.', 'error');
+      return;
+    }
+  } catch (e) {}
+
+  const existingDurationHours = (() => {
+    try {
+      const s = new Date(`1970-01-01T${startTime}:00`);
+      const e = new Date(`1970-01-01T${endTime}:00`);
+      return (e - s) / (1000 * 60 * 60);
+    } catch (e) {
+      return 1;
+    }
+  })();
+
+  const fixedDuration = Math.min(7, Math.max(1, Math.round(existingDurationHours) || 1));
+
+  const inputs = {
+    header: {
+      title: `Reschedule ${getEmoji('📆', 26)}`,
+      subtitle: 'Select new date and time',
+    },
+    short: [
+      { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
+      { placeholder: 'Reservation date (mm-dd-yyyy)', value: date, required: true, calendar: true },
+    ],
+    spinner: [],
+    short2: [
+      { placeholder: 'Start time', value: startTime, required: true, type: 'time', listener: (input, container) => {
+        try {
+          const start = input.value;
+          if (!/^\d{2}:\d{2}$/.test(start)) return;
+          const selectedDuration = fixedDuration;
+          const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+          const endTotalMinutes = h * 60 + m + selectedDuration * 60;
+          if (endTotalMinutes > 23 * 60 + 59) {
+            main.toast('The reservation must finish before midnight.', 'error');
+            const endInputBlock =
+              container.querySelector('input[placeholder="End time"]') ||
+              container.querySelector('input[type="time"][disabled]');
+            if (endInputBlock) {
+              endInputBlock.value = '';
+              endInputBlock.dispatchEvent(new Event('input'));
+            }
+            return;
+          }
+          const endH = Math.floor(endTotalMinutes / 60).toString().padStart(2, '0');
+          const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
+          const endInput =
+            container.querySelector('input[placeholder="End time"]') ||
+            container.querySelector('input[type="time"][disabled]');
+          if (endInput) {
+            endInput.value = `${endH}:${endM}`;
+            endInput.dispatchEvent(new Event('input'));
+          }
+        } catch (e) {}
+      } },
+      { placeholder: 'End time', value: endTime, required: true, type: 'time', locked: true },
+    ],
+    short3: [
+      { placeholder: 'Duration (hours)', value: `${fixedDuration} hour${fixedDuration > 1 ? 's' : ''}`, locked: true },
+    ],
+    footer: { main: `Confirm ${getEmoji('📆')}` },
+  };
+
+  // Precompute initial End time from current Start time and fixedDuration
+  try {
+    const start = inputs.short2[0].value || startTime;
+    if (/^\d{2}:\d{2}$/.test(start)) {
+      const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+      const endTotalMinutes = h * 60 + m + fixedDuration * 60;
+      if (endTotalMinutes <= 23 * 60 + 59) {
+        const endH = Math.floor(endTotalMinutes / 60).toString().padStart(2, '0');
+        const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
+        inputs.short2[1].value = `${endH}:${endM}`;
+      } else {
+        inputs.short2[1].value = '';
+      }
+    }
+  } catch (e) {}
+
+  main.openModal('blue', inputs, async (result) => {
+    const newDate = result.short[1].value;
+    const newStart = result.short2[0].value;
+    const newEnd = result.short2[1].value;
+    const selectedDuration = fixedDuration;
+    // Precompute new dynamic price total and the difference from existing amount
+    let newTotalAmount = 0;
+    let additionalDue = 0;
+    try {
+      newTotalAmount = calculateDynamicPrice(selectedDuration, newStart);
+      const prevAmount = Number(reservation.amount) || 0;
+      additionalDue = Math.max(0, newTotalAmount - prevAmount);
+    } catch (_) {
+      newTotalAmount = Number(reservation.amount) || 0;
+      additionalDue = 0;
+    }
+
+    try {
+      const [month, day, year] = newDate.split('-').map(Number);
+      const chosenDate = new Date(year, month - 1, day);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      if (chosenDate < todayStart) throw new Error('Selected date cannot be in the past');
+
+      const s = new Date(`1970-01-01T${newStart}:00`);
+      let e = new Date(`1970-01-01T${newEnd}:00`);
+      if (e <= s) throw new Error('End time must be after start time');
+
+      const diffHours = (e - s) / (1000 * 60 * 60);
+      if (diffHours < 1) throw new Error('Reservation must be at least 1 hour');
+      if (diffHours > 7) throw new Error('Reservation cannot exceed 7 hours');
+      // Duration must match the original duration
+      if (Math.abs(diffHours - selectedDuration) > 0.1) {
+        throw new Error(`Duration is fixed to ${selectedDuration} hour${selectedDuration > 1 ? 's' : ''} for reschedule.`);
+      }
+
+      const startHour = s.getHours();
+      if (startHour < 9) throw new Error('Reservation cannot start before 9:00 AM');
+
+      {
+        const [sh, sm] = newStart.split(':').map((n) => parseInt(n, 10));
+        const computedEndTotalMinutes = sh * 60 + sm + selectedDuration * 60;
+        if (computedEndTotalMinutes > 23 * 60 + 59) throw new Error('The reservation must finish before midnight.');
+      }
+
+      const todayFormatted = main.encodeDate(new Date(), '2-digit');
+      if (newDate === todayFormatted && isTimeInPast(newDate, newStart)) {
+        throw new Error('Cannot book past time slots on the same day');
+      }
+
+      const others = existingReservations.filter((r) => r.id !== id);
+
+      const conflictExists = (() => {
+        const [m, d, y] = newDate.split('-').map(Number);
+        const [nsh, nsm] = newStart.split(':').map(Number);
+        const [neh, nem] = newEnd.split(':').map(Number);
+        const nStart = new Date(y, m - 1, d, nsh, nsm, 0, 0);
+        const nEnd = new Date(y, m - 1, d, neh, nem, 0, 0);
+        return others.some((res) => {
+          const [rm, rd, ry] = (res.date || '').split('-').map(Number);
+          if (!(rm === m && rd === d && ry === y)) return false;
+          const [esh, esm] = res.startTime.split(':').map(Number);
+          const [eeh, eem] = res.endTime.split(':').map(Number);
+          const eStart = new Date(y, m - 1, d, esh, esm, 0, 0);
+          const eEnd = new Date(y, m - 1, d, eeh, eem, 0, 0);
+          return nStart <= eEnd && nEnd >= eStart;
+        });
+      })();
+      if (conflictExists) throw new Error('Selected time is already booked.');
+
+      const gapViolation = (() => {
+        const [m, d, y] = newDate.split('-').map(Number);
+        const [nsh, nsm] = newStart.split(':').map(Number);
+        const [neh, nem] = newEnd.split(':').map(Number);
+        const nStart = new Date(y, m - 1, d, nsh, nsm, 0, 0);
+        const nEnd = new Date(y, m - 1, d, neh, nem, 0, 0);
+        return others.some((res) => {
+          if (res.date !== newDate) return false;
+          const [esh, esm] = res.startTime.split(':').map(Number);
+          const [eeh, eem] = res.endTime.split(':').map(Number);
+          const eStart = new Date(y, m - 1, d, esh, esm, 0, 0);
+          const eEnd = new Date(y, m - 1, d, eeh, eem, 0, 0);
+          const gapAfterMs = nStart - eEnd;
+          const gapBeforeMs = eStart - nEnd;
+          const violatesAfter = gapAfterMs >= 0 && gapAfterMs < 60000;
+          const violatesBefore = gapBeforeMs >= 0 && gapBeforeMs < 60000;
+          return violatesAfter || violatesBefore;
+        });
+      })();
+      if (gapViolation) throw new Error('Please leave a 1-minute gap from other reservations.');
+    } catch (error) {
+      main.toast(error.message, 'error');
+      return;
+    }
+
+    main.openConfirmationModal(
+      `Reschedule for<br><p class="text-lg">${fullName}</p>to ${main.decodeDate(newDate)}<br>from ${main.decodeTime(
+        newStart
+      )} to ${main.decodeTime(newEnd)}${additionalDue > 0 ? `<br><br>New total: ${main.encodePrice(newTotalAmount)}<br>Additional to pay: ${main.encodePrice(additionalDue)}` : ''}`,
+      async () => {
+        try {
+          if (additionalDue > 0) {
+            // Create a pending payment, then mark reservation with pending reschedule fields and tid once we have it
+            let imageSrc = '';
+            try {
+              await new Promise((resolve) => {
+                main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, (findResult) => {
+                  if (findResult) imageSrc = findResult.dataset.image || '';
+                  resolve();
+                });
+              });
+            } catch (_) {}
+
+            payments.processReservationPayment(
+              {
+                image: imageSrc || '/src/images/client_logo.jpg',
+                name: reservation.customerName,
+                cid: customerId,
+                amount: additionalDue,
+                purpose: 'Reschedule adjustment (facility reservation)',
+              },
+              async (pendingId) => {
+                try {
+                  await updateReservationFE(id, {
+                    tid: pendingId,
+                    pendingDate: newDate,
+                    pendingStartTime: newStart,
+                    pendingEndTime: newEnd,
+                    pendingAmount: newTotalAmount,
+                  });
+                } catch (_) {}
+              }
+            );
+
+            main.toast(`Additional payment created for ${main.encodePrice(additionalDue)}. Schedule will update after payment.`, 'success');
+          } else {
+            // No additional due; apply immediately
+            await updateReservationFE(id, { date: newDate, startTime: newStart, endTime: newEnd, amount: newTotalAmount });
+            main.toast('Reservation rescheduled successfully!', 'success');
+          }
+          main.closeConfirmationModal();
+          main.closeModal();
+        } catch (e) {
+          main.toast(`Error rescheduling: ${e.message}`,'error');
+        }
+      }
+    );
   });
 }
 

@@ -67,7 +67,10 @@ function requestRender() {
 function listenToReservationsFE() {
   const q = query(collection(db, 'reservations'));
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    state.reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    // Exclude 'Canceled' reservations from UI and availability checks
+    state.reservations = snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter((r) => (String(r.status || '')).toLowerCase() !== 'canceled');
     requestRender();
   });
   return unsubscribe;

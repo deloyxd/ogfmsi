@@ -2527,7 +2527,7 @@ export function cancelCheckinPayment(transactionId, reason = '') {
 
 export function processReservationPayment(reservation, callback = () => {}) {
   const { firstName, lastName, fullName } = main.decodeName(reservation.name);
-  const purpose = `Manual facility reservation fee`;
+  const purpose = reservation.purpose || `Manual facility reservation fee`;
   const columnsData = [
     'id_T_random',
     {
