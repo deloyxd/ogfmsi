@@ -97,7 +97,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const pendingPayments = await response.json();
-        console.log('CF-Cache-Status:', response.headers.get('cf-cache-status'));
 
         pendingPayments.result.forEach((pendingPayment) => {
           if (!pendingPayment || !pendingPayment.payment_id) return;
