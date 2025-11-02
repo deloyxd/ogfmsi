@@ -615,10 +615,12 @@ function processCustomerRateData(customers) {
   let student = 0;
 
   customers.forEach((customer) => {
-    if (customer.customer_rate === 'regular') {
-      regular++;
-    } else if (customer.customer_rate === 'student') {
-      student++;
+    if (customer.customer_type !== 'archived') {
+      if (customer.customer_rate === 'regular') {
+        regular++;
+      } else if (customer.customer_rate === 'student') {
+        student++;
+      }
     }
   });
 
@@ -787,7 +789,6 @@ async function loadUpcomingRenewals() {
         });
       });
     }
-
   } catch (error) {
     console.error('Failed to load upcoming renewals:', error);
     const tabContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="2"]');
