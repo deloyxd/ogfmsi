@@ -1225,7 +1225,7 @@ function setupModalBase(defaultData, inputs, callback) {
                 input.listener(input.title, tempModalContainer.querySelector(`#modalMainBtn`), autoformatText);
               }
             } else if (autoformatType.includes('online')) {
-              input.listener(input.title);
+              input.listener(input.title, input.id);
             } else {
               if (autoformatIndex > 0) {
                 input.listener(

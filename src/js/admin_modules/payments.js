@@ -1867,12 +1867,14 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       icon: `${getEmoji('📸', 26)}`,
       title: 'Monthly Registrant Photo',
       subtitle: 'Validate before confirming',
+      id: effectiveId,
       listener: seePhotoProvidedListener,
     });
     inputs.radio.push({
       icon: `${getEmoji('🆔', 26)}`,
       title: 'Student ID Photo',
       subtitle: 'Validate before confirming',
+      id: effectiveId,
       listener: seePhotoProvidedListener,
     });
   } else {

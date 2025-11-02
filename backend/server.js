@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, '../src/html')));
 
 //API URL: (host):(port)/api
 
-app.use('/api',router);
+app.use('/api', router);
 
 // Specific routes for short paths
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
@@ -52,7 +52,6 @@ app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../src/ht
 app.get('/about', (req, res) => res.sendFile(path.join(__dirname, '../src/html/about/index.html')));
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../src/html/privacy/index.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../src/html/terms/index.html')));
-
 
 //Fall back Middleware, eto irereturn pag may nag access ng api route na hindi pa existing
 // app.use('*', (req, res) => {
