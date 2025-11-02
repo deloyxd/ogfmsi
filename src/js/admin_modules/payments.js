@@ -1883,8 +1883,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       listener: seePhotoProvidedListener,
     });
   } else {
-    inputs.short[3].autoformat = 'price';
-    inputs.radio[0].autoformat = { type: 'short', index: 11 };
+    if (!inputs.short[3].locked) inputs.short[3].autoformat = 'price';
+    if (!inputs.short[3].locked) inputs.radio[0].autoformat = { type: 'short', index: 11 };
     inputs.radio[0].locked = isOnlineTransaction;
     inputs.radio.push({
       icon: `${getEmoji('💵', 26)}`,
@@ -2525,7 +2525,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     if (isOnlineTransaction) {
       main.openConfirmationModal(
         'Confirming<br><br>• Reference number is valid' +
-          (isOnlineTransaction && !isOnlineFacility ? '<br>• Images provided are valid' : ''),
+          (isOnlineTransaction && !isOnlineFacility && isStudent ? '<br>• Images provided are valid' : ''),
         () => {
           main.closeConfirmationModal(() => {
             continueProcessPayment();
