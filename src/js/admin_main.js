@@ -2237,6 +2237,12 @@ export function isPastDate(dateString) {
   return date < today;
 }
 
+export function isIncomingDate(date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(date) >= today;
+}
+
 export function encodePrice(price) {
   return `₱${Number(price).toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
@@ -2345,6 +2351,7 @@ export default {
   updateDateAndTime,
   isValidDate,
   isPastDate,
+  isIncomingDate,
 
   // ecommerce-stock
   encodePrice,

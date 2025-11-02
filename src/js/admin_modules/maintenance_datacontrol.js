@@ -221,12 +221,21 @@ async function loadMonthlyUsers() {
         'id_' + user.customer_id,
         { type: 'object_contact', data: [image, fullName, customerData?.customer_contact || ''] },
         'Monthly',
-        user.customer_pending ? 'Pending' : 'Active',
+        user.customer_pending ? 'Pending' : main.isIncomingDate(user.customer_start_date) ? 'Incoming' : 'Active',
         'custom_date_' + main.encodeDate(user.customer_start_date, 'long'),
         'custom_date_' + main.encodeDate(user.customer_end_date, 'long'),
         priceRateLabel,
-        main.encodePrice((user.customer_months || 1) * (String(customerData?.customer_rate || '').toLowerCase() === 'student' ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular)),
-        main.encodePrice(String(customerData?.customer_rate || '').toLowerCase() === 'student' ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular),
+        main.encodePrice(
+          (user.customer_months || 1) *
+            (String(customerData?.customer_rate || '').toLowerCase() === 'student'
+              ? MONTHLY_PRICES.student
+              : MONTHLY_PRICES.regular)
+        ),
+        main.encodePrice(
+          String(customerData?.customer_rate || '').toLowerCase() === 'student'
+            ? MONTHLY_PRICES.student
+            : MONTHLY_PRICES.regular
+        ),
       ];
       rows.push({ _id: String(user.customer_id), columnsData });
     }
