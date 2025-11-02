@@ -295,7 +295,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
         // Use for...of to support async/await
         for (const completePayment of completePayments.result) {
-          if (!completePayment.payment_customer_id.startsWith('U') || completePayment.payment_customer_id === 'U123') continue;
+          if (!completePayment.payment_customer_id.startsWith('U') || completePayment.payment_customer_id === 'U123')
+            continue;
           const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
           if (customerInfo.name === '') {
             continue;
@@ -1776,7 +1777,13 @@ async function seePhotoProvidedListener(title, paymentId) {
       if (imgSrc === '') {
         imgSrc = '/src/images/client_logo.jpg';
       }
-      window.showImageModal(imgSrc, title);
+      window.showImageModal(
+        imgSrc,
+        title,
+        'approve',
+        paymentId,
+        titleLower.includes('monthly') ? 'monthly' : 'student'
+      );
     } else {
       console.error('Error:', data.error);
     }
@@ -1790,6 +1797,8 @@ async function seePhotoProvidedListener(title, paymentId) {
 function completePayment(type, id, image, customerId, purpose, fullName, amountToPay, priceRate) {
   const isOnlineTransaction =
     purpose.includes('Online facility reservation fee') || purpose.includes('Online monthly registration fee');
+  const isOnlineFacility = isOnlineTransaction && purpose.includes('Online facility');
+  const isStudent = priceRate.toLowerCase().includes('student');
   const effectiveId = id;
   const inputs = {
     header: {
@@ -1863,7 +1872,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   //     listener: activeRadioListener,
   //   },
   // ],
-  if (isOnlineTransaction) {
+  if (isOnlineTransaction && !isOnlineFacility) {
     inputs.radio[0].donotautoclick = true;
     inputs.radio[0].autoformat = { type: 'online' };
     inputs.radio.push({
@@ -1873,13 +1882,15 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       id: effectiveId,
       listener: seePhotoProvidedListener,
     });
-    inputs.radio.push({
-      icon: `${getEmoji('🆔', 26)}`,
-      title: 'Student ID Photo',
-      subtitle: 'Validate before confirming',
-      id: effectiveId,
-      listener: seePhotoProvidedListener,
-    });
+    if (isStudent) {
+      inputs.radio.push({
+        icon: `${getEmoji('🆔', 26)}`,
+        title: 'Student ID Photo',
+        subtitle: 'Validate before confirming',
+        id: effectiveId,
+        listener: seePhotoProvidedListener,
+      });
+    }
   } else {
     inputs.short[3].autoformat = 'price';
     inputs.radio[0].autoformat = { type: 'short', index: 11 };
@@ -1904,7 +1915,16 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   }
 
   main.openModal('green', inputs, (result) => {
-    const paymentMethod = main.getSelectedRadio(result.radio).toLowerCase();
+    const approvalStatus = window.getApprovalStatus(effectiveId);
+    if (
+      isOnlineTransaction &&
+      !isOnlineFacility &&
+      (!approvalStatus || !approvalStatus.approvals.monthly || (isStudent && !approvalStatus.approvals.student))
+    ) {
+      main.toast('You need to approve the image provided by the customer!', 'error');
+      return;
+    }
+    const paymentMethod = isOnlineTransaction ? 'cashless' : main.getSelectedRadio(result.radio).toLowerCase();
     const cashVal = result.short[2].value.includes('₱')
       ? +main.decodePrice(result.short[2].value)
       : Number(result.short[2].value) || 0;
@@ -1956,7 +1976,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       } else {
         refNum = purpose.split(' - Reference: ')[1].split(' from Account: ')[0];
       }
-    } else if (refNum != 'N/A') {
+    } else if (!isOnlineTransaction && refNum != 'N/A') {
       main.toast(`Cash payment method doesn't need reference number: ${refNum}`, 'error');
       return;
     }
@@ -2510,7 +2530,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     }
 
     if (isOnlineTransaction) {
-      main.openConfirmationModal('Confirming the gcash reference number is valid', () => {
+      main.openConfirmationModal('Confirming<br><br>• Reference number is valid' + (isOnlineTransaction && !isOnlineFacility ? '<br>• Images provided are valid' : ''), () => {
         main.closeConfirmationModal(() => {
           continueProcessPayment();
         });

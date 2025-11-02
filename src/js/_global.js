@@ -482,18 +482,65 @@ function setupFAQandFeedbackComponent() {
   }
 }
 
+window.approvalState = [];
+
 // Global Image Modal Functions
-window.showImageModal = function (imageSrc, imageName) {
+window.showImageModal = function (
+  imageSrc,
+  imageName,
+  type = '',
+  processId = '',
+  approvalType = 'monthly',
+) {
+  // Find the process in approvalState
+  let process = window.approvalState.find((p) => p.id && p.id === processId);
+  if (!process) {
+    // Create new process if it doesn't exist
+    process = {
+      id: processId,
+      approvals: {
+        monthly: false,
+        student: false,
+      },
+    };
+    window.approvalState.push(process);
+  }
+
+  // Determine approval status for this image
+  const isApproved = process.approvals[approvalType] || false;
+
+  // Create approve checkbox HTML if type is 'approve'
+  const approveCheckboxHTML =
+    type === 'approve'
+      ? `<div class="absolute bottom-4 right-4 flex items-center gap-2 bg-black/70 text-white px-3 py-2 rounded-lg shadow-lg">
+            <input type="checkbox" id="approveCheckbox" ${isApproved ? 'checked' : ''} 
+                   class="w-5 h-5 text-green-500 bg-gray-800 border-gray-600 rounded focus:ring-green-500 focus:ring-2">
+            <label for="approveCheckbox" class="text-sm font-medium cursor-pointer">
+                ${isApproved ? 'Approved' : `Approve?`}
+            </label>
+        </div>`
+      : '';
+
+  // Add approval status indicator
+  const approvalStatusHTML =
+    type === 'approve'
+      ? `<div class="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
+            You need to approve this image before you can continue the process...
+        </div>`
+      : '';
+
   const modalHTML = `
-    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/75 opacity-0 duration-300 z-50 hidden" id="imageModal">
-      <div class="m-auto w-full max-w-3xl -translate-y-6 scale-95 p-4 duration-300" onclick="event.stopPropagation()">
-        <div class="relative">
-          <img src="${imageSrc}" alt="${imageName}" class="w-full h-auto rounded-lg shadow-2xl">
+        <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/75 opacity-0 duration-300 z-50 hidden" id="imageModal">
+            <div class="m-auto w-full max-w-3xl -translate-y-6 scale-95 p-4 duration-300" onclick="event.stopPropagation()">
+                <div class="relative">
+                    <img src="${imageSrc}" alt="${imageName}" class="w-full h-auto rounded-lg shadow-2xl">
+                    ${approvalStatusHTML}
+                    ${approveCheckboxHTML}
+                </div>
+                <p class="text-center text-white mt-4 text-lg font-medium">${imageName}</p>
+            </div>
         </div>
-        <p class="text-center text-white mt-4 text-lg font-medium">${imageName}</p>
-      </div>
-    </div>
-  `;
+    `;
 
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const modal = document.getElementById('imageModal');
@@ -505,6 +552,26 @@ window.showImageModal = function (imageSrc, imageName) {
     modal.children[0].classList.remove('-translate-y-6');
     modal.children[0].classList.add('scale-100');
   }, 10);
+
+  // Add change handler for approve checkbox
+  if (type === 'approve') {
+    const approveCheckbox = document.getElementById('approveCheckbox');
+    const approveLabel = approveCheckbox?.nextElementSibling;
+
+    approveCheckbox?.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+
+      // Update approval state
+      process.approvals[approvalType] = isChecked;
+
+      // Update label text
+      if (approveLabel) {
+        approveLabel.textContent = isChecked ? 'Approved' : `Approve?`;
+      }
+      
+      closeImageModal();
+    });
+  }
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
@@ -521,6 +588,99 @@ window.showImageModal = function (imageSrc, imageName) {
   modal.dataset.escapeHandler = 'true';
 };
 
+window.checkApprovals = function (processId, requiredApprovals = ['monthly', 'student'], successCallback = null) {
+  const process = window.approvalState.find((p) => p.id === processId);
+
+  if (!process) {
+    showErrorModal(`Process "${processId}" not found.`);
+    return false;
+  }
+
+  const missingApprovals = requiredApprovals.filter((approvalType) => !process.approvals[approvalType]);
+
+  if (missingApprovals.length > 0) {
+    showErrorModal(processId, requiredApprovals, missingApprovals);
+    return false;
+  } else {
+    // All required approvals are met
+    if (successCallback && typeof successCallback === 'function') {
+      successCallback();
+    }
+    return true;
+  }
+};
+
+function showErrorModal(processId, requiredApprovals, missingApprovals) {
+  const process = window.approvalState.find((p) => p.id === processId);
+
+  const approvalStatusHTML = requiredApprovals
+    .map(
+      (approvalType) =>
+        `<p class="text-sm ${process.approvals[approvalType] ? 'text-green-600' : 'text-red-600'}">
+            ${approvalType.charAt(0).toUpperCase() + approvalType.slice(1)}: ${process.approvals[approvalType] ? '✓ Approved' : '✗ Not Approved'}
+        </p>`
+    )
+    .join('');
+
+  const errorHTML = `
+        <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/75 opacity-0 duration-300 z-50 hidden" id="errorModal">
+            <div class="m-auto w-full max-w-md -translate-y-6 scale-95 p-6 duration-300 bg-white rounded-lg shadow-xl" onclick="event.stopPropagation()">
+                <div class="text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="mt-3 text-lg font-medium text-gray-900">Approval Required</h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500">
+                            Please complete all required approvals for <strong>${processId}</strong> before proceeding.
+                        </p>
+                        <div class="mt-4 space-y-2">
+                            ${approvalStatusHTML}
+                        </div>
+                    </div>
+                    <div class="mt-5">
+                        <button type="button" id="closeErrorModal" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 font-medium">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+  document.body.insertAdjacentHTML('beforeend', errorHTML);
+  const errorModal = document.getElementById('errorModal');
+
+  errorModal.classList.remove('hidden');
+  errorModal.classList.add('flex');
+  setTimeout(() => {
+    errorModal.classList.add('opacity-100');
+    errorModal.children[0].classList.remove('-translate-y-6');
+    errorModal.children[0].classList.add('scale-100');
+  }, 10);
+
+  // Close error modal handler
+  const closeErrorModal = document.getElementById('closeErrorModal');
+  closeErrorModal.addEventListener('click', () => {
+    closeErrorModalFunc(errorModal);
+  });
+
+  // Also close when clicking outside
+  errorModal.addEventListener('click', (e) => {
+    if (e.target === errorModal) {
+      closeErrorModalFunc(errorModal);
+    }
+  });
+}
+
+// Function to get current approval status
+window.getApprovalStatus = function (processId) {
+  const process = window.approvalState.find((p) => p.id === processId);
+  return process ? { ...process } : null;
+};
+
 window.closeImageModal = function () {
   const modal = document.getElementById('imageModal');
   if (modal) {
@@ -534,6 +694,17 @@ window.closeImageModal = function () {
     }, 300);
   }
 };
+
+function closeErrorModalFunc(modal) {
+  modal.classList.remove('opacity-100');
+  modal.children[0].classList.add('-translate-y-6');
+  modal.children[0].classList.remove('scale-100');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.remove();
+  }, 300);
+}
 
 function setupAutoCasing() {
   // Skip auto-casing on the customer login page
@@ -580,27 +751,38 @@ function setupAutoCasing() {
     return /\b(first|last|name|fullname|full name)\b/.test(hay);
   }
 
-  document.addEventListener('input', (e) => {
-    if (!e.isTrusted) return; // ignore synthetic events to prevent loops
-    const el = e.target;
-    if (!shouldAutoCase(el)) return;
-    const isTextual = el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && (!el.type || el.type.toLowerCase() === 'text' || el.type.toLowerCase() === 'search'));
-    if (!isTextual) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    let value = el.value;
-    if (isNameField(el)) {
-      const sanitized = sanitizeNameInput(value);
-      if (sanitized !== value) value = sanitized;
-    }
-    const corrected = toTitleCaseName(value);
-    if (el.value !== corrected) {
-      el.value = corrected;
-      try {
-        if (typeof start === 'number' && typeof end === 'number') el.setSelectionRange(corrected.length < (end || 0) ? corrected.length : start, corrected.length < (end || 0) ? corrected.length : end);
-      } catch (_) {}
-    }
-  }, true);
+  document.addEventListener(
+    'input',
+    (e) => {
+      if (!e.isTrusted) return; // ignore synthetic events to prevent loops
+      const el = e.target;
+      if (!shouldAutoCase(el)) return;
+      const isTextual =
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLInputElement &&
+          (!el.type || el.type.toLowerCase() === 'text' || el.type.toLowerCase() === 'search'));
+      if (!isTextual) return;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      let value = el.value;
+      if (isNameField(el)) {
+        const sanitized = sanitizeNameInput(value);
+        if (sanitized !== value) value = sanitized;
+      }
+      const corrected = toTitleCaseName(value);
+      if (el.value !== corrected) {
+        el.value = corrected;
+        try {
+          if (typeof start === 'number' && typeof end === 'number')
+            el.setSelectionRange(
+              corrected.length < (end || 0) ? corrected.length : start,
+              corrected.length < (end || 0) ? corrected.length : end
+            );
+        } catch (_) {}
+      }
+    },
+    true
+  );
 }
 
 /* add new functions above */
@@ -609,7 +791,9 @@ function setupAutoCasing() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setupAutoCasing, { once: true });
 } else {
-  try { setupAutoCasing(); } catch (_) {}
+  try {
+    setupAutoCasing();
+  } catch (_) {}
 }
 
 document.addEventListener('DOMContentLoaded', function () {
