@@ -1885,6 +1885,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   } else {
     inputs.short[3].autoformat = 'price';
     inputs.radio[0].autoformat = { type: 'short', index: 11 };
+    inputs.radio[0].locked = isOnlineTransaction;
     inputs.radio.push({
       icon: `${getEmoji('💵', 26)}`,
       title: 'Cash',
