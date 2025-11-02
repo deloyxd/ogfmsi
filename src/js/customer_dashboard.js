@@ -19,7 +19,9 @@ import { signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-aut
 import { auth } from './customer_login.js';
 
 function setupLogout() {
-  const logoutButtons = document.querySelectorAll('a[href=""][class*="Logout"], a[href=""]:has(svg)');
+  const logoutButtons = [];
+  logoutButtons.push(document.getElementById('logout'));
+  logoutButtons.push(document.getElementById('logoutMobile'));
 
   logoutButtons.forEach((button) => {
     button.addEventListener('click', function (e) {
