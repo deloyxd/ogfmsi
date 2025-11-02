@@ -1875,13 +1875,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   if (isOnlineTransaction && !isOnlineFacility && isStudent) {
     inputs.radio[0].donotautoclick = true;
     inputs.radio[0].autoformat = { type: 'online' };
-      inputs.radio.push({
-        icon: `${getEmoji('🆔', 26)}`,
-        title: 'Student ID Photo',
-        subtitle: 'Validate before confirming',
-        id: effectiveId,
-        listener: seePhotoProvidedListener,
-      });
+    inputs.radio.push({
+      icon: `${getEmoji('🆔', 26)}`,
+      title: 'Student ID Photo',
+      subtitle: 'Validate before confirming',
+      id: effectiveId,
+      listener: seePhotoProvidedListener,
+    });
   } else {
     inputs.short[3].autoformat = 'price';
     inputs.radio[0].autoformat = { type: 'short', index: 11 };
@@ -1911,7 +1911,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     if (
       isOnlineTransaction &&
       !isOnlineFacility &&
-      (!approvalStatus || (isStudent && !approvalStatus.approvals.student))
+      isStudent &&
+      (!approvalStatus || !approvalStatus.approvals.student)
     ) {
       main.toast('You need to approve the image provided by the customer!', 'error');
       return;
@@ -2522,11 +2523,15 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     }
 
     if (isOnlineTransaction) {
-      main.openConfirmationModal('Confirming<br><br>• Reference number is valid' + (isOnlineTransaction && !isOnlineFacility ? '<br>• Images provided are valid' : ''), () => {
-        main.closeConfirmationModal(() => {
-          continueProcessPayment();
-        });
-      });
+      main.openConfirmationModal(
+        'Confirming<br><br>• Reference number is valid' +
+          (isOnlineTransaction && !isOnlineFacility ? '<br>• Images provided are valid' : ''),
+        () => {
+          main.closeConfirmationModal(() => {
+            continueProcessPayment();
+          });
+        }
+      );
     } else {
       continueProcessPayment();
     }
