@@ -23,3 +23,6 @@ yarn-error.log*
 .vscode/
 .DS_Store
 Thumbs.db
+
+# REST client file
+test.rest

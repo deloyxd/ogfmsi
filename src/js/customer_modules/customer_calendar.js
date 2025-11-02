@@ -1235,6 +1235,8 @@ async function submitMonthlyRegistration(reservation, regData, payData) {
       payment_amount_to_pay: amount,
       payment_rate: rate,
       payment_ref: String(payData.get('gcashRef') || ''),
+      payment_monthly_url: '',
+      payment_student_url: '',
     }),
   });
   if (!resp.ok) {

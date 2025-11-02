@@ -794,13 +794,15 @@ async function getCustomerDataMany(ids = []) {
   });
   if (toFetch.length) {
     const fetches = toFetch.map(async (id) => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/inquiry/customers/${id}`);
-        if (!res.ok) return;
-        const json = await res.json();
-        customerCache.set(id, json.result);
-        results.set(id, json.result);
-      } catch (_) {}
+      if (id !== 'U123') {
+        try {
+          const res = await fetch(`${API_BASE_URL}/inquiry/customers/${id}`);
+          if (!res.ok) return;
+          const json = await res.json();
+          customerCache.set(id, json.result);
+          results.set(id, json.result);
+        } catch (_) {}
+      }
     });
     await Promise.all(fetches);
   }

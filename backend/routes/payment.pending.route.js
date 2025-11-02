@@ -48,7 +48,7 @@ router.post('/pending', async (req, res) => {
     const query = `
       INSERT INTO payment_tbl
       (payment_id, payment_customer_id, payment_purpose, payment_amount_to_pay, payment_rate, payment_ref, payment_monthly_url, payment_student_url, payment_type)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending')
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `;
 
     await db.query(query, [

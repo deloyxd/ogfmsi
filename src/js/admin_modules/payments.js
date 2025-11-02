@@ -97,6 +97,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const pendingPayments = await response.json();
+        console.log('CF-Cache-Status:', response.headers.get('cf-cache-status'));
 
         pendingPayments.result.forEach((pendingPayment) => {
           if (!pendingPayment || !pendingPayment.payment_id) return;
@@ -295,7 +296,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
         // Use for...of to support async/await
         for (const completePayment of completePayments.result) {
-          if (!completePayment.payment_customer_id.startsWith('U')) continue;
+          if (!completePayment.payment_customer_id.startsWith('U') || completePayment.payment_customer_id === 'U123') continue;
           const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
           if (customerInfo.name === '') {
             continue;
