@@ -8,6 +8,9 @@ const SECTION_NAME = 'maintenance-datacontrol';
 const MODULE_NAME = 'Data Control';
 
 const MONTHLY_PRICES = { regular: 950, student: 850 };
+const CACHE_TTL_MS = 60 * 1000;
+const customerCache = new Map();
+const tabCacheMem = { 1: null, 2: null, 3: null };
 
 let activated = false,
   mainBtn,
@@ -62,7 +65,7 @@ function setupRefreshFunctionality() {
   if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
       main.openConfirmationModal('Refresh current tab data?<br><br>This will reload all data from the server.', () => {
-        loadTabData(currentTab);
+        loadTabData(currentTab, true);
         main.closeConfirmationModal();
       });
     });
@@ -88,7 +91,7 @@ async function switchToTab(tabIndex) {
 }
 
 // Load data for specified tab with throttle guard
-async function loadTabData(tabIndex) {
+async function loadTabData(tabIndex, force = false) {
   try {
     const now = Date.now();
     if (tabIndex === lastLoadedTab && now - lastLoadedAt < 500) {
@@ -96,7 +99,9 @@ async function loadTabData(tabIndex) {
     }
     lastLoadedTab = tabIndex;
     lastLoadedAt = now;
-    main.showGlobalLoading();
+    const cached = getTabCache(tabIndex) || tabCacheMem[tabIndex];
+    const useCache = !!cached && !force;
+    if (!useCache) main.showGlobalLoading();
 
     // Ensure Reservations listener is disabled when leaving Reservations tab (now tab 4)
     if (tabIndex !== 4 && typeof reservationsUnsubscribe === 'function') {
@@ -107,25 +112,84 @@ async function loadTabData(tabIndex) {
       main.deleteAllAtSectionOne(SECTION_NAME, 4);
     }
 
-    switch (tabIndex) {
-      case 1:
-        await loadMonthlyUsers();
-        break;
-      case 2:
-        await loadRegularUsers();
-        break;
-      case 3:
-        await loadSupplements();
-        break;
-      case 4:
-        await loadReservations();
-        break;
+    if (useCache) {
+      renderFromCache(tabIndex, cached);
+      backgroundRefresh(tabIndex).catch(() => {});
+    } else {
+      switch (tabIndex) {
+        case 1:
+          await loadMonthlyUsers();
+          break;
+        case 2:
+          await loadRegularUsers();
+          break;
+        case 3:
+          await loadSupplements();
+          break;
+        case 4:
+          await loadReservations();
+          break;
+      }
     }
   } catch (error) {
     console.error(`Error loading tab ${tabIndex} data:`, error);
     main.toast(`Error loading data for tab ${tabIndex}`, 'error');
   } finally {
-    main.hideGlobalLoading();
+    try { main.hideGlobalLoading(); } catch (_) {}
+  }
+}
+
+function dataSignature(rows) {
+  try { return JSON.stringify(rows).length; } catch (_) { return 0; }
+}
+
+function renderFromCache(tabIndex, rows) {
+  try {
+    if (tabIndex === 1) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 1);
+      rows.forEach((entry) => {
+        const existing = document
+          .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
+          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+        if (existing) return;
+        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, () => {});
+      });
+    } else if (tabIndex === 2) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 2);
+      rows.forEach((entry) => {
+        const existing = document
+          .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
+          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+        if (existing) return;
+        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, () => {});
+      });
+    } else if (tabIndex === 3) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 3);
+      rows.forEach((entry) => {
+        const existing = document
+          .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
+          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+        if (existing) return;
+        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, () => {});
+      });
+    }
+  } catch (_) {}
+}
+
+async function backgroundRefresh(tabIndex) {
+  switch (tabIndex) {
+    case 1:
+      await loadMonthlyUsers();
+      break;
+    case 2:
+      await loadRegularUsers();
+      break;
+    case 3:
+      await loadSupplements();
+      break;
+    case 4:
+      await loadReservations();
+      break;
   }
 }
 
@@ -139,24 +203,20 @@ async function loadMonthlyUsers() {
     const data = await response.json();
     tableData.monthlyUsers = (data.result || []).filter(Boolean);
 
-    main.deleteAllAtSectionOne(SECTION_NAME, 1);
+    const ids = Array.from(new Set(tableData.monthlyUsers.map((u) => u && u.customer_id).filter(Boolean)));
+    const customerMap = await getCustomerDataMany(ids);
 
+    const rows = [];
     const seenMonthly = new Set();
     for (const user of tableData.monthlyUsers) {
       if (!user || !user.customer_id) continue;
       if (seenMonthly.has(user.customer_id)) continue;
       seenMonthly.add(user.customer_id);
-      const customerData = await getCustomerData(user.customer_id);
-      // Exclude archived customers from Monthly Users tab
-      if (String(customerData?.customer_type || '').toLowerCase() === 'archived') {
-        continue;
-      }
-      const fullName = customerData
-        ? `${customerData.customer_first_name} ${customerData.customer_last_name}`
-        : 'Unknown';
+      const customerData = customerMap.get(user.customer_id) || null;
+      if (String(customerData?.customer_type || '').toLowerCase() === 'archived') continue;
+      const fullName = customerData ? `${customerData.customer_first_name} ${customerData.customer_last_name}` : 'Unknown';
       const image = customerData?.customer_image_url || '/src/images/client_logo.jpg';
-      const priceRateLabel =
-        String(customerData?.customer_rate || '').toLowerCase() === 'student' ? 'Student' : 'Regular';
+      const priceRateLabel = String(customerData?.customer_rate || '').toLowerCase() === 'student' ? 'Student' : 'Regular';
       const columnsData = [
         'id_' + user.customer_id,
         { type: 'object_contact', data: [image, fullName, customerData?.customer_contact || ''] },
@@ -165,27 +225,27 @@ async function loadMonthlyUsers() {
         'custom_date_' + main.encodeDate(user.customer_start_date, 'long'),
         'custom_date_' + main.encodeDate(user.customer_end_date, 'long'),
         priceRateLabel,
-        main.encodePrice(
-          (user.customer_months || 1) *
-            (String(customerData?.customer_rate || '').toLowerCase() === 'student'
-              ? MONTHLY_PRICES.student
-              : MONTHLY_PRICES.regular)
-        ),
-        main.encodePrice(
-          String(customerData?.customer_rate || '').toLowerCase() === 'student'
-            ? MONTHLY_PRICES.student
-            : MONTHLY_PRICES.regular
-        ),
+        main.encodePrice((user.customer_months || 1) * (String(customerData?.customer_rate || '').toLowerCase() === 'student' ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular)),
+        main.encodePrice(String(customerData?.customer_rate || '').toLowerCase() === 'student' ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular),
       ];
+      rows.push({ _id: String(user.customer_id), columnsData });
+    }
 
-      const existing = document
-        .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
-        ?.parentElement?.parentElement?.querySelector(`[data-id="${user.customer_id}"]`);
-      if (existing) continue;
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
-        setupRowEditing(createResult, 'monthly', user);
+    const prevRows = getTabCache(1) || tabCacheMem[1];
+    const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
+    if (changed) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 1);
+      rows.forEach((entry) => {
+        const existing = document
+          .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
+          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+        if (existing) return;
+        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, (createResult) => {
+          setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+        });
       });
+      tabCacheMem[1] = rows;
+      setTabCache(1, rows);
     }
   } catch (error) {
     console.error('Error loading monthly users:', error);
@@ -229,21 +289,18 @@ async function loadRegularUsers() {
     const todays = [...regularAll, ...monthlyAll];
     tableData.regularUsers = todays; // keep combined for potential reuse
 
-    main.deleteAllAtSectionOne(SECTION_NAME, 2);
+    const ids = Array.from(new Set(todays.map((r) => r && (r.customer_id || r.checkin_id)).filter(Boolean)));
+    const customerMap = await getCustomerDataMany(ids);
 
+    const rows = [];
     for (const record of todays) {
       const customerId = record.customer_id || record.checkin_id;
       if (!customerId) continue;
-
-      // Enrich with customer data to get rate and contact
-      const c = await getCustomerData(customerId);
+      const c = customerMap.get(customerId) || null;
       const isStudentRate = String(c?.customer_rate || '').toLowerCase() === 'student';
       const priceRateLabel = isStudentRate ? 'Student' : 'Regular';
       const typeLabel = record._src === 'monthly' ? 'Monthly' : 'Daily';
-      const amount =
-        record._src === 'monthly'
-          ? (isStudentRate ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular)
-          : (isStudentRate ? 60 : 70);
+      const amount = record._src === 'monthly' ? (isStudentRate ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular) : (isStudentRate ? 60 : 70);
 
       const columnsData = [
         'id_' + customerId,
@@ -256,20 +313,28 @@ async function loadRegularUsers() {
             (c?.customer_contact || record.customer_contact || ''),
           ],
         },
-        // Log Date & Time (from record)
         'custom_datetime_' + main.encodeDate(record.created_at, 'long') + ' - ' + main.encodeTime(record.created_at, 'long'),
         priceRateLabel,
         main.encodePrice(amount),
       ];
+      rows.push({ _id: String(customerId), columnsData });
+    }
 
-      const existing = document
-        .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
-        ?.parentElement?.parentElement?.querySelector(`[data-id="${customerId}"]`);
-      if (existing) continue;
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
-        setupRowEditing(createResult, 'regular', record);
+    const prevRows = getTabCache(2) || tabCacheMem[2];
+    const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
+    if (changed) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 2);
+      rows.forEach((entry) => {
+        const existing = document
+          .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
+          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+        if (existing) return;
+        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, (createResult) => {
+          setupRowEditing(createResult, 'regular', {});
+        });
       });
+      tabCacheMem[2] = rows;
+      setTabCache(2, rows);
     }
   } catch (error) {
     console.error('Error loading daily check-ins:', error);
@@ -353,13 +418,12 @@ async function loadSupplements() {
     const salesAggregates = await getProductSalesAggregates();
 
     const seenProducts = new Set();
+    const rows = [];
     products.forEach((product) => {
       if (!product || !product.product_id) return;
       if (seenProducts.has(product.product_id)) return;
       seenProducts.add(product.product_id);
 
-      // Align columns with HTML listtitletexts for Supplements tab:
-      // [Product ID, Product Name, Quantity, Price, Measurement, Measurement Unit, Quantity Sold, Total Sales, Expiration Date, Date]
       const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
       const displayId =
         String(product.product_id || '')
@@ -376,33 +440,32 @@ async function loadSupplements() {
         String(aggregate.quantity || 0),
         main.encodePrice(aggregate.total || 0),
         product.expiration_date
-          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })
+          ? new Date(product.expiration_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
           : 'No expiration',
-        'custom_date_' +
-          (product.created_at
-            ? new Date(product.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })
-            : main.encodeDate(new Date(), 'long')),
+        'custom_date_' + (product.created_at
+          ? new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+          : main.encodeDate(new Date(), 'long')),
       ];
-
-      const existing = document
-        .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
-        ?.parentElement?.parentElement?.querySelector(`[data-id="${product.product_id}"]`);
-      if (existing) return;
-
-      main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
-        // Ensure dataset contains the full product_id even if display shows a shortened value
-        createResult.dataset.id = product.product_id;
-        setupRowEditing(createResult, 'supplement', product);
-      });
+      rows.push({ _id: String(product.product_id), columnsData });
     });
+
+    const prevRows = getTabCache(3) || tabCacheMem[3];
+    const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
+    if (changed) {
+      main.deleteAllAtSectionOne(SECTION_NAME, 3);
+      rows.forEach((entry) => {
+        const existing = document
+          .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
+          ?.parentElement?.parentElement?.querySelector(`[data-id=\"${entry._id}\"]`);
+        if (existing) return;
+        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, (createResult) => {
+          createResult.dataset.id = entry._id;
+          setupRowEditing(createResult, 'supplement', {});
+        });
+      });
+      tabCacheMem[3] = rows;
+      setTabCache(3, rows);
+    }
   } catch (error) {
     console.error('Error loading supplements:', error);
     main.toast('Error loading supplements', 'error');
@@ -719,6 +782,48 @@ async function getCustomerData(customerId) {
   }
 }
 
+async function getCustomerDataMany(ids = []) {
+  const results = new Map();
+  const toFetch = [];
+  ids.forEach((id) => {
+    if (customerCache.has(id)) {
+      results.set(id, customerCache.get(id));
+    } else {
+      toFetch.push(id);
+    }
+  });
+  if (toFetch.length) {
+    const fetches = toFetch.map(async (id) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/inquiry/customers/${id}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        customerCache.set(id, json.result);
+        results.set(id, json.result);
+      } catch (_) {}
+    });
+    await Promise.all(fetches);
+  }
+  return results;
+}
+
+function cacheKey(tabIndex) { return `dc_tab_${tabIndex}`; }
+function setTabCache(tabIndex, rows) {
+  try {
+    localStorage.setItem(cacheKey(tabIndex), JSON.stringify({ t: Date.now(), rows }));
+  } catch (_) {}
+}
+function getTabCache(tabIndex) {
+  try {
+    const raw = localStorage.getItem(cacheKey(tabIndex));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.t) return null;
+    if (Date.now() - parsed.t > CACHE_TTL_MS) return null;
+    return parsed.rows || null;
+  } catch (_) { return null; }
+}
+
 // Main button click handler - exports PDF
 function mainBtnFunction() {
   exportToPDF();
@@ -736,20 +841,19 @@ function openDateRangeFilterModal(title = 'Filter by date range before export') 
     const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-30 hidden" id="dcExportFilterModal">
         <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
-          <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
+          <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-violet-500 via-fuchsia-600 to-red-600 p-4 text-center text-white">
             <p class="text-base font-semibold">${title}</p>
             <p class="text-xs">Leave blank to skip filtering or choose Export All</p>
           </div>
           <div class="p-4">
             <label class="mb-1 block text-sm font-medium text-gray-700">Date range</label>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input type="date" id="dcExportStart" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <input type="date" id="dcExportEnd" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <input type="date" id="dcExportStart" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500" />
+              <input type="date" id="dcExportEnd" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500" />
             </div>
             <div class="mt-4 flex items-center justify-end gap-2">
-              <button type="button" id="dcExportFilteredBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">Export Filtered</button>
+              <button type="button" id="dcExportFilteredBtn" class="px-4 py-2 bg-fuchsia-600 text-white rounded-md hover:bg-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-fuchsia-500">Export Filtered</button>
               <button type="button" id="dcExportAllBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Export All</button>
-              <button type="button" id="dcExportCancelBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">Cancel</button>
             </div>
           </div>
         </div>
@@ -771,13 +875,15 @@ function openDateRangeFilterModal(title = 'Filter by date range before export') 
       setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); modal.remove(); }, 300);
     };
 
+    // Close when clicking outside the modal content
+    modal.addEventListener('click', () => {
+      cleanup();
+      resolve(undefined);
+    });
+
     document.getElementById('dcExportAllBtn').addEventListener('click', () => {
       cleanup();
       resolve(null);
-    });
-    document.getElementById('dcExportCancelBtn').addEventListener('click', () => {
-      cleanup();
-      resolve(undefined);
     });
     document.getElementById('dcExportFilteredBtn').addEventListener('click', () => {
       const s = (document.getElementById('dcExportStart').value || '').trim();
@@ -851,347 +957,121 @@ async function exportToPDF() {
     return;
   }
 
-  // Ask for optional date range filter
-  const range = await openDateRangeFilterModal('Filter rows by date range before PDF export');
+  const range = await openDateRangeFilterModal('Filter rows by date range before export');
   if (typeof range === 'undefined') return; // cancelled
 
-  const tempContainer = document.createElement('div');
-  tempContainer.style.position = 'absolute';
-  tempContainer.style.left = '-10000px';
-  tempContainer.style.top = '0';
-  tempContainer.style.width = '1200px';
-  tempContainer.style.pointerEvents = 'none';
-  tempContainer.style.padding = '40px';
-  tempContainer.style.backgroundColor = '#ffffff';
-  tempContainer.style.fontFamily = "'Arial', 'Helvetica', sans-serif";
+  // Extract headers (exclude action column)
+  const headerCells = Array.from(tableEl.querySelectorAll('thead th'));
+  const headers = headerCells.slice(0, -1).map((th) => (th.textContent || '').trim());
 
-  // Header Section - Clean and Corporate
-  const headerSection = document.createElement('div');
-  headerSection.style.marginBottom = '30px';
-  headerSection.style.borderBottom = '2px solid #333333';
-  headerSection.style.paddingBottom = '20px';
+  // Build body rows (exclude placeholder and action column)
+  const bodyRows = [];
+  const tbody = tableEl.querySelector('tbody');
+  if (tbody) {
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    const dateCols = findDateColumnIndices(headers);
+    allRows.forEach((tr) => {
+      const placeholder = tr.querySelector(`#${SECTION_NAME}SectionOneListEmpty${activeIndex}`);
+      if (placeholder) return;
+      const tds = Array.from(tr.querySelectorAll('td'));
+      if (!tds.length) return;
+      const dataCells = tds.slice(0, -1).map((td) => (td.textContent || '').trim());
+      if (range && (range.start || range.end) && dateCols.length > 0) {
+        const anyMatch = dateCols.some((ci) => isWithinRange(parseDateCell(dataCells[ci]), range.start, range.end));
+        if (!anyMatch) return;
+      }
+      bodyRows.push(dataCells);
+    });
+  }
 
-  // Gym Name and Address (Top)
-  const gymName = document.createElement('div');
-  gymName.textContent = 'Fitworx Gym';
-  gymName.style.textAlign = 'center';
-  gymName.style.margin = '0';
-  gymName.style.fontSize = '20px';
-  gymName.style.fontWeight = '700';
-  gymName.style.color = '#1a1a1a';
-  gymName.style.letterSpacing = '0.3px';
+  // Build styled HTML same as payments.js
+  const styles = `
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; padding: 28px; color:#111827; }
+      .header { text-align:center; line-height:1.35; margin-bottom:20px; }
+      .header .name { font-weight:600; font-size:14px; }
+      .header .small { font-size:11px; color:#374151; }
+      .header .title { margin-top:4px; font-size:12px; color:#111827; }
+      table { width:100%; border-collapse:collapse; margin-top:14px; border:1px solid #e5e7eb; }
+      thead th { font-size:11px; font-weight:600; color:#111827; padding:8px 10px; text-align:left; border:1px solid #e5e7eb; background:#fbfbfb; }
+      tbody td { font-size:11px; color:#111827; padding:8px 10px; border:1px solid #e5e7eb; vertical-align:top; }
+      .amount { text-align:right; white-space:pre-line; }
+      .footer { margin-top:28px; display:flex; justify-content:space-between; align-items:flex-start; font-size:11px; }
+      .footer .left { max-width:50%; }
+      .footer .right { text-align:right; }
+      .footer .label { color:#374151; }
+      .footer .value { font-weight:600; }
+      @media print { @page { margin: 16mm; } }
+    </style>`;
 
-  const gymAddress = document.createElement('div');
-  gymAddress.textContent = 'Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila 0939 874 5377';
-  gymAddress.style.textAlign = 'center';
-  gymAddress.style.margin = '4px 0 12px 0';
-  gymAddress.style.fontSize = '12px';
-  gymAddress.style.color = '#4a4a4a';
-  gymAddress.style.fontWeight = '500';
+  const headersHtml = `<tr>${headers
+    .map((h) => `<th>${h}</th>`)
+    .join('')}</tr>`;
+  const amountCol = (label) => /amount|price|sales/i.test(label);
+  const rowsHtml = bodyRows
+    .map((cells) =>
+      `<tr>${cells
+        .map((val, idx) => `<td class="${amountCol(headers[idx]) ? 'amount' : ''}">${val}</td>`)
+        .join('')}</tr>`
+    )
+    .join('');
 
-  const title = document.createElement('h1');
-  title.textContent = `${currentTabName} Report`;
-  title.style.textAlign = 'center';
-  title.style.margin = '0 0 8px 0';
-  title.style.fontSize = '24px';
-  title.style.fontWeight = '600';
-  title.style.color = '#1a1a1a';
-  title.style.letterSpacing = '0.3px';
-
-  const subtitle = document.createElement('div');
-  subtitle.textContent = main.getDateOrTimeOrBoth().datetime;
-  subtitle.style.textAlign = 'center';
-  subtitle.style.margin = '0';
-  subtitle.style.fontSize = '13px';
-  subtitle.style.color = '#666666';
-  subtitle.style.fontWeight = '400';
-
-  // Date range line (shown only if user selected a range)
-  let rangeLine = null;
-  if (range && (range.start || range.end)) {
+  const dateSuffix = (() => {
     const fmt = (d) =>
       d
-        ? d.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })
+        ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
         : '';
-    let rangeText = '';
-    if (range.start && range.end) {
-      rangeText = `${fmt(range.start)} - ${fmt(range.end)}`;
-    } else if (range.start) {
-      rangeText = `From ${fmt(range.start)}`;
-    } else if (range.end) {
-      rangeText = `Until ${fmt(range.end)}`;
-    }
-    rangeLine = document.createElement('div');
-    rangeLine.textContent = rangeText;
-    rangeLine.style.textAlign = 'center';
-    rangeLine.style.margin = '4px 0 0 0';
-    rangeLine.style.fontSize = '12px';
-    rangeLine.style.color = '#4a4a4a';
-    rangeLine.style.fontWeight = '500';
-  }
+    if (!range || (!range.start && !range.end)) return '';
+    if (range.start && range.end) return ` — ${fmt(range.start)} to ${fmt(range.end)}`;
+    if (range.start) return ` — from ${fmt(range.start)}`;
+    return ` — until ${fmt(range.end)}`;
+  })();
 
-  headerSection.appendChild(gymName);
-  headerSection.appendChild(gymAddress);
-  headerSection.appendChild(title);
-  headerSection.appendChild(subtitle);
-  if (rangeLine) headerSection.appendChild(rangeLine);
+  const generatedAt = new Date().toLocaleString();
+  const preparedName = sessionStorage.getItem('systemUserFullname') || 'Cashier or admin';
+  const preparedRole = sessionStorage.getItem('systemUserRole') || '';
+  const preparedBy = preparedRole ? `${preparedName} (${preparedRole})` : preparedName;
 
-  const clonedContent = tableEl.cloneNode(true);
-  try {
-    const theadRow = clonedContent.querySelector('thead tr');
-    if (theadRow && theadRow.lastElementChild) {
-      theadRow.removeChild(theadRow.lastElementChild);
-    }
-    const tbody = clonedContent.querySelector('tbody');
-    if (tbody) {
-      const emptyCell = tbody.querySelector(`#${SECTION_NAME}SectionOneListEmpty${activeIndex}`);
-      if (emptyCell) {
-        const emptyRow = emptyCell.closest('tr');
-        if (emptyRow) emptyRow.remove();
-      }
-      // Apply date filtering if provided
-      if (range && (range.start || range.end)) {
-        const headers = Array.from(clonedContent.querySelectorAll('thead th')).map((th) => (th.textContent || '').trim());
-        const dateCols = findDateColumnIndices(headers);
-        if (dateCols.length > 0) {
-          Array.from(tbody.querySelectorAll('tr')).forEach((tr) => {
-            const cells = Array.from(tr.querySelectorAll('td'));
-            if (!cells.length) return;
-            // keep row if ANY date column falls within range
-            const anyMatch = dateCols.some((ci) => {
-              const val = (cells[ci]?.textContent || '').trim();
-              const d = parseDateCell(val);
-              return isWithinRange(d, range.start, range.end);
-            });
-            if (!anyMatch) tr.remove();
-          });
-        }
-      }
-      tbody.querySelectorAll('tr').forEach((tr) => {
-        const last = tr.lastElementChild;
-        if (last) tr.removeChild(last);
-        tr.querySelectorAll('img').forEach((img) => img.remove());
-        Array.from(tr.children).forEach((td) => td.classList.remove('hidden'));
-        tr.classList.remove('hidden');
-      });
-    }
-  } catch (_e) {}
+  const reportHtml = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${currentTabName} Report</title>
+        ${styles}
+      </head>
+      <body>
+        <div class="header">
+          <div class="name">Fitworx Gym</div>
+          <div class="small">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
+          <div class="small">0939 874 5377</div>
+          <div class="title">${currentTabName}${dateSuffix}</div>
+        </div>
+        <table>
+          <thead>${headersHtml}</thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <div class="footer">
+          <div class="left">
+            <span class="label">Prepared by:</span> <span class="value">${preparedBy}</span>
+          </div>
+          <div class="right">
+            <div><span class="label">Generated:</span> <span class="value">${generatedAt}</span></div>
+          </div>
+        </div>
+      </body>
+    </html>`;
 
-  clonedContent.style.width = '100%';
-  clonedContent.style.borderCollapse = 'collapse';
-  clonedContent.style.borderSpacing = '0';
-  clonedContent.style.fontSize = '11px';
-  clonedContent.style.color = '#1a1a1a';
-  clonedContent.style.border = '1px solid #cccccc';
-
-  const thead = clonedContent.querySelector('thead');
-  if (thead) {
-    thead.style.backgroundColor = '#f5f5f5';
-    thead.querySelectorAll('th').forEach((th) => {
-      th.style.padding = '12px 10px';
-      th.style.textAlign = 'left';
-      th.style.fontWeight = '600';
-      th.style.fontSize = '11px';
-      th.style.color = '#1a1a1a';
-      th.style.borderBottom = '2px solid #333333';
-      th.style.borderRight = '1px solid #e0e0e0';
-    });
-  }
-
-  const tbody = clonedContent.querySelector('tbody');
-  if (tbody) {
-    tbody.querySelectorAll('tr').forEach((tr, idx) => {
-      if (idx % 2 === 0) {
-        tr.style.backgroundColor = '#ffffff';
-      } else {
-        tr.style.backgroundColor = '#fafafa';
-      }
-      tr.querySelectorAll('td').forEach((td) => {
-        td.style.padding = '10px';
-        td.style.borderBottom = '1px solid #e0e0e0';
-        td.style.borderRight = '1px solid #e0e0e0';
-        td.style.fontSize = '11px';
-        td.style.color = '#333333';
-        td.style.fontWeight = '400';
-      });
-    });
-  }
-
-  // Helper: compute per-table subtotals based on header labels
-  function computeTableSubtotals(tableNode) {
-    const totals = {};
-    try {
-      const thead = tableNode.querySelector('thead');
-      const tbody = tableNode.querySelector('tbody');
-      if (!thead || !tbody) return totals;
-      const headers = Array.from(thead.querySelectorAll('th')).map((th) => (th.textContent || '').trim());
-      const isCurrency = (label) => /amount|price|sales/i.test(label);
-      const isQuantity = (label) => /quantity sold/i.test(label);
-      const rows = Array.from(tbody.querySelectorAll('tr')).filter(
-        (tr) => !tr.querySelector(`#${SECTION_NAME}SectionOneListEmpty${activeIndex}`)
-      );
-      rows.forEach((tr) => {
-        const cells = Array.from(tr.querySelectorAll('td'));
-        cells.forEach((td, idx) => {
-          const label = headers[idx] || '';
-          if (!label) return;
-          const raw = (td.textContent || '').trim();
-          if (isCurrency(label)) {
-            const parsed = Number(String(raw).replace(/[^0-9.\-]/g, ''));
-            const val = Number.isFinite(parsed) ? parsed : 0;
-            totals[label] = (totals[label] || 0) + val;
-          } else if (isQuantity(label)) {
-            const val = parseInt(raw.replace(/[^0-9\-]/g, ''), 10);
-            totals[label] = (totals[label] || 0) + (Number.isFinite(val) ? val : 0);
-          }
-        });
-      });
-    } catch (_) {}
-    return totals;
-  }
-
-  // Subtotals Section - Clean Corporate Style
-  function renderSubtotalsSection(container) {
-    const totals = computeTableSubtotals(clonedContent);
-    const keys = Object.keys(totals);
-    if (keys.length === 0) return;
-
-    const wrap = document.createElement('div');
-    wrap.style.marginTop = '30px';
-    wrap.style.padding = '20px';
-    wrap.style.backgroundColor = '#f9f9f9';
-    wrap.style.border = '1px solid #cccccc';
-
-    const heading = document.createElement('div');
-    heading.textContent = 'Summary Totals';
-    heading.style.fontWeight = '600';
-    heading.style.fontSize = '14px';
-    heading.style.marginBottom = '15px';
-    heading.style.color = '#1a1a1a';
-    heading.style.borderBottom = '1px solid #333333';
-    heading.style.paddingBottom = '10px';
-    wrap.appendChild(heading);
-
-    const list = document.createElement('div');
-    list.style.display = 'grid';
-    list.style.gridTemplateColumns = '1fr 1fr';
-    list.style.gap = '12px';
-    list.style.fontSize = '12px';
-
-    keys.forEach((k) => {
-      const item = document.createElement('div');
-      item.style.display = 'flex';
-      item.style.justifyContent = 'space-between';
-      item.style.alignItems = 'center';
-      item.style.padding = '10px 12px';
-      item.style.backgroundColor = '#ffffff';
-      item.style.border = '1px solid #e0e0e0';
-
-      const isCurrency = /amount|price|sales/i.test(k);
-      const labelSpan = document.createElement('span');
-      labelSpan.textContent = k + ':';
-      labelSpan.style.color = '#333333';
-      labelSpan.style.fontWeight = '500';
-      labelSpan.style.fontSize = '11px';
-
-      const valueSpan = document.createElement('span');
-      valueSpan.textContent = isCurrency && main.encodePrice ? main.encodePrice(totals[k]) : totals[k];
-      valueSpan.style.color = '#1a1a1a';
-      valueSpan.style.fontWeight = '600';
-      valueSpan.style.fontSize = '12px';
-
-      item.appendChild(labelSpan);
-      item.appendChild(valueSpan);
-      list.appendChild(item);
-    });
-
-    wrap.appendChild(list);
-    container.appendChild(wrap);
-  }
-
-  const operatorName =
-    (typeof main.getOperatorName === 'function' && main.getOperatorName()) ||
-    (typeof main.getCurrentUserName === 'function' && main.getCurrentUserName()) ||
-    (typeof main.getUserPrefs === 'function' && main.getUserPrefs()?.operatorName) ||
-    'System Operator';
-  const printedAt = main.getDateOrTimeOrBoth().datetime;
-
-  tempContainer.appendChild(headerSection);
-  tempContainer.appendChild(clonedContent);
-  renderSubtotalsSection(tempContainer);
-
-  // Footer - Clean and Simple
-  const footer = document.createElement('div');
-  footer.style.marginTop = '30px';
-  footer.style.paddingTop = '15px';
-  footer.style.borderTop = '1px solid #cccccc';
-  footer.style.display = 'flex';
-  footer.style.justifyContent = 'space-between';
-  footer.style.alignItems = 'center';
-  footer.style.fontSize = '10px';
-  footer.style.color = '#666666';
-  footer.style.fontWeight = '400';
-
-  const preparedBy = document.createElement('span');
-  preparedBy.innerHTML = `<strong style="color: #333333;">Prepared by:</strong> ${operatorName}`;
-
-  const printedAtSpan = document.createElement('span');
-  printedAtSpan.innerHTML = `<strong style="color: #333333;">Printed:</strong> ${printedAt}`;
-
-  footer.appendChild(preparedBy);
-  footer.appendChild(printedAtSpan);
-  tempContainer.appendChild(footer);
-
-  document.body.appendChild(tempContainer);
-  void tempContainer.offsetHeight;
-
-  try {
-    html2canvas(tempContainer, {
-      scale: 1.2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: 1200,
-      windowHeight: tempContainer.scrollHeight,
-    })
-      .then((canvas) => {
-        const imgData = canvas.toDataURL('image/jpeg', 0.75);
-        const pdf = new window.jspdf.jsPDF({
-          unit: 'pt',
-          format: 'a4',
-          orientation: 'portrait',
-          compress: true,
-        });
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = Math.min((pageWidth - 60) / imgWidth, (pageHeight - 60) / imgHeight);
-        const width = imgWidth * ratio;
-        const height = imgHeight * ratio;
-        const x = (pageWidth - width) / 2;
-        const y = 30;
-
-        pdf.addImage(imgData, 'JPEG', x, y, width, height, undefined, 'FAST');
-        pdf.save(`${currentTabName.replace(/\s+/g, '_')}_Report_${main.encodeDate(new Date(), 'numeric')}.pdf`);
-        document.body.removeChild(tempContainer);
-        main.toast('PDF exported successfully', 'success');
-      })
-      .catch((error) => {
-        document.body.removeChild(tempContainer);
-        console.error('PDF export error:', error);
-        main.toast('Error exporting PDF', 'error');
-      });
-  } catch (error) {
-    document.body.removeChild(tempContainer);
-    console.error('PDF export error:', error);
-    main.toast('Error exporting PDF', 'error');
-  }
+  const win = window.open('', '', 'width=900,height=700');
+  if (!win) return;
+  win.document.write(reportHtml);
+  win.document.close();
+  win.focus();
+  setTimeout(() => {
+    try { win.print(); } catch (_) {}
+    try { win.close(); } catch (_) {}
+  }, 250);
 }
 
 // Export current tab data to Excel
@@ -1325,7 +1205,7 @@ async function exportToExcel() {
   rows.forEach((r, idx) => {
     const row = ws.addRow(r);
     const isEven = idx % 2 === 0;
-    row.eachCell((cell, colNumber) => {
+    row.eachCell((cell) => {
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
@@ -1339,9 +1219,9 @@ async function exportToExcel() {
       };
       cell.font = { size: 10, color: { argb: 'FF333333' } };
 
-      // Right-align numbers and currency
       const cellValue = String(cell.value || '');
-      if (cellValue.match(/^\$|₱|£|€/) || cellValue.match(/^\d+(\.\d+)?$/)) {
+      if (cellValue.match(/^\$|₱|£|€/)
+          || cellValue.match(/^\d+(\.\d+)?$/)) {
         cell.alignment = { horizontal: 'right', vertical: 'middle' };
         cell.font = { ...cell.font, bold: true };
       } else {
@@ -1371,10 +1251,7 @@ async function exportToExcel() {
   });
 
   if (Object.keys(totals).length > 0) {
-    // Add spacing before totals
     ws.addRow([]);
-
-    // Add totals section - Clean Corporate Style
     const totalHeaderRow = ws.addRow(['SUMMARY TOTALS']);
     ws.mergeCells(totalHeaderRow.number, 1, totalHeaderRow.number, headers.length);
     const totalHeaderCell = ws.getCell(totalHeaderRow.number, 1);
