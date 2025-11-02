@@ -1762,10 +1762,9 @@ async function seePhotoProvidedListener(title, paymentId) {
   main.sharedState.moduleLoad = SECTION_NAME;
   window.showGlobalLoading?.();
   try {
-    const response = await fetch(`/api/payments/pending/${paymentId}/urls`);
+    const response = await fetch(`${API_BASE_URL}/payment/pending/${paymentId}/urls`);
     const data = await response.json();
 
-    console.log(data)
     if (response.ok) {
       const titleLower = title.toLowerCase();
       let imgSrc;
