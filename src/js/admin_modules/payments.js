@@ -1815,7 +1815,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
       {
         placeholder: 'Amount tendered',
-        value: isOnlineTransaction ? amountToPay : 0,
+        value: isOnlineTransaction ? main.encodePrice(amountToPay) : 0,
         required: !isOnlineTransaction,
         hidden: !isOnlineTransaction,
         locked: isOnlineTransaction,
