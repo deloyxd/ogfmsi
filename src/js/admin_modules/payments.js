@@ -171,6 +171,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   if (isOnlineTransaction && refFromPortal) {
                     createResult.dataset.refnum = refFromPortal;
                   }
+                  if (isOnlineTransaction && !isOnlineFacility) {
+                    if (pendingPayment.payment_rate.toLowerCase().includes('student')) {
+                    }
+                  }
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
                     completePayment(
@@ -704,7 +708,7 @@ function openConsolidateTransactionsModal() {
       <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
         <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
           <p class="text-xl font-medium">Consolidate Transactions</p>
-          <p class="text-xs">Showing first 10 recent Service and Sales transactions</p>
+          <p class="text-xs">Showing recent Service and Sales transactions</p>
         </div>
         <div class="p-4">
           <div class="mb-3">
@@ -1078,8 +1082,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     return true;
   };
 
+  const maxRows = 10;
+
   if (serviceListEl) {
-    const filtered = (Array.isArray(service) ? service : []).filter(matcher).slice(0, 10);
+    const filtered = (Array.isArray(service) ? service : []).filter(matcher);
     if (filtered.length === 0) {
       serviceListEl.innerHTML = '<div class="text-sm text-gray-500">No service transactions found</div>';
     } else {
@@ -1160,7 +1166,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     });
   }
   if (salesListEl) {
-    const filtered = (Array.isArray(sales) ? sales : []).filter(matcher).slice(0, 10);
+    const filtered = (Array.isArray(sales) ? sales : []).filter(matcher);
     if (filtered.length === 0) {
       salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
     } else {
