@@ -172,8 +172,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     createResult.dataset.refnum = refFromPortal;
                   }
                   if (isOnlineTransaction && !isOnlineFacility) {
+                    findResult.dataset.custom2 = 'Monthly - Pending';
+                    findResult.children[2].innerText = findResult.dataset.custom2;
                     if (pendingPayment.payment_rate.toLowerCase().includes('student')) {
+                      findResult.dataset.custom3 = 'Student';
+                      findResult.children[3].innerText = findResult.dataset.custom3;
                     }
+                      findResult.dataset.status = 'pending';
+                      findResult.dataset.tid = createResult.dataset.id;
                   }
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
@@ -1445,7 +1451,6 @@ async function openProcessConsolidatedModal() {
         const e = endDate;
         if (!s && !e) return '';
         const fmt = (d) => main.encodeDate(d, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long');
-        console.log(fmt(startDate), fmt(endDate));
         if (s && e) {
           const same =
             s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth() && s.getDate() === e.getDate();
