@@ -6,6 +6,9 @@ const DEFAULT_PAGE_SIZE = 12;
 // Store pagination state per section/tab
 const paginationState = new Map();
 
+// Store calculated page sizes per section/tab to maintain consistency
+const calculatedPageSizes = new Map();
+
 /**
  * Get pagination key for a section/tab combination
  */
@@ -14,13 +17,142 @@ function getPaginationKey(sectionName, tabIndex) {
 }
 
 /**
+ * Calculate optimal page size based on table container height
+ */
+function calculatePageSize(sectionName, tabIndex) {
+  const key = getPaginationKey(sectionName, tabIndex);
+
+  // Return cached calculation if available
+  if (calculatedPageSizes.has(key)) {
+    return calculatedPageSizes.get(key);
+  }
+
+  const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+  if (!emptyText) return DEFAULT_PAGE_SIZE;
+
+  try {
+    // Find the table container
+    const tableContainer = emptyText.closest('[data-sectionindex="1"]').parentElement;
+    if (!tableContainer) return DEFAULT_PAGE_SIZE;
+
+    // Get the table container height
+    const containerHeight = parseHeightFromClasses(tableContainer);
+
+    // Estimate row height - try to measure actual rows first
+    let rowHeight = 49; // Default estimated row height
+
+    const tbody = emptyText.closest('tbody');
+    if (tbody) {
+      const rows = Array.from(tbody.querySelectorAll('tr')).filter(
+        (row) => !row.contains(emptyText) && row.children.length > 0
+      );
+
+      if (rows.length > 0) {
+        // Measure actual row height from existing rows
+        const firstRow = rows[0];
+        const rowRect = firstRow.getBoundingClientRect();
+        if (rowRect.height > 0) {
+          rowHeight = rowRect.height;
+        }
+      }
+    }
+
+    // Calculate available height for table rows (subtract header, padding, pagination space)
+    const MIN_ROWS = 5;
+    const MAX_ROWS = 15;
+    const headerHeight = 37;
+    const paddingAndMargins = 86;
+
+    const availableHeight = containerHeight - headerHeight - paddingAndMargins;
+
+    // Calculate how many rows can fit
+    const calculatedSize = Math.floor(availableHeight / rowHeight);
+
+    // Clamp between min and max - clearer logic
+    const finalSize = Math.min(MAX_ROWS, Math.max(MIN_ROWS, calculatedSize));
+
+    // Cache the calculation
+    calculatedPageSizes.set(key, finalSize);
+
+    // if (sectionName.includes('customer')) {
+    //   console.log(`Page size calculation for ${sectionName} tab ${tabIndex}:`, {
+    //     containerHeight,
+    //     rowHeight,
+    //     headerHeight,
+    //     availableHeight,
+    //     calculatedRows: calculatedSize,
+    //     finalPageSize: finalSize,
+    //   });
+    // }
+
+    return finalSize;
+  } catch (error) {
+    console.error('Error calculating page size:', error);
+    return DEFAULT_PAGE_SIZE;
+  }
+}
+
+/**
+ * Parse height value from CSS classes like 'min-h-[723px]', 'h-[500px]', etc.
+ */
+function parseHeightFromClasses(element) {
+  if (!element) return null;
+
+  // Get all class names from the element and its parent
+  const classNames = element.className.split(' ');
+  
+  // Also check parent element for height classes
+  const parent = element.parentElement;
+  if (parent) {
+    classNames.push(...parent.className.split(' '));
+  }
+
+  // Patterns to match common height utility classes
+  const heightPatterns = [
+    /min-h-\[(\d+)px\]/,  // min-h-[723px]
+    /max-h-\[(\d+)px\]/,  // max-h-[723px]
+    /h-\[(\d+)px\]/,      // h-[723px]
+    /min-h-(\d+)/,        // min-h-96 (tailwind numeric)
+    /max-h-(\d+)/,        // max-h-96
+    /h-(\d+)/,            // h-96
+  ];
+
+  for (const className of classNames) {
+    for (const pattern of heightPatterns) {
+      const match = className.match(pattern);
+      if (match) {
+        const value = match[1];
+        
+        // If it's a bracket syntax with px, use the number directly
+        if (pattern.source.includes('\\[\\d+px\\]')) {
+          return parseInt(value, 10);
+        }
+        
+        // If it's a Tailwind numeric class, convert to pixels
+        // Tailwind: 1 = 0.25rem (4px), 96 = 24rem (384px), etc.
+        const numericValue = parseInt(value, 10);
+        if (!isNaN(numericValue)) {
+          return numericValue;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Initialize pagination for a table
  */
-export function initPagination(sectionName, tabIndex, pageSize = DEFAULT_PAGE_SIZE) {
+export function initPagination(sectionName, tabIndex, pageSize = null) {
   const key = getPaginationKey(sectionName, tabIndex);
+
+  // Use calculated page size if not provided
+  const finalPageSize = pageSize || calculatePageSize(sectionName, tabIndex);
+
   paginationState.set(key, {
     currentPage: 1,
-    pageSize: Math.max(1, Math.min(100, pageSize)),
+    pageSize: Math.max(1, Math.min(100, finalPageSize)),
     totalRows: 0,
   });
 }
@@ -76,10 +208,12 @@ export function updatePaginationControls(sectionName, tabIndex) {
   const currentPageSpan = paginationContainer.querySelector('.pagination-current-page');
   const totalPagesSpan = paginationContainer.querySelector('.pagination-total-pages');
   const totalRowsSpan = paginationContainer.querySelector('.pagination-total-rows');
+  const pageSizeSpan = paginationContainer.querySelector('.pagination-page-size');
 
   if (currentPageSpan) currentPageSpan.textContent = state.currentPage;
   if (totalPagesSpan) totalPagesSpan.textContent = totalPages;
   if (totalRowsSpan) totalRowsSpan.textContent = totalRows;
+  if (pageSizeSpan) pageSizeSpan.textContent = state.pageSize;
 
   // Update button states
   const prevBtn = paginationContainer.querySelector('.pagination-prev');
@@ -125,12 +259,12 @@ const creationInProgress = new Set();
 
 export function createPaginationControls(sectionName, tabIndex, mainColor = 'orange') {
   const key = getPaginationKey(sectionName, tabIndex);
-  
+
   // If creation is already in progress for this key, skip
   if (creationInProgress.has(key)) {
     return;
   }
-  
+
   // Check if pagination container already exists in DOM
   const existingPagination = document.getElementById(`${sectionName}PaginationContainer${tabIndex}`);
   if (existingPagination) {
@@ -148,9 +282,11 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
 
   // Mark as in progress
   creationInProgress.add(key);
-  
+
   try {
-    initPagination(sectionName, tabIndex);
+    // Calculate page size based on container height
+    const calculatedPageSize = calculatePageSize(sectionName, tabIndex);
+    initPagination(sectionName, tabIndex, calculatedPageSize);
 
     // Find the table parent to append pagination controls
     const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
@@ -189,7 +325,10 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
       <span class="pagination-current-page font-bold text-gray-900">1</span>
       <span>of</span>
       <span class="pagination-total-pages font-bold text-gray-900">1</span>
-      <span class="ml-2 text-gray-500">(<span class="pagination-total-rows">0</span> rows)</span>
+      <span class="ml-2 text-gray-500">
+        (<span class="pagination-total-rows">0</span> rows, 
+        <span class="pagination-page-size">${calculatedPageSize}</span> per page)
+      </span>
     </div>
     <div class="flex items-center gap-1">
       <button 
@@ -248,14 +387,13 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
 
     // Initially hide - will be shown by updatePaginationControls when rows are added
     paginationContainer.classList.add('hidden');
-    
+
     // Force an initial update to check if rows exist
     setTimeout(() => {
       updatePaginationControls(sectionName, tabIndex);
       // Remove from in-progress set after creation is complete
       creationInProgress.delete(key);
     }, 100);
-  
   } catch (error) {
     // If error occurs, remove from in-progress set
     creationInProgress.delete(key);
@@ -294,7 +432,7 @@ export function renderPage(sectionName, tabIndex, skipSearchCheck = false) {
   // Check if search is active - if so, don't apply pagination filtering
   const searchInput = document.getElementById(`${sectionName}SectionOneSearch`);
   const isSearching = searchInput && searchInput.value.trim() !== '';
-  
+
   if (isSearching && !skipSearchCheck) {
     // Search is active - pagination is handled by search logic
     return;
@@ -349,6 +487,33 @@ export function resetPagination(sectionName, tabIndex) {
   renderPage(sectionName, tabIndex);
 }
 
+/**
+ * Recalculate page size when container is resized or layout changes
+ */
+export function recalculatePageSize(sectionName, tabIndex) {
+  const key = getPaginationKey(sectionName, tabIndex);
+
+  // Clear cached calculation
+  calculatedPageSizes.delete(key);
+
+  // Calculate new page size
+  const newPageSize = calculatePageSize(sectionName, tabIndex);
+
+  // Update pagination state
+  const currentState = getPaginationState(sectionName, tabIndex);
+  setPaginationState(sectionName, tabIndex, {
+    ...currentState,
+    pageSize: newPageSize,
+    currentPage: 1, // Reset to first page when page size changes
+  });
+
+  // Re-render with new page size
+  renderPage(sectionName, tabIndex);
+  updatePaginationControls(sectionName, tabIndex);
+
+  console.log(`Recalculated page size for ${sectionName} tab ${tabIndex}: ${newPageSize}`);
+}
+
 // Debounce pagination refresh to batch updates
 let refreshTimeouts = new Map();
 
@@ -357,19 +522,19 @@ let refreshTimeouts = new Map();
  */
 export function refreshPagination(sectionName, tabIndex) {
   const key = getPaginationKey(sectionName, tabIndex);
-  
+
   // Clear existing timeout
   if (refreshTimeouts.has(key)) {
     clearTimeout(refreshTimeouts.get(key));
   }
-  
+
   // Set new timeout to batch updates
   const timeout = setTimeout(() => {
     renderPage(sectionName, tabIndex);
     updatePaginationControls(sectionName, tabIndex); // Ensure controls visibility is updated
     refreshTimeouts.delete(key);
   }, 10);
-  
+
   refreshTimeouts.set(key, timeout);
 }
 
@@ -379,16 +544,16 @@ export function refreshPagination(sectionName, tabIndex) {
 export function clearPagination(sectionName, tabIndex) {
   const key = getPaginationKey(sectionName, tabIndex);
   paginationState.delete(key);
-  
+  calculatedPageSizes.delete(key);
+
   // Clear any timeout for this pagination
   if (refreshTimeouts.has(key)) {
     clearTimeout(refreshTimeouts.get(key));
     refreshTimeouts.delete(key);
   }
-  
+
   const paginationContainer = document.getElementById(`${sectionName}PaginationContainer${tabIndex}`);
   if (paginationContainer) {
     paginationContainer.remove();
   }
 }
-
