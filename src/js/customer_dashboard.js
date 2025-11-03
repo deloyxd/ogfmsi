@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
   }
+  console.log('CID: ', sessionStorage.getItem('id'));
   setupMobileDropdown();
   setupLogout();
   document.getElementById('welcomeUser').innerText = fullName;

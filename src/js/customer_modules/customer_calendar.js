@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../_global.js';
+import main from '../admin_main.js';
 
 import { db } from '../firebase.js';
 import {
@@ -861,7 +862,7 @@ function openPaymentModal(reservation, preparedRegistrationData) {
               </div>
               <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1" for="gcashAmount">Amount Paid</label>
-                <input id="gcashAmount" name="gcashAmount" type="text" inputmode="decimal" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-gray-100 cursor-not-allowed" value="${totalAmount}" readonly required />
+                <input id="gcashAmount" name="gcashAmount" type="text" inputmode="decimal" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-gray-100 cursor-not-allowed" value="${main.encodePrice(totalAmount)}" readonly required />
               </div>
               <p class="text-xs text-gray-600">Please ensure all details are correct before submitting. Payment verification may take a few minutes.</p>
               <p class="inline-validation-msg mt-2 text-xs text-red-600"></p>

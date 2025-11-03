@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../_global.js';
+import main from '../admin_main.js';
 
 const BUTTON_SELECTOR = '#subscription-form';
 
@@ -323,7 +324,7 @@ function openPaymentModal(preparedRegistrationData) {
                 <input id="gcashAmount" name="gcashAmount" type="text" 
                       inputmode="decimal"
                       class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-gray-100 cursor-not-allowed" 
-                      value="${totalAmount}" 
+                      value="${main.encodePrice(totalAmount)}" 
                       readonly 
                       required />
               </div>
