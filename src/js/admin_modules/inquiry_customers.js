@@ -4,6 +4,7 @@ import reservations from './inquiry_reservations.js';
 import payments from './payments.js';
 import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
+import * as pagination from '../admin_pagination.js';
 
 const SECTION_NAME = 'inquiry-customers';
 
@@ -69,10 +70,22 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await autoArchiveInactiveCustomers();
     await clearDuplicateMonthlyEntries();
     updateCustomerStats();
+    
+    // Ensure pagination is properly applied after all initial data loads
+    setTimeout(() => {
+      pagination.renderPage(SECTION_NAME, 1, true);
+      pagination.updatePaginationControls(SECTION_NAME, 1);
+    }, 300);
 
     setInterval(() => {
       if (main.sharedState.sectionName === SECTION_NAME) {
-        fetchAllCustomers();
+        fetchAllCustomers().then(() => {
+          // Refresh pagination after interval fetch
+          setTimeout(() => {
+            pagination.renderPage(SECTION_NAME, 1, true);
+            pagination.updatePaginationControls(SECTION_NAME, 1);
+          }, 100);
+        });
       }
     }, 5000);
 
@@ -143,6 +156,22 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
             }
           );
         });
+        
+        // Refresh pagination after all customers are loaded and ensure rows are paginated
+        setTimeout(() => {
+          // Ensure pagination controls exist for tab 1
+          const existingPagination = document.getElementById(`${SECTION_NAME}PaginationContainer1`);
+          if (!existingPagination) {
+            // Controls don't exist yet, create them (use default color)
+            pagination.createPaginationControls(SECTION_NAME, 1, 'blue');
+          }
+          
+          // Now refresh and apply pagination
+          pagination.refreshPagination(SECTION_NAME, 1);
+          // Also explicitly render page to ensure pagination is applied
+          pagination.renderPage(SECTION_NAME, 1, true); // skipSearchCheck = true
+          pagination.updatePaginationControls(SECTION_NAME, 1);
+        }, 200);
       } catch (error) {
         console.error('Error fetching customers:', error);
       }

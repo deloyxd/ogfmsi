@@ -1,4 +1,5 @@
 import main from './admin_main.js';
+import * as pagination from './admin_pagination.js';
 
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   const tabCount = document.getElementById(`${main.sharedState.sectionName}_tab`).parentElement.children.length - 1;
@@ -28,6 +29,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     searchInput.value = '';
     searchInput.dataset.tabindex = tabIndex;
     searchInput.dispatchEvent(new Event('input'));
+    
+    // Reset pagination when switching tabs
+    pagination.resetPagination(main.sharedState.sectionName, tabIndex);
 
     const inactiveTabs = [];
     for (let i = 1; i <= tabCount; i++) {

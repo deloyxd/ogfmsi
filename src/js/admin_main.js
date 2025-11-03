@@ -1,3 +1,5 @@
+import * as pagination from './admin_pagination.js';
+
 const sharedState = {
   sectionName: '',
   activeTab: 1,
@@ -429,13 +431,17 @@ async function loadSectionSilently(sectionName) {
                 if (emptyText) {
                   const items = Array.from(emptyText.parentElement.parentElement.children);
                   if (searchTerm === '') {
+                    // Clear search - restore pagination
                     items.forEach((item, i) => {
                       if (i > 0) {
                         item.classList.remove('hidden');
                       }
                     });
+                    pagination.resetPagination(sectionName, tabIndex);
                     return;
                   }
+                  // Search mode - show all matching results, hide non-matching
+                  // During search, we show all matching rows and hide pagination
                   items.forEach((item, i) => {
                     if (i > 0) {
                       if (item.textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -445,6 +451,11 @@ async function loadSectionSilently(sectionName) {
                       }
                     }
                   });
+                  // Hide pagination during search (show all matches)
+                  const paginationContainer = document.getElementById(`${sectionName}PaginationContainer${tabIndex}`);
+                  if (paginationContainer) {
+                    paginationContainer.classList.add('hidden');
+                  }
                 }
               });
             }
@@ -525,6 +536,20 @@ async function loadSectionSilently(sectionName) {
               tableParent.appendChild(table);
 
               sectionOne.parentElement.parentElement.lastElementChild.appendChild(tableParent);
+
+              // Initialize pagination for this table
+              setTimeout(() => {
+                // Only create if it doesn't exist
+                const existing = document.getElementById(`${sectionName}PaginationContainer${i + 1}`);
+                if (!existing) {
+                  pagination.createPaginationControls(sectionName, i + 1, mainColor);
+                  // Initial render after controls are created
+                  pagination.renderPage(sectionName, i + 1);
+                } else {
+                  // Just refresh if it already exists
+                  pagination.refreshPagination(sectionName, i + 1);
+                }
+              }, 50);
             } else {
               containsCustomContents = true;
             }
@@ -1852,6 +1877,12 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, callback 
 
   tableRow.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
+  
+  // Update pagination after adding row
+  setTimeout(() => {
+    pagination.refreshPagination(sectionName, tabIndex);
+  }, 0);
+  
   callback(newRow);
 }
 
@@ -2074,6 +2105,8 @@ export function deleteAllAtSectionOne(sectionName, tabIndex) {
   for (let i = 1; i < items.length; i++) {
     items[i].remove();
   }
+  // Reset pagination when all rows are deleted
+  pagination.resetPagination(sectionName, tabIndex);
 }
 
 export function deleteAllAtSectionTwo(sectionName) {
