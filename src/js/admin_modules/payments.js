@@ -704,22 +704,23 @@ function subBtnFunction() {}
 function openConsolidateTransactionsModal() {
   // Build modal shell
   const modalHTML = `
-    <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-20 hidden" id="consolidateTransactionsModal">
-      <div class="m-auto w-full max-w-4xl -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
-        <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
-          <p class="text-xl font-medium">Consolidate Transactions</p>
-          <p class="text-xs">Showing recent Service and Sales transactions</p>
-        </div>
-        <div class="p-4">
-          <div class="mb-3">
-            <label class="mb-1 block text-sm font-medium text-gray-700">Filter transactions by date range</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input type="date" id="consolidateStartDate" 
-                     class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <input type="date" id="consolidateEndDate" 
-                     class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
+  <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-20 hidden" id="consolidateTransactionsModal">
+    <div class="m-auto w-full max-w-4xl max-h-[80vh] -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300 flex flex-col" onclick="event.stopPropagation()">
+      <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-emerald-500 to-emerald-800 p-4 text-center text-white">
+        <p class="text-xl font-medium">Consolidate Transactions</p>
+        <p class="text-xs">Choose a date to filter transactions</p>
+      </div>
+      <div class="flex-1 p-4 flex flex-col min-h-0 overflow-hidden">
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-medium text-gray-700">Filter transactions by date range</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="date" id="consolidateStartDate" 
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input type="date" id="consolidateEndDate" 
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
+        </div>
+        <div class="flex-1 overflow-auto min-h-0">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="consolidateGrid">
             <div class="flex flex-col gap-2 border rounded-lg p-3" id="serviceCol">
               <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur flex items-center justify-between">
@@ -744,14 +745,15 @@ function openConsolidateTransactionsModal() {
               <div class="flex flex-col gap-2" id="salesList"></div>
             </div>
           </div>
-          <div class="mt-4 flex items-center justify-end gap-2">
-            <span class="text-xs md:text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md" id="selectedCountText" aria-live="polite">Selected: 0</span>
-            <button type="button" id="processConsolidateBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">Process</button>
-            <button type="button" id="closeConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
-          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-200 mt-4">
+          <span class="text-xs md:text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md" id="selectedCountText" aria-live="polite">Selected: 0</span>
+          <button type="button" id="processConsolidateBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">Process</button>
+          <button type="button" id="closeConsolidateBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Close</button>
         </div>
       </div>
-    </div>`;
+    </div>
+  </div>`;
 
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const modal = document.getElementById('consolidateTransactionsModal');
