@@ -20,8 +20,35 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     await loadAllCheckins();
     setupMidnightClear();
+
+    createCalendarInput();
   }
 });
+
+function createCalendarInput() {
+  const searchContainer = document.getElementById('inquiry-checkinsSectionOneSearch').parentElement;
+
+  if (searchContainer) {
+    const calendarInput = document.createElement('input');
+    calendarInput.type = 'date';
+    calendarInput.id = 'calendarInput';
+    calendarInput.autocomplete = 'off';
+    calendarInput.className = 'section-content-search-main focus:ring-blue-500 w-48 text-sm mr-2';
+    calendarInput.setAttribute('data-tabindex', '1');
+
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    calendarInput.value = formattedDate;
+
+    calendarInput.addEventListener('change', async function () {
+      main.toast('Fetching all check-ins from date: ' + main.encodeDate(this.value, 'long'), 'info');
+      await loadAllCheckins();
+      main.toast('Successfully loaded at date: ' + main.encodeDate(this.value, 'long'), 'success');
+    });
+
+    searchContainer.parentNode.insertBefore(calendarInput, searchContainer);
+  }
+}
 
 export function logCheckin(transactionId, customer, tabIndex, showSection) {
   const { firstName } = main.decodeName(customer.dataset.text);
@@ -92,14 +119,14 @@ async function loadAllCheckins() {
       main.deleteAllAtSectionOne(SECTION_NAME, 1);
       const data = await regularResp.json();
       data.result.forEach((r) => {
-        if (isToday(r.created_at)) renderCheckinFromBackend(r, 1);
+        if (isDateSelected(r.created_at)) renderCheckinFromBackend(r, 1);
       });
     }
     if (monthlyResp.ok) {
       main.deleteAllAtSectionOne(SECTION_NAME, 2);
       const data = await monthlyResp.json();
       data.result.forEach((r) => {
-        if (isToday(r.created_at)) renderCheckinFromBackend(r, 2);
+        if (isDateSelected(r.created_at)) renderCheckinFromBackend(r, 2);
       });
     }
   } catch (error) {
@@ -107,11 +134,15 @@ async function loadAllCheckins() {
   }
 }
 
-function isToday(date) {
+function isDateSelected(date) {
   date = date.split('T')[0];
-  const today = new Date();
-  const checkinDate = new Date(date);
-  return today.toDateString() === checkinDate.toDateString();
+  const calendarInput = document.getElementById('calendarInput');
+  if (calendarInput && calendarInput.value) {
+    return date === calendarInput.value;
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    return date === today;
+  }
 }
 
 function renderCheckinFromBackend(record, tabIndex) {
@@ -172,7 +203,7 @@ function setupMidnightClear() {
 
   if (lastClearDate !== today) {
     // clearAllCheckins();
-     loadAllCheckins();
+    loadAllCheckins();
     localStorage.setItem('monthlyCheckinsLastCleared', today);
   }
 
@@ -184,7 +215,7 @@ function setupMidnightClear() {
     lastClearDate = localStorage.getItem('monthlyCheckinsLastCleared');
     if (lastClearDate !== currentDate) {
       // clearAllCheckins();
-     loadAllCheckins();
+      loadAllCheckins();
       localStorage.setItem('monthlyCheckinsLastCleared', currentDate);
     }
   }, 60000); // 1 minute interval
