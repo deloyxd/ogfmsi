@@ -76,6 +76,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     setupChartOne();
     setupChartTwo();
     loadDashboardStats(); // Load dashboard stats
+    main.toast(`Please wait while the system is initializing...`, 'info');
   }
 });
 
@@ -533,6 +534,69 @@ async function setupChartTwo() {
           plugins: { legend: { position: 'bottom' } },
         },
       });
+
+      function getSmartGreeting() {
+        const hour = new Date().getHours();
+        let baseGreeting;
+
+        // Time-based greetings
+        if (hour < 12) {
+          baseGreeting = 'Good morning';
+        } else if (hour < 18) {
+          baseGreeting = 'Good afternoon';
+        } else {
+          baseGreeting = 'Good evening';
+        }
+
+        // Random variations for each time period
+        const morningVariations = [
+          'Good morning',
+          'Rise and shine',
+          'Top of the morning',
+          'Morning glory',
+          'A beautiful morning',
+          'Ready for a great day',
+          'Hope you slept well',
+        ];
+
+        const afternoonVariations = [
+          'Good afternoon',
+          'What a fine afternoon',
+          'Greetings',
+          'Hope your day is going well',
+          'Afternoon delights',
+          'Making great progress',
+          'Productive afternoon',
+        ];
+
+        const eveningVariations = [
+          'Good evening',
+          'Welcome back',
+          'Hello',
+          'Evening breeze',
+          'Winding down nicely',
+          'Hope you had a great day',
+          'Perfect evening',
+        ];
+
+        let variations;
+        if (hour < 12) {
+          variations = morningVariations;
+        } else if (hour < 18) {
+          variations = afternoonVariations;
+        } else {
+          variations = eveningVariations;
+        }
+
+        return variations[Math.floor(Math.random() * variations.length)];
+      }
+
+      // Usage
+      const greetings = getSmartGreeting();
+      main.toast(
+        `${greetings}, ${sessionStorage.getItem('systemUserFullname')}! The system is now ready to serve you!`,
+        'success'
+      );
     }, 50);
   } catch (error) {
     console.error('Failed to load real chart data:', error);

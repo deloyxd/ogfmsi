@@ -2120,12 +2120,16 @@ export function deleteAtSectionTwo(sectionName, id) {
   }
 }
 
-export function deleteAllAtSectionOne(sectionName, tabIndex) {
+export function deleteAllAtSectionOne(sectionName, tabIndex, callback = null) {
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   emptyText.parentElement.classList.remove('hidden');
-  const items = emptyText.parentElement.parentElement.children;
-  for (let i = 1; i < items.length; i++) {
-    items[i].remove();
+  const container = emptyText.parentElement.parentElement;
+  while (container.children.length > 1) {
+    container.lastChild.remove();
+  }
+
+  if (callback) {
+    callback();
   }
   // Reset pagination when all rows are deleted
   pagination.resetPagination(sectionName, tabIndex);
