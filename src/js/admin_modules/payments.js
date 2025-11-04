@@ -183,7 +183,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     findResult.dataset.status = 'pending';
                     findResult.dataset.tid = createResult.dataset.id;
 
-                    const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${findResult.dataset.id}`);
+                    const response = await fetch(`${API_BASE_URL}/inquiry/monthly/pending/${findResult.dataset.id}`);
                     if (response.ok) {
                       const result = await response.json();
                       const customer = result.result;

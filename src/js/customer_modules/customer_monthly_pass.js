@@ -257,7 +257,6 @@ function openRegistrationModal() {
     const studentId = /** @type {HTMLInputElement} */ (form.querySelector('#studentId'))?.files?.[0] || null;
     const startDate = /** @type {HTMLInputElement} */ (form.querySelector('#startDate'))?.value;
     const endDate = /** @type {HTMLInputElement} */ (form.querySelector('#endDate'))?.value;
-    console.log(startDate, endDate);
 
     // if (!memberName) {
     //   msg.textContent = 'Please enter the Member Name.';
