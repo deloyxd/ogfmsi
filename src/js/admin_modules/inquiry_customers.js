@@ -201,8 +201,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               }
               if (findResult.dataset.custom2 === 'Daily') {
                 return;
-              } else if (customer.customer_pending == 1) {
-                console.log(findResult);
+              } else {
                 findResult.dataset.startDate = main.encodeDate(
                   customer.customer_start_date,
                   main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
