@@ -2220,7 +2220,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                 });
               } catch (_) {}
 
-              seenPendingPaymentIds.delete(effectiveId);
+              // seenPendingPaymentIds.delete(effectiveId);
             } catch (error) {
               console.error('Error creating complete payment:', error);
             }
