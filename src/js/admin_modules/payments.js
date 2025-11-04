@@ -180,6 +180,20 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     }
                     findResult.dataset.status = 'pending';
                     findResult.dataset.tid = createResult.dataset.id;
+
+                    const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${findResult.dataset.id}`);
+                    if (response.ok) {
+                      const result = await response.json();
+                      const customer = result.result;
+                      findResult.dataset.startDate = main.encodeDate(
+                        customer.customer_start_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      );
+                      findResult.dataset.endDate = main.encodeDate(
+                        customer.customer_end_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      );
+                    }
                   }
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {

@@ -47,6 +47,51 @@ router.get('/monthly', async (req, res) => {
   }
 });
 
+// GET specific customer by ID
+router.get('/monthly/:id', async (req, res) => {
+  const customerId = req.params.id;
+  
+  // Validate the ID parameter
+  if (!customerId || isNaN(customerId)) {
+    return res.status(400).json({ error: 'Invalid customer ID' });
+  }
+
+  // Get the most recent active monthly subscription for a specific customer
+  const sql = `
+    SELECT m1.* 
+    FROM customer_monthly_tbl m1
+    INNER JOIN (
+      SELECT customer_id, MAX(created_at) as max_created_at
+      FROM customer_monthly_tbl
+      WHERE customer_id = ?
+      AND customer_end_date >= CURDATE()
+      GROUP BY customer_id
+    ) m2 ON m1.customer_id = m2.customer_id AND m1.created_at = m2.max_created_at
+    WHERE m1.customer_id = ?
+    AND m1.customer_end_date >= CURDATE()
+    ORDER BY m1.created_at DESC
+    LIMIT 1
+  `;
+  
+  const params = [customerId, customerId];
+  
+  try {
+    const rows = await db.query(sql, params);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found or no active subscription' });
+    }
+    
+    res.status(200).json({ 
+      message: 'Fetching customer successful', 
+      result: rows[0] 
+    });
+  } catch (error) {
+    console.error('Fetching customer error:', error);
+    return res.status(500).json({ error: 'Fetching customer failed' });
+  }
+});
+
 // GET all expired customers
 // router.get('/customers/monthly', async (req, res) => {
 //   const query = 'SELECT * FROM customer_monthly_tbl WHERE customer_end_date < CURRENT_DATE ORDER BY created_at DESC';

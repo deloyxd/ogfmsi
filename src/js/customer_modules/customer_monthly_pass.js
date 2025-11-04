@@ -491,22 +491,13 @@ function openPaymentModal(preparedRegistrationData) {
       return;
     }
 
-    const normalizeAmount = (val) => {
-      const cleaned = String(val).replace(/[^0-9.]/g, '');
-      const parts = cleaned.split('.');
-      const normalized = parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
-      const num = Number(normalized);
-      return Number.isFinite(num) ? num : NaN;
-    };
-
-    const gcashAmountNum = normalizeAmount(gcashAmountRaw);
-    if (!Number.isFinite(gcashAmountNum)) {
+    if (!Number.isFinite(totalAmount)) {
       msg.textContent = 'Please enter a valid amount (numbers only).';
       const amtEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashAmount'));
       if (amtEl) amtEl.classList.add('border-red-500');
       return;
     }
-    if (Math.abs(gcashAmountNum - totalAmount) > 0.009) {
+    if (Math.abs(totalAmount - totalAmount) > 0.009) {
       msg.textContent = `Amount must be exactly ₱${totalAmount}.`;
       const amtEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashAmount'));
       if (amtEl) amtEl.classList.add('border-red-500');

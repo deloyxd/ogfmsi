@@ -309,6 +309,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           } else {
                             findResult.dataset.status = 'incoming';
                             findResult.dataset.custom2 = 'Monthly - Incoming';
+                            createResult.remove();
+                          }
+                          findResult.children[2].innerText = findResult.dataset.custom2;
                             findResult.dataset.startDate = main.encodeDate(
                               customer.customer_start_date,
                               main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
@@ -317,9 +320,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                               customer.customer_end_date,
                               main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
                             );
-                            createResult.remove();
-                          }
-                          findResult.children[2].innerText = findResult.dataset.custom2;
                           const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
                           customerProcessBtn.addEventListener('click', () =>
                             customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
