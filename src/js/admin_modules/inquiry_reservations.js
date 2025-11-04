@@ -372,7 +372,7 @@ function cleanupExpiredReservations() {
       if (alreadyPast) return;
       main.findAtSectionOne(SECTION_NAME, reservation.id, 'equal_id', 2, (findResult) => {
         if (findResult) {
-          const {_,__,fullName} = main.decodeName(reservation.customerName);
+          const { _, __, fullName } = main.decodeName(reservation.customerName);
           const columnsData = [
             'id_' + reservation.id,
             {
@@ -383,9 +383,13 @@ function cleanupExpiredReservations() {
             `${main.decodeDate(reservation.date)} - ${main.decodeTime(reservation.startTime)} to ${main.decodeTime(reservation.endTime)}`,
             `custom_datetime_${reservation.status}`,
           ];
-          try { findResult.remove?.(); } catch (e) {}
+          try {
+            findResult.remove?.();
+          } catch (e) {}
           main.createAtSectionOne(SECTION_NAME, columnsData, 3, (createResult) => {
-            try { createResult.dataset.id = reservation.id; } catch (e) {}
+            try {
+              createResult.dataset.id = reservation.id;
+            } catch (e) {}
             main.toast('A reservation has expired');
           });
         }
@@ -399,9 +403,7 @@ function cleanupExpiredReservations() {
 async function loadExistingReservations() {
   listenToReservationsFE(async (reservations) => {
     // Exclude 'Canceled' reservations from UI and conflict checks
-    existingReservations = (reservations || []).filter(
-      (r) => (r.status || '').toLowerCase() !== 'canceled'
-    );
+    existingReservations = (reservations || []).filter((r) => (r.status || '').toLowerCase() !== 'canceled');
     const myBuild = ++buildVersion;
 
     main.deleteAllAtSectionOne(SECTION_NAME, 2);
@@ -427,8 +429,16 @@ async function loadExistingReservations() {
 
           // Remove any existing row with same id in both tabs before creating
           try {
-            main.findAtSectionOne(SECTION_NAME, id, 'equal_id', 2, (dup) => { try { dup?.remove?.(); } catch (e) {} });
-            main.findAtSectionOne(SECTION_NAME, id, 'equal_id', 3, (dup) => { try { dup?.remove?.(); } catch (e) {} });
+            main.findAtSectionOne(SECTION_NAME, id, 'equal_id', 2, (dup) => {
+              try {
+                dup?.remove?.();
+              } catch (e) {}
+            });
+            main.findAtSectionOne(SECTION_NAME, id, 'equal_id', 3, (dup) => {
+              try {
+                dup?.remove?.();
+              } catch (e) {}
+            });
           } catch (e) {}
 
           // Skip if this build became stale
@@ -458,10 +468,14 @@ async function loadExistingReservations() {
           if (myBuild !== buildVersion) return resolveCreate();
           main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (createdItem) => {
             if (myBuild !== buildVersion) {
-              try { createdItem.remove?.(); } catch (e) {}
+              try {
+                createdItem.remove?.();
+              } catch (e) {}
               return resolveCreate();
             }
-            try { createdItem.dataset.id = id; } catch (e) {}
+            try {
+              createdItem.dataset.id = id;
+            } catch (e) {}
             createdItem.dataset.tid = tid || '';
 
             // Add event listeners (unchanged)
@@ -868,7 +882,7 @@ async function sectionTwoMainBtnFunction() {
           `Reserve for<br><p class="text-lg">${fullName}</p>at ${main.decodeDate(
             reservationDate
           )}<br>from ${main.decodeTime(startTime)} to ${main.decodeTime(endTime)}`,
-          async () => {
+          () => {
             const reservationId = 'R' + new Date().getTime();
             const reservationData = {
               id: reservationId,
@@ -884,21 +898,23 @@ async function sectionTwoMainBtnFunction() {
 
             try {
               main.toast('Reservation is now ready for payment!', 'success');
-              main.closeConfirmationModal();
-              main.closeModal();
-              await createReservationFE(reservationData);
-              payments.processReservationPayment(
-                {
-                  id: reservationData.id,
-                  image: customer.dataset.image,
-                  name: customer.dataset.text,
-                  cid: customer.dataset.id,
-                  amount: reservationData.amount,
-                },
-                async (transactionId) => {
-                  await updateReservationFE(reservationData.id, { tid: transactionId });
-                }
-              );
+              main.closeConfirmationModal(() => {
+                main.closeModal(async () => {
+                  await createReservationFE(reservationData);
+                  payments.processReservationPayment(
+                    {
+                      id: reservationData.id,
+                      image: customer.dataset.image,
+                      name: customer.dataset.text,
+                      cid: customer.dataset.id,
+                      amount: reservationData.amount,
+                    },
+                    async (transactionId) => {
+                      await updateReservationFE(reservationData.id, { tid: transactionId });
+                    }
+                  );
+                });
+              });
             } catch (error) {
               main.toast(`Error creating reservation: ${error.message}`, 'error');
             }
@@ -1212,7 +1228,9 @@ function dedupeSectionOneTab(tabIndex) {
         else seen.add(id);
       });
     toRemove.forEach((el) => {
-      try { el.remove(); } catch (e) {}
+      try {
+        el.remove();
+      } catch (e) {}
     });
   } catch (e) {}
 }
@@ -1237,7 +1255,9 @@ export async function cancelPendingTransaction(transactionId) {
         // If this is a newly created reservation awaiting initial payment, remove it entirely
         if (statusLc === 'pending' && !data.pendingDate && !data.pendingStartTime && !data.pendingEndTime) {
           await deleteReservationFE(resId);
-          try { main.toast('Pending reservation canceled and removed. Slot is now available.', 'info'); } catch (_) {}
+          try {
+            main.toast('Pending reservation canceled and removed. Slot is now available.', 'info');
+          } catch (_) {}
         } else {
           // Otherwise it's a reschedule payment cancel: clear pending fields and keep original schedule
           await updateReservationFE(resId, {
@@ -1247,7 +1267,9 @@ export async function cancelPendingTransaction(transactionId) {
             pendingEndTime: '',
             pendingAmount: 0,
           });
-          try { main.toast('Reschedule canceled. Original schedule retained.', 'info'); } catch (_) {}
+          try {
+            main.toast('Reschedule canceled. Original schedule retained.', 'info');
+          } catch (_) {}
         }
       } catch (_) {}
     }
@@ -1266,7 +1288,8 @@ export async function completeReservationPayment(transactionId) {
       const newDate = data.pendingDate || data.date;
       const newStart = data.pendingStartTime || data.startTime;
       const newEnd = data.pendingEndTime || data.endTime;
-      const newAmount = typeof data.pendingAmount === 'number' && data.pendingAmount > 0 ? data.pendingAmount : data.amount;
+      const newAmount =
+        typeof data.pendingAmount === 'number' && data.pendingAmount > 0 ? data.pendingAmount : data.amount;
       await updateReservationFE(findResult.dataset.id, {
         date: newDate,
         startTime: newStart,
@@ -1280,7 +1303,9 @@ export async function completeReservationPayment(transactionId) {
         pendingAmount: 0,
       });
     } catch (e) {
-      try { main.toast('Payment completed but failed to apply schedule update. Please refresh.', 'error'); } catch (_) {}
+      try {
+        main.toast('Payment completed but failed to apply schedule update. Please refresh.', 'error');
+      } catch (_) {}
     }
   });
 }
@@ -1459,35 +1484,43 @@ function rescheduleReservation(reservation) {
     ],
     spinner: [],
     short2: [
-      { placeholder: 'Start time', value: startTime, required: true, type: 'time', listener: (input, container) => {
-        try {
-          const start = input.value;
-          if (!/^\d{2}:\d{2}$/.test(start)) return;
-          const selectedDuration = fixedDuration;
-          const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-          const endTotalMinutes = h * 60 + m + selectedDuration * 60;
-          if (endTotalMinutes > 23 * 60 + 59) {
-            main.toast('The reservation must finish before midnight.', 'error');
-            const endInputBlock =
+      {
+        placeholder: 'Start time',
+        value: startTime,
+        required: true,
+        type: 'time',
+        listener: (input, container) => {
+          try {
+            const start = input.value;
+            if (!/^\d{2}:\d{2}$/.test(start)) return;
+            const selectedDuration = fixedDuration;
+            const [h, m] = start.split(':').map((n) => parseInt(n, 10));
+            const endTotalMinutes = h * 60 + m + selectedDuration * 60;
+            if (endTotalMinutes > 23 * 60 + 59) {
+              main.toast('The reservation must finish before midnight.', 'error');
+              const endInputBlock =
+                container.querySelector('input[placeholder="End time"]') ||
+                container.querySelector('input[type="time"][disabled]');
+              if (endInputBlock) {
+                endInputBlock.value = '';
+                endInputBlock.dispatchEvent(new Event('input'));
+              }
+              return;
+            }
+            const endH = Math.floor(endTotalMinutes / 60)
+              .toString()
+              .padStart(2, '0');
+            const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
+            const endInput =
               container.querySelector('input[placeholder="End time"]') ||
               container.querySelector('input[type="time"][disabled]');
-            if (endInputBlock) {
-              endInputBlock.value = '';
-              endInputBlock.dispatchEvent(new Event('input'));
+            if (endInput) {
+              endInput.value = `${endH}:${endM}`;
+              endInput.dispatchEvent(new Event('input'));
             }
-            return;
-          }
-          const endH = Math.floor(endTotalMinutes / 60).toString().padStart(2, '0');
-          const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
-          const endInput =
-            container.querySelector('input[placeholder="End time"]') ||
-            container.querySelector('input[type="time"][disabled]');
-          if (endInput) {
-            endInput.value = `${endH}:${endM}`;
-            endInput.dispatchEvent(new Event('input'));
-          }
-        } catch (e) {}
-      } },
+          } catch (e) {}
+        },
+      },
       { placeholder: 'End time', value: endTime, required: true, type: 'time', locked: true },
     ],
     short3: [
@@ -1503,7 +1536,9 @@ function rescheduleReservation(reservation) {
       const [h, m] = start.split(':').map((n) => parseInt(n, 10));
       const endTotalMinutes = h * 60 + m + fixedDuration * 60;
       if (endTotalMinutes <= 23 * 60 + 59) {
-        const endH = Math.floor(endTotalMinutes / 60).toString().padStart(2, '0');
+        const endH = Math.floor(endTotalMinutes / 60)
+          .toString()
+          .padStart(2, '0');
         const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
         inputs.short2[1].value = `${endH}:${endM}`;
       } else {
@@ -1545,7 +1580,9 @@ function rescheduleReservation(reservation) {
       if (diffHours > 7) throw new Error('Reservation cannot exceed 7 hours');
       // Duration must match the original duration
       if (Math.abs(diffHours - selectedDuration) > 0.1) {
-        throw new Error(`Duration is fixed to ${selectedDuration} hour${selectedDuration > 1 ? 's' : ''} for reschedule.`);
+        throw new Error(
+          `Duration is fixed to ${selectedDuration} hour${selectedDuration > 1 ? 's' : ''} for reschedule.`
+        );
       }
 
       const startHour = s.getHours();
@@ -1646,16 +1683,24 @@ function rescheduleReservation(reservation) {
               }
             );
 
-            main.toast(`Additional payment created for ${main.encodePrice(additionalDue)}. Schedule will update after payment.`, 'success');
+            main.toast(
+              `Additional payment created for ${main.encodePrice(additionalDue)}. Schedule will update after payment.`,
+              'success'
+            );
           } else {
             // No additional due; apply immediately
-            await updateReservationFE(id, { date: newDate, startTime: newStart, endTime: newEnd, amount: newTotalAmount });
+            await updateReservationFE(id, {
+              date: newDate,
+              startTime: newStart,
+              endTime: newEnd,
+              amount: newTotalAmount,
+            });
             main.toast('Reservation rescheduled successfully!', 'success');
           }
           main.closeConfirmationModal();
           main.closeModal();
         } catch (e) {
-          main.toast(`Error rescheduling: ${e.message}`,'error');
+          main.toast(`Error rescheduling: ${e.message}`, 'error');
         }
       }
     );
