@@ -47,25 +47,27 @@ router.get('/monthly', async (req, res) => {
   }
 });
 
-// GET specific customer by ID
-router.get('/monthly/pending/:id', async (req, res) => {
-  const customerId = req.params.id;
+// POST to get specific customer pending subscription
+router.post('/monthly/pending', async (req, res) => {
+  const { cid, tid } = req.body;
 
-  // Validate the ID parameter
-  if (!customerId || isNaN(customerId)) {
-    return res.status(400).json({ error: 'Invalid customer ID' });
+  // Validate required parameters
+  if (!cid || !tid) {
+    return res.status(400).json({
+      error: 'Missing required parameters: cid and tid are required',
+    });
   }
 
   // Get the most recent active monthly subscription for a specific customer
-  const sql = `SELECT * FROM customer_monthly_tbl WHERE customer_id = ? AND customer_pending = 1 LIMIT 1`;
-
-  const params = [customerId, customerId];
+  const sql = `SELECT * FROM customer_monthly_tbl WHERE customer_id = ? AND customer_tid = ? AND customer_pending = 1`;
 
   try {
-    const rows = await db.query(sql, params);
+    const rows = await db.query(sql, [cid, tid]);
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'Customer not found or no pending subscription' });
+      return res.status(404).json({ 
+        error: 'Customer not found or no pending subscription' 
+      });
     }
 
     res.status(200).json({
