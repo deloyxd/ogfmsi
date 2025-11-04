@@ -133,11 +133,11 @@ function createAnnouncementElement(announcement) {
         <!-- Title Section -->
         <div class="mb-6 flex justify-center">
           <h3 class="font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            <span class="text-5xl"">${announcement.title.top}</span>
+            <span class="text-4xl"">${announcement.title.top}</span>
             <span class="text-6xl text-yellow-400 drop-shadow-[0_2px_4px_rgba(255,215,0,0.9)] mx-4">
               ${announcement.title.highlight}
             </span>
-            <span class="text-4xl"">${announcement.title.bottom}</span>
+            <span class="text-3xl"">${announcement.title.bottom}</span>
           </h3>
         </div>
 
