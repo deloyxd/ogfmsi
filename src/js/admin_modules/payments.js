@@ -196,7 +196,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     if (response.ok) {
                       const result = await response.json();
                       const customer = result.result;
-                      console.log(customer, findResult);
+                      findResult.dataset.image = imageSrc;
+                      findResult.children[1].children[0].children[0].src = imageSrc;
                       findResult.dataset.startDate = main.encodeDate(
                         customer.customer_start_date,
                         main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
@@ -2108,9 +2109,6 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           main.createNotifDot(SECTION_NAME, 7);
           main.createNotifDot(SECTION_NAME, 8);
           main.deleteAtSectionOne(SECTION_NAME, 1, id);
-          try {
-            seenPendingPaymentIds.delete(effectiveId);
-          } catch (_) {}
 
           main.closeModal(() => {
             switch (type) {
@@ -2221,6 +2219,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   body: JSON.stringify({ customer_tid: '', customer_pending: 0 }),
                 });
               } catch (_) {}
+
+              seenPendingPaymentIds.delete(effectiveId);
             } catch (error) {
               console.error('Error creating complete payment:', error);
             }
