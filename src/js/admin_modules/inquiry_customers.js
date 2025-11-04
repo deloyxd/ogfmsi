@@ -1069,7 +1069,6 @@ function validateCustomer(
                 registerNewCustomer(customerId, columnsData, true, price, priceRate, async (createResult) => {
                   createResult.dataset.startDate = main.decodeDate(startDateNormalized);
                   createResult.dataset.endDate = main.decodeDate(endDate);
-                  console.log(createResult.dataset);
                   createResult.dataset.days = months * 30;
                   createResult.dataset.status = 'pending';
 
@@ -1333,7 +1332,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
   // If it's a monthly customer and start date hasn't been reached, show a message
   if (customer.dataset.custom2.toLowerCase().includes('incoming') || !hasReachedStart) {
     const startDateStr = customer.dataset.custom2.toLowerCase().includes('incoming')
-      ? customer.dataset.start_date
+      ? customer.dataset.startDate
       : customer.dataset.custom2;
     main.openConfirmationModal(
       `Customer membership not yet active:<br><br><span class="text-lg">${fullName}</span><br>ID: ${customer.dataset.id}<br>Start date: ${startDateStr}<br><br>Actions will be available once the start date is reached.`,
@@ -1493,8 +1492,8 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                     continueCustomerProcessBtnFunction,
                     selectedProcess.includes('renew')
                       ? {
-                          startDate: customer.dataset.startdate,
-                          endDate: customer.dataset.enddate,
+                          startDate: customer.dataset.startDate,
+                          endDate: customer.dataset.endDate,
                           days: customer.dataset.days,
                         }
                       : null,
@@ -1585,8 +1584,8 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
               continueCustomerProcessBtnFunction,
               selectedProcess.includes('renew')
                 ? {
-                    startDate: customer.dataset.startdate,
-                    endDate: customer.dataset.enddate,
+                    startDate: customer.dataset.startDate,
+                    endDate: customer.dataset.endDate,
                     days: customer.dataset.days,
                   }
                 : null,
@@ -1916,8 +1915,8 @@ export function cancelPendingTransaction(transactionId, customerIdHint = null) {
       if (findResult) {
         findResult.dataset.tid = '';
         if (findResult.dataset.status == 'pending') {
-          findResult.dataset.startdate = '';
-          findResult.dataset.enddate = '';
+          findResult.dataset.startDate = '';
+          findResult.dataset.endDate = '';
           findResult.dataset.days = '';
           findResult.dataset.status = '';
 
