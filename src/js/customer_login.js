@@ -172,7 +172,7 @@ function setupLoginForm() {
           }
 
           const newCustomer = await response.json();
-          sessionStorage.setItem('id', id);
+          sessionStorage.setItem('id', newCustomer.result.customer_id);
           sessionStorage.setItem('first_name', first);
           sessionStorage.setItem('last_name', last);
           sessionStorage.setItem('full_name', first + ' ' + last);
@@ -337,7 +337,7 @@ async function submitClicked(e) {
         }
 
         const newCustomer = await response.json();
-        sessionStorage.setItem('id', id);
+        sessionStorage.setItem('id', newCustomer.result.customer_id);
         sessionStorage.setItem('first_name', sanitizedFirst);
         sessionStorage.setItem('last_name', sanitizedLast);
         sessionStorage.setItem('full_name', sanitizedFirst + ' ' + sanitizedLast);
@@ -431,7 +431,8 @@ async function submitClicked(e) {
         console.error('Error fetching customer:', error);
         let message = 'Login failed. Please check your email and password.';
         const code = error?.code || '';
-        if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') message = 'Incorrect email or password.';
+        if (code === 'auth/invalid-credential' || code === 'auth/wrong-password')
+          message = 'Incorrect email or password.';
         else if (code === 'auth/user-not-found') message = 'No account found with this email.';
         else if (code === 'auth/too-many-requests') message = 'Too many attempts. Try again later.';
 
