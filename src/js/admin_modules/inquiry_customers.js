@@ -70,7 +70,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await autoArchiveInactiveCustomers();
     await clearDuplicateMonthlyEntries();
     updateCustomerStats();
-    
+
     // Ensure pagination is properly applied after all initial data loads
     setTimeout(() => {
       pagination.renderPage(SECTION_NAME, 1, true);
@@ -156,7 +156,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
             }
           );
         });
-        
+
         // Refresh pagination after all customers are loaded and ensure rows are paginated
         setTimeout(() => {
           // Ensure pagination controls exist for tab 1
@@ -165,7 +165,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
             // Controls don't exist yet, create them (use default color)
             pagination.createPaginationControls(SECTION_NAME, 1, 'blue');
           }
-          
+
           // Now refresh and apply pagination
           pagination.refreshPagination(SECTION_NAME, 1);
           // Also explicitly render page to ensure pagination is applied
@@ -850,34 +850,38 @@ function mainBtnFunction(
             }
           };
 
-          main.findAtSectionOne(SECTION_NAME, name, 'equal_text', 1, (findResult) => {
-            if (findResult && findResult.dataset.id != customer?.id) {
-              const { _, __, fullName } = main.decodeName(findResult.dataset.text);
+          // main.findAtSectionOne(SECTION_NAME, name, 'equal_text', 1, (findResult) => {
+          //   if (findResult && findResult.dataset.id != customer?.id) {
+          //     const { _, __, fullName } = main.decodeName(findResult.dataset.text);
 
-              main.openConfirmationModal(
-                `Data duplication - Customer with same details:<br><br>ID: ${findResult.dataset.id}<br>Name: ${fullName}`,
-                () => {
-                  main.closeConfirmationModal(() => {
-                    main.closeModal(() => {
-                      validateCustomer(
-                        findResult.dataset.id,
-                        columnsData,
-                        goBackCallback,
-                        null,
-                        true,
-                        !isMonthlyCustomerAlready
-                      );
-                    });
-                  });
-                }
-              );
-              return;
-            }
+          //     main.openConfirmationModal(
+          //       `Data duplication - Customer with same details:<br><br>ID: ${findResult.dataset.id}<br>Name: ${fullName}`,
+          //       () => {
+          //         main.closeConfirmationModal(() => {
+          //           main.closeModal(() => {
+          //             validateCustomer(
+          //               findResult.dataset.id,
+          //               columnsData,
+          //               goBackCallback,
+          //               null,
+          //               true,
+          //               !isMonthlyCustomerAlready
+          //             );
+          //           });
+          //         });
+          //       }
+          //     );
+          //     return;
+          //   }
 
+          // });
+          if (customerType.includes('monthly')) {
+            validateCustomer(null, columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
+          } else {
             main.closeModal(() => {
               validateCustomer(null, columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
             });
-          });
+          }
         } catch (e) {
         } finally {
           window.hideGlobalLoading?.();
@@ -1063,8 +1067,9 @@ function validateCustomer(
                 main.closeConfirmationModal();
                 columnsData[2] += ' - Pending';
                 registerNewCustomer(customerId, columnsData, true, price, priceRate, async (createResult) => {
-                  createResult.dataset.startdate = main.decodeDate(startDateNormalized);
-                  createResult.dataset.enddate = main.decodeDate(endDate);
+                  createResult.dataset.startDate = main.decodeDate(startDateNormalized);
+                  createResult.dataset.endDate = main.decodeDate(endDate);
+                  console.log(createResult.dataset);
                   createResult.dataset.days = months * 30;
                   createResult.dataset.status = 'pending';
 
