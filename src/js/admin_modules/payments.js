@@ -171,15 +171,15 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   if (isOnlineTransaction && refFromPortal) {
                     createResult.dataset.refnum = refFromPortal;
                   }
-                  if (isOnlineTransaction && !isOnlineFacility) {
+                  if (findResult && isOnlineTransaction && !isOnlineFacility) {
                     findResult.dataset.custom2 = 'Monthly - Pending';
                     findResult.children[2].innerText = findResult.dataset.custom2;
                     if (pendingPayment.payment_rate.toLowerCase().includes('student')) {
                       findResult.dataset.custom3 = 'Student';
                       findResult.children[3].innerText = findResult.dataset.custom3;
                     }
-                      findResult.dataset.status = 'pending';
-                      findResult.dataset.tid = createResult.dataset.id;
+                    findResult.dataset.status = 'pending';
+                    findResult.dataset.tid = createResult.dataset.id;
                   }
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {

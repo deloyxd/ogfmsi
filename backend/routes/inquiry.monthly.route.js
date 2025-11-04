@@ -14,13 +14,25 @@ router.get('/monthly', async (req, res) => {
       SELECT customer_id, MAX(created_at) as max_created_at
       FROM customer_monthly_tbl
       WHERE customer_end_date >= CURDATE()
-      AND customer_pending = 0
       GROUP BY customer_id
     ) m2 ON m1.customer_id = m2.customer_id AND m1.created_at = m2.max_created_at
     WHERE m1.customer_end_date >= CURDATE()
-    AND m1.customer_pending = 0
     ORDER BY m1.created_at DESC
   `;
+  //   let sql = `
+  //   SELECT m1.* 
+  //   FROM customer_monthly_tbl m1
+  //   INNER JOIN (
+  //     SELECT customer_id, MAX(created_at) as max_created_at
+  //     FROM customer_monthly_tbl
+  //     WHERE customer_end_date >= CURDATE()
+  //     AND customer_pending = 0
+  //     GROUP BY customer_id
+  //   ) m2 ON m1.customer_id = m2.customer_id AND m1.created_at = m2.max_created_at
+  //   WHERE m1.customer_end_date >= CURDATE()
+  //   AND m1.customer_pending = 0
+  //   ORDER BY m1.created_at DESC
+  // `;
   const params = [];
   if (useLimit) {
     sql += ' LIMIT ? OFFSET ?';

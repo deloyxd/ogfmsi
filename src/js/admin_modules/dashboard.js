@@ -349,11 +349,12 @@ function injectDataToAnnouncementItem(element, inputs, announcementId = null) {
           enqueueAnnouncement('Update');
         });
       },
-      () =>
+      () => {
         main.openConfirmationModal('Delete announcement: ' + title, async () => {
           await deleteAnnouncementHandler(element);
           enqueueAnnouncement('Delete');
-        })
+        });
+      }
     );
   };
 

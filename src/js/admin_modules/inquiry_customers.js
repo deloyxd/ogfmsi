@@ -201,6 +201,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               }
               if (findResult.dataset.custom2 === 'Daily') {
                 return;
+              } else if (customer.customer_pending == 1) {
+                console.log(findResult);
+                findResult.dataset.startDate = main.encodeDate(
+                  customer.customer_start_date,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                );
+                findResult.dataset.endDate = main.encodeDate(
+                  customer.customer_end_date,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                );
               }
               const endDate = new Date(customer.customer_end_date);
               const today = new Date();
@@ -300,8 +310,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           } else {
                             findResult.dataset.status = 'incoming';
                             findResult.dataset.custom2 = 'Monthly - Incoming';
-                            findResult.dataset.start_date = main.encodeDate(
+                            findResult.dataset.startDate = main.encodeDate(
                               customer.customer_start_date,
+                              main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                            );
+                            findResult.dataset.endDate = main.encodeDate(
+                              customer.customer_end_date,
                               main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
                             );
                             createResult.remove();
@@ -1301,7 +1315,7 @@ function autoChangeButtonText(title, button, text) {
     case 'renew':
     case 'monthly':
     case 'reserve':
-      button.innerHTML = `Initiate Process ${getEmoji('📒')}`;
+      button.innerHTML = `Initiate Process ${getEmoji('🎫')}`;
       break;
   }
 }
@@ -1333,7 +1347,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
     const inputs = {
       header: {
-        title: `Initiate Customer Process ${getEmoji('📒', 26)}`,
+        title: `Initiate Customer Process ${getEmoji('🎫', 26)}`,
       },
       short: [{ placeholder: 'Customer details', value: `${fullName} (${customer.dataset.id})`, locked: true }],
       radio: [
@@ -1364,7 +1378,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
         },
       ],
       footer: {
-        main: isMonthlyCustomer ? `Check-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('📒')}`,
+        main: isMonthlyCustomer ? `Check-in ${getEmoji('📘')}` : `Initiate Process ${getEmoji('🎫')}`,
       },
     };
 
@@ -1686,40 +1700,11 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           return;
         }
 
-        // Resolve date range and days for monthly activation; portal-created rows may lack dataset values
-        const resolveMonthlyDates = async () => {
-          let startDisplay = findResult1.dataset.startdate;
-          let endDisplay = findResult1.dataset.enddate;
-          let daysVal = findResult1.dataset.days;
-          if (!startDisplay || !endDisplay || !daysVal) {
-            try {
-              const resp = await fetch(`${API_BASE_URL}/inquiry/monthly/${encodeURIComponent(findResult1.dataset.id)}`);
-              if (resp.ok) {
-                const data = await resp.json();
-                const rec = Array.isArray(data.result) ? data.result[0] : data.result;
-                if (rec && rec.customer_start_date && rec.customer_end_date) {
-                  startDisplay = main.encodeDate(
-                    rec.customer_start_date,
-                    main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                  );
-                  endDisplay = main.encodeDate(
-                    rec.customer_end_date,
-                    main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                  );
-                  const start = new Date(rec.customer_start_date);
-                  const end = new Date(rec.customer_end_date);
-                  const diff = Math.max(0, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-                  daysVal = String(diff);
-                }
-              }
-            } catch (_) {}
-          }
-
-          return { startDisplay, endDisplay, daysVal };
-        };
-
         (async () => {
-          const { startDisplay, endDisplay, daysVal } = await resolveMonthlyDates();
+          const startDisplay = findResult1.dataset.startDate;
+          const endDisplay = findResult1.dataset.endDate;
+          const diff = Math.max(0, Math.ceil((new Date(endDisplay) - new Date(startDisplay)) / (1000 * 60 * 60 * 24)));
+          const daysVal = String(diff);
           const columnsData = [
             'id_' + findResult1.dataset.id,
             {

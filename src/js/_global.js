@@ -569,7 +569,7 @@ window.showImageModal = function (
         approveLabel.textContent = isChecked ? 'Approved' : `Approve?`;
       }
       
-      closeImageModal();
+      if (isChecked) closeImageModal();
     });
   }
 

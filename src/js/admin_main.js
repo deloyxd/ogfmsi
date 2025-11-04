@@ -994,7 +994,13 @@ export function openConfirmationModal(action, callback) {
   modalMainBtn.innerHTML = data.button.main;
   modalSubBtn.innerHTML = data.button.sub;
 
-  modalMainBtn.onclick = callback;
+  modalMainBtn.onclick = () => {
+    callback();
+    modalMainBtn.classList.add('pointer-events-none');
+    setTimeout(() => {
+      modalMainBtn.classList.remove('pointer-events-none');
+    }, 1000);
+  };
   modalSubBtn.onclick = () => closeConfirmationModal();
 
   modalSubtitle.classList.remove('hidden');
@@ -1107,14 +1113,30 @@ function setupModalBase(defaultData, inputs, callback) {
   modalMainBtn.onclick = () => {
     if (checkIfEmpty(inputs)) return;
     callback[0](inputs);
+    modalMainBtn.classList.add('pointer-events-none');
+    setTimeout(() => {
+      modalMainBtn.classList.remove('pointer-events-none');
+    }, 1000);
   };
   if (data.button.sub != '') {
     modalSubBtn.classList.remove('hidden');
-    modalSubBtn.onclick = callback[1];
+    modalSubBtn.onclick = () => {
+      callback[1]();
+      modalSubBtn.classList.add('pointer-events-none');
+      setTimeout(() => {
+        modalSubBtn.classList.remove('pointer-events-none');
+      }, 1000);
+    };
   }
   if (data.button.third != '') {
     modalThirdBtn.classList.remove('hidden');
-    modalThirdBtn.onclick = callback[2];
+    modalThirdBtn.onclick = () => {
+      callback[2]();
+      modalThirdBtn.classList.add('pointer-events-none');
+      setTimeout(() => {
+        modalThirdBtn.classList.remove('pointer-events-none');
+      }, 1000);
+    };
   }
 
   if (inputs.image) {
@@ -1877,12 +1899,12 @@ export function createAtSectionOne(sectionName, columnsData, tabIndex, callback 
 
   tableRow.classList.add('hidden');
   tableRow.parentElement.children[0].insertAdjacentElement('afterend', newRow);
-  
+
   // Update pagination after adding row
   setTimeout(() => {
     pagination.refreshPagination(sectionName, tabIndex);
   }, 0);
-  
+
   callback(newRow);
 }
 
