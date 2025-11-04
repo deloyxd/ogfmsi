@@ -187,6 +187,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                     if (response.ok) {
                       const result = await response.json();
                       const customer = result.result;
+                      console.log(customer, findResult);
                       findResult.dataset.startDate = main.encodeDate(
                         customer.customer_start_date,
                         main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
