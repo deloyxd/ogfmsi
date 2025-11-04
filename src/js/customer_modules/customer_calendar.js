@@ -580,7 +580,7 @@ function mount() {
       };
 
       const WORK_START = toMinutes('09:00'); // 9:00 AM
-      const WORK_END = toMinutes('23:00'); // 11:00 PM
+      const WORK_END = toMinutes('23:59'); // 11:59 PM
 
       if (startVal && endVal) {
         const startMins = toMinutes(startVal);
@@ -588,14 +588,14 @@ function mount() {
 
         if (startMins < WORK_START || startMins > WORK_END) {
           e.preventDefault();
-          showError('Start time is outside our operating hours (9:00 AM - 11:00 PM). Please choose a start time within this range.');
+          showError('Start time is outside our operating hours (9:00 AM - 11:59 PM). Please choose a start time within this range.');
           startInput?.focus();
           return;
         }
 
         if (endMins < WORK_START || endMins > WORK_END) {
           e.preventDefault();
-          showError('Start time is outside our operating hours (9:00 AM - 11:00 PM). Please choose a start time within this range.');
+          showError('Start time is outside our operating hours (9:00 AM - 11:59 PM). Please choose a start time within this range.');
           endInput?.focus();
           return;
         }
@@ -722,12 +722,12 @@ function mount() {
 
       if (startMins < 9 * 60) {
         e.preventDefault();
-        showError('Reservation cannot start before 09:00.');
+        showError('Reservation cannot start before 09:00 AM.');
         return;
       }
       if (endMins > 23 * 60 + 59) {
         e.preventDefault();
-        showError('Reservation cannot end after 23:59.');
+        showError('Reservation cannot end after 11:59 PM.');
         return;
       }
       if (+durationHours < 1) {

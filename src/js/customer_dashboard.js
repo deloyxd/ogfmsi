@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="flex items-center space-x-2">
           <span class="font-bold text-orange-300">⏰</span>
           <!-- 🔑 CLIENT -->
-          <span class="text-sm font-medium">7:00 AM - 11:00 PM</span>
+          <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
         </div>
         <div class="mt-1 text-xs text-orange-200">Operating Hours</div>
       </div>
