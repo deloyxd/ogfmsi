@@ -300,6 +300,10 @@ function createDayElement(day, month, year) {
     typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   const bookmarkHiddenClass = (isPrevDay && !isCoarsePointer) || reservedCount === 0 ? 'opacity-0' : '';
 
+  // Persist metadata to restore correct visibility on selection changes
+  el.dataset.reservedCount = String(reservedCount);
+  el.dataset.isPrevDay = isPrevDay ? '1' : '0';
+
   el.innerHTML = `
     <div class="self-center">
       <p class="${
@@ -336,7 +340,15 @@ function createDayElement(day, month, year) {
     if (state.selectedDate) {
       state.selectedDate.classList.remove('bg-orange-300');
       state.selectedDate.setAttribute('aria-pressed', 'false');
-      state.selectedDate.querySelector('.bookmark')?.classList.add('opacity-0');
+      const prev = state.selectedDate;
+      const prevBookmark = prev.querySelector('.bookmark');
+      if (prevBookmark) {
+        const prevCount = parseInt(prev.dataset.reservedCount || '0', 10);
+        const prevIsPrevDay = prev.dataset.isPrevDay === '1';
+        const shouldHide = (prevIsPrevDay && !isCoarsePointer) || prevCount === 0;
+        if (shouldHide) prevBookmark.classList.add('opacity-0');
+        else prevBookmark.classList.remove('opacity-0');
+      }
     }
     el.classList.add('bg-orange-300');
     state.selectedDate = el;
