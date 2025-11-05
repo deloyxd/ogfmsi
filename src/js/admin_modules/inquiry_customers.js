@@ -312,14 +312,22 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                             createResult.remove();
                           }
                           findResult.children[2].innerText = findResult.dataset.custom2;
-                            findResult.dataset.startDate = main.encodeDate(
-                              customer.customer_start_date,
-                              main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                            );
-                            findResult.dataset.endDate = main.encodeDate(
-                              customer.customer_end_date,
-                              main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                            );
+                          findResult.dataset.startDate = main.encodeDate(
+                            customer.customer_start_date,
+                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                          );
+                          findResult.dataset.endDate = main.encodeDate(
+                            customer.customer_end_date,
+                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                          );
+                          createResult.dataset.startDate = main.encodeDate(
+                            customer.customer_start_date,
+                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                          );
+                          createResult.dataset.endDate = main.encodeDate(
+                            customer.customer_end_date,
+                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                          );
                           const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
                           customerProcessBtn.addEventListener('click', () =>
                             customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
@@ -1346,7 +1354,8 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
   continueCustomerProcess();
 
   function continueCustomerProcess() {
-    const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active') || customer.dataset.custom4.toLowerCase().includes('day');
+    const isTabTwo = customer.dataset.custom4 && customer.dataset.custom4.toLowerCase().includes('day');
+    const isMonthlyCustomer = isTabTwo || customer.dataset.custom2.toLowerCase().includes('active');
 
     const inputs = {
       header: {
@@ -1389,19 +1398,12 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
 
     function continueCustomerProcessBtnFunction() {
       main.openModal('blue', inputs, (result) => {
-        const isMonthlyCustomer =
-          (customer.dataset.custom4 && customer.dataset.custom4.toLowerCase().includes('day')) ||
-          customer.dataset.custom2.toLowerCase().includes('active');
         const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
-        const priceRate = customer.dataset.custom3.toLowerCase();
-        let amount =
+        const priceRate = isTabTwo ? customer.dataset.custom6.toLowerCase() : customer.dataset.custom3.toLowerCase();
+        const amount =
           isMonthlyCustomer && isPending
-            ? PRICES_AUTOFILL[`${priceRate}_${customer.dataset.custom2.toLowerCase().split(' - ')[0]}`]
-            : isMonthlyCustomer
-              ? 0
-              : PRICES_AUTOFILL[
-                  `${priceRate}_${customer.dataset.custom2.toLowerCase().includes('incoming') ? 'daily' : customer.dataset.custom2.toLowerCase()}`
-                ];
+            ? PRICES_AUTOFILL[`${priceRate}_monthly`]
+            : PRICES_AUTOFILL[`${priceRate}_daily`];
         const selectedProcess = main.getSelectedRadio(result.radio).toLowerCase();
         if ((isMonthlyCustomer && isPending) || (!isMonthlyCustomer && customer.dataset.tid)) {
           payments.pendingTransaction(customer.dataset.tid, (pendingResult) => {
@@ -1483,7 +1485,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                       data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
                     },
                     'Monthly',
-                    customer.dataset.custom3,
+                    main.fixText(priceRate),
                     'custom_date_' + customer.dataset.date,
                   ];
                   validateCustomer(
@@ -1494,7 +1496,6 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                       ? {
                           startDate: customer.dataset.startDate,
                           endDate: customer.dataset.endDate,
-                          days: customer.dataset.days,
                         }
                       : null,
                     true,
@@ -1555,12 +1556,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                   );
                   return;
                 } else {
-                  processCheckinPayment(
-                    customer,
-                    customer.dataset.custom2.toLowerCase().includes('monthly'),
-                    amount,
-                    priceRate
-                  );
+                  processCheckinPayment(customer, isMonthlyCustomer, amount, priceRate);
                 }
               }
             });
@@ -1575,7 +1571,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                 data: [customer.dataset.image, customer.dataset.text, customer.dataset.contact],
               },
               'Monthly',
-              customer.dataset.custom3,
+              main.fixText(priceRate),
               'custom_date_' + customer.dataset.date,
             ];
             validateCustomer(
@@ -1586,7 +1582,6 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                 ? {
                     startDate: customer.dataset.startDate,
                     endDate: customer.dataset.endDate,
-                    days: customer.dataset.days,
                   }
                 : null,
               true,
