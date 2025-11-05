@@ -390,7 +390,7 @@ function cleanupExpiredReservations() {
             try {
               createResult.dataset.id = reservation.id;
             } catch (e) {}
-            main.toast('A reservation has expired');
+            main.toast('A reservation has expired', 'info');
           });
         }
       });

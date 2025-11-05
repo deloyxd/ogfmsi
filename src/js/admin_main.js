@@ -1724,7 +1724,7 @@ function setupModalBase(defaultData, inputs, callback) {
   }
 }
 
-export function toast(message, type) {
+export function toast(message, type = 'info') {
   const colorSchemes = {
     success: { bg: '#4CAF50', text: '#fff' },
     error: { bg: '#F44336', text: '#fff' },
