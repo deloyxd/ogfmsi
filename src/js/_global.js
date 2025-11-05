@@ -741,6 +741,8 @@ function setupAutoCasing() {
       'hidden',
     ]);
     if (el instanceof HTMLInputElement && type && disallowed.has(type)) return false;
+    const hay = `${el.name || ''} ${el.id || ''} ${el.placeholder || ''}`.toLowerCase();
+    if (/\bpassword\b/.test(hay)) return false;
     return true;
   }
 
