@@ -31,10 +31,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
       return;
     }
   }
+  const nameElement = document.getElementById('name');
   const roleElement = document.getElementById('role');
-  if (roleElement) {
-    roleElement.innerText = systemUserRole;
-    roleElement.parentElement.previousElementSibling.innerText = `Welcome, ${sessionStorage.getItem('systemUserFullname') || 'Guest'}!`;
+  if (nameElement && roleElement) {
+    nameElement.innerText = sessionStorage.getItem('systemUserFullname') || 'Guest';
+    roleElement.innerText = main.fixText(systemUserRole);
   }
   if (!activated) {
     mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);

@@ -7,3 +7,13 @@ scripts.forEach((script) => {
   scriptEl.src = script;
   document.body.appendChild(scriptEl);
 });
+
+VANTA.CLOUDS2({
+  el: '#vanta-bg',
+  mouseControls: true,
+  touchControls: true,
+  gyroControls: false,
+  minHeight: 10.0,
+  minWidth: 190.0,
+  texturePath: '/src/images/noise.png',
+});

@@ -45,6 +45,10 @@
     <!-- firebase (for database) -->
     <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+
+    <!-- animated background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.clouds2.min.js"></script>
   </head>
   <body
     class="min-h-screen cursor-default overflow-y-auto overflow-x-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black"
@@ -57,18 +61,32 @@
     <!-- 🔥 dynamic sidebar 🔥 -->
     <aside class="flexbox fixed left-0 top-0 z-50 h-screen w-48 border-r border-gray-700 bg-gray-800 shadow-2xl">
       <!-- header -->
-      <header class="flex-shrink-0 border-b border-gray-700 p-6">
+      <header id="vanta-bg" class="relative flex-shrink-0 border-b border-gray-700 p-6">
         <!-- 🔑 CLIENT -->
-        <p class="text-xl font-bold text-white">Fitworx Gym</p>
-        <p class="text-sm text-gray-400">Welcome, User!</p>
-        <div class="mt-3 flex items-center gap-1 text-sm text-gray-400">
-          <p>Role:</p>
-          <div id="role" class="emoji font-bold">
+        <div class="flex items-center justify-center text-xl font-bold text-orange-300 [text-shadow:-1px_-1px_0_black,1px_-1px_0_black,-1px_1px_0_black,1px_1px_0_black]">Fitworx Gym</div>
+        <div class="mt-3 text-sm">
+          <p class="emoji flex gap-2 font-bold">
             <script>
-              document.write(getEmoji('👨‍💼', 14));
+              document.write(getEmoji('💪', 10));
             </script>
-            Staff
-          </div>
+            Welcome
+            <script>
+              document.write(getEmoji('🏋️‍♀️', 10));
+            </script>
+          </p>
+          <p id="name" class="emoji">User</p>
+        </div>
+        <div class="mt-3 text-sm">
+          <p class="emoji flex gap-2 font-bold">
+            <script>
+              document.write(getEmoji('🎩', 10));
+            </script>
+            Role
+            <script>
+              document.write(getEmoji('💼', 10));
+            </script>
+          </p>
+          <p id="role" class="emoji">Staff</p>
         </div>
       </header>
 
@@ -434,7 +452,6 @@
           data-listitembtncolors="[]::[]::[]::[]"
         ></div>
       </section>
-
 
       <!-- 🔥 maintenance-equipment 🔥 -->
       <section
