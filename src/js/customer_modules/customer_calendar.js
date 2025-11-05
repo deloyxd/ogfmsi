@@ -370,7 +370,7 @@ function createDayElement(day, month, year) {
   });
   el.addEventListener('mouseleave', () => {
     if (el === state.selectedDate) return;
-    el.querySelector('.bookmark')?.classList.add('opacity-0');
+    if (isPrevDay) el.querySelector('.bookmark')?.classList.add('opacity-0');
   });
 
   // Keyboard support

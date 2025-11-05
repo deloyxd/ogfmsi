@@ -1346,7 +1346,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
   continueCustomerProcess();
 
   function continueCustomerProcess() {
-    const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active');
+    const isMonthlyCustomer = customer.dataset.custom2.toLowerCase().includes('active') || customer.dataset.custom4.toLowerCase().includes('day');
 
     const inputs = {
       header: {
@@ -1390,7 +1390,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
     function continueCustomerProcessBtnFunction() {
       main.openModal('blue', inputs, (result) => {
         const isMonthlyCustomer =
-          (customer.dataset.custom4 && customer.dataset.custom4.toLowerCase().includes('days')) ||
+          (customer.dataset.custom4 && customer.dataset.custom4.toLowerCase().includes('day')) ||
           customer.dataset.custom2.toLowerCase().includes('active');
         const isPending = customer.dataset.custom2.toLowerCase().includes('pending');
         const priceRate = customer.dataset.custom3.toLowerCase();
