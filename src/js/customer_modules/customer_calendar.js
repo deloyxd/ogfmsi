@@ -1177,7 +1177,7 @@ function openDateReservationsModal(dateMMDDYYYY) {
                 ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
                 : 'bg-green-100 text-green-800 border-green-200';
             const time = `${to12h(r.startTime)} – ${to12h(r.endTime)}`;
-            const type = r.reservationType || '—';
+            const type = r.reservationType.replace(/\b\w/g, (char) => char.toUpperCase()) || '—';
             return `
               <li class="flex items-start justify-between gap-3 rounded-md border p-3 text-sm">
                 <div class="flex flex-col">
