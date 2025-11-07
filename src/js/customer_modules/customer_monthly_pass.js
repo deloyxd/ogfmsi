@@ -84,13 +84,15 @@ function openInfoModal() {
 }
 
 function openRegistrationModal() {
-  let today;
+  let todayObj;
   if (sessionStorage.getItem('activeMonthlyLastEndDate')) {
-    today = formatDateInput(new Date(sessionStorage.getItem('activeMonthlyLastEndDate')));
+    todayObj = new Date(sessionStorage.getItem('activeMonthlyLastEndDate'));
+    todayObj.setDate(d.getDate() + 1);
   } else {
-    today = formatDateInput(new Date());
+    todayObj = new Date();
   }
-  const endDate = formatDateInput(addMonths(new Date(), 1));
+  const today = formatDateInput(todayObj);
+  const endDate = formatDateInput(addMonths(todayObj, 1));
 
   const formHtml = `
       <form id="membershipForm" class="text-left space-y-4">
@@ -145,15 +147,15 @@ function openRegistrationModal() {
       </form>
     `;
 
-          // <div>
-          //   <label class="block text-xs font-semibold text-gray-700 mb-1" for="memberName">Member Name</label>
-          //   <input id="memberName" name="memberName" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
-          // </div>
+  // <div>
+  //   <label class="block text-xs font-semibold text-gray-700 mb-1" for="memberName">Member Name</label>
+  //   <input id="memberName" name="memberName" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+  // </div>
 
-          // <div>
-          //   <label class="block text-xs font-semibold text-gray-700 mb-1" for="email">Email Address</label>
-          //   <input id="email" name="email" type="email" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
-          // </div>
+  // <div>
+  //   <label class="block text-xs font-semibold text-gray-700 mb-1" for="email">Email Address</label>
+  //   <input id="email" name="email" type="email" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+  // </div>
 
   const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="monthlyPassRegistrationModal">
@@ -219,12 +221,12 @@ function openRegistrationModal() {
     updateVariant();
   }
 
-  form?.addEventListener("change", function (e) {
+  form?.addEventListener('change', function (e) {
     const target = /** @type {HTMLInputElement} */ (e.target);
-    if (target.type === "file") {
+    if (target.type === 'file') {
       const label = target.nextElementSibling;
-      const fileName = target.files?.[0]?.name || "Choose image…";
-      if (label && label.tagName === "SPAN") {
+      const fileName = target.files?.[0]?.name || 'Choose image…';
+      if (label && label.tagName === 'SPAN') {
         label.textContent = fileName;
       }
       // Toggle red border on file box when empty
@@ -285,9 +287,9 @@ function openRegistrationModal() {
     }
 
     // Duplicate validation against existing customers (admin side)
-        const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
-        close();
-        openPaymentModal(prepared);
+    const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
+    close();
+    openPaymentModal(prepared);
   });
 }
 
@@ -411,7 +413,9 @@ function openPaymentModal(preparedRegistrationData) {
 
       // Early uniqueness check when exactly 13 digits
       const submitBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('mpPaySubmit'));
-      const msg = /** @type {HTMLParagraphElement|null} */ (document.querySelector('#paymentForm .inline-validation-msg'));
+      const msg = /** @type {HTMLParagraphElement|null} */ (
+        document.querySelector('#paymentForm .inline-validation-msg')
+      );
       // reset UI state unless we detect duplicate below
       if (submitBtn) submitBtn.disabled = false;
       gcashRefInput.classList.remove('border-red-500');
@@ -498,7 +502,13 @@ function openPaymentModal(preparedRegistrationData) {
       if (nameEl) nameEl.classList.add('border-red-500');
       try {
         if (typeof Toastify === 'function') {
-          Toastify({ text: 'Account Name cannot contain numbers', duration: 2500, gravity: 'top', position: 'right', close: true }).showToast();
+          Toastify({
+            text: 'Account Name cannot contain numbers',
+            duration: 2500,
+            gravity: 'top',
+            position: 'right',
+            close: true,
+          }).showToast();
         }
       } catch (_) {}
       return;
@@ -664,7 +674,7 @@ async function submitMonthlyRegistration(regData, payData) {
         payment_rate: isStudent ? 'Student' : 'Regular',
         payment_ref: String(payData.get('gcashRef') || ''),
         payment_monthly_url: profileDataUrl,
-        payment_student_url: studentIdDataUrl
+        payment_student_url: studentIdDataUrl,
       }),
     });
     if (!resp.ok) {
@@ -678,43 +688,43 @@ async function submitMonthlyRegistration(regData, payData) {
   displayMonthlyStatus();
 }
 
-  async function displayMonthlyStatus() {
-    const monthlyStatus = document.getElementById('monthlyStatus');
-    const monthlyStatusMobile = document.getElementById('monthlyStatusMobile');
-    const customerId = sessionStorage.getItem('id');
-    if (customerId === 'U123') return;
-    try {
-      const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
-      if (!response.ok) return;
-      const result = await response.json();
-      const customerData = result.result;
+async function displayMonthlyStatus() {
+  const monthlyStatus = document.getElementById('monthlyStatus');
+  const monthlyStatusMobile = document.getElementById('monthlyStatusMobile');
+  const customerId = sessionStorage.getItem('id');
+  if (customerId === 'U123') return;
+  try {
+    const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
+    if (!response.ok) return;
+    const result = await response.json();
+    const customerData = result.result;
 
-      // Get today's date
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
+    // Get today's date
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
-      // Filter out expired monthly passes
-      const validMonthly = customerData.filter((item) => new Date(item.customer_end_date) >= now);
+    // Filter out expired monthly passes
+    const validMonthly = customerData.filter((item) => new Date(item.customer_end_date) >= now);
 
-      // Separate pending and active passes
-      const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
-      const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
+    // Separate pending and active passes
+    const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
+    const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
 
-      // Function to calculate remaining days
-      const getRemainingDays = (endDate) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const endDateObj = new Date(endDate);
-        endDateObj.setHours(0, 0, 0, 0);
-        const diff = endDateObj - today;
-        return Math.ceil(diff / (1000 * 60 * 60 * 24));
-      };
+    // Function to calculate remaining days
+    const getRemainingDays = (endDate) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(0, 0, 0, 0);
+      const diff = endDateObj - today;
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    };
 
-      let displayHTML = '';
-      let displayHTMLMobile = '';
+    let displayHTML = '';
+    let displayHTMLMobile = '';
 
-      if (pendingMonthly.length > 0 && activeMonthly.length === 0) {
-        displayHTML = `
+    if (pendingMonthly.length > 0 && activeMonthly.length === 0) {
+      displayHTML = `
           <div class="text-center">
             <div class="mt-[5px] flex items-center space-x-2">
               <span class="font-bold text-orange-300">🎫</span>
@@ -726,7 +736,7 @@ async function submitMonthlyRegistration(regData, payData) {
             </div>
           </div>
         `;
-        displayHTMLMobile = `
+      displayHTMLMobile = `
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <span class="font-bold text-orange-300">🎫</span>
@@ -738,11 +748,11 @@ async function submitMonthlyRegistration(regData, payData) {
             </span>
           </div>
         `;
-      } else if (activeMonthly.length > 0) {
-        const active = activeMonthly[0];
-        const daysLeft = getRemainingDays(active.customer_end_date);
+    } else if (activeMonthly.length > 0) {
+      const active = activeMonthly[0];
+      const daysLeft = getRemainingDays(active.customer_end_date);
 
-        displayHTML = `
+      displayHTML = `
           <div class="text-center">
             <div class="mt-[5px] flex items-center space-x-2">
               <span class="font-bold text-orange-300">🎫</span>
@@ -754,7 +764,7 @@ async function submitMonthlyRegistration(regData, payData) {
             </div>
           </div>
         `;
-        displayHTMLMobile = `
+      displayHTMLMobile = `
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <span class="font-bold text-orange-300">🎫</span>
@@ -766,28 +776,28 @@ async function submitMonthlyRegistration(regData, payData) {
             </span>
           </div>
         `;
-      }
+    }
 
-      // Inject into DOM
-      monthlyStatus.innerHTML = displayHTML;
-      monthlyStatusMobile.innerHTML = displayHTMLMobile;
+    // Inject into DOM
+    monthlyStatus.innerHTML = displayHTML;
+    monthlyStatusMobile.innerHTML = displayHTMLMobile;
 
-      let startDateString, endDateString;
-      if (activeMonthly.length > 0) {
-        startDateString = new Date(activeMonthly[0].customer_start_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: '2-digit',
-        });
-        endDateString = new Date(activeMonthly[0].customer_end_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: '2-digit',
-        });
-      }
+    let startDateString, endDateString;
+    if (activeMonthly.length > 0) {
+      startDateString = new Date(activeMonthly[0].customer_start_date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit',
+      });
+      endDateString = new Date(activeMonthly[0].customer_end_date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit',
+      });
+    }
 
-      // --- Popup Modal HTML ---
-      const modalHTML = `
+    // --- Popup Modal HTML ---
+    const modalHTML = `
         <div id="monthlyPopup" class="absolute bg-transparent hidden z-50">
           <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
             <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
@@ -807,12 +817,12 @@ async function submitMonthlyRegistration(regData, payData) {
         </div>
       `;
 
-      if (document.getElementById('monthlyPopup')) {
-        document.getElementById('monthlyPopup').remove();
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-      }
-    } catch (_) {}
-  }
+    if (document.getElementById('monthlyPopup')) {
+      document.getElementById('monthlyPopup').remove();
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+  } catch (_) {}
+}
 
 function openConfirmationModal(membershipType) {
   const isStudent = String(membershipType) === 'student';
