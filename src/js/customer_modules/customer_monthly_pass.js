@@ -87,7 +87,7 @@ function openRegistrationModal() {
   let todayObj;
   if (sessionStorage.getItem('activeMonthlyLastEndDate')) {
     todayObj = new Date(sessionStorage.getItem('activeMonthlyLastEndDate'));
-    todayObj.setDate(d.getDate() + 1);
+    todayObj.setDate(todayObj.getDate() + 1);
   } else {
     todayObj = new Date();
   }
