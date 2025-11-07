@@ -68,7 +68,7 @@ function openInfoModal() {
     if (e.target === modal) close();
   });
   document.getElementById('mpInfoCancel').addEventListener('click', close);
-  document.getElementById('mpInfoStart').addEventListener('click', () => {
+  document.getElementById('mpInfoStart').addEventListener('click', async () => {
     const agree = /** @type {HTMLInputElement|null} */ (document.getElementById('mpolicyAgree'));
     const msg = /** @type {HTMLParagraphElement|null} */ (modal.querySelector('.inline-validation-msg'));
     if (!agree || !agree.checked) {
@@ -77,6 +77,36 @@ function openInfoModal() {
         msg.classList.remove('hidden');
       }
       return;
+    }
+    const customerId = sessionStorage.getItem('id');
+    if (customerId !== 'U123') {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
+        if (!response.ok) return;
+        const result = await response.json();
+        const customerData = result.result;
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const validMonthly = customerData.filter((item) => new Date(item.customer_end_date) >= now);
+        const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
+        const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
+        if (pendingMonthly.length > 0) {
+          try {
+            if (typeof Toastify === 'function') {
+              Toastify({
+                text: 'You still have a pending monthly registration transaction, please wait for the staff to approve it first.',
+                duration: 10000,
+                gravity: 'top',
+                position: 'right',
+                close: true,
+              }).showToast();
+            }
+          } catch (_) {}
+          return;
+        }
+        if (activeMonthly.length > 0)
+          sessionStorage.setItem('activeMonthlyLastEndDate', activeMonthly[activeMonthly.length - 1].customer_end_date);
+      } catch (_) {}
     }
     close();
     openRegistrationModal();
@@ -709,6 +739,9 @@ async function displayMonthlyStatus() {
     // Separate pending and active passes
     const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
     const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
+
+    if (activeMonthly.length > 0)
+      sessionStorage.setItem('activeMonthlyLastEndDate', activeMonthly[activeMonthly.length - 1].customer_end_date);
 
     // Function to calculate remaining days
     const getRemainingDays = (endDate) => {
