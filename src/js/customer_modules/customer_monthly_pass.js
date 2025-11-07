@@ -944,7 +944,7 @@ function getSelectedMembershipType() {
 
 function addMonths(date, months) {
   const d = new Date(date.getTime());
-  d.setMonth(d.getMonth() + months);
+  d.setDate(d.getDate() + 30 * months);
   return d;
 }
 
