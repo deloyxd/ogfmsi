@@ -332,10 +332,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                           customerProcessBtn.addEventListener('click', () =>
                             customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
                           );
-                          const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-                          customerEditDetailsBtn.addEventListener('click', () =>
-                            customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                          );
+                          // const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+                          // customerEditDetailsBtn.addEventListener('click', () =>
+                          //   customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                          // );
                           updateCustomerStats();
                         }
                       );
@@ -887,7 +887,14 @@ function mainBtnFunction(
             validateCustomer(null, columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
           } else {
             main.closeModal(() => {
-              validateCustomer(null, columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
+              validateCustomer(
+                isCreating ? null : customer.id,
+                columnsData,
+                goBackCallback,
+                null,
+                true,
+                !isMonthlyCustomerAlready
+              );
             });
           }
         } catch (e) {
@@ -1184,6 +1191,7 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
     if (findResult) {
       isCreating = false;
     }
+    console.log(customerId);
     main.toast(`${firstName}, successfully ${isCreating ? 'registered' : 'updated'}!`, 'success');
     if (isCreating) {
       main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
@@ -1728,10 +1736,10 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
             customerProcessBtn.addEventListener('click', () =>
               customerProcessBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
             );
-            const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-            customerEditDetailsBtn.addEventListener('click', () =>
-              customerEditDetailsBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
-            );
+            // const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+            // customerEditDetailsBtn.addEventListener('click', () =>
+            //   customerEditDetailsBtnFunction(findResult1, main.decodeName(findResult1.dataset.text))
+            // );
 
             try {
               const response = await fetch(`${API_BASE_URL}/inquiry/customers/pending/${findResult1.dataset.id}`, {
