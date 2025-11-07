@@ -196,10 +196,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const monthlyStatus = document.getElementById('monthlyStatus');
     const monthlyStatusMobile = document.getElementById('monthlyStatusMobile');
     const customerId = sessionStorage.getItem('id');
+    if (customerId === 'U123') return;
     try {
       const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
       if (!response.ok) return;
-      const customer = response.result;
+      const result = await response.json();
+      const customer = result.result;
       console.log(customer);
     } catch (_) {}
   }
