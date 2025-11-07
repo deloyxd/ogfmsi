@@ -135,12 +135,18 @@ async function loadTabData(tabIndex, force = false) {
     console.error(`Error loading tab ${tabIndex} data:`, error);
     main.toast(`Error loading data for tab ${tabIndex}`, 'error');
   } finally {
-    try { main.hideGlobalLoading(); } catch (_) {}
+    try {
+      main.hideGlobalLoading();
+    } catch (_) {}
   }
 }
 
 function dataSignature(rows) {
-  try { return JSON.stringify(rows).length; } catch (_) { return 0; }
+  try {
+    return JSON.stringify(rows).length;
+  } catch (_) {
+    return 0;
+  }
 }
 
 function renderFromCache(tabIndex, rows) {
@@ -214,9 +220,12 @@ async function loadMonthlyUsers() {
       seenMonthly.add(user.customer_id);
       const customerData = customerMap.get(user.customer_id) || null;
       if (String(customerData?.customer_type || '').toLowerCase() === 'archived') continue;
-      const fullName = customerData ? `${customerData.customer_first_name} ${customerData.customer_last_name}` : 'Unknown';
+      const fullName = customerData
+        ? `${customerData.customer_first_name} ${customerData.customer_last_name}`
+        : 'Unknown';
       const image = customerData?.customer_image_url || '/src/images/client_logo.jpg';
-      const priceRateLabel = String(customerData?.customer_rate || '').toLowerCase() === 'student' ? 'Student' : 'Regular';
+      const priceRateLabel =
+        String(customerData?.customer_rate || '').toLowerCase() === 'student' ? 'Student' : 'Regular';
       const columnsData = [
         'id_' + user.customer_id,
         { type: 'object_contact', data: [image, fullName, customerData?.customer_contact || ''] },
@@ -286,12 +295,10 @@ async function loadRegularUsers() {
       try {
         const d = new Date(iso);
         const t = new Date();
-        return (
-          d.getFullYear() === t.getFullYear() &&
-          d.getMonth() === t.getMonth() &&
-          d.getDate() === t.getDate()
-        );
-      } catch (_) { return false; }
+        return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+      } catch (_) {
+        return false;
+      }
     };
 
     // const todays = [...regularAll, ...monthlyAll].filter((r) => isToday(r.created_at));
@@ -309,7 +316,14 @@ async function loadRegularUsers() {
       const isStudentRate = String(c?.customer_rate || '').toLowerCase() === 'student';
       const priceRateLabel = isStudentRate ? 'Student' : 'Regular';
       const typeLabel = record._src === 'monthly' ? 'Monthly' : 'Daily';
-      const amount = record._src === 'monthly' ? (isStudentRate ? MONTHLY_PRICES.student : MONTHLY_PRICES.regular) : (isStudentRate ? 60 : 70);
+      const amount =
+        record._src === 'monthly'
+          ? isStudentRate
+            ? MONTHLY_PRICES.student
+            : MONTHLY_PRICES.regular
+          : isStudentRate
+            ? 60
+            : 70;
 
       const columnsData = [
         'id_' + customerId,
@@ -317,12 +331,15 @@ async function loadRegularUsers() {
         {
           type: 'object_contact',
           data: [
-            (c?.customer_image_url || record.customer_image_url || '/src/images/client_logo.jpg'),
-            (c ? `${c.customer_first_name} ${c.customer_last_name}` : record.customer_name_encoded),
-            (c?.customer_contact || record.customer_contact || ''),
+            c?.customer_image_url || record.customer_image_url || '/src/images/client_logo.jpg',
+            c ? `${c.customer_first_name} ${c.customer_last_name}` : record.customer_name_encoded,
+            c?.customer_contact || record.customer_contact || '',
           ],
         },
-        'custom_datetime_' + main.encodeDate(record.created_at, 'long') + ' - ' + main.encodeTime(record.created_at, 'long'),
+        'custom_datetime_' +
+          main.encodeDate(record.created_at, 'long') +
+          ' - ' +
+          main.encodeTime(record.created_at, 'long'),
         priceRateLabel,
         main.encodePrice(amount),
       ];
@@ -350,7 +367,9 @@ async function loadRegularUsers() {
     main.toast('Error loading daily check-ins', 'error');
     hadError = true;
   } finally {
-    try { if (!hadError) main.toast('Daily Check-ins (Today: Regular + Monthly) loaded', 'success'); } catch (_) {}
+    try {
+      if (!hadError) main.toast('Daily Check-ins (Today: Regular + Monthly) loaded', 'success');
+    } catch (_) {}
   }
 }
 
@@ -400,7 +419,9 @@ async function loadStudents() {
     console.error('Error loading students:', error);
     main.toast('Error loading students', 'error');
   } finally {
-    try { /* optional student-only toast if this tab is used */ } catch (_) {}
+    try {
+      /* optional student-only toast if this tab is used */
+    } catch (_) {}
   }
 }
 
@@ -449,11 +470,20 @@ async function loadSupplements() {
         String(aggregate.quantity || 0),
         main.encodePrice(aggregate.total || 0),
         product.expiration_date
-          ? new Date(product.expiration_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
           : 'No expiration',
-        'custom_date_' + (product.created_at
-          ? new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-          : main.encodeDate(new Date(), 'long')),
+        'custom_date_' +
+          (product.created_at
+            ? new Date(product.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : main.encodeDate(new Date(), 'long')),
       ];
       rows.push({ _id: String(product.product_id), columnsData });
     });
@@ -480,7 +510,9 @@ async function loadSupplements() {
     main.toast('Error loading supplements', 'error');
     hadError = true;
   } finally {
-    try { if (!hadError) main.toast('Supplements / Products loaded', 'success'); } catch (_) {}
+    try {
+      if (!hadError) main.toast('Supplements / Products loaded', 'success');
+    } catch (_) {}
   }
 }
 
@@ -619,7 +651,9 @@ async function loadReservations() {
           });
           if (!reservationsLoadedOnce) {
             reservationsLoadedOnce = true;
-            try { main.toast('Reservations loaded', 'success'); } catch (_) {}
+            try {
+              main.toast('Reservations loaded', 'success');
+            } catch (_) {}
           }
         } catch (e) {
           console.error('Reservations listener processing error:', e);
@@ -818,7 +852,9 @@ async function getCustomerDataMany(ids = []) {
   return results;
 }
 
-function cacheKey(tabIndex) { return `dc_tab_${tabIndex}`; }
+function cacheKey(tabIndex) {
+  return `dc_tab_${tabIndex}`;
+}
 function setTabCache(tabIndex, rows) {
   try {
     localStorage.setItem(cacheKey(tabIndex), JSON.stringify({ t: Date.now(), rows }));
@@ -832,7 +868,9 @@ function getTabCache(tabIndex) {
     if (!parsed || !parsed.t) return null;
     if (Date.now() - parsed.t > CACHE_TTL_MS) return null;
     return parsed.rows || null;
-  } catch (_) { return null; }
+  } catch (_) {
+    return null;
+  }
 }
 
 // Main button click handler - exports PDF
@@ -883,7 +921,11 @@ function openDateRangeFilterModal(title = 'Filter by date range before export') 
       modal.classList.remove('opacity-100');
       modal.children[0].classList.add('-translate-y-6');
       modal.children[0].classList.remove('scale-100');
-      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); modal.remove(); }, 300);
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.remove();
+      }, 300);
     };
 
     // Close when clicking outside the modal content
@@ -902,7 +944,9 @@ function openDateRangeFilterModal(title = 'Filter by date range before export') 
       let start = s ? new Date(s) : null;
       let end = e ? new Date(e) : null;
       if (start && end && start > end) {
-        const t = start; start = end; end = t;
+        const t = start;
+        start = end;
+        end = t;
       }
       cleanup();
       resolve({ start, end });
@@ -1016,23 +1060,30 @@ async function exportToPDF() {
       @media print { @page { margin: 16mm; } }
     </style>`;
 
-  const headersHtml = `<tr>${headers
-    .map((h) => `<th>${h}</th>`)
-    .join('')}</tr>`;
+  const headersHtml = `<tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr>`;
   const amountCol = (label) => /amount|price|sales/i.test(label);
+  let grandTotal = 0;
+
   const rowsHtml = bodyRows
-    .map((cells) =>
-      `<tr>${cells
+    .map((cells) => {
+      // Add up numeric values in the cells
+      cells.forEach((val) => {
+        if (val.includes('₱')) {
+          grandTotal += +main.decodePrice(val);
+        }
+      });
+
+      // Return the HTML row
+      return `<tr>${cells
         .map((val, idx) => `<td class="${amountCol(headers[idx]) ? 'amount' : ''}">${val}</td>`)
-        .join('')}</tr>`
-    )
+        .join('')}</tr>`;
+    })
     .join('');
 
+  const grandTotalText = `<b>${main.encodePrice(grandTotal)}</b>`;
+
   const dateSuffix = (() => {
-    const fmt = (d) =>
-      d
-        ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-        : '';
+    const fmt = (d) => (d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '');
     if (!range || (!range.start && !range.end)) return '';
     if (range.start && range.end) return ` — ${fmt(range.start)} to ${fmt(range.end)}`;
     if (range.start) return ` — from ${fmt(range.start)}`;
@@ -1068,6 +1119,7 @@ async function exportToPDF() {
             <span class="label">Prepared by:</span> <span class="value">${preparedBy}</span>
           </div>
           <div class="right">
+            <div><span class="label">Grand Total:</span> <span class="value">${grandTotalText}</span></div>
             <div><span class="label">Generated:</span> <span class="value">${generatedAt}</span></div>
           </div>
         </div>
@@ -1080,8 +1132,12 @@ async function exportToPDF() {
   win.document.close();
   win.focus();
   setTimeout(() => {
-    try { win.print(); } catch (_) {}
-    try { win.close(); } catch (_) {}
+    try {
+      win.print();
+    } catch (_) {}
+    try {
+      win.close();
+    } catch (_) {}
   }, 250);
 }
 
@@ -1129,6 +1185,18 @@ async function exportToExcel() {
       rows.push(cells);
     });
   }
+
+  // Calculate grand total across numeric "amount" columns
+  let grandTotal = 0;
+  const isAmountCol = (label) => /amount|price|sales/i.test(label);
+  rows.forEach((r) => {
+    r.forEach((val, idx) => {
+      if (isAmountCol(headers[idx])) {
+        const num = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
+        if (!isNaN(num)) grandTotal += num;
+      }
+    });
+  });
 
   if (typeof ExcelJS === 'undefined') {
     main.toast('Excel exporter not loaded. Please try again.', 'error');
@@ -1231,8 +1299,7 @@ async function exportToExcel() {
       cell.font = { size: 10, color: { argb: 'FF333333' } };
 
       const cellValue = String(cell.value || '');
-      if (cellValue.match(/^\$|₱|£|€/)
-          || cellValue.match(/^\d+(\.\d+)?$/)) {
+      if (cellValue.match(/^\$|₱|£|€/) || cellValue.match(/^\d+(\.\d+)?$/)) {
         cell.alignment = { horizontal: 'right', vertical: 'middle' };
         cell.font = { ...cell.font, bold: true };
       } else {
@@ -1302,6 +1369,19 @@ async function exportToExcel() {
       };
       totalRow.height = 20;
     });
+  }
+
+  // Add Grand Total row (overall total across all amount columns)
+  if (grandTotal > 0) {
+    ws.addRow([]);
+    const gtRow = ws.addRow(['Grand Total', main.encodePrice(grandTotal)]);
+    ws.mergeCells(gtRow.number, 2, gtRow.number, headers.length);
+
+    gtRow.getCell(1).font = { bold: true, size: 11, color: { argb: 'FF1a1a1a' } };
+    gtRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+    gtRow.getCell(2).font = { bold: true, size: 11, color: { argb: 'FF1a1a1a' } };
+    gtRow.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
+    gtRow.height = 22;
   }
 
   // Auto-fit columns with better sizing
