@@ -190,21 +190,57 @@ document.addEventListener('DOMContentLoaded', function () {
     notifPanel.classList.remove('translate-x-full');
   });
 
-  displayMonthlyStatus();
+  displayMonthlyStatus((result) => {
+    if (!result) {
+      const monthlyStatus = document.getElementById('monthlyStatus');
+      const monthlyStatusMobile = document.getElementById('monthlyStatusMobile');
+      monthlyStatus.innerHTML = `
+        <div class="text-center">
+          <div class="mt-[5px] flex items-center space-x-2">
+            <span class="font-bold text-orange-300">🎫</span>
+            <span class="text-sm font-medium">Monthly Pass Status</span>
+          </div>
+          <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
+            Unregistered
+            <i id="monthlyInfo" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+          </div>
+        </div>
+      `;
+      monthlyStatusMobile.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="font-bold text-orange-300">🎫</span>
+            <span class="text-sm font-medium">Monthly Pass Status</span>
+          </div>
+          <span class="flex items-center justify-center text-xs text-orange-200">
+            Unregistered
+            <i id="monthlyInfoMobile" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+          </span>
+        </div>
+      `;
+    }
+  });
 
-  async function displayMonthlyStatus() {
+  async function displayMonthlyStatus(callback) {
     const monthlyStatus = document.getElementById('monthlyStatus');
     const monthlyStatusMobile = document.getElementById('monthlyStatusMobile');
     const customerId = sessionStorage.getItem('id');
-    if (customerId === 'U123') return;
+    if (customerId === 'U123') {
+      callback();
+      return;
+    }
     try {
       const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
-      if (!response.ok) return;
+      if (!response.ok) {
+        callback();
+        return;
+      }
       const result = await response.json();
       const customerData = result.result;
 
       // Get today's date
       const now = new Date();
+      now.setHours(0, 0, 0, 0);
 
       // Filter out expired monthly passes
       const validMonthly = customerData.filter((item) => new Date(item.customer_end_date) >= now);
@@ -283,8 +319,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // --- Popup Modal HTML ---
       const modalHTML = `
-        <div id="monthlyPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-          <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
+        <div id="monthlyPopup" class="fixed bg-black bg-opacity-50 hidden z-50" style="inset: 0; pointer-events: none;">
+          <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative" style="pointer-events: auto; position: absolute;">
             <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
               <i class="fa fa-times"></i>
             </button>
