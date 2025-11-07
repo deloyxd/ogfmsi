@@ -337,6 +337,21 @@ document.addEventListener('DOMContentLoaded', function () {
           day: '2-digit',
         });
       }
+      
+      const formattedActiveMonthly = activeMonthly
+        .map(
+          (item) =>
+            `• ${new Date(item.customer_start_date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: '2-digit',
+            })} - ${new Date(item.customer_end_date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: '2-digit',
+            })}`
+        )
+        .join('\n');
 
       // --- Popup Modal HTML ---
       const modalHTML = `
@@ -353,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 activeMonthly.length > 0 ? `<br>${startDateString} - ${endDateString}` : 'None'
               }</p>
               <p><strong>Pending Monthly:</strong> ${pendingMonthly.length}</p>
-              <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `${activeMonthly}` : 'None'}</p>
+              <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `<br>${formattedActiveMonthly}` : 'None'}</p>
             </div>
           </div>
         </div>
