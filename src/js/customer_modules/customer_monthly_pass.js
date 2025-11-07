@@ -79,11 +79,16 @@ function openInfoModal() {
       return;
     }
     close();
-    const customerId = sessionStorage.getItem('id');
-    if (customerId !== 'U123') {
-      try {
-        const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
-        if (!response.ok) return;
+    openRegistrationModal();
+  });
+}
+
+async function openRegistrationModal() {
+  const customerId = sessionStorage.getItem('id');
+  if (customerId !== 'U123') {
+    try {
+      const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
+      if (response.ok) {
         const result = await response.json();
         const customerData = result.result;
         const now = new Date();
@@ -105,17 +110,9 @@ function openInfoModal() {
           }
           return;
         }
-        openRegistrationModal();
-      } catch (_) {
-        openRegistrationModal();
       }
-    } else {
-      openRegistrationModal();
-    }
-  });
-}
-
-function openRegistrationModal() {
+    } catch (_) {}
+  }
   let todayObj;
   if (sessionStorage.getItem('activeMonthlyLastEndDate')) {
     todayObj = new Date(sessionStorage.getItem('activeMonthlyLastEndDate'));

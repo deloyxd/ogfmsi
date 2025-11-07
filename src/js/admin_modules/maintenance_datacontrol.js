@@ -1119,7 +1119,7 @@ async function exportToPDF() {
             <span class="label">Prepared by:</span> <span class="value">${preparedBy}</span>
           </div>
           <div class="right">
-            <div><span class="label">Grand Total:</span> <span class="value">${grandTotalText}</span></div>
+            <div><span class="label">Total:</span> <span class="value">${grandTotalText}</span></div>
             <div><span class="label">Generated:</span> <span class="value">${generatedAt}</span></div>
           </div>
         </div>
