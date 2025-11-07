@@ -371,23 +371,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const mouseY = e.clientY;
 
         // Position popup slightly offset from cursor
-        popup.style.left = `${mouseX + 10}px`;
-        popup.style.top = `${mouseY + 10}px`;
-        popup.classList.remove('hidden');
-      };
-      const showPopupMobile = (e) => {
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-
-        // Position popup slightly offset from cursor
-        popup.style.right = `${mouseX - 10}px`;
+        popup.style.left = `${mouseX - popup.offsetWidth - 10}px`;
         popup.style.top = `${mouseY + 10}px`;
         popup.classList.remove('hidden');
       };
 
       // Attach listeners
       document.getElementById('monthlyInfo')?.addEventListener('click', showPopup);
-      document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopupMobile);
+      document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopup);
       document.getElementById('closePopup')?.addEventListener('click', closePopup);
       popup?.addEventListener('click', (e) => {
         if (e.target.id === 'monthlyPopup') closePopup(); // close when clicking outside
