@@ -796,7 +796,23 @@ async function displayMonthlyStatus() {
       });
     }
 
+    const formattedPendingMonthly = pendingMonthly
+      .map(
+        (item) =>
+          `• ${new Date(item.customer_start_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: '2-digit',
+          })} - ${new Date(item.customer_end_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: '2-digit',
+          })}`
+      )
+      .join('\n');
+
     const formattedActiveMonthly = activeMonthly
+      .slice(1)
       .map(
         (item) =>
           `• ${new Date(item.customer_start_date).toLocaleDateString('en-US', {
@@ -813,24 +829,24 @@ async function displayMonthlyStatus() {
 
     // --- Popup Modal HTML ---
     const modalHTML = `
-        <div id="monthlyPopup" class="absolute bg-transparent hidden z-50">
-          <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
-            <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
-              <i class="fa fa-times"></i>
-            </button>
-            <h2 class="text-lg font-semibold mb-3 flex items-center space-x-2">
-              <span>🎫</span><span>Monthly Pass Details</span>
-            </h2>
-            <div class="space-y-2 text-sm text-gray-200">
-              <p><strong>Active Monthly:</strong> ${
-                activeMonthly.length > 0 ? `<br>${startDateString} - ${endDateString}` : 'None'
-              }</p>
-              <p><strong>Pending Monthly:</strong> ${pendingMonthly.length}</p>
-              <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `<br>${formattedActiveMonthly}` : 'None'}</p>
-            </div>
+      <div id="monthlyPopup" class="absolute bg-transparent hidden z-50">
+        <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
+          <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
+            <i class="fa fa-times"></i>
+          </button>
+          <h2 class="text-lg font-semibold mb-3 flex items-center space-x-2">
+            <span>🎫</span><span>Monthly Pass Details</span>
+          </h2>
+          <div class="space-y-2 text-sm text-gray-200">
+            <p><strong>Active Monthly:</strong> ${
+              activeMonthly.length > 0 ? `<br>${startDateString} - ${endDateString}` : 'None'
+            }</p>
+            <p><strong>Pending Monthly:</strong> ${pendingMonthly.length > 0 ? `<br>${formattedPendingMonthly}` : 'None'}</p>
+            <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `<br>${formattedActiveMonthly}` : 'None'}</p>
           </div>
         </div>
-      `;
+      </div>
+    `;
 
     if (document.getElementById('monthlyPopup')) {
       document.getElementById('monthlyPopup').remove();
