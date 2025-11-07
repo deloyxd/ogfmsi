@@ -78,6 +78,7 @@ function openInfoModal() {
       }
       return;
     }
+    close();
     const customerId = sessionStorage.getItem('id');
     if (customerId !== 'U123') {
       try {
@@ -90,27 +91,26 @@ function openInfoModal() {
         const validMonthly = customerData.filter((item) => new Date(item.customer_end_date) >= now);
         const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
         const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
-        if (pendingMonthly.length > 0) {
-          try {
-            if (typeof Toastify === 'function') {
-              Toastify({
-                text: 'You still have a pending monthly registration transaction, please wait for the staff to approve it first.',
-                duration: 10000,
-                gravity: 'top',
-                position: 'right',
-                close: true,
-              }).showToast();
-            }
-          } catch (_) {}
-          return;
-        }
         if (activeMonthly.length > 0)
           sessionStorage.setItem('activeMonthlyLastEndDate', activeMonthly[activeMonthly.length - 1].customer_end_date);
+        if (pendingMonthly.length > 0) {
+          if (typeof Toastify === 'function') {
+            Toastify({
+              text: 'You still have a pending monthly registration transaction, please wait for the staff to approve it first.',
+              duration: 10000,
+              gravity: 'top',
+              position: 'right',
+              close: true,
+            }).showToast();
+          }
+          return;
+        }
+        openRegistrationModal();
       } catch (_) {
-      } finally {
-        close();
         openRegistrationModal();
       }
+    } else {
+      openRegistrationModal();
     }
   });
 }
