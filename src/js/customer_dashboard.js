@@ -251,7 +251,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Function to calculate remaining days
       const getRemainingDays = (endDate) => {
-        const diff = new Date(endDate) - now;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const endDateObj = new Date(endDate);
+        endDateObj.setHours(0, 0, 0, 0);
+        const diff = endDateObj - today;
         return Math.ceil(diff / (1000 * 60 * 60 * 24));
       };
 
