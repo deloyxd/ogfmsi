@@ -2288,12 +2288,18 @@ export function isValidDate(dateString) {
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
-export function isPastDate(dateString) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [month, day, year] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date < today;
+export function isPastDate(dateString, endDateString = null) {
+  if (!endDateString) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [month, day, year] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date < today;
+  }
+  const [startMonth, startDay, startYear] = dateString.split('-').map(Number);
+  const startDate = new Date(startYear, startMonth - 1, startDay);
+  const endDate = new Date(endDateString);
+  return startDate <= endDate;
 }
 
 export function isIncomingDate(date) {

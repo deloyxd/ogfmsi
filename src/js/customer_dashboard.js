@@ -190,8 +190,22 @@ document.addEventListener('DOMContentLoaded', function () {
     notifPanel.classList.remove('translate-x-full');
   });
 
+  displayMonthlyStatus();
+
+  async function displayMonthlyStatus() {
+    const monthlyStatus = document.getElementById('monthlyStatus');
+    const monthlyStatusMobile = document.getElementById('monthlyStatusMobile');
+    const customerId = sessionStorage.getItem('id');
+    try {
+      const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
+      if (!response.ok) return;
+      const customer = response.result;
+      console.log(customer);
+    } catch (_) {}
+  }
+
   const openMessage = document.getElementById('openMessage');
-  const hoursMessage = document.getElementById('hoursMessage');
+  const openMessageMobile = document.getElementById('openMessageMobile');
   const storeHours = document.getElementById('storeHours');
 
   const operatingHoursText = storeHours.textContent.trim();
@@ -220,20 +234,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (!isOpen) {
     openMessage.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <span class="font-bold text-orange-300">🏦</span>
-        <span class="text-sm font-medium">Facility Closed</span>
-      </div>
-      <div class="mt-1 text-xs text-orange-200">Come back during our operating hours</div>
-    `;
-    hoursMessage.innerHTML = `
       <div class="text-center">
-        <div class="flex items-center space-x-2">
-          <span class="font-bold text-orange-300">⏰</span>
-          <!-- 🔑 CLIENT -->
-          <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="font-bold text-orange-300">🏦</span>
+          <span class="text-sm font-medium">Facility Closed</span>
         </div>
-        <div class="mt-1 text-xs text-orange-200">Operating Hours</div>
+        <div class="mt-1 text-xs text-orange-200">Come back during our operating hours</div>
+      </div>
+    `;
+    openMessageMobile.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <span class="font-bold text-orange-300">🏦</span>
+          <span class="text-sm font-medium">Facility Closed</span>
+        </div>
+        <span class="text-xs text-orange-200">Come back during our operating hours</span>
       </div>
     `;
   }

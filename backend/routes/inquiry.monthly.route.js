@@ -20,7 +20,7 @@ router.get('/monthly', async (req, res) => {
     ORDER BY m1.created_at DESC
   `;
   //   let sql = `
-  //   SELECT m1.* 
+  //   SELECT m1.*
   //   FROM customer_monthly_tbl m1
   //   INNER JOIN (
   //     SELECT customer_id, MAX(created_at) as max_created_at
@@ -65,8 +65,8 @@ router.post('/monthly/pending', async (req, res) => {
     const rows = await db.query(sql, [cid, tid]);
 
     if (rows.length === 0) {
-      return res.status(404).json({ 
-        error: 'Customer not found or no pending subscription' 
+      return res.status(404).json({
+        error: 'Customer not found or no pending subscription',
       });
     }
 
@@ -129,6 +129,33 @@ router.post('/monthly', async (req, res) => {
     return res.status(500).json({ error: 'Creating customer failed' });
   }
 });
+
+// GET specific customer
+router.get('/monthly/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT * FROM customer_monthly_tbl 
+    WHERE customer_id = ?
+  `;
+
+  try {
+    const rows = await db.query(query, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    res.status(200).json({
+      message: 'Customer fetched successfully',
+      result: rows[0],
+    });
+  } catch (error) {
+    console.error('Fetching customer error:', error);
+    return res.status(500).json({ error: 'Fetching customer failed' });
+  }
+});
+
 
 // PUT update customer
 router.put('/monthly/:id', async (req, res) => {

@@ -106,15 +106,30 @@
         <div class="hidden items-center space-x-4 md:flex">
           <!-- info -->
           <div class="flex items-center space-x-6">
-            <div id="openMessage" class="text-center">
-              <div class="flex items-center space-x-2">
-                <span class="font-bold text-orange-300">🏦</span>
-                <span class="text-sm font-medium">Facility Open</span>
+            <div id="monthlyStatus" class="border-r border-orange-600 pr-6">
+              <div class="text-center">
+                <div class="mt-[5px] flex items-center space-x-2">
+                  <span class="font-bold text-orange-300">🎫</span>
+                  <span class="text-sm font-medium">Monthly Pass Status</span>
+                </div>
+                <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
+                  Unregistered
+                  <i class="fa fa-circle-info pl-2 text-lg text-white"></i>
+                </div>
               </div>
-              <div class="mt-1 text-xs text-orange-200">Ready to serve you</div>
             </div>
 
-            <div id="hoursMessage" class="border-l border-r border-orange-600 px-6">
+            <div id="openMessage" class="border-r border-orange-600 pr-6">
+              <div class="text-center">
+                <div class="flex items-center justify-center space-x-2">
+                  <span class="font-bold text-orange-300">🏦</span>
+                  <span class="text-sm font-medium">Facility Open</span>
+                </div>
+                <div class="mt-1 text-xs text-orange-200">Ready to serve you</div>
+              </div>
+            </div>
+
+            <div id="hoursMessage" class="border-r border-orange-600 pr-6">
               <div class="text-center">
                 <div class="flex items-center space-x-2">
                   <span class="font-bold text-orange-300">⏰</span>
@@ -148,7 +163,7 @@
               id="logout"
               class="inline-flex items-center rounded-full bg-white px-3 py-2 text-xs font-medium text-orange-600 transition-all hover:bg-orange-50 focus:ring-2 focus:ring-orange-100"
             >
-              🟥 Logout
+              ⚠️ Logout
             </button>
           </div>
         </div>
@@ -170,7 +185,20 @@
         <div class="space-y-4 border-b-4 border-orange-600 bg-orange-800 p-4 pb-4">
           <!-- status -->
           <div class="space-y-4">
-            <div class="rounded-full bg-orange-600 p-4">
+            <div id="monthlyStatusMobile" class="rounded-full bg-orange-600 p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <span class="font-bold text-orange-300">🎫</span>
+                  <span class="text-sm font-medium">Monthly Pass Status</span>
+                </div>
+                <span class="flex items-center justify-center text-xs text-orange-200">
+                  Unregistered
+                  <i class="fa fa-circle-info pl-2 text-lg text-white"></i>
+                </span>
+              </div>
+            </div>
+
+            <div id="openMessageMobile" class="rounded-full bg-orange-600 p-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                   <span class="font-bold text-orange-300">🏦</span>

@@ -1047,7 +1047,11 @@ function validateCustomer(
           inputs,
           (result) => {
             const startDate = result.short[3].value;
-            if (!main.isValidDate(startDate) || main.isPastDate(startDate)) {
+            if (
+              !main.isValidDate(startDate) ||
+              main.isPastDate(startDate) ||
+              (renewalData && main.isPastDate(startDate, renewalData.endDate))
+            ) {
               main.toast(`Invalid start date: ${startDate}`, 'error');
               return;
             }
