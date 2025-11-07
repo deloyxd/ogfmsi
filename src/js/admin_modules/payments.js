@@ -2026,7 +2026,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     if (refNum === 'N/A') refNum = '';
 
     // Early duplicate reference check (blocks immediately before any UI updates)
-    if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+    if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
       try {
         const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
         if (refChk.ok) {
@@ -2170,7 +2170,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           (async () => {
             try {
               // Pre-check reference uniqueness before updating backend
-              if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+              if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
                 try {
                   const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
                   if (refChk.ok) {
@@ -2364,7 +2364,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           (async () => {
             try {
               // Pre-check reference uniqueness before updating backend
-              if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+              if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
                 try {
                   const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
                   if (refChk.ok) {
@@ -2506,7 +2506,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
         try {
           // Pre-check reference uniqueness before updating backend
-          if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+          if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
             try {
               const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
               if (refChk.ok) {
