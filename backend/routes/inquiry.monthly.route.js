@@ -8,16 +8,15 @@ router.get('/monthly', async (req, res) => {
   const { useLimit, limit, offset } = parsePageParams(req);
   // Get only the most recent active monthly subscription for each customer
   let sql = `
-    SELECT m1.* 
-    FROM customer_monthly_tbl m1
-    INNER JOIN (
-      SELECT customer_id, MAX(created_at) as max_created_at
-      FROM customer_monthly_tbl
-      WHERE customer_end_date >= CURDATE()
-      GROUP BY customer_id
-    ) m2 ON m1.customer_id = m2.customer_id AND m1.created_at = m2.max_created_at
-    WHERE m1.customer_end_date >= CURDATE()
-    ORDER BY m1.created_at DESC
+    SELECT
+      m.customer_id,
+      MIN(m.customer_start_date) AS customer_start_date,
+      MAX(m.customer_end_date) AS customer_end_date,
+      MAX(m.created_at) AS last_created_at,
+    FROM customer_monthly_tbl m
+    WHERE m.customer_end_date >= CURDATE()
+    GROUP BY m.customer_id
+    ORDER BY last_created_at DESC;
   `;
   //   let sql = `
   //   SELECT m1.*

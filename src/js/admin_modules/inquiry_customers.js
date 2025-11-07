@@ -186,13 +186,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         const customers = await response.json();
 
         // Track processed customers to avoid duplicates
-        const processedCustomers = new Set();
+        // const processedCustomers = new Set();
 
         customers.result.forEach((customer) => {
           // Skip if we've already processed this customer
-          if (processedCustomers.has(customer.customer_id)) {
-            return;
-          }
+          // if (processedCustomers.has(customer.customer_id)) {
+          //   return;
+          // }
 
           main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, async (findResult) => {
             if (findResult) {
@@ -263,89 +263,84 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                     }
                   );
                 } else {
-                  // Check if customer already exists in tab 2 to avoid duplicates
-                  main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 2, (existingResult) => {
-                    if (!existingResult) {
-                      // Active monthly customer - show in Active Monthly Customers tab (tab 2)
-                      main.createAtSectionOne(
-                        SECTION_NAME,
-                        [
-                          'id_' + customer.customer_id,
-                          {
-                            type: 'object_contact',
-                            data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
-                          },
-                          main.encodeDate(
-                            customer.customer_start_date,
-                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                          ),
-                          main.encodeDate(
-                            customer.customer_end_date,
-                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                          ),
-                          daysLeft + ' days',
-                          main.formatPrice(
-                            customer.customer_months *
-                              PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
-                          ),
-                          findResult.dataset.custom3,
-                          'custom_date_' +
-                            main.encodeDate(
-                              customer.created_at,
-                              main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                            ) +
-                            ' - ' +
-                            main.encodeTime(customer.created_at),
-                        ],
-                        2,
-                        (createResult) => {
-                          const startDate = new Date(customer.customer_start_date);
-                          startDate.setHours(0, 0, 0, 0);
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          if (startDate <= today) {
-                            findResult.dataset.status = 'active';
-                            findResult.dataset.custom2 = 'Monthly - Active';
-                          } else {
-                            findResult.dataset.status = 'incoming';
-                            findResult.dataset.custom2 = 'Monthly - Incoming';
-                            createResult.remove();
-                          }
-                          findResult.children[2].innerText = findResult.dataset.custom2;
-                          findResult.dataset.startDate = main.encodeDate(
-                            customer.customer_start_date,
-                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                          );
-                          findResult.dataset.endDate = main.encodeDate(
-                            customer.customer_end_date,
-                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                          );
-                          createResult.dataset.startDate = main.encodeDate(
-                            customer.customer_start_date,
-                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                          );
-                          createResult.dataset.endDate = main.encodeDate(
-                            customer.customer_end_date,
-                            main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                          );
-                          const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-                          customerProcessBtn.addEventListener('click', () =>
-                            customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                          );
-                          // const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-                          // customerEditDetailsBtn.addEventListener('click', () =>
-                          //   customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-                          // );
-                          updateCustomerStats();
-                        }
+                  if (customer.customer_id === 'U1762550858205') console.log(customer);
+                  main.createAtSectionOne(
+                    SECTION_NAME,
+                    [
+                      'id_' + customer.customer_id,
+                      {
+                        type: 'object_contact',
+                        data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+                      },
+                      main.encodeDate(
+                        customer.customer_start_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                      main.encodeDate(
+                        customer.customer_end_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                      daysLeft + ' days',
+                      main.formatPrice(
+                        customer.customer_months *
+                          PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                      ),
+                      findResult.dataset.custom3,
+                      'custom_date_' +
+                        main.encodeDate(
+                          customer.created_at,
+                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                        ) +
+                        ' - ' +
+                        main.encodeTime(customer.created_at),
+                    ],
+                    2,
+                    (createResult) => {
+                      const startDate = new Date(customer.customer_start_date);
+                      startDate.setHours(0, 0, 0, 0);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      if (startDate <= today) {
+                        findResult.dataset.status = 'active';
+                        findResult.dataset.custom2 = 'Monthly - Active';
+                      } else {
+                        findResult.dataset.status = 'incoming';
+                        findResult.dataset.custom2 = 'Monthly - Incoming';
+                        // createResult.remove();
+                      }
+                      findResult.children[2].innerText = findResult.dataset.custom2;
+                      findResult.dataset.startDate = main.encodeDate(
+                        customer.customer_start_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
                       );
+                      findResult.dataset.endDate = main.encodeDate(
+                        customer.customer_end_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      );
+                      createResult.dataset.startDate = main.encodeDate(
+                        customer.customer_start_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      );
+                      createResult.dataset.endDate = main.encodeDate(
+                        customer.customer_end_date,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      );
+                      const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+                      customerProcessBtn.addEventListener('click', () =>
+                        customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                      );
+                      // const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+                      // customerEditDetailsBtn.addEventListener('click', () =>
+                      //   customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                      // );
+                      updateCustomerStats();
                     }
-                  });
+                  );
                 }
               }
 
               // Mark this customer as processed
-              processedCustomers.add(customer.customer_id);
+              // processedCustomers.add(customer.customer_id);
             }
           });
         });
