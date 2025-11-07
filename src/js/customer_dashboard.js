@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="text-center">
           <div class="mt-[5px] flex items-center space-x-2">
             <span class="font-bold text-orange-300">🎫</span>
-            <span class="text-sm font-medium">Monthly Pass Status</span>
+            <span class="text-sm font-medium">Monthly Pass</span>
           </div>
           <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
             Unregistered
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
             <span class="font-bold text-orange-300">🎫</span>
-            <span class="text-sm font-medium">Monthly Pass Status</span>
+            <span class="text-sm font-medium">Monthly Pass</span>
           </div>
           <span class="flex items-center justify-center text-xs text-orange-200">
             Unregistered
@@ -249,6 +249,9 @@ document.addEventListener('DOMContentLoaded', function () {
       const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
       const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
 
+      if (activeMonthly.length > 0)
+        sessionStorage.setItem('activeMonthlyLastEndDate', activeMonthly[activeMonthly.length - 1].customer_end_date);
+
       // Function to calculate remaining days
       const getRemainingDays = (endDate) => {
         const today = new Date();
@@ -267,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="text-center">
             <div class="mt-[5px] flex items-center space-x-2">
               <span class="font-bold text-orange-300">🎫</span>
-              <span class="text-sm font-medium">Monthly Pass Status</span>
+              <span class="text-sm font-medium">Monthly Pass</span>
             </div>
             <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
               Pending
@@ -279,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <span class="font-bold text-orange-300">🎫</span>
-              <span class="text-sm font-medium">Monthly Pass Status</span>
+              <span class="text-sm font-medium">Monthly Pass</span>
             </div>
             <span class="flex items-center justify-center text-xs text-orange-200">
               Pending
@@ -295,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="text-center">
             <div class="mt-[5px] flex items-center space-x-2">
               <span class="font-bold text-orange-300">🎫</span>
-              <span class="text-sm font-medium">Monthly Pass Status</span>
+              <span class="text-sm font-medium">Monthly Pass</span>
             </div>
             <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
               ${daysLeft} days left
@@ -307,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <span class="font-bold text-orange-300">🎫</span>
-              <span class="text-sm font-medium">Monthly Pass Status</span>
+              <span class="text-sm font-medium">Monthly Pass</span>
             </div>
             <span class="flex items-center justify-center text-xs text-orange-200">
               ${daysLeft} days left
@@ -371,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const mouseY = e.clientY;
 
         // Position popup slightly offset from cursor
-        popup.style.left = `${mouseX - popup.offsetWidth - 10}px`;
+        popup.style.left = `${mouseX - 320 - 10}px`;
         popup.style.top = `${mouseY + 10}px`;
         popup.classList.remove('hidden');
       };
