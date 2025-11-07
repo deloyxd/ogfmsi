@@ -14,6 +14,8 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
+  where,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const SECTION_NAME = 'payments';
@@ -261,39 +263,47 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
                           const transactionId = createResult.dataset.id;
 
-                          // Listen for reservations and find matching one by tid
-                          onSnapshot(query(collection(db, 'reservations')), async (snapshot) => {
-                            const reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-                            const matchingReservation = reservations.find((r) => r.tid === transactionId);
-
-                            if (!matchingReservation) {
-                              main.toast('No matching reservation found for this transaction.', 'error');
-                              cancelCheckinPayment(transactionId);
-                              main.closeConfirmationModal();
-                              return;
-                            }
-
-                            const reservationId = matchingReservation.id;
-                            const fullReason = `${reservationId}:ID:facility:${selectedReason}`;
-
+                          // One-time lookup for matching reservation by TID to avoid duplicate callbacks
+                          (async () => {
                             try {
-                              await fetch(`${API_BASE_URL}/notif`, {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  notif_customer_id: pendingPayment.payment_customer_id,
-                                  notif_title: 'Your Transaction has been Cancelled',
-                                  notif_body: 'Reason: ' + selectedReason + '<br><br>TID: ' + createResult.dataset.id,
-                                  notif_type: '',
-                                }),
-                              });
+                              const q = query(collection(db, 'reservations'), where('tid', '==', transactionId));
+                              const snap = await getDocs(q);
 
-                              cancelCheckinPayment(transactionId, fullReason);
-                            } catch (_) {}
-                            main.closeConfirmationModal();
-                          });
+                              if (snap.empty) {
+                                main.toast('No matching reservation found for this transaction.', 'error');
+                                // Still cancel the payment to avoid it lingering
+                                cancelReservationPayment(transactionId);
+                                main.closeConfirmationModal();
+                                return;
+                              }
+
+                              const reservationDoc = snap.docs[0];
+                              const reservationId = reservationDoc.id;
+
+                              try {
+                                await fetch(`${API_BASE_URL}/notif`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    notif_customer_id: pendingPayment.payment_customer_id,
+                                    notif_title: 'Your Transaction has been Cancelled',
+                                    notif_body: 'Reason: ' + selectedReason + '<br><br>TID: ' + createResult.dataset.id,
+                                    notif_type: '',
+                                  }),
+                                });
+                              } catch (_) {}
+
+                              // Use reservation-specific cancel flow so reservation cleanup is handled correctly
+                              cancelReservationPayment(transactionId);
+                              main.closeConfirmationModal();
+                            } catch (_) {
+                              // On failure, at least cancel the payment
+                              cancelReservationPayment(transactionId);
+                              main.closeConfirmationModal();
+                            }
+                          })();
 
                           return;
                         }
@@ -1946,7 +1956,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     });
   }
 
-  main.openModal('green', inputs, (result) => {
+  main.openModal('green', inputs, async (result) => {
     const approvalStatus = window.getApprovalStatus(effectiveId);
     if (
       isOnlineTransaction &&
@@ -2014,6 +2024,20 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       return;
     }
     if (refNum === 'N/A') refNum = '';
+
+    // Early duplicate reference check (blocks immediately before any UI updates)
+    if (refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+      try {
+        const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
+        if (refChk.ok) {
+          const data = await refChk.json();
+          if (data.used) {
+            main.toast('This reference number has already been used. Please enter a valid one.', 'error');
+            return; // Stop flow immediately
+          }
+        }
+      } catch (_) {}
+    }
 
     function continueProcessPayment() {
       const dateTimeText = `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`;

@@ -367,6 +367,19 @@ function openPaymentModal(preparedRegistrationData) {
       el.classList.toggle('border-red-500', empty);
     });
   });
+  // Prevent numbers in Account Name
+  if (gcashNameInput) {
+    try {
+      gcashNameInput.setAttribute('inputmode', 'text');
+      gcashNameInput.setAttribute('autocomplete', 'name');
+    } catch (_) {}
+    gcashNameInput.addEventListener('input', () => {
+      const cleaned = String(gcashNameInput.value).replace(/[0-9]/g, '');
+      if (cleaned !== gcashNameInput.value) {
+        gcashNameInput.value = cleaned;
+      }
+    });
+  }
   if (gcashRefInput) {
     try {
       gcashRefInput.maxLength = 13;
@@ -470,6 +483,19 @@ function openPaymentModal(preparedRegistrationData) {
       if (refEl && !String(refEl.value).trim()) refEl.classList.add('border-red-500');
       if (nameEl && !String(nameEl.value).trim()) nameEl.classList.add('border-red-500');
       if (amtEl && !String(amtEl.value).trim()) amtEl.classList.add('border-red-500');
+      return;
+    }
+
+    // Disallow numbers in Account Name
+    if (/\d/.test(gcashName)) {
+      msg.textContent = 'Account Name cannot contain numbers.';
+      const nameEl = /** @type {HTMLInputElement|null} */ (form.querySelector('#gcashName'));
+      if (nameEl) nameEl.classList.add('border-red-500');
+      try {
+        if (typeof Toastify === 'function') {
+          Toastify({ text: 'Account Name cannot contain numbers', duration: 2500, gravity: 'top', position: 'right', close: true }).showToast();
+        }
+      } catch (_) {}
       return;
     }
 
