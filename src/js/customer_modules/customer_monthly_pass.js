@@ -106,10 +106,12 @@ function openInfoModal() {
         }
         if (activeMonthly.length > 0)
           sessionStorage.setItem('activeMonthlyLastEndDate', activeMonthly[activeMonthly.length - 1].customer_end_date);
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        close();
+        openRegistrationModal();
+      }
     }
-    close();
-    openRegistrationModal();
   });
 }
 
