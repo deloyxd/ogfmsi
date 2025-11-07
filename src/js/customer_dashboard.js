@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // --- Popup Modal HTML ---
       const modalHTML = `
-        <div id="monthlyPopup" class="absolute bg-black bg-opacity-50 hidden z-50">
+        <div id="monthlyPopup" class="absolute bg-transparent hidden z-50">
           <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
             <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
               <i class="fa fa-times"></i>
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </h2>
             <div class="space-y-2 text-sm text-gray-200">
               <p><strong>Active Monthly:</strong> ${
-                activeMonthly.length > 0 ? `from ${startDateString} to ${endDateString}` : 'None'
+                activeMonthly.length > 0 ? `<br>${startDateString} - ${endDateString}` : 'None'
               }</p>
               <p><strong>Pending Monthly:</strong> ${pendingMonthly.length}</p>
               <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `${activeMonthly}` : 'None'}</p>
@@ -375,10 +375,19 @@ document.addEventListener('DOMContentLoaded', function () {
         popup.style.top = `${mouseY + 10}px`;
         popup.classList.remove('hidden');
       };
+      const showPopupMobile = (e) => {
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        // Position popup slightly offset from cursor
+        popup.style.right = `${mouseX - 10}px`;
+        popup.style.top = `${mouseY + 10}px`;
+        popup.classList.remove('hidden');
+      };
 
       // Attach listeners
       document.getElementById('monthlyInfo')?.addEventListener('click', showPopup);
-      document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopup);
+      document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopupMobile);
       document.getElementById('closePopup')?.addEventListener('click', closePopup);
       popup?.addEventListener('click', (e) => {
         if (e.target.id === 'monthlyPopup') closePopup(); // close when clicking outside
