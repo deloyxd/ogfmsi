@@ -80,6 +80,7 @@ function loadCustomerNotifications() {
       showMessage('No notifications');
       return;
     }
+    console.log(customerId);
 
     fetch(`${API_BASE_URL}/notif/${encodeURIComponent(customerId)}`, {
       method: 'GET',
