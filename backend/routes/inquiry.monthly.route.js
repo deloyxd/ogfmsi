@@ -148,7 +148,7 @@ router.get('/monthly/:id', async (req, res) => {
 
     res.status(200).json({
       message: 'Customer fetched successfully',
-      result: rows[0],
+      result: rows,
     });
   } catch (error) {
     console.error('Fetching customer error:', error);

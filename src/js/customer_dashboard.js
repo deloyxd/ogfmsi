@@ -201,8 +201,127 @@ document.addEventListener('DOMContentLoaded', function () {
       const response = await fetch(`${API_BASE_URL}/inquiry/monthly/${customerId}`);
       if (!response.ok) return;
       const result = await response.json();
-      const customer = result.result;
-      console.log(customer);
+      const customerData = result.result;
+
+      // Get today's date
+      const now = new Date();
+
+      // Filter out expired monthly passes
+      const validMonthly = customerData.filter((item) => new Date(item.customer_end_date) >= now);
+
+      // Separate pending and active passes
+      const pendingMonthly = validMonthly.filter((item) => item.customer_pending === 1);
+      const activeMonthly = validMonthly.filter((item) => item.customer_pending === 0);
+
+      // Function to calculate remaining days
+      const getRemainingDays = (endDate) => {
+        const diff = new Date(endDate) - now;
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+      };
+
+      let displayHTML = '';
+      let displayHTMLMobile = '';
+
+      if (pendingMonthly.length > 0 && activeMonthly.length === 0) {
+        displayHTML = `
+          <div class="text-center">
+            <div class="mt-[5px] flex items-center space-x-2">
+              <span class="font-bold text-orange-300">🎫</span>
+              <span class="text-sm font-medium">Monthly Pass Status</span>
+            </div>
+            <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
+              Pending
+              <i id="monthlyInfo" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+            </div>
+          </div>
+        `;
+        displayHTMLMobile = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="font-bold text-orange-300">🎫</span>
+              <span class="text-sm font-medium">Monthly Pass Status</span>
+            </div>
+            <span class="flex items-center justify-center text-xs text-orange-200">
+              Pending
+              <i id="monthlyInfoMobile" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+            </span>
+          </div>
+        `;
+      } else if (activeMonthly.length > 0) {
+        const active = activeMonthly[0];
+        const daysLeft = getRemainingDays(active.customer_end_date);
+
+        displayHTML = `
+          <div class="text-center">
+            <div class="mt-[5px] flex items-center space-x-2">
+              <span class="font-bold text-orange-300">🎫</span>
+              <span class="text-sm font-medium">Monthly Pass Status</span>
+            </div>
+            <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
+              ${daysLeft} days left
+              <i id="monthlyInfo" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+            </div>
+          </div>
+        `;
+        displayHTMLMobile = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="font-bold text-orange-300">🎫</span>
+              <span class="text-sm font-medium">Monthly Pass Status</span>
+            </div>
+            <span class="flex items-center justify-center text-xs text-orange-200">
+              ${daysLeft} days left
+              <i id="monthlyInfoMobile" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+            </span>
+          </div>
+        `;
+      }
+
+      // Inject into DOM
+      monthlyStatus.innerHTML = displayHTML;
+      monthlyStatusMobile.innerHTML = displayHTMLMobile;
+
+      // --- Popup Modal HTML ---
+      const modalHTML = `
+        <div id="monthlyPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+          <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
+            <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
+              <i class="fa fa-times"></i>
+            </button>
+            <h2 class="text-lg font-semibold mb-3 flex items-center space-x-2">
+              <span>🎫</span><span>Monthly Pass Details</span>
+            </h2>
+            <div class="space-y-2 text-sm text-gray-200">
+              <p><strong>Active Monthly:</strong> ${
+                activeMonthly.length > 0 ? `${getRemainingDays(activeMonthly[0].customer_end_date)} days left` : 'None'
+              }</p>
+              <p><strong>Pending Monthly:</strong> ${pendingMonthly.length}</p>
+              <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `${activeMonthly}` : 'None'}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Append modal to body if not already added
+      if (!document.getElementById('monthlyPopup')) {
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+      }
+
+      // --- Event Handlers ---
+      const showPopup = () => {
+        document.getElementById('monthlyPopup').classList.remove('hidden');
+      };
+      const closePopup = () => {
+        document.getElementById('monthlyPopup').classList.add('hidden');
+      };
+
+      // Attach listeners
+      document.getElementById('monthlyInfo')?.addEventListener('click', showPopup);
+      document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopup);
+      document.getElementById('closePopup')?.addEventListener('click', closePopup);
+      document.getElementById('monthlyPopup')?.addEventListener('click', (e) => {
+        if (e.target.id === 'monthlyPopup') closePopup(); // close when clicking outside
+      });
     } catch (_) {}
   }
 
