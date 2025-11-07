@@ -884,7 +884,14 @@ function mainBtnFunction(
 
           // });
           if (customerType.includes('monthly')) {
-            validateCustomer(null, columnsData, goBackCallback, null, true, !isMonthlyCustomerAlready);
+            validateCustomer(
+              isCreating ? null : customer.id,
+              columnsData,
+              goBackCallback,
+              null,
+              true,
+              !isMonthlyCustomerAlready
+            );
           } else {
             main.closeModal(() => {
               validateCustomer(
@@ -1191,7 +1198,6 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
     if (findResult) {
       isCreating = false;
     }
-    console.log(customerId);
     main.toast(`${firstName}, successfully ${isCreating ? 'registered' : 'updated'}!`, 'success');
     if (isCreating) {
       main.createAtSectionOne(SECTION_NAME, columnsData, 1, async (createResult) => {
