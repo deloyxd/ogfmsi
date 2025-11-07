@@ -317,10 +317,24 @@ document.addEventListener('DOMContentLoaded', function () {
       monthlyStatus.innerHTML = displayHTML;
       monthlyStatusMobile.innerHTML = displayHTMLMobile;
 
+      let startDateString, endDateString;
+      if (activeMonthly.length > 0) {
+        startDateString = new Date(activeMonthly[0].customer_start_date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: '2-digit',
+        });
+        endDateString = new Date(activeMonthly[0].customer_end_date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: '2-digit',
+        });
+      }
+
       // --- Popup Modal HTML ---
       const modalHTML = `
-        <div id="monthlyPopup" class="fixed bg-black bg-opacity-50 hidden z-50" style="inset: 0; pointer-events: none;">
-          <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative" style="pointer-events: auto; position: absolute;">
+        <div id="monthlyPopup" class="absolute bg-black bg-opacity-50 hidden z-50">
+          <div class="bg-gray-800 text-white rounded-2xl shadow-lg w-80 p-6 relative">
             <button id="closePopup" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">
               <i class="fa fa-times"></i>
             </button>
@@ -329,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </h2>
             <div class="space-y-2 text-sm text-gray-200">
               <p><strong>Active Monthly:</strong> ${
-                activeMonthly.length > 0 ? `${getRemainingDays(activeMonthly[0].customer_end_date)} days left` : 'None'
+                activeMonthly.length > 0 ? `from ${startDateString} to ${endDateString}` : 'None'
               }</p>
               <p><strong>Pending Monthly:</strong> ${pendingMonthly.length}</p>
               <p><strong>Incoming Monthly:</strong> ${activeMonthly.length > 1 ? `${activeMonthly}` : 'None'}</p>
@@ -344,18 +358,25 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       // --- Event Handlers ---
-      const showPopup = () => {
-        document.getElementById('monthlyPopup').classList.remove('hidden');
-      };
+      const popup = document.getElementById('monthlyPopup');
       const closePopup = () => {
-        document.getElementById('monthlyPopup').classList.add('hidden');
+        popup.classList.add('hidden');
+      };
+      const showPopup = (e) => {
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        // Position popup slightly offset from cursor
+        popup.style.left = `${mouseX + 10}px`;
+        popup.style.top = `${mouseY + 10}px`;
+        popup.classList.remove('hidden');
       };
 
       // Attach listeners
       document.getElementById('monthlyInfo')?.addEventListener('click', showPopup);
       document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopup);
       document.getElementById('closePopup')?.addEventListener('click', closePopup);
-      document.getElementById('monthlyPopup')?.addEventListener('click', (e) => {
+      popup?.addEventListener('click', (e) => {
         if (e.target.id === 'monthlyPopup') closePopup(); // close when clicking outside
       });
     } catch (_) {}
