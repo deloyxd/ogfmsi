@@ -558,6 +558,36 @@
       </section>
     </main>
 
+    <!-- Equipment Status (inserted before footer) -->
+    <div class="relative">
+      <div class="absolute inset-0 bg-orange-100 opacity-100 transition-opacity duration-300 dark:opacity-0"></div>
+      <div class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"></div>
+      <section class="relative z-10 w-full px-0 py-12">
+
+        <h2 class="mb-6 bg-gradient-to-r from-orange-300 to-red-600 bg-clip-text text-center text-2xl font-black text-transparent">
+          Equipment Status
+        </h2>
+
+        <div id="equipment-filters" class="mb-4 flex flex-wrap items-center justify-center gap-2">
+          <button type="button" data-filter="all"
+            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-orange-600 text-white">
+            All
+          </button>
+          <button type="button" data-filter="machine"
+            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-white text-orange-700">
+            Machine
+          </button>
+          <button type="button" data-filter="non-machine"
+            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-white text-orange-700">
+            Non-Machine
+          </button>
+        </div>
+
+        <div id="equipment-container" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+      </section>
+
+    </div>
+
     <!-- 🔥 footer 🔥 -->
     <footer class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 py-8 text-white">
       <div class="container mx-auto px-4">
@@ -803,5 +833,43 @@
 
     <!-- imported js -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- scripts -->
+    <script type="module" src="/src/js/_global.js"></script>
+    <script type="module" src="/src/js/landing_modules/equipment-loader.js"></script>
+    <script>
+      (function () {
+        const panel = document.getElementById('notificationPanel');
+        const main = document.getElementById('dashboardMain');
+        if (!panel || !main) return;
+
+        function applyPadding() {
+          const isOpen = !panel.classList.contains('translate-x-full');
+          if (isOpen) {
+            const isLarge = window.innerWidth >= 1024; // lg breakpoint
+            main.style.paddingRight = isLarge ? '20rem' : '0'; // w-80 = 20rem
+          } else {
+            main.style.paddingRight = '0';
+          }
+        }
+
+        // React to open/close buttons
+        const openBtns = [
+          document.getElementById('openNotif'),
+          document.getElementById('openNotifMobile'),
+        ].filter(Boolean);
+        openBtns.forEach((btn) => btn.addEventListener('click', () => setTimeout(applyPadding, 50)));
+        const closeBtn = document.getElementById('closeNotif');
+        if (closeBtn) closeBtn.addEventListener('click', () => setTimeout(applyPadding, 50));
+
+        // Observe class changes on the panel (in case other scripts toggle it)
+        const mo = new MutationObserver(applyPadding);
+        mo.observe(panel, { attributes: true, attributeFilter: ['class'] });
+
+        window.addEventListener('resize', applyPadding, { passive: true });
+        // Initial
+        applyPadding();
+      })();
+    </script>
   </body>
 </html>
