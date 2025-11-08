@@ -768,10 +768,6 @@ function openConsolidateTransactionsModal() {
             <div class="flex flex-col gap-2 border rounded-lg p-3" id="serviceCol">
               <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur flex items-center justify-between">
                 <p class="text-sm font-semibold text-emerald-700">Service</p>
-                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
-                  <input type="checkbox" id="serviceSelectAll" class="h-4 w-4 border-gray-300 rounded" />
-                  <span>Select all</span>
-                </label>
               </div>
               <div class="text-sm text-gray-600" id="serviceListLoading">Loading...</div>
               <div class="flex flex-col gap-2" id="serviceList"></div>
@@ -779,10 +775,6 @@ function openConsolidateTransactionsModal() {
             <div class="flex flex-col gap-2 border rounded-lg p-3" id="salesCol">
               <div class="sticky top-0 z-10 rounded bg-white/80 px-1 py-1 backdrop-blur flex items-center justify-between">
                 <p class="text-sm font-semibold text-cyan-700">Sales</p>
-                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
-                  <input type="checkbox" id="salesSelectAll" class="h-4 w-4 border-gray-300 rounded" />
-                  <span>Select all</span>
-                </label>
               </div>
               <div class="text-sm text-gray-600" id="salesListLoading">Loading...</div>
               <div class="flex flex-col gap-2" id="salesList"></div>
@@ -826,6 +818,12 @@ function openConsolidateTransactionsModal() {
 
   // Initialize button state based on current selection (likely zero on open)
   updateSelectedCountUI();
+
+  // Reset selection state and auto-select initialization on open
+  try {
+    consolidatedSelected.clear();
+  } catch (_) {}
+  consolidateAutoSelectInitialized = false;
 
   // Fetch and render first 10 of each
   fetchFirstFiveTransactions();
@@ -896,6 +894,9 @@ let consolidateRange = { start: null, end: null };
 // Track selected items across renders (key format: `${type}:${payment_id}`)
 const consolidatedSelected = new Set();
 
+// Track if we've auto-selected all items on first render after opening
+let consolidateAutoSelectInitialized = false;
+
 // Simple debounce utility
 function debounce(fn, delay) {
   let t;
@@ -947,6 +948,7 @@ function pruneSelectionsByRange(serviceList, salesList, range) {
     if (!toKeep.has(key)) consolidatedSelected.delete(key);
   });
   updateSelectedCountUI();
+  if (!consolidateAutoSelectInitialized) consolidateAutoSelectInitialized = true;
 }
 
 // Fetch filtered service and sales lists from backend using a query
@@ -1136,6 +1138,16 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     } else {
       serviceListEl.innerHTML = filtered.map((tx) => renderRow(tx, 'service')).join('');
     }
+    // Auto-select all service items on first render after opening
+    if (!consolidateAutoSelectInitialized) {
+      const allowedServiceKeys = new Set(filtered.map((tx) => `service:${tx.payment_id}`));
+      // Prune non-visible service selections
+      Array.from(consolidatedSelected).forEach((key) => {
+        if (key.startsWith('service:') && !allowedServiceKeys.has(key)) consolidatedSelected.delete(key);
+      });
+      // Add all visible service items
+      allowedServiceKeys.forEach((k) => consolidatedSelected.add(k));
+    }
     // Sync Select All header checkbox state (checked/indeterminate)
     const serviceSelectAll = document.getElementById('serviceSelectAll');
     if (serviceSelectAll) {
@@ -1216,6 +1228,16 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
     } else {
       salesListEl.innerHTML = filtered.map((tx) => renderRow(tx, 'sales')).join('');
+    }
+    // Auto-select all sales items on first render after opening
+    if (!consolidateAutoSelectInitialized) {
+      const allowedSalesKeys = new Set(filtered.map((tx) => `sales:${tx.payment_id}`));
+      // Prune non-visible sales selections
+      Array.from(consolidatedSelected).forEach((key) => {
+        if (key.startsWith('sales:') && !allowedSalesKeys.has(key)) consolidatedSelected.delete(key);
+      });
+      // Add all visible sales items
+      allowedSalesKeys.forEach((k) => consolidatedSelected.add(k));
     }
     // Sync Select All header checkbox state (checked/indeterminate)
     const salesSelectAll = document.getElementById('salesSelectAll');
