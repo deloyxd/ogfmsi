@@ -439,6 +439,40 @@
       </section>
     </div>
 
+    <!-- equipment component -->
+    <div class="relative">
+      <div
+        class="absolute inset-0 bg-orange-100 opacity-100 transition-opacity duration-300 dark:opacity-0"
+      ></div>
+      <div
+        class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"
+      ></div>
+      <section class="container relative z-10 mx-auto px-4 py-16">
+        <h2
+          class="mb-12 bg-gradient-to-r from-orange-300 to-red-600 bg-clip-text text-center text-3xl font-black text-transparent dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
+        >
+          Equipment Status
+        </h2>
+
+        <div id="equipment-filters" class="mb-6 flex flex-wrap items-center justify-center gap-2">
+          <button type="button" data-filter="all"
+            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-orange-600 text-white">
+            All
+          </button>
+          <button type="button" data-filter="machine"
+            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-white text-orange-700 dark:bg-gray-800 dark:text-orange-300">
+            Machine
+          </button>
+          <button type="button" data-filter="non-machine"
+            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-white text-orange-700 dark:bg-gray-800 dark:text-orange-300">
+            Non-Machine
+          </button>
+        </div>
+
+        <div id="equipment-container" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+      </section>
+    </div>
+
     <!-- 🔥 features component 🔥 -->
     <div class="relative">
       <div
@@ -3134,5 +3168,7 @@
     <script type="module" src="/src/js/customer_modules/customer_calendar.js"></script>
     <!-- announcement loader -->
     <script type="module" src="/src/js/landing_modules/announcement-loader.js"></script>
+    <!-- equipment loader -->
+    <script type="module" src="/src/js/landing_modules/equipment-loader.js"></script>
   </body>
 </html>
