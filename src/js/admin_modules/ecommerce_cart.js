@@ -15,6 +15,7 @@ let cart = [],
 
 // Search term for filtering products
 let searchTerm = '';
+let selectedCategory = '';
 
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
@@ -25,12 +26,46 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     sectionTwoMainBtn.addEventListener('click', processCheckout);
   }
 
+function setupCategoryFilter() {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  if (document.getElementById(`${SECTION_NAME}CategoryFilter`)) return;
+
+  const select = document.createElement('select');
+  select.id = `${SECTION_NAME}CategoryFilter`;
+  select.className = 'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All Products';
+  select.appendChild(optAll);
+
+  (stock.CATEGORIES || []).forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.value;
+    opt.textContent = c.label;
+    select.appendChild(opt);
+  });
+
+  select.addEventListener('change', (e) => {
+    selectedCategory = e.target.value || '';
+    refreshProductDisplays();
+  });
+
+  if (searchInput.parentElement) {
+    if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+    else searchInput.parentElement.appendChild(select);
+  }
+}
+
   // Add clear all button
   addClearAllButton();
 
   getInventoryItemsFromSystem();
   loadCartFromServer();
   setupSearch();
+  setupCategoryFilter();
 
   if (!liveActivated) {
     liveActivated = true;
@@ -86,8 +121,10 @@ function setupSearch() {
 
 // Returns inventory filtered by current searchTerm (matches name or category)
 function getFilteredInventory() {
-  if (!searchTerm) return inventoryItems;
-  return inventoryItems.filter((p) => {
+  let list = inventoryItems;
+  if (selectedCategory) list = list.filter((p) => p.category === selectedCategory);
+  if (!searchTerm) return list;
+  return list.filter((p) => {
     const { fullName } = main.decodeName(p.name);
     const nameMatch = fullName.toLowerCase().includes(searchTerm);
     const categoryLabel = getCategoryLabel(p.category) || '';
