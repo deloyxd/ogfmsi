@@ -970,16 +970,16 @@ export function openConfirmationModal(action, callback) {
   tempModalConfirmationContainer.classList.add('z-30');
   tempModalConfirmationContainer.children[0].classList.add('max-w-md');
 
-  setupModalTheme('red', tempModalConfirmationContainer);
+  setupModalTheme('green', tempModalConfirmationContainer);
 
   const data = {
-    title: `Are you sure? ${getEmoji('⚠️', 26)}`,
+    title: `Are you sure? ${getEmoji('🔍', 26)}`,
     subtitle:
       'Please double check or review any details you may have provided<br>before proceeding with the action stated below:<br><br><b>' +
       action.trim() +
       '</b>',
     button: {
-      main: `Confirm ${getEmoji('⚠️')}`,
+      main: `Confirm ${getEmoji('🔍')}`,
       sub: 'Cancel',
     },
   };

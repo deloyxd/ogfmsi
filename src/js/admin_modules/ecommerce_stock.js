@@ -190,7 +190,7 @@ function showSimilarProductModal(similarProduct, attemptedName) {
     <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-40 hidden" id="similarProductModal">
       <div class="m-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300" onclick="event.stopPropagation()">
         <div class="flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-red-500 to-red-800 p-4 text-center text-white">
-          <p class="text-xl font-medium">Similar Product Found ${getEmoji('⚠️', 26)}</p>
+          <p class="text-xl font-medium">Similar Product Found ${getEmoji('🔍', 26)}</p>
           <p class="text-xs">A product with similar name already exists</p>
         </div>
         <div class="p-6 text-sm text-gray-700">

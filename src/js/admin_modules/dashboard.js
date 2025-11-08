@@ -331,7 +331,7 @@ function injectDataToAnnouncementItem(element, inputs, announcementId = null) {
   inputs.header.subtitle = 'Announcement form';
   inputs.footer = {};
   inputs.footer.main = `Update ${getEmoji('📌')}`;
-  inputs.footer.sub = `Delete ${getEmoji('⚠️')}`;
+  inputs.footer.sub = `Delete ${getEmoji('🔍')}`;
   element.dataset.description = inputs.large[0].value;
 
   if (announcementId) {
