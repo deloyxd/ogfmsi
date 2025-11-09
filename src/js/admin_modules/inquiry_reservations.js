@@ -614,6 +614,21 @@ async function sectionTwoMainBtnFunction() {
     if (customer) {
       const { fullName } = main.decodeName(customer.dataset.text);
 
+      const buildTimeSlotOptions = () => {
+        const to12 = (hour24) => {
+          const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
+          const ap = hour24 >= 12 ? 'PM' : 'AM';
+          return `${h}:00 ${ap}`;
+        };
+        const opts = [];
+        for (let h = 9; h <= 22; h++) {
+          const startH = String(h).padStart(2, '0');
+          const endH = String(h + 1).padStart(2, '0');
+          opts.push({ value: `${startH}:00-${endH}:00`, label: `${to12(h)} - ${to12(h + 1)}` });
+        }
+        return opts;
+      };
+
       const inputs = {
         header: {
           title: `Reserve Facility ${getEmoji('📅', 26)}`,
@@ -642,103 +657,22 @@ async function sectionTwoMainBtnFunction() {
         ],
         spinner2: [
           {
-            label: 'Time duration',
-            placeholder: 'Select duration',
-            selected: 1,
+            label: 'Time slot',
+            placeholder: 'Select time slot',
+            selected: 0,
             required: true,
-            options: DURATION_OPTIONS,
+            options: buildTimeSlotOptions(),
             listener: (selectedIndex, container) => {
               try {
-                const selectedDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 1;
-
-                const startInput = container.querySelector('#input-short-35');
-                const startTime = startInput?.value || '';
-
-                updatePriceDisplay(selectedDuration, startTime, container);
-
-                if (!startInput || !startInput.value) return;
-
-                const start = startInput.value;
-                if (!/^\d{2}:\d{2}$/.test(start)) return;
-
-                const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-                const endTotalMinutes = h * 60 + m + selectedDuration * 60;
-                // Block if computed end crosses midnight (beyond 23:59 of the same day)
-                if (endTotalMinutes > 23 * 60 + 59) {
-                  main.toast('The reservation must finish before midnight.', 'error');
-                  const endInputBlock = container.querySelector('#input-short-36');
-                  if (endInputBlock) {
-                    endInputBlock.value = '';
-                    endInputBlock.dispatchEvent(new Event('input'));
-                  }
-                  return;
-                }
-                const endMinutes = endTotalMinutes;
-                const endH = Math.floor(endMinutes / 60)
-                  .toString()
-                  .padStart(2, '0');
-                const endM = (endMinutes % 60).toString().padStart(2, '0');
-
-                const endInput = container.querySelector('#input-short-36');
-                if (endInput) {
-                  endInput.value = `${endH}:${endM}`;
-                  endInput.dispatchEvent(new Event('input'));
-                }
+                const opt = buildTimeSlotOptions()[selectedIndex - 1];
+                const startHH = (opt?.value || '').split('-')[0]?.split(':')[0] || '09';
+                const startTime = `${startHH.padStart(2, '0')}:00`;
+                updatePriceDisplay(1, startTime, container);
               } catch (e) {}
             },
           },
         ],
         short3: [
-          {
-            placeholder: 'Start time',
-            value: '',
-            required: true,
-            type: 'time',
-            listener: (input, container) => {
-              try {
-                const start = input.value;
-                if (!/^\d{2}:\d{2}$/.test(start)) return;
-
-                // Get the selected duration
-                const durationSelect = container.querySelector('#input-spinner-25');
-                const selectedDuration = DURATION_OPTIONS[durationSelect?.selectedIndex - 1]?.value || 1;
-
-                const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-                const endTotalMinutes = h * 60 + m + selectedDuration * 60;
-                // Block if computed end crosses midnight (beyond 23:59 of the same day)
-                if (endTotalMinutes > 23 * 60 + 59) {
-                  main.toast('The reservation must finish before midnight.', 'error');
-                  const endInputBlock = container.querySelector('#input-short-36');
-                  if (endInputBlock) {
-                    endInputBlock.value = '';
-                    endInputBlock.dispatchEvent(new Event('input'));
-                  }
-                  return;
-                }
-                const endMinutes = endTotalMinutes;
-                const endH = Math.floor(endMinutes / 60)
-                  .toString()
-                  .padStart(2, '0');
-                const endM = (endMinutes % 60).toString().padStart(2, '0');
-
-                const endInput = container.querySelector('#input-short-36');
-                if (endInput) {
-                  endInput.value = `${endH}:${endM}`;
-                  endInput.dispatchEvent(new Event('input'));
-                }
-
-                updatePriceDisplay(selectedDuration, start, container);
-              } catch (e) {}
-            },
-          },
-          {
-            placeholder: 'End time',
-            value: '',
-            required: true,
-            type: 'time',
-            offset: 1,
-            locked: true,
-          },
           {
             placeholder: 'Amount to pay',
             value: main.encodePrice(180),
@@ -766,9 +700,15 @@ async function sectionTwoMainBtnFunction() {
           return;
         }
 
-        const startTime = result.short3[0].value;
-        const endTime = result.short3[1].value;
-        const selectedDuration = DURATION_OPTIONS[result.spinner2[0].selected - 1]?.value || 1;
+        const slotOpt = (result.spinner2 && result.spinner2[0] && buildTimeSlotOptions()[result.spinner2[0].selected - 1]) || null;
+        if (!slotOpt) {
+          main.toast('Please select a valid time slot.', 'error');
+          return;
+        }
+        const [slotStart, slotEnd] = slotOpt.value.split('-');
+        const startTime = slotStart;
+        const endTime = slotEnd;
+        const selectedDuration = 1;
 
         try {
           const start = new Date(`1970-01-01T${startTime}:00`);
@@ -831,48 +771,11 @@ async function sectionTwoMainBtnFunction() {
                 )}`
               : 'the same time';
 
-            // Suggest the next available time (existing end + 1 minute)
-            let suggestion = '';
-            if (conflictingReservation) {
-              const [eh, em] = conflictingReservation.endTime.split(':').map(Number);
-              const s = new Date(1970, 0, 1, eh, em, 0, 0);
-              const next = new Date(s.getTime() + 60000);
-              const h = next.getHours().toString().padStart(2, '0');
-              const m = next.getMinutes().toString().padStart(2, '0');
-              suggestion = ` Next booking is available at ${main.decodeTime(`${h}:${m}`)}.`;
-            }
-
             throw new Error(
-              `This time slot is already booked by ${conflictingCustomerName} (${conflictingTime}).${suggestion}`
+              `This time slot is already booked by ${conflictingCustomerName} (${conflictingTime}).`
             );
           }
 
-          if (hasMinimumGap(startTime, endTime, reservationDate)) {
-            const conflictingReservation = getConflictingReservationForGap(startTime, endTime, reservationDate);
-            const conflictingCustomerName = conflictingReservation
-              ? main.decodeName(conflictingReservation.customerName).fullName
-              : 'Another customer';
-            const nextAvailableTime = getNextAvailableTime(startTime, endTime, reservationDate);
-
-            let nextAvailableTimeFormatted = 'later';
-            if (nextAvailableTime) {
-              const [hours, minutes] = nextAvailableTime.split(':');
-              const hour24 = parseInt(hours);
-              const minute = parseInt(minutes);
-
-              if (!isNaN(hour24) && !isNaN(minute)) {
-                const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-                const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                const minuteFormatted = minute.toString().padStart(2, '0');
-
-                nextAvailableTimeFormatted = `${hour12}:${minuteFormatted} ${ampm}`;
-              }
-            }
-
-            throw new Error(
-              `This hour is booked by ${conflictingCustomerName}. Next booking is available in ${nextAvailableTimeFormatted}`
-            );
-          }
         } catch (error) {
           main.toast(error.message, 'error');
           return;
@@ -893,7 +796,7 @@ async function sectionTwoMainBtnFunction() {
               startTime: startTime,
               endTime: endTime,
               status: 'Pending',
-              amount: main.decodePrice(result.short3[2].value),
+              amount: main.decodePrice(result.short3[0].value),
             };
 
             try {
@@ -1461,17 +1364,22 @@ function rescheduleReservation(reservation) {
     }
   } catch (e) {}
 
-  const existingDurationHours = (() => {
-    try {
-      const s = new Date(`1970-01-01T${startTime}:00`);
-      const e = new Date(`1970-01-01T${endTime}:00`);
-      return (e - s) / (1000 * 60 * 60);
-    } catch (e) {
-      return 1;
-    }
-  })();
+  const fixedDuration = 1;
 
-  const fixedDuration = Math.min(7, Math.max(1, Math.round(existingDurationHours) || 1));
+  const buildTimeSlotOptions = () => {
+    const to12 = (hour24) => {
+      const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
+      const ap = hour24 >= 12 ? 'PM' : 'AM';
+      return `${h}:00 ${ap}`;
+    };
+    const opts = [];
+    for (let h = 9; h <= 22; h++) {
+      const startH = String(h).padStart(2, '0');
+      const endH = String(h + 1).padStart(2, '0');
+      opts.push({ value: `${startH}:00-${endH}:00`, label: `${to12(h)} - ${to12(h + 1)}` });
+    }
+    return opts;
+  };
 
   const inputs = {
     header: {
@@ -1482,76 +1390,37 @@ function rescheduleReservation(reservation) {
       { placeholder: 'Customer details', value: `${fullName} (${customerId})`, locked: true },
       { placeholder: 'Reservation date (mm-dd-yyyy)', value: date, required: true, calendar: true },
     ],
-    spinner: [],
-    short2: [
+    spinner: [
       {
-        placeholder: 'Start time',
-        value: startTime,
+        label: 'Time slot',
+        placeholder: 'Select time slot',
+        selected: (() => {
+          const val = `${startTime}-${endTime}`;
+          const idx = buildTimeSlotOptions().findIndex((o) => o.value === val);
+          return idx >= 0 ? idx + 1 : 0;
+        })(),
         required: true,
-        type: 'time',
-        listener: (input, container) => {
-          try {
-            const start = input.value;
-            if (!/^\d{2}:\d{2}$/.test(start)) return;
-            const selectedDuration = fixedDuration;
-            const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-            const endTotalMinutes = h * 60 + m + selectedDuration * 60;
-            if (endTotalMinutes > 23 * 60 + 59) {
-              main.toast('The reservation must finish before midnight.', 'error');
-              const endInputBlock =
-                container.querySelector('input[placeholder="End time"]') ||
-                container.querySelector('input[type="time"][disabled]');
-              if (endInputBlock) {
-                endInputBlock.value = '';
-                endInputBlock.dispatchEvent(new Event('input'));
-              }
-              return;
-            }
-            const endH = Math.floor(endTotalMinutes / 60)
-              .toString()
-              .padStart(2, '0');
-            const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
-            const endInput =
-              container.querySelector('input[placeholder="End time"]') ||
-              container.querySelector('input[type="time"][disabled]');
-            if (endInput) {
-              endInput.value = `${endH}:${endM}`;
-              endInput.dispatchEvent(new Event('input'));
-            }
-          } catch (e) {}
-        },
+        options: buildTimeSlotOptions(),
       },
-      { placeholder: 'End time', value: endTime, required: true, type: 'time', locked: true },
     ],
-    short3: [
-      { placeholder: 'Duration (hours)', value: `${fixedDuration} hour${fixedDuration > 1 ? 's' : ''}`, locked: true },
+    short2: [
+      { placeholder: 'Amount to pay', value: main.encodePrice(calculateDynamicPrice(fixedDuration, startTime)), locked: true },
     ],
     footer: { main: `Confirm ${getEmoji('📆')}` },
   };
 
-  // Precompute initial End time from current Start time and fixedDuration
-  try {
-    const start = inputs.short2[0].value || startTime;
-    if (/^\d{2}:\d{2}$/.test(start)) {
-      const [h, m] = start.split(':').map((n) => parseInt(n, 10));
-      const endTotalMinutes = h * 60 + m + fixedDuration * 60;
-      if (endTotalMinutes <= 23 * 60 + 59) {
-        const endH = Math.floor(endTotalMinutes / 60)
-          .toString()
-          .padStart(2, '0');
-        const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
-        inputs.short2[1].value = `${endH}:${endM}`;
-      } else {
-        inputs.short2[1].value = '';
-      }
-    }
-  } catch (e) {}
+  // No need to precompute End time since slot is fixed
 
   main.openModal('blue', inputs, async (result) => {
     const newDate = result.short[1].value;
-    const newStart = result.short2[0].value;
-    const newEnd = result.short2[1].value;
+    const slotOpt = (result.spinner && result.spinner[0] && buildTimeSlotOptions()[result.spinner[0].selected - 1]) || null;
+    if (!slotOpt) {
+      main.toast('Please select a valid time slot.', 'error');
+      return;
+    }
+    const [newStart, newEnd] = slotOpt.value.split('-');
     const selectedDuration = fixedDuration;
+
     // Precompute new dynamic price total and the difference from existing amount
     let newTotalAmount = 0;
     let additionalDue = 0;
@@ -1565,34 +1434,15 @@ function rescheduleReservation(reservation) {
     }
 
     try {
-      const [month, day, year] = newDate.split('-').map(Number);
-      const chosenDate = new Date(year, month - 1, day);
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      if (chosenDate < todayStart) throw new Error('Selected date cannot be in the past');
-
       const s = new Date(`1970-01-01T${newStart}:00`);
       let e = new Date(`1970-01-01T${newEnd}:00`);
       if (e <= s) throw new Error('End time must be after start time');
 
       const diffHours = (e - s) / (1000 * 60 * 60);
-      if (diffHours < 1) throw new Error('Reservation must be at least 1 hour');
-      if (diffHours > 7) throw new Error('Reservation cannot exceed 7 hours');
-      // Duration must match the original duration
-      if (Math.abs(diffHours - selectedDuration) > 0.1) {
-        throw new Error(
-          `Duration is fixed to ${selectedDuration} hour${selectedDuration > 1 ? 's' : ''} for reschedule.`
-        );
-      }
+      if (diffHours !== 1) throw new Error('Reservation must be exactly 1 hour.');
 
       const startHour = s.getHours();
       if (startHour < 9) throw new Error('Reservation cannot start before 9:00 AM');
-
-      {
-        const [sh, sm] = newStart.split(':').map((n) => parseInt(n, 10));
-        const computedEndTotalMinutes = sh * 60 + sm + selectedDuration * 60;
-        if (computedEndTotalMinutes > 23 * 60 + 59) throw new Error('The reservation must finish before midnight.');
-      }
 
       const todayFormatted = main.encodeDate(new Date(), '2-digit');
       if (newDate === todayFormatted && isTimeInPast(newDate, newStart)) {
@@ -1618,27 +1468,6 @@ function rescheduleReservation(reservation) {
         });
       })();
       if (conflictExists) throw new Error('Selected time is already booked.');
-
-      const gapViolation = (() => {
-        const [m, d, y] = newDate.split('-').map(Number);
-        const [nsh, nsm] = newStart.split(':').map(Number);
-        const [neh, nem] = newEnd.split(':').map(Number);
-        const nStart = new Date(y, m - 1, d, nsh, nsm, 0, 0);
-        const nEnd = new Date(y, m - 1, d, neh, nem, 0, 0);
-        return others.some((res) => {
-          if (res.date !== newDate) return false;
-          const [esh, esm] = res.startTime.split(':').map(Number);
-          const [eeh, eem] = res.endTime.split(':').map(Number);
-          const eStart = new Date(y, m - 1, d, esh, esm, 0, 0);
-          const eEnd = new Date(y, m - 1, d, eeh, eem, 0, 0);
-          const gapAfterMs = nStart - eEnd;
-          const gapBeforeMs = eStart - nEnd;
-          const violatesAfter = gapAfterMs >= 0 && gapAfterMs < 60000;
-          const violatesBefore = gapBeforeMs >= 0 && gapBeforeMs < 60000;
-          return violatesAfter || violatesBefore;
-        });
-      })();
-      if (gapViolation) throw new Error('Please leave a 1-minute gap from other reservations.');
     } catch (error) {
       main.toast(error.message, 'error');
       return;

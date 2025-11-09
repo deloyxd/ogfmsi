@@ -270,7 +270,28 @@ async function refreshIndividualItemsSection(equipmentId, equipmentName) {
       }
 
       const modal = document.getElementById('individualItemsModal');
-      if (modal) modal.dataset.generalStatus = generalStatus;
+      if (modal) {
+        const previousGeneral = modal.dataset.generalStatus || '';
+        // Update dataset first for UI consistency
+        modal.dataset.generalStatus = generalStatus;
+        // If general status changed, broadcast a notification to all customers
+        if (previousGeneral && previousGeneral !== generalStatus) {
+          try {
+            await fetch(`${API_BASE_URL}/notif`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                notif_customer_id: 'ALL',
+                notif_title: 'Equipment Status Updated',
+                notif_body: `${equipmentName} status is now: ${generalStatus}`,
+                notif_type: 'equipment',
+              }),
+            });
+          } catch (e) {
+            console.error('Failed to send equipment status notification:', e);
+          }
+        }
+      }
 
       const row = document.querySelector(`tr[data-equipment-id="${equipmentId}"]`);
       if (row) {

@@ -550,6 +550,7 @@ function mount() {
   if (bookingForm) {
     const startInput = document.getElementById('startTime');
     const endInput = document.getElementById('endTime');
+    const timeSlotSelect = document.getElementById('timeSlot') || document.querySelector('select[name="timeSlot"]');
     const timeError = document.getElementById('timeError');
 
     const toMinutes = (val) => {
@@ -576,10 +577,29 @@ function mount() {
     });
 
     endInput?.addEventListener('change', clearError);
+    timeSlotSelect?.addEventListener('change', () => {
+      clearError();
+      try {
+        const val = String(timeSlotSelect.value || '');
+        const [s, e] = val.split('-');
+        const amount = calculateDynamicPrice(s, 1);
+        updatePriceDisplay(amount);
+      } catch (e) {}
+    });
 
     bookingForm.addEventListener('submit', async (e) => {
-      const startVal = startInput?.value || '';
-      const endVal = endInput?.value || '';
+      // Prefer the new fixed 1-hour time slot selector if present
+      let slotStart = '';
+      let slotEnd = '';
+      if (timeSlotSelect && timeSlotSelect.value) {
+        const parts = String(timeSlotSelect.value).split('-');
+        if (parts.length === 2) {
+          slotStart = parts[0];
+          slotEnd = parts[1];
+        }
+      }
+      const startVal = slotStart || startInput?.value || '';
+      const endVal = slotEnd || endInput?.value || '';
 
       const showError = (msg) => {
         if (timeError) {
@@ -645,10 +665,10 @@ function mount() {
       // Facility hours constraints and duration
       const startMins = toMinutes(startVal || '00:00');
       const endMins = toMinutes(endVal || '00:00');
-      const durationSelect = document.getElementById('duration');
-      const durationHours = durationSelect.value;
+      // Fixed 1-hour slots
+      const durationHours = 1;
 
-      // Helper: validate that (End - Start) strictly equals the selected duration (in minutes)
+      // Helper: validate that (End - Start) strictly equals 1 hour (in minutes)
       // Returns: { valid: boolean, message: string }
       function validateDuration(startTimeStr, endTimeStr, selectedDurationRaw) {
         const parseTimeToMinutes = (s) => {
@@ -710,7 +730,7 @@ function mount() {
 
         const s = parseTimeToMinutes(startTimeStr);
         const e = parseTimeToMinutes(endTimeStr);
-        const d = parseDurationToMinutes(selectedDurationRaw);
+        const d = 60; // fixed 1 hour
 
         if (!Number.isFinite(s) || !Number.isFinite(e)) {
           return { valid: false, message: 'Invalid time format. Please use a valid time (e.g., 08:00 or 8:00 AM).' };
@@ -742,20 +762,11 @@ function mount() {
         showError('Reservation cannot end after 11:59 PM.');
         return;
       }
-      if (+durationHours < 1) {
-        e.preventDefault();
-        showError('Reservation must be at least 1 hour.');
-        return;
-      }
-      if (durationHours > 7) {
-        e.preventDefault();
-        showError('Reservation cannot exceed 7 hours.');
-        return;
-      }
+      // Duration is fixed to 1 hour
 
       // Enforce that (End - Start) equals selected duration exactly
       {
-        const durationCheck = validateDuration(startVal, endVal, durationSelect?.value);
+        const durationCheck = validateDuration(startVal, endVal, '1 hour');
         if (!durationCheck.valid) {
           e.preventDefault();
           showError(durationCheck.message);
@@ -775,20 +786,25 @@ function mount() {
         return;
       }
 
-      // Conflicts and minimum gap
+      // Conflicts
       if (hasTimeConflict(dateMMDDYYYY, startVal, endVal)) {
         e.preventDefault();
         const conflict = getConflictingReservation(dateMMDDYYYY, startVal, endVal);
-        const conflictTime = conflict ? `${conflict.startTime} to ${conflict.endTime}` : 'the selected time';
+        const to12 = (hhmm) => {
+          try {
+            const [h, m] = String(hhmm || '').split(':').map((n) => parseInt(n, 10));
+            if (!Number.isFinite(h) || !Number.isFinite(m)) return hhmm;
+            const ap = h >= 12 ? 'PM' : 'AM';
+            const hr = h % 12 === 0 ? 12 : h % 12;
+            return `${hr}:${String(m).padStart(2, '0')} ${ap}`;
+          } catch (_) {
+            return hhmm;
+          }
+        };
+        const conflictTime = conflict
+          ? `${to12(conflict.startTime)} to ${to12(conflict.endTime)}`
+          : 'the selected time';
         showError(`This time overlaps with an existing booking (${conflictTime}). Please choose a different time.`);
-        return;
-      }
-
-      if (hasMinimumGap(dateMMDDYYYY, startVal, endVal)) {
-        e.preventDefault();
-        const conflict = getConflictingReservationForGap(dateMMDDYYYY, startVal, endVal);
-        const nextTime = getNextAvailableTime(dateMMDDYYYY, startVal, durationHours) || 'later';
-        showError(`Selected time is too close to another booking. Earliest available start: ${nextTime}.`);
         return;
       }
 
@@ -802,7 +818,7 @@ function mount() {
         reservationType = labelText || serviceChecked.value || 'basketball';
       }
 
-      const amount = calculateDynamicPrice(startVal, durationHours);
+      const amount = calculateDynamicPrice(startVal, 1);
 
       const reservation = {
         id,

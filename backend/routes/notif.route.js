@@ -17,7 +17,11 @@ router.get('/', async (req, res) => {
 // GET all notifications of customer
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  const query = `SELECT * FROM notif_tbl WHERE notif_customer_id = ? ORDER BY created_at DESC`;
+  const query = `
+    SELECT * FROM notif_tbl 
+    WHERE notif_customer_id = ? OR notif_customer_id = 'ALL'
+    ORDER BY created_at DESC
+  `;
   try {
     const rows = await db.query(query, [id]);
     return res.status(200).json({ message: 'Fetching notifications successful', result: rows });
