@@ -627,6 +627,10 @@ async function sectionTwoMainBtnFunction() {
         return opts;
       };
 
+      // Track current selections to compute price reliably regardless of DOM order
+      let __currentDuration = 0;
+      let __currentStart = '09:00';
+
       const inputs = {
         header: {
           title: `Reserve Facility ${getEmoji('📅', 26)}`,
@@ -662,12 +666,8 @@ async function sectionTwoMainBtnFunction() {
             options: DURATION_OPTIONS.map((d) => ({ value: String(d.value), label: d.label })),
             listener: (selectedIndex, container) => {
               try {
-                const durationVal = DURATION_OPTIONS[selectedIndex - 1]?.value || 0;
-                const startSel = container.querySelectorAll('.modal-spinner')[1];
-                const startIdx = startSel ? startSel.selectedIndex : 0;
-                const startOpt = buildHourOptions()[startIdx - 1];
-                const startTime = startOpt?.value || '09:00';
-                updatePriceDisplay(durationVal, startTime, container);
+                __currentDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 0;
+                updatePriceDisplay(__currentDuration, __currentStart, container);
               } catch (_) {}
             },
           },
@@ -679,11 +679,8 @@ async function sectionTwoMainBtnFunction() {
             options: buildHourOptions(),
             listener: (selectedIndex, container) => {
               try {
-                const startTime = buildHourOptions()[selectedIndex - 1]?.value || '09:00';
-                const durSel = container.querySelectorAll('.modal-spinner')[0];
-                const durIdx = durSel ? durSel.selectedIndex : 0;
-                const durationVal = DURATION_OPTIONS[durIdx - 1]?.value || 0;
-                updatePriceDisplay(durationVal, startTime, container);
+                __currentStart = buildHourOptions()[selectedIndex - 1]?.value || '09:00';
+                updatePriceDisplay(__currentDuration, __currentStart, container);
               } catch (_) {}
             },
           },
@@ -730,9 +727,9 @@ async function sectionTwoMainBtnFunction() {
         const startTime = startOpt.value;
         const startParts = startTime.split(':').map((n) => parseInt(n, 10));
         const endTotal = startParts[0] * 60 + startParts[1] + selectedDuration * 60;
-        const endH = String(Math.floor(endTotal / 60)).padStart(2, '0');
-        const endM = String(endTotal % 60).padStart(2, '0');
-        const endTime = `${endH}:${endM}`;
+        const endTime = endTotal === 24 * 60
+          ? '00:00'
+          : `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
 
         try {
           const start = new Date(`1970-01-01T${startTime}:00`);
@@ -1395,12 +1392,24 @@ function rescheduleReservation(reservation) {
       return `${h}:00 ${ap}`;
     };
     const opts = [];
-    for (let h = 9; h <= 22; h++) {
+    for (let h = 9; h <= 23; h++) {
       const startH = String(h).padStart(2, '0');
       opts.push({ value: `${startH}:00`, label: `${to12(h)}` });
     }
     return opts;
   };
+
+  // Track current selections for accurate price recompute and preselect based on existing reservation
+  let __rDuration = 1;
+  let __rStart = startTime || '09:00';
+  try {
+    const s = buildDateTime(date, startTime);
+    let e = buildDateTime(date, endTime);
+    if (e <= s) e = new Date(e.getTime() + 24 * 60 * 60 * 1000);
+    __rDuration = Math.max(1, Math.min(7, Math.round((e - s) / (1000 * 60 * 60))));
+  } catch (_) {}
+  const initialDurIdx = Math.max(0, DURATION_OPTIONS.findIndex((d) => d.value === __rDuration)) + 1;
+  const initialStartIdx = Math.max(0, buildHourOptions().findIndex((o) => o.value === __rStart)) + 1;
 
   const inputs = {
     header: {
@@ -1415,21 +1424,31 @@ function rescheduleReservation(reservation) {
       {
         label: 'Duration',
         placeholder: 'Select duration',
-        selected: 0,
+        selected: initialDurIdx,
         required: true,
         options: DURATION_OPTIONS.map((d) => ({ value: String(d.value), label: d.label })),
+        listener: (selectedIndex, container) => {
+          try {
+            __rDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 0;
+            updateReschedulePrices(container);
+          } catch (_) {}
+        },
       },
       {
         label: 'Start time',
         placeholder: 'Select start time',
-        selected: 0,
+        selected: initialStartIdx,
         required: true,
         options: buildHourOptions(),
+        listener: (selectedIndex, container) => {
+          try {
+            __rStart = buildHourOptions()[selectedIndex - 1]?.value || '09:00';
+            updateReschedulePrices(container);
+          } catch (_) {}
+        },
       },
     ],
-    short2: [
-      { placeholder: 'Amount to pay', value: main.encodePrice(calculateDynamicPrice(1, startTime)), locked: true },
-    ],
+    short2: [],
     footer: { main: `Confirm ${getEmoji('📆')}` },
   };
 
@@ -1450,9 +1469,9 @@ function rescheduleReservation(reservation) {
 
     const [sh, sm] = newStart.split(':').map((n) => parseInt(n, 10));
     const endTotal = sh * 60 + sm + selectedDuration * 60;
-    const eh = String(Math.floor(endTotal / 60)).padStart(2, '0');
-    const em = String(endTotal % 60).padStart(2, '0');
-    const newEnd = `${eh}:${em}`;
+    const newEnd = endTotal === 24 * 60
+          ? '00:00'
+          : `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
 
     let newTotalAmount = 0;
     let additionalDue = 0;
@@ -1493,7 +1512,13 @@ function rescheduleReservation(reservation) {
         const [nsh, nsm] = newStart.split(':').map(Number);
         const [neh, nem] = newEnd.split(':').map(Number);
         const nStart = new Date(y, m - 1, d, nsh, nsm, 0, 0);
-        const nEnd = new Date(y, m - 1, d, neh, nem, 0, 0);
+        const nEnd = (() => {
+          const base = new Date(y, m - 1, d, neh, nem, 0, 0);
+          if (endTotal === 24 * 60 && (neh === 0 && nem === 0)) {
+            base.setDate(base.getDate() + 1);
+          }
+          return base;
+        })();
         return others.some((res) => {
           const [rm, rd, ry] = (res.date || '').split('-').map(Number);
           if (!(rm === m && rd === d && ry === y)) return false;

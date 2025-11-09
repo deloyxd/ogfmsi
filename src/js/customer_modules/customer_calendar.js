@@ -635,9 +635,14 @@ function mount() {
           return;
         }
 
-        if (endMins < WORK_START || endMins > WORK_END) {
+        // Permit end exactly at midnight (00:00) when start + duration reaches 24:00
+        const selDuration = Number.isFinite(durSel) && durSel >= 1 ? durSel : 1;
+        const reachesMidnight = startMins + selDuration * 60 === WORK_END;
+        const isMidnightEnd = endMins === 0;
+        const endWithinHours = endMins >= WORK_START && endMins <= WORK_END;
+        if (!(endWithinHours || (isMidnightEnd && reachesMidnight))) {
           e.preventDefault();
-          showError('Start time is outside our operating hours (9:00 AM - 12:00 AM). Please choose a start time within this range.');
+          showError('End time is outside our operating hours (must end by 12:00 AM).');
           endInput?.focus();
           return;
         }
@@ -694,7 +699,7 @@ function mount() {
         }
       }
 
-      // Helper: validate that (End - Start) strictly equals 1 hour (in minutes)
+      // Helper: validate that (End - Start) strictly equals the selected duration (in minutes)
       // Returns: { valid: boolean, message: string }
       function validateDuration(startTimeStr, endTimeStr, selectedDurationRaw) {
         const parseTimeToMinutes = (s) => {
@@ -756,7 +761,7 @@ function mount() {
 
         const s = parseTimeToMinutes(startTimeStr);
         const e = parseTimeToMinutes(endTimeStr);
-        const d = 60; // fixed 1 hour
+        const d = parseDurationToMinutes(selectedDurationRaw);
 
         if (!Number.isFinite(s) || !Number.isFinite(e)) {
           return { valid: false, message: 'Invalid time format. Please use a valid time (e.g., 08:00 or 8:00 AM).' };
@@ -764,11 +769,14 @@ function mount() {
         if (!Number.isFinite(d)) {
           return { valid: false, message: 'Could not parse selected duration.' };
         }
-        if (e <= s) {
+        // Allow exact midnight end: if end is 00:00 and start + duration == 24:00, treat end as 24:00 for comparison
+        const endsAtMidnight = endTimeStr === '00:00';
+        const eLogical = endsAtMidnight && s + d === 24 * 60 ? 24 * 60 : e;
+        if (eLogical <= s) {
           return { valid: false, message: 'End Time must be later than Start Time.' };
         }
 
-        const delta = e - s;
+        const delta = eLogical - s;
         if (delta !== d) {
           return {
             valid: false,
@@ -791,13 +799,21 @@ function mount() {
       }
       // Duration is user-selected (1-7 hours)
 
+      // Prepare a logical end for checks: if exactly midnight, treat as 23:59 for comparisons only
+      const logicEndVal = endVal === '00:00' && startMins + durationHours * 60 === WORK_END ? '23:59' : endVal;
+
       // Enforce that (End - Start) equals selected duration exactly
       {
-        const durationCheck = validateDuration(startVal, endVal, String(durationHours));
-        if (!durationCheck.valid) {
-          e.preventDefault();
-          showError(durationCheck.message);
-          return;
+        // Special case: allow 11 PM to 12:00 AM (stored as 00:00) when Start + Duration reaches midnight
+        const reachesMidnight = startMins + durationHours * 60 === WORK_END;
+        const isMidnightEnd = endVal === '00:00';
+        if (!(reachesMidnight && isMidnightEnd)) {
+          const durationCheck = validateDuration(startVal, endVal, String(durationHours));
+          if (!durationCheck.valid) {
+            e.preventDefault();
+            showError(durationCheck.message);
+            return;
+          }
         }
       }
 
@@ -814,7 +830,7 @@ function mount() {
       }
 
       // Conflicts
-      if (hasTimeConflict(dateMMDDYYYY, startVal, endVal)) {
+      if (hasTimeConflict(dateMMDDYYYY, startVal, logicEndVal)) {
         e.preventDefault();
         const conflict = getConflictingReservation(dateMMDDYYYY, startVal, endVal);
         const to12 = (hhmm) => {
