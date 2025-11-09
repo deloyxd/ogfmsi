@@ -12,6 +12,9 @@ export let { sectionName, activeTab, moduleLoad } = sharedState;
 
 // Global loading overlay (admin modules use window.showGlobalLoading/window.hideGlobalLoading)
 let __globalLoadingCount = 0;
+// Network alert cooldown tracking
+let __netLastSlowToast = 0;
+const __NET_SLOW_COOLDOWN_MS = 30000;
 
 function ensureGlobalLoadingOverlay() {
   let overlay = document.getElementById('global-loading-overlay');
@@ -152,22 +155,166 @@ if (typeof window !== 'undefined') {
     const originalFetch = window.fetch?.bind(window);
     if (originalFetch) {
       window.fetch = (...args) => {
+        let __netSlowTimer;
         try {
           if (sharedState.moduleLoad != 0) {
             console.log('loading:', sharedState.moduleLoad);
             sharedState.moduleLoad = '';
             window.showGlobalLoading?.();
           }
+          // Warn if a request appears slow
+          __netSlowTimer = setTimeout(() => {
+            const now = Date.now();
+            if (now - __netLastSlowToast > __NET_SLOW_COOLDOWN_MS) {
+              try {
+                toast('Network seems slow... still working on it.', 'warning');
+              } catch (_) {}
+              __netLastSlowToast = now;
+            }
+          }, 7000);
         } catch (_e) {}
-        return originalFetch(...args).finally(() => {
-          try {
-            window.hideGlobalLoading?.();
-          } catch (_e) {}
-        });
+        return originalFetch(...args)
+          .catch((err) => {
+            try {
+              if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+                // No toast when offline; show blocking overlay instead
+                try { showOfflineOverlay(); } catch (_) {}
+              } else {
+                toast('Request failed. Please try again.', 'error');
+              }
+            } catch (_) {}
+            throw err;
+          })
+          .finally(() => {
+            try {
+              if (__netSlowTimer) clearTimeout(__netSlowTimer);
+            } catch (_) {}
+            try {
+              window.hideGlobalLoading?.();
+            } catch (_e) {}
+          });
       };
       window.__ogfmsiFetchPatched = true;
     }
   }
+}
+
+// Create once and control a blocking offline overlay
+function ensureOfflineOverlay() {
+  let overlay = document.getElementById('ogfmsi-offline-overlay');
+  if (overlay) return overlay;
+  overlay = document.createElement('div');
+  overlay.id = 'ogfmsi-offline-overlay';
+  overlay.setAttribute('aria-live', 'assertive');
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.zIndex = '100000';
+  overlay.style.display = 'none';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.background = 'rgba(0,0,0,0.92)';
+  overlay.style.backdropFilter = 'blur(8px)';
+  overlay.style.pointerEvents = 'all';
+
+  const panel = document.createElement('div');
+  panel.style.maxWidth = '480px';
+  panel.style.width = '90%';
+  panel.style.background = '#000';
+  panel.style.border = '2px solid #fff';
+  panel.style.borderRadius = '2px';
+  panel.style.boxShadow = '0 0 0 8px rgba(255,255,255,0.1)';
+  panel.style.padding = '48px 40px';
+  panel.style.color = '#fff';
+  panel.style.textAlign = 'center';
+  panel.style.position = 'relative';
+  panel.style.overflow = 'hidden';
+
+  const title = document.createElement('h2');
+  title.textContent = 'NO INTERNET CONNECTION';
+  title.style.fontSize = '28px';
+  title.style.fontWeight = '900';
+  title.style.margin = '0 0 24px 0';
+  title.style.color = '#fff';
+  title.style.letterSpacing = '2px';
+  title.style.textTransform = 'uppercase';
+
+  const msg = document.createElement('p');
+  msg.innerHTML = 'Please check your connection. The admin is paused until you are back online.';
+  msg.style.color = '#fff';
+  msg.style.fontSize = '16px';
+  msg.style.lineHeight = '1.6';
+  msg.style.marginBottom = '32px';
+  msg.style.opacity = '0.85';
+
+  const hint = document.createElement('p');
+  hint.textContent = 'WE WILL RESUME AUTOMATICALLY ONCE CONNECTION IS RESTORED';
+  hint.style.color = '#fff';
+  hint.style.fontSize = '11px';
+  hint.style.fontWeight = '700';
+  hint.style.letterSpacing = '1.5px';
+  hint.style.textTransform = 'uppercase';
+  hint.style.opacity = '0.6';
+  hint.style.marginTop = '0';
+
+  panel.appendChild(title);
+  panel.appendChild(msg);
+  panel.appendChild(hint);
+  overlay.appendChild(panel);
+
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function showOfflineOverlay() {
+  try {
+    const overlay = ensureOfflineOverlay();
+    overlay.style.display = 'flex';
+  } catch (_) {}
+}
+
+function hideOfflineOverlay() {
+  try {
+    const overlay = ensureOfflineOverlay();
+    overlay.style.display = 'none';
+  } catch (_) {}
+}
+
+// Setup global online/offline handlers and monitor slow connections
+function setupNetworkStatusAlerts() {
+  try {
+    const offlineHandler = () => {
+      showOfflineOverlay();
+    };
+    const onlineHandler = () => {
+      hideOfflineOverlay();
+    };
+
+    window.addEventListener('offline', offlineHandler);
+    window.addEventListener('online', onlineHandler);
+
+    // Initial state
+    if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+      setTimeout(offlineHandler, 100);
+    }
+
+    // Use Network Information API if available for slow connection hints
+    const conn = navigator && (navigator.connection || navigator.mozConnection || navigator.webkitConnection);
+    if (conn) {
+      const warnIfSlow = () => {
+        try {
+          const types = ['slow-2g', '2g'];
+          const now = Date.now();
+          if ((types.includes(conn.effectiveType) || conn.saveData) && now - __netLastSlowToast > __NET_SLOW_COOLDOWN_MS) {
+            toast('Your connection looks slow. Operations may take longer.', 'warning');
+            __netLastSlowToast = now;
+          }
+        } catch (_) {}
+      };
+      conn.addEventListener?.('change', warnIfSlow);
+      // One-time hint on load
+      warnIfSlow();
+    }
+  } catch (_) {}
 }
 
 function checkIfJsShouldNotRun(id) {
@@ -1987,11 +2134,18 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
     }
 
     row.dataset['custom' + index] = data;
-    // Auto-align currency-like values to the right
+    // Auto-align amounts to the right only if content is purely price-like (not mixed descriptive text)
     try {
-      const txt = String(data);
-      const currencyLike = /[₱$€]|php/i.test(txt) || /^\s*\d{1,3}(,\d{3})*(\.\d{2})?\s*$/.test(txt);
-      if (currencyLike) {
+      const clean = String(data).replace(/<[^>]*>/g, '').trim();
+      // Match one or more lines of currency/number-only values (e.g., ₱1,234.00 or 1,234.00), optionally separated by newlines
+      const priceLine = /^(?:[₱$€]?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*)$/i;
+      const phpPrefixed = /^php\s*\d+(?:,\d{3})*(?:\.\d{2})?$/i;
+      const lines = clean.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const currencyOnly =
+        (lines.length > 0 && lines.every((l) => priceLine.test(l) || phpPrefixed.test(l))) ||
+        priceLine.test(clean) ||
+        phpPrefixed.test(clean);
+      if (currencyOnly) {
         cell.classList.add('text-right');
       }
     } catch (_) {}
@@ -2019,11 +2173,17 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
     return;
   }
 
-  // Auto-align currency-like values to the right for non-string inputs as well
+  // Auto-align amounts to the right for non-string inputs only if content is purely price-like
   try {
-    const txt = String(data);
-    const currencyLike = /[₱$€]|php/i.test(txt) || /^\s*\d{1,3}(,\d{3})*(\.\d{2})?\s*$/.test(txt);
-    if (currencyLike) {
+    const clean = String(data).replace(/<[^>]*>/g, '').trim();
+    const priceLine = /^(?:[₱$€]?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*)$/i;
+    const phpPrefixed = /^php\s*\d+(?:,\d{3})*(?:\.\d{2})?$/i;
+    const lines = clean.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const currencyOnly =
+      (lines.length > 0 && lines.every((l) => priceLine.test(l) || phpPrefixed.test(l))) ||
+      priceLine.test(clean) ||
+      phpPrefixed.test(clean);
+    if (currencyOnly) {
       cell.classList.add('text-right');
     }
   } catch (_) {}
@@ -2440,6 +2600,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupSidebar();
   showLoadingAndPreloadSections();
   setupLogoDashboardRedirect();
+  setupNetworkStatusAlerts();
 });
 
 async function showLoadingAndPreloadSections() {
