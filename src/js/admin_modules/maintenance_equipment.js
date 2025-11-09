@@ -7,6 +7,17 @@ function getEmoji(emoji, size = 16) {
   return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
 }
 
+// Lightweight debounce utility
+function debounce(fn, delay) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
+}
+
+let loadEquipAbortCtrl = null;
+
 function getGeneralStatusDisplay(generalStatus, unavailableCount = 0) {
   if (generalStatus === 'All Available') {
     return `<p class="text-green-600 font-bold emoji">All Available ${getEmoji('✅')}</p>`;
@@ -533,37 +544,51 @@ async function loadExistingEquipment() {
     const tableBody = document.querySelector('#maintenanceSectionOneList');
     if (tableBody) tableBody.innerHTML = '';
 
-    const response = await fetch(`${API_BASE_URL}/maintenance/equipment`);
+    // Abort any in-flight request to avoid overlap
+    try { loadEquipAbortCtrl?.abort(); } catch (_) {}
+    loadEquipAbortCtrl = new AbortController();
+
+    const response = await fetch(`${API_BASE_URL}/maintenance/equipment`, { signal: loadEquipAbortCtrl.signal });
     const result = await response.json();
 
     if (response.ok && result.result) {
-      result.result.forEach((equipment) => {
-        const columnsData = [
-          equipment.equipment_id.split('_').slice(0, 2).join('_'),
-          `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipment.equipment_name}')"><span>${equipment.equipment_name}</span></div>`,
-          equipment.total_quantity + '',
-          equipment.equipment_type,
-          getGeneralStatusDisplay(equipment.general_status, equipment.unavailable_count || 0),
-          'custom_date_today',
-        ];
+      const items = Array.isArray(result.result) ? result.result : [];
+      const CHUNK = 50;
+      const total = items.length;
+      const renderChunk = (start) => {
+        const end = Math.min(start + CHUNK, total);
+        for (let i = start; i < end; i++) {
+          const equipment = items[i];
+          const columnsData = [
+            equipment.equipment_id.split('_').slice(0, 2).join('_'),
+            `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipment.equipment_name}')"><span>${equipment.equipment_name}</span></div>`,
+            equipment.total_quantity + '',
+            equipment.equipment_type,
+            getGeneralStatusDisplay(equipment.general_status, equipment.unavailable_count || 0),
+            'custom_date_today',
+          ];
 
-        main.createAtSectionOne('maintenance-equipment', columnsData, 1, (frontendResult) => {
-          if (equipment.created_at) {
-            const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            });
-            frontendResult.dataset.date = date;
-            frontendResult.children[5].innerHTML = date;
-          }
+          main.createAtSectionOne('maintenance-equipment', columnsData, 1, (frontendResult) => {
+            if (equipment.created_at) {
+              const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              });
+              frontendResult.dataset.date = date;
+              frontendResult.children[5].innerHTML = date;
+            }
 
-          frontendResult.dataset.equipmentId = equipment.equipment_id;
-          setupEquipmentButtons(frontendResult, equipment);
-        });
-      });
+            frontendResult.dataset.equipmentId = equipment.equipment_id;
+            setupEquipmentButtons(frontendResult, equipment);
+          });
+        }
+        if (end < total) requestAnimationFrame(() => renderChunk(end));
+      };
+      requestAnimationFrame(() => renderChunk(0));
     }
   } catch (error) {
+    if (error?.name === 'AbortError') return;
     console.error('Error loading equipment:', error);
     main.toast('Failed to load existing equipment', 'error');
   }

@@ -11,6 +11,15 @@ function getEmoji(emoji, size = 16) {
   return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
 }
 
+// Lightweight debounce utility
+function debounce(fn, delay) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
+}
+
 // Utility: Normalize product name for comparison (similar to equipment validation)
 function normalizeProductName(name) {
   return (name || '')
@@ -92,6 +101,12 @@ let mainBtn;
 
 // Set up periodic expiration check (every 5 sec)
 let expirationCheckInterval;
+let loadProductsAbortCtrl = null;
+const loadProductsDebounced = debounce(() => {
+  try {
+    loadProducts();
+  } catch (_) {}
+}, 200);
 
 // Start periodic expiration check when section is loaded
 function startExpirationCheck() {
@@ -130,7 +145,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
 
   // Start expiration check and load products
   startExpirationCheck();
-  loadProducts();
+  loadProductsDebounced();
 });
 
 // Listen for section changes to refresh stats when this section becomes active
@@ -139,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (currentSection && !currentSection.classList.contains('hidden')) {
     setTimeout(() => {
       // Check for expired products and load products when section becomes active
-      loadProducts();
+      loadProductsDebounced();
     }, 100);
   }
 });
@@ -369,7 +384,10 @@ async function loadProducts() {
     // First, check for expired products and automatically dispose them
     await checkAndDisposeExpiredProducts();
 
-    const response = await fetch(`${API_BASE_URL}/ecommerce/products`);
+    // Abort any in-flight load to avoid overlap
+    try { loadProductsAbortCtrl?.abort(); } catch (_) {}
+    loadProductsAbortCtrl = new AbortController();
+    const response = await fetch(`${API_BASE_URL}/ecommerce/products`, { signal: loadProductsAbortCtrl.signal });
     const data = await response.json();
 
     if (response.ok) {
@@ -445,6 +463,7 @@ async function loadProducts() {
       console.error('Error loading products:', data.error);
     }
   } catch (error) {
+    if (error?.name === 'AbortError') return;
     console.error('Error loading products:', error);
   }
 }
@@ -623,73 +642,87 @@ function displayProductsForTab(products, tabIndex) {
     return;
   }
 
-  products.forEach((product) => {
-    const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
-    const isDisposed =
-      product.disposal_status === 'Disposed' ||
-      (product.product_name && product.product_name.toLowerCase().includes('disposed'));
+  // Chunked rendering to keep UI responsive on large lists
+  const CHUNK = 50;
+  const total = products.length;
+  const renderChunk = (startIndex) => {
+    const end = Math.min(startIndex + CHUNK, total);
+    for (let i = startIndex; i < end; i++) {
+      const product = products[i];
+      const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
+      const isDisposed =
+        product.disposal_status === 'Disposed' ||
+        (product.product_name && product.product_name.toLowerCase().includes('disposed'));
 
-    const columnsData = [
-      displayId,
-      {
-        type: 'object',
-        data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
-      },
-      main.formatPrice(product.price),
-      product.quantity + '',
-      isDisposed ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>` : main.getStockStatus(product.quantity),
-      product.measurement_value || '',
-      product.measurement_unit || '',
-      main.getSelectedOption(product.category, CATEGORIES),
-      product.expiration_date
-        ? new Date(product.expiration_date).toLocaleDateString('en-US', {
+      const columnsData = [
+        displayId,
+        {
+          type: 'object',
+          data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
+        },
+        main.formatPrice(product.price),
+        product.quantity + '',
+        isDisposed ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>` : main.getStockStatus(product.quantity),
+        product.measurement_value || '',
+        product.measurement_unit || '',
+        main.getSelectedOption(product.category, CATEGORIES),
+        product.expiration_date
+          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
+          : 'No expiration',
+        'custom_date_today',
+      ];
+
+      main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (frontendResult) => {
+        // Set the actual date
+        if (product.created_at) {
+          const date = new Date(product.created_at).toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'short',
+            month: 'long',
             day: 'numeric',
-          })
-        : 'No expiration',
-      'custom_date_today',
-    ];
+          });
+          frontendResult.dataset.date = date;
+          // Adjusted index due to added Expiration Date column
+          frontendResult.children[9].innerHTML = date;
+        }
 
-    main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (frontendResult) => {
-      // Set the actual date
-      if (product.created_at) {
-        const date = new Date(product.created_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-        frontendResult.dataset.date = date;
-        // Adjusted index due to added Expiration Date column
-        frontendResult.children[9].innerHTML = date;
-      }
+        // Set up the product data for editing
+        frontendResult.dataset.id = product.product_id;
+        frontendResult.dataset.image = product.image_url || '/src/images/client_logo.jpg';
+        // Keep dataset.text consistent with duplicate detection (use raw name)
+        frontendResult.dataset.text = product.product_name;
+        frontendResult.dataset.custom2 = product.price_encoded;
+        frontendResult.dataset.custom3 = product.quantity;
+        frontendResult.dataset.custom4 = product.stock_status;
+        frontendResult.dataset.custom5 = product.measurement_value;
+        frontendResult.dataset.custom6 = product.measurement_unit;
+        // custom7 now maps to category after removing purchase_type
+        frontendResult.dataset.custom7 = product.category;
+        frontendResult.dataset.custom8 = product.expiration_date || '';
+        frontendResult.dataset.disposalStatus = product.disposal_status || 'Active';
+        frontendResult.dataset.disposalReason = product.disposal_reason || '';
+        frontendResult.dataset.disposalNotes = product.disposal_notes || '';
+        frontendResult.dataset.disposedAt = product.disposed_at || '';
 
-      // Set up the product data for editing
-      frontendResult.dataset.id = product.product_id;
-      frontendResult.dataset.image = product.image_url || '/src/images/client_logo.jpg';
-      // Keep dataset.text consistent with duplicate detection (use raw name)
-      frontendResult.dataset.text = product.product_name;
-      frontendResult.dataset.custom2 = product.price_encoded;
-      frontendResult.dataset.custom3 = product.quantity;
-      frontendResult.dataset.custom4 = product.stock_status;
-      frontendResult.dataset.custom5 = product.measurement_value;
-      frontendResult.dataset.custom6 = product.measurement_unit;
-      // custom7 now maps to category after removing purchase_type
-      frontendResult.dataset.custom7 = product.category;
-      frontendResult.dataset.custom8 = product.expiration_date || '';
-      frontendResult.dataset.disposalStatus = product.disposal_status || 'Active';
-      frontendResult.dataset.disposalReason = product.disposal_reason || '';
-      frontendResult.dataset.disposalNotes = product.disposal_notes || '';
-      frontendResult.dataset.disposedAt = product.disposed_at || '';
-
-      // Setup action buttons (only for non-disposed products)
-      if (!isDisposed) {
-        setupProductDetailsButton(frontendResult);
-      } else {
-        setupDisposedProductButton(frontendResult);
-      }
-    });
-  });
+        // Setup action buttons (only for non-disposed products)
+        if (!isDisposed) {
+          setupProductDetailsButton(frontendResult);
+        } else {
+          setupDisposedProductButton(frontendResult);
+        }
+      });
+    }
+    if (end < total) {
+      requestAnimationFrame(() => renderChunk(end));
+    } else {
+      // Hide empty placeholder when rendering completes
+      if (emptyCell) emptyCell.parentElement.classList.add('hidden');
+    }
+  };
+  requestAnimationFrame(() => renderChunk(0));
 }
 
 // Function to update tab title with count badge

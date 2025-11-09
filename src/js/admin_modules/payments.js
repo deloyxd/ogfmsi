@@ -29,15 +29,23 @@ let activated = false,
 let completedPaymentsCache = [];
 // Track pending IDs to avoid duplicate rows when polling
 const seenPendingPaymentIds = new Set();
+// In-memory cache for customer info to avoid repeated network/DOM lookups
+const customerInfoCache = new Map();
 
 // Helper function to resolve customer metadata (image, id, name) with backend fallback
 async function resolveCustomerInfo(customerId) {
+  // Return from cache if available
+  if (customerInfoCache.has(customerId)) return customerInfoCache.get(customerId);
   // Try DOM lookup first
   return new Promise((resolve) => {
+    const finalize = (info) => {
+      customerInfoCache.set(customerId, info);
+      resolve(info);
+    };
     main.findAtSectionOne('inquiry-customers', customerId, 'equal_id', 1, async (findResult) => {
       if (findResult) {
         const customerName = findResult.dataset.text ? main.decodeName(findResult.dataset.text).fullName : '';
-        resolve({
+        finalize({
           image: findResult.dataset.image || '',
           id: findResult.dataset.id || customerId,
           name: customerName,
@@ -50,17 +58,17 @@ async function resolveCustomerInfo(customerId) {
             const data = await response.json();
             const customer = data.result || {};
             const fullName = `${customer.customer_first_name || ''} ${customer.customer_last_name || ''}`.trim();
-            resolve({
+            finalize({
               image: customer.customer_image_url || '',
               id: customer.customer_id || customerId,
               name: fullName,
             });
           } else {
-            resolve({ image: '', id: customerId, name: '' });
+            finalize({ image: '', id: customerId, name: '' });
           }
         } catch (error) {
           console.error('Error fetching customer from backend:', error);
-          resolve({ image: '', id: customerId, name: '' });
+          finalize({ image: '', id: customerId, name: '' });
         }
       }
     });
@@ -129,13 +137,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
               if (isOnlineTransaction && !isOnlineFacility && pendingPayment.payment_customer_id !== 'U123') {
                 try {
-                  const resp = await fetch(`${API_BASE_URL}/inquiry/customers/${encodeURIComponent(customerIdText)}`);
-                  if (resp.ok) {
-                    const data = await resp.json();
-                    const c = data.result || {};
-                    imageSrc = c.customer_image_url || '';
-                    fullName = `${c.customer_first_name || ''} ${c.customer_last_name || ''}`.trim();
-                  }
+                  const ci = await resolveCustomerInfo(customerIdText);
+                  imageSrc = ci.image || imageSrc;
+                  fullName = ci.name || fullName;
                 } catch (_) {}
               }
 
@@ -163,13 +167,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   let customer;
                   if (isOnlineTransaction && pendingPayment.payment_customer_id !== 'U123') {
                     try {
-                      const resp = await fetch(
-                        `${API_BASE_URL}/inquiry/customers/${pendingPayment.payment_customer_id}`
-                      );
-                      if (resp.ok) {
-                        const data = await resp.json();
-                        customer = data.result;
-                      }
+                      const ci = await resolveCustomerInfo(pendingPayment.payment_customer_id);
+                      const parts = (ci.name || '').split(' ');
+                      const first = parts.shift() || '';
+                      const last = parts.join(' ');
+                      customer = { customer_image_url: ci.image || '', customer_first_name: first, customer_last_name: last };
                     } catch (_) {}
                   }
                   if (isOnlineTransaction && refFromPortal) {
@@ -340,13 +342,19 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
         ];
         computeAndUpdatePaymentStats(completedPaymentsCache);
 
-        // Use for...of to support async/await
-        for (const completePayment of completePayments.result) {
+        // Process rows with limited concurrency to speed up while avoiding overload
+        const list = Array.isArray(completePayments.result) ? completePayments.result : [];
+        const filteredList = list.filter(
+          (completePayment) =>
+            completePayment.payment_customer_id.startsWith('U') && completePayment.payment_customer_id !== 'U123'
+        );
+
+        await mapWithConcurrency(filteredList, async (completePayment) => {
           if (!completePayment.payment_customer_id.startsWith('U') || completePayment.payment_customer_id === 'U123')
-            continue;
+            return;
           const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
           if (customerInfo.name === '') {
-            continue;
+            return;
           }
 
           // First, add to the original Service Transactions tab (tab 3) - shows all service transactions
@@ -448,7 +456,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
               }
             );
-            continue; // Skip the regular creation below for hybrid payments
+            return; // Skip the regular creation below for hybrid payments
           } else {
             // Default to cash tab for unknown payment methods
             tabIndex = 4;
@@ -485,7 +493,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               }
             );
           }
-        }
+        }, 6);
       } catch (error) {
         console.error('Error fetching service payments:', error);
       }
@@ -907,6 +915,21 @@ function debounce(fn, delay) {
     clearTimeout(t);
     t = setTimeout(() => fn(...args), delay);
   };
+}
+
+// Concurrency-limited async mapper
+async function mapWithConcurrency(items, mapper, limit = 6) {
+  const results = new Array(items.length);
+  let index = 0;
+  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
+    while (true) {
+      const current = index++;
+      if (current >= items.length) break;
+      results[current] = await mapper(items[current], current);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 // Set lists to loading state during search/fetch

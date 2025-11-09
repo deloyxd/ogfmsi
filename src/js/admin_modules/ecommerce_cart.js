@@ -190,6 +190,7 @@ function displayProductsForTab(products, tabIndex) {
   productsEmpty.classList.add('hidden');
 
   productsGrid.innerHTML = '';
+  const frag = document.createDocumentFragment();
 
   Array.from(products).forEach((product) => {
     const fullName = main.fixText(product.name.trim().replace(/::\/\//g, ' '));
@@ -317,7 +318,7 @@ function displayProductsForTab(products, tabIndex) {
         availableStock = getAvailableStock(product.id);
         quantity = Math.min(1, availableStock);
         updateAddToCartButton();
-        main.toast(`${fullName} is being added to cart, please wait`, 'info');
+        // main.toast(`${fullName} is being added to cart, please wait`, 'info');
       } else if (quantity > 0) {
         main.toast(`Cannot add ${quantity} items. Only ${getAvailableStock(product.id)} available.`, 'error');
       }
@@ -340,9 +341,25 @@ function displayProductsForTab(products, tabIndex) {
     updateAddToCartButton();
 
     productCard.classList.remove('hidden');
-    productsGrid.appendChild(productCard);
+    frag.appendChild(productCard);
   });
+  productsGrid.appendChild(frag);
 }
+
+// Lightweight debounce utility for expensive UI refreshes
+function debounce(fn, delay) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
+}
+
+const refreshProductDisplaysDebounced = debounce(() => {
+  try {
+    refreshProductDisplays();
+  } catch (_) {}
+}, 150);
 
 async function addToCart(product, quantity) {
   // Validate stock before adding
@@ -365,7 +382,19 @@ async function addToCart(product, quantity) {
     }
 
     existingItem.quantity = newQuantity;
-    await updateCartItemQuantity(existingItem.cart_id, existingItem.quantity);
+    // Optimistic local update for faster UX
+    updateCartDisplay();
+    refreshProductDisplaysDebounced();
+    try {
+      await updateCartItemQuantity(existingItem.cart_id, existingItem.quantity);
+    } catch (_) {
+      // On failure, revert and inform user
+      existingItem.quantity -= quantity;
+      updateCartDisplay();
+      refreshProductDisplaysDebounced();
+      main.toast('Failed to update cart quantity. Reverted.', 'error');
+      return;
+    }
   } else {
     const cartData = {
       session_id: sessionId,
@@ -379,35 +408,54 @@ async function addToCart(product, quantity) {
       category: product.category,
     };
 
+    // Optimistic local insert for instant feedback
+    const tempId = 'temp_' + Date.now();
+    cart.push({
+      id: product.id,
+      cart_id: tempId,
+      image: product.image,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      measurement: product.measurement,
+      measurementUnit: product.measurementUnit,
+      category: product.category,
+    });
+    updateCartDisplay();
+    refreshProductDisplaysDebounced();
+
     try {
       const response = await fetch(`${API_BASE_URL}/ecommerce/cart`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cartData),
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        // Reload cart from server to get the cart_id
+        // Re-sync with server to get real cart_id; non-blocking UX already updated
         await loadCartFromServer();
-        main.toast(`${product.name.replace(/::\/\//g, ' ').trim()} successfully added to cart!`, 'success');
+        // main.toast(`${product.name.replace(/::\/\//g, ' ').trim()} successfully added to cart!`, 'success');
       } else {
+        // Remove optimistic item on failure
+        cart = cart.filter((i) => i.cart_id !== tempId);
+        updateCartDisplay();
+        refreshProductDisplaysDebounced();
         console.error('Error adding to cart:', data.error);
         main.toast('Error: Failed to add item to cart', 'error');
       }
     } catch (error) {
+      // Remove optimistic item on error
+      cart = cart.filter((i) => i.cart_id !== tempId);
+      updateCartDisplay();
+      refreshProductDisplaysDebounced();
       console.error('Error adding to cart:', error);
       main.toast('Error: Failed to add item to cart', 'error');
     }
   }
 
+  // Ensure UI is up-to-date
   updateCartDisplay();
-
-  // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
-  refreshProductDisplays();
+  refreshProductDisplaysDebounced();
 }
 
 async function updateCartItemQuantity(cartId, quantity) {
@@ -527,11 +575,17 @@ window.increaseQuantity = async function (cartId) {
     }
 
     item.quantity++;
-    await updateCartItemQuantity(cartId, item.quantity);
+    // Optimistic update
     updateCartDisplay();
-
-    // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
-    refreshProductDisplays();
+    refreshProductDisplaysDebounced();
+    try {
+      await updateCartItemQuantity(cartId, item.quantity);
+    } catch (_) {
+      item.quantity--;
+      updateCartDisplay();
+      refreshProductDisplaysDebounced();
+      main.toast('Failed to update cart quantity. Reverted.', 'error');
+    }
   }
 };
 
@@ -539,11 +593,16 @@ window.decreaseQuantity = async function (cartId) {
   const item = cart.find((item) => item.cart_id === cartId);
   if (item && item.quantity > 1) {
     item.quantity--;
-    await updateCartItemQuantity(cartId, item.quantity);
     updateCartDisplay();
-
-    // REFRESH PRODUCT DISPLAYS TO SHOW UPDATED STOCK
-    refreshProductDisplays();
+    refreshProductDisplaysDebounced();
+    try {
+      await updateCartItemQuantity(cartId, item.quantity);
+    } catch (_) {
+      item.quantity++;
+      updateCartDisplay();
+      refreshProductDisplaysDebounced();
+      main.toast('Failed to update cart quantity. Reverted.', 'error');
+    }
   } else if (item && item.quantity === 1) {
     removeCartItem(cartId);
   }
