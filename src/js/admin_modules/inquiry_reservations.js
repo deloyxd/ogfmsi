@@ -172,9 +172,8 @@ function hasTimeConflict(newStartTime, newEndTime, newDate) {
     const existingStart = new Date(year, month - 1, day, existingStartHour, existingStartMinute, 0, 0);
     const existingEnd = new Date(year, month - 1, day, existingEndHour, existingEndMinute, 0, 0);
 
-    // Treat boundary times as conflicts to enforce 1-minute buffer via main rule
-    // e.g., if an event ends at 15:00, starting at 15:00 is considered conflicting
-    return newStart <= existingEnd && newEnd >= existingStart;
+    // Allow adjacency: starting exactly when another ends is OK
+    return newStart < existingEnd && newEnd > existingStart;
   });
 }
 
@@ -614,17 +613,16 @@ async function sectionTwoMainBtnFunction() {
     if (customer) {
       const { fullName } = main.decodeName(customer.dataset.text);
 
-      const buildTimeSlotOptions = () => {
+      const buildHourOptions = () => {
         const to12 = (hour24) => {
           const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
           const ap = hour24 >= 12 ? 'PM' : 'AM';
           return `${h}:00 ${ap}`;
         };
         const opts = [];
-        for (let h = 9; h <= 22; h++) {
+        for (let h = 9; h <= 23; h++) {
           const startH = String(h).padStart(2, '0');
-          const endH = String(h + 1).padStart(2, '0');
-          opts.push({ value: `${startH}:00-${endH}:00`, label: `${to12(h)} - ${to12(h + 1)}` });
+          opts.push({ value: `${startH}:00`, label: `${to12(h)}` });
         }
         return opts;
       };
@@ -657,18 +655,36 @@ async function sectionTwoMainBtnFunction() {
         ],
         spinner2: [
           {
-            label: 'Time slot',
-            placeholder: 'Select time slot',
+            label: 'Duration',
+            placeholder: 'Select duration',
             selected: 0,
             required: true,
-            options: buildTimeSlotOptions(),
+            options: DURATION_OPTIONS.map((d) => ({ value: String(d.value), label: d.label })),
             listener: (selectedIndex, container) => {
               try {
-                const opt = buildTimeSlotOptions()[selectedIndex - 1];
-                const startHH = (opt?.value || '').split('-')[0]?.split(':')[0] || '09';
-                const startTime = `${startHH.padStart(2, '0')}:00`;
-                updatePriceDisplay(1, startTime, container);
-              } catch (e) {}
+                const durationVal = DURATION_OPTIONS[selectedIndex - 1]?.value || 0;
+                const startSel = container.querySelectorAll('.modal-spinner')[1];
+                const startIdx = startSel ? startSel.selectedIndex : 0;
+                const startOpt = buildHourOptions()[startIdx - 1];
+                const startTime = startOpt?.value || '09:00';
+                updatePriceDisplay(durationVal, startTime, container);
+              } catch (_) {}
+            },
+          },
+          {
+            label: 'Start time',
+            placeholder: 'Select start time',
+            selected: 0,
+            required: true,
+            options: buildHourOptions(),
+            listener: (selectedIndex, container) => {
+              try {
+                const startTime = buildHourOptions()[selectedIndex - 1]?.value || '09:00';
+                const durSel = container.querySelectorAll('.modal-spinner')[0];
+                const durIdx = durSel ? durSel.selectedIndex : 0;
+                const durationVal = DURATION_OPTIONS[durIdx - 1]?.value || 0;
+                updatePriceDisplay(durationVal, startTime, container);
+              } catch (_) {}
             },
           },
         ],
@@ -700,15 +716,23 @@ async function sectionTwoMainBtnFunction() {
           return;
         }
 
-        const slotOpt = (result.spinner2 && result.spinner2[0] && buildTimeSlotOptions()[result.spinner2[0].selected - 1]) || null;
-        if (!slotOpt) {
-          main.toast('Please select a valid time slot.', 'error');
+        const durationOpt = (result.spinner2 && result.spinner2[0] && DURATION_OPTIONS[result.spinner2[0].selected - 1]) || null;
+        const startOpt = (result.spinner2 && result.spinner2[1] && buildHourOptions()[result.spinner2[1].selected - 1]) || null;
+        if (!durationOpt) {
+          main.toast('Please select a valid duration.', 'error');
           return;
         }
-        const [slotStart, slotEnd] = slotOpt.value.split('-');
-        const startTime = slotStart;
-        const endTime = slotEnd;
-        const selectedDuration = 1;
+        if (!startOpt) {
+          main.toast('Please select a valid start time.', 'error');
+          return;
+        }
+        const selectedDuration = durationOpt.value;
+        const startTime = startOpt.value;
+        const startParts = startTime.split(':').map((n) => parseInt(n, 10));
+        const endTotal = startParts[0] * 60 + startParts[1] + selectedDuration * 60;
+        const endH = String(Math.floor(endTotal / 60)).padStart(2, '0');
+        const endM = String(endTotal % 60).padStart(2, '0');
+        const endTime = `${endH}:${endM}`;
 
         try {
           const start = new Date(`1970-01-01T${startTime}:00`);
@@ -745,12 +769,12 @@ async function sectionTwoMainBtnFunction() {
             throw new Error('Reservation cannot start before 9:00 AM');
           }
 
-          // Enforce hard cutoff at 11:59 PM regardless of UI listeners
+          // Enforce hard cutoff at 12:00 AM (midnight)
           {
             const [sh, sm] = startTime.split(':').map((n) => parseInt(n, 10));
             const computedEndTotalMinutes = sh * 60 + sm + selectedDuration * 60;
-            if (computedEndTotalMinutes > 23 * 60 + 59) {
-              throw new Error('The reservation must finish before midnight.');
+            if (computedEndTotalMinutes > 24 * 60) {
+              throw new Error('The reservation must finish by 12:00 AM.');
             }
           }
 
@@ -1364,9 +1388,7 @@ function rescheduleReservation(reservation) {
     }
   } catch (e) {}
 
-  const fixedDuration = 1;
-
-  const buildTimeSlotOptions = () => {
+  const buildHourOptions = () => {
     const to12 = (hour24) => {
       const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
       const ap = hour24 >= 12 ? 'PM' : 'AM';
@@ -1375,8 +1397,7 @@ function rescheduleReservation(reservation) {
     const opts = [];
     for (let h = 9; h <= 22; h++) {
       const startH = String(h).padStart(2, '0');
-      const endH = String(h + 1).padStart(2, '0');
-      opts.push({ value: `${startH}:00-${endH}:00`, label: `${to12(h)} - ${to12(h + 1)}` });
+      opts.push({ value: `${startH}:00`, label: `${to12(h)}` });
     }
     return opts;
   };
@@ -1392,36 +1413,47 @@ function rescheduleReservation(reservation) {
     ],
     spinner: [
       {
-        label: 'Time slot',
-        placeholder: 'Select time slot',
-        selected: (() => {
-          const val = `${startTime}-${endTime}`;
-          const idx = buildTimeSlotOptions().findIndex((o) => o.value === val);
-          return idx >= 0 ? idx + 1 : 0;
-        })(),
+        label: 'Duration',
+        placeholder: 'Select duration',
+        selected: 0,
         required: true,
-        options: buildTimeSlotOptions(),
+        options: DURATION_OPTIONS.map((d) => ({ value: String(d.value), label: d.label })),
+      },
+      {
+        label: 'Start time',
+        placeholder: 'Select start time',
+        selected: 0,
+        required: true,
+        options: buildHourOptions(),
       },
     ],
     short2: [
-      { placeholder: 'Amount to pay', value: main.encodePrice(calculateDynamicPrice(fixedDuration, startTime)), locked: true },
+      { placeholder: 'Amount to pay', value: main.encodePrice(calculateDynamicPrice(1, startTime)), locked: true },
     ],
     footer: { main: `Confirm ${getEmoji('📆')}` },
   };
 
-  // No need to precompute End time since slot is fixed
-
   main.openModal('blue', inputs, async (result) => {
     const newDate = result.short[1].value;
-    const slotOpt = (result.spinner && result.spinner[0] && buildTimeSlotOptions()[result.spinner[0].selected - 1]) || null;
-    if (!slotOpt) {
-      main.toast('Please select a valid time slot.', 'error');
+    const durOpt = (result.spinner && result.spinner[0] && DURATION_OPTIONS[result.spinner[0].selected - 1]) || null;
+    const startOpt = (result.spinner && result.spinner[1] && buildHourOptions()[result.spinner[1].selected - 1]) || null;
+    if (!durOpt) {
+      main.toast('Please select a valid duration.', 'error');
       return;
     }
-    const [newStart, newEnd] = slotOpt.value.split('-');
-    const selectedDuration = fixedDuration;
+    if (!startOpt) {
+      main.toast('Please select a valid start time.', 'error');
+      return;
+    }
+    const selectedDuration = durOpt.value;
+    const newStart = startOpt.value;
 
-    // Precompute new dynamic price total and the difference from existing amount
+    const [sh, sm] = newStart.split(':').map((n) => parseInt(n, 10));
+    const endTotal = sh * 60 + sm + selectedDuration * 60;
+    const eh = String(Math.floor(endTotal / 60)).padStart(2, '0');
+    const em = String(endTotal % 60).padStart(2, '0');
+    const newEnd = `${eh}:${em}`;
+
     let newTotalAmount = 0;
     let additionalDue = 0;
     try {
@@ -1439,10 +1471,16 @@ function rescheduleReservation(reservation) {
       if (e <= s) throw new Error('End time must be after start time');
 
       const diffHours = (e - s) / (1000 * 60 * 60);
-      if (diffHours !== 1) throw new Error('Reservation must be exactly 1 hour.');
+      if (diffHours < 1) throw new Error('Reservation must be at least 1 hour');
+      if (diffHours > 7) throw new Error('Reservation cannot exceed 7 hours');
+      if (Math.abs(diffHours - selectedDuration) > 0.1) {
+        throw new Error(`Duration must match selected duration of ${selectedDuration} hour${selectedDuration > 1 ? 's' : ''}`);
+      }
 
       const startHour = s.getHours();
       if (startHour < 9) throw new Error('Reservation cannot start before 9:00 AM');
+
+      if (endTotal > 23 * 60 + 59) throw new Error('The reservation must finish before midnight.');
 
       const todayFormatted = main.encodeDate(new Date(), '2-digit');
       if (newDate === todayFormatted && isTimeInPast(newDate, newStart)) {
@@ -1450,7 +1488,6 @@ function rescheduleReservation(reservation) {
       }
 
       const others = existingReservations.filter((r) => r.id !== id);
-
       const conflictExists = (() => {
         const [m, d, y] = newDate.split('-').map(Number);
         const [nsh, nsm] = newStart.split(':').map(Number);
@@ -1464,7 +1501,8 @@ function rescheduleReservation(reservation) {
           const [eeh, eem] = res.endTime.split(':').map(Number);
           const eStart = new Date(y, m - 1, d, esh, esm, 0, 0);
           const eEnd = new Date(y, m - 1, d, eeh, eem, 0, 0);
-          return nStart <= eEnd && nEnd >= eStart;
+          // Allow adjacency between reservations
+          return nStart < eEnd && nEnd > eStart;
         });
       })();
       if (conflictExists) throw new Error('Selected time is already booked.');
@@ -1474,13 +1512,10 @@ function rescheduleReservation(reservation) {
     }
 
     main.openConfirmationModal(
-      `Reschedule for<br><p class="text-lg">${fullName}</p>to ${main.decodeDate(newDate)}<br>from ${main.decodeTime(
-        newStart
-      )} to ${main.decodeTime(newEnd)}${additionalDue > 0 ? `<br><br>New total: ${main.encodePrice(newTotalAmount)}<br>Additional to pay: ${main.encodePrice(additionalDue)}` : ''}`,
+      `Reschedule for<br><p class="text-lg">${fullName}</p>to ${main.decodeDate(newDate)}<br>from ${main.decodeTime(newStart)} to ${main.decodeTime(newEnd)}${additionalDue > 0 ? `<br><br>New total: ${main.encodePrice(newTotalAmount)}<br>Additional to pay: ${main.encodePrice(additionalDue)}` : ''}`,
       async () => {
         try {
           if (additionalDue > 0) {
-            // Create a pending payment, then mark reservation with pending reschedule fields and tid once we have it
             let imageSrc = '';
             try {
               await new Promise((resolve) => {
@@ -1517,13 +1552,7 @@ function rescheduleReservation(reservation) {
               'success'
             );
           } else {
-            // No additional due; apply immediately
-            await updateReservationFE(id, {
-              date: newDate,
-              startTime: newStart,
-              endTime: newEnd,
-              amount: newTotalAmount,
-            });
+            await updateReservationFE(id, { date: newDate, startTime: newStart, endTime: newEnd, amount: newTotalAmount });
             main.toast('Reservation rescheduled successfully!', 'success');
           }
           main.closeConfirmationModal();

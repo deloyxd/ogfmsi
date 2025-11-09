@@ -550,7 +550,7 @@ function mount() {
   if (bookingForm) {
     const startInput = document.getElementById('startTime');
     const endInput = document.getElementById('endTime');
-    const timeSlotSelect = document.getElementById('timeSlot') || document.querySelector('select[name="timeSlot"]');
+    const durationSelect = document.getElementById('duration');
     const timeError = document.getElementById('timeError');
 
     const toMinutes = (val) => {
@@ -571,35 +571,45 @@ function mount() {
       }
     };
 
-    startInput?.addEventListener('change', () => {
-      if (!endInput || !startInput.value) return;
-      clearError();
-    });
-
-    endInput?.addEventListener('change', clearError);
-    timeSlotSelect?.addEventListener('change', () => {
-      clearError();
+    const computeAndSetEndTime = () => {
       try {
-        const val = String(timeSlotSelect.value || '');
-        const [s, e] = val.split('-');
-        const amount = calculateDynamicPrice(s, 1);
-        updatePriceDisplay(amount);
-      } catch (e) {}
-    });
+        clearError();
+        if (!startInput || !endInput || !durationSelect) return;
+        const startVal = startInput.value;
+        const dur = parseInt(durationSelect.value || '0', 10);
+        if (!/^\d{2}:\d{2}$/.test(startVal) || !Number.isFinite(dur) || dur < 1) {
+          endInput.value = '';
+          return;
+        }
+        const [sh, sm] = startVal.split(':').map((n) => parseInt(n, 10));
+        const totalStart = sh * 60 + sm;
+        const endTotal = totalStart + dur * 60;
+        // must finish no later than midnight (24:00)
+        if (endTotal > 24 * 60) {
+          endInput.value = '';
+          showError('Selected duration exceeds operating hours.');
+          return;
+        }
+        if (endTotal === 24 * 60) {
+          endInput.value = `00:00`;
+        } else {
+          const eh = String(Math.floor(endTotal / 60)).padStart(2, '0');
+          const em = String(endTotal % 60).padStart(2, '0');
+          endInput.value = `${eh}:${em}`;
+        }
+        // Update price by selected duration
+        updatePriceDisplay(calculateDynamicPrice(startVal, dur));
+      } catch (_) {}
+    };
+
+    startInput?.addEventListener('change', computeAndSetEndTime);
+    durationSelect?.addEventListener('change', computeAndSetEndTime);
+    endInput?.addEventListener('change', clearError);
 
     bookingForm.addEventListener('submit', async (e) => {
-      // Prefer the new fixed 1-hour time slot selector if present
-      let slotStart = '';
-      let slotEnd = '';
-      if (timeSlotSelect && timeSlotSelect.value) {
-        const parts = String(timeSlotSelect.value).split('-');
-        if (parts.length === 2) {
-          slotStart = parts[0];
-          slotEnd = parts[1];
-        }
-      }
-      const startVal = slotStart || startInput?.value || '';
-      const endVal = slotEnd || endInput?.value || '';
+      const startVal = startInput?.value || '';
+      let endVal = endInput?.value || '';
+      const durSel = parseInt(durationSelect?.value || '0', 10);
 
       const showError = (msg) => {
         if (timeError) {
@@ -612,7 +622,7 @@ function mount() {
       };
 
       const WORK_START = toMinutes('09:00'); // 9:00 AM
-      const WORK_END = toMinutes('23:59'); // 11:59 PM
+      const WORK_END = 24 * 60; // 12:00 AM (midnight)
 
       if (startVal && endVal) {
         const startMins = toMinutes(startVal);
@@ -620,14 +630,14 @@ function mount() {
 
         if (startMins < WORK_START || startMins > WORK_END) {
           e.preventDefault();
-          showError('Start time is outside our operating hours (9:00 AM - 11:59 PM). Please choose a start time within this range.');
+          showError('Start time is outside our operating hours (9:00 AM - 12:00 AM). Please choose a start time within this range.');
           startInput?.focus();
           return;
         }
 
         if (endMins < WORK_START || endMins > WORK_END) {
           e.preventDefault();
-          showError('Start time is outside our operating hours (9:00 AM - 11:59 PM). Please choose a start time within this range.');
+          showError('Start time is outside our operating hours (9:00 AM - 12:00 AM). Please choose a start time within this range.');
           endInput?.focus();
           return;
         }
@@ -665,8 +675,24 @@ function mount() {
       // Facility hours constraints and duration
       const startMins = toMinutes(startVal || '00:00');
       const endMins = toMinutes(endVal || '00:00');
-      // Fixed 1-hour slots
-      const durationHours = 1;
+      const durationHours = Number.isFinite(durSel) && durSel >= 1 ? durSel : 1;
+
+      // If end time is empty, compute it now
+      if (!endVal && /^\d{2}:\d{2}$/.test(startVal)) {
+        const endTotal = startMins + durationHours * 60;
+        if (endTotal > WORK_END) {
+          e.preventDefault();
+          showError('Selected duration exceeds operating hours.');
+          return;
+        }
+        if (endTotal === WORK_END) {
+          endVal = '00:00';
+        } else {
+          const eh = String(Math.floor(endTotal / 60)).padStart(2, '0');
+          const em = String(endTotal % 60).padStart(2, '0');
+          endVal = `${eh}:${em}`;
+        }
+      }
 
       // Helper: validate that (End - Start) strictly equals 1 hour (in minutes)
       // Returns: { valid: boolean, message: string }
@@ -757,16 +783,17 @@ function mount() {
         showError('Reservation cannot start before 09:00 AM.');
         return;
       }
-      if (endMins > 23 * 60 + 59) {
+      // endMins may be 0 when end is exactly midnight (00:00); rely on computed endTotal above
+      if (startMins + durationHours * 60 > WORK_END) {
         e.preventDefault();
-        showError('Reservation cannot end after 11:59 PM.');
+        showError('Reservation cannot end after 12:00 AM.');
         return;
       }
-      // Duration is fixed to 1 hour
+      // Duration is user-selected (1-7 hours)
 
       // Enforce that (End - Start) equals selected duration exactly
       {
-        const durationCheck = validateDuration(startVal, endVal, '1 hour');
+        const durationCheck = validateDuration(startVal, endVal, String(durationHours));
         if (!durationCheck.valid) {
           e.preventDefault();
           showError(durationCheck.message);
@@ -818,7 +845,7 @@ function mount() {
         reservationType = labelText || serviceChecked.value || 'basketball';
       }
 
-      const amount = calculateDynamicPrice(startVal, 1);
+      const amount = calculateDynamicPrice(startVal, durationHours);
 
       const reservation = {
         id,
