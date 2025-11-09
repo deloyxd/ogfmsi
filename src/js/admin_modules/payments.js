@@ -2743,12 +2743,15 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
     const confirmationHtml = `
       <div style="text-align:left; padding:20px 0">
-        <div style="background:#ffffff; color:#111; border:2px solid #000; padding:20px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
+        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:20px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
           ${headerHtml}
           <div style="padding:16px 0;">
             ${rowsHtml}
           </div>
           ${footerHtml}
+        </div>
+        <div style="max-width:600px; margin:8px auto 0; display:flex; justify-content:center;">
+          <button id="receiptPrintBtn" style="background:#111; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer">Print receipt</button>
         </div>
       </div>
     `;
@@ -2758,6 +2761,50 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         continueProcessPayment();
       });
     });
+
+    // Wire up print action for the receipt
+    setTimeout(() => {
+      try {
+        const btn = document.getElementById('receiptPrintBtn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            try {
+              const docHtml = `
+                <html>
+                  <head>
+                    <meta charset="utf-8" />
+                    <title>Receipt ${id}</title>
+                    <style>
+                      html, body { font-family: 'Courier New', Courier, monospace; color: #111; margin: 0; }
+                      .wrap { padding: 24px; }
+                      .card { border: 2px solid #000; padding: 20px 32px; max-width: 720px; margin: 0 auto; }
+                      @media print { .card { box-shadow: none; } }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="wrap">
+                      <div class="card">
+                        ${headerHtml}
+                        <div style="padding:16px 0;">
+                          ${rowsHtml}
+                        </div>
+                        ${footerHtml}
+                      </div>
+                    </div>
+                  </body>
+                </html>`;
+              const w = window.open('', '_blank', 'width=900,height=650');
+              if (!w) return;
+              w.document.open();
+              w.document.write(docHtml);
+              w.document.close();
+              w.focus();
+              setTimeout(() => { try { w.print(); } catch (_) {} }, 300);
+            } catch (_) {}
+          });
+        }
+      } catch (_) {}
+    }, 0);
   });
 
   setTimeout(() => {
