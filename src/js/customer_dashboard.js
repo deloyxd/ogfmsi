@@ -168,12 +168,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const openNotifMobile = document.getElementById('openNotifMobile');
 
   // Close animation: slide to right
-  closeNotif.addEventListener('click', () => {
+  closeNotif?.addEventListener('click', () => {
     notifPanel.classList.add('translate-x-full');
   });
 
   // Open animation: slide back in
-  openNotif.addEventListener('click', () => {
+  openNotif?.addEventListener('click', () => {
     if (!notifPanel.classList.contains('translate-x-full')) {
       closeNotif.dispatchEvent(new Event('click'));
       return;
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Open animation: slide back in
-  openNotifMobile.addEventListener('click', () => {
+  openNotifMobile?.addEventListener('click', () => {
     if (!notifPanel.classList.contains('translate-x-full')) {
       closeNotif.dispatchEvent(new Event('click'));
       return;
@@ -424,72 +424,79 @@ document.addEventListener('DOMContentLoaded', function () {
   const openMessageMobile = document.getElementById('openMessageMobile');
   const storeHours = document.getElementById('storeHours');
 
-  const operatingHoursText = storeHours.textContent.trim();
-  const [openingTimeStr, closingTimeStr] = operatingHoursText.split(' - ');
-  const convertTo24Hour = (timeStr) => {
-    const [time, modifier] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
+  if (storeHours) {
+    const operatingHoursText = storeHours.textContent.trim();
+    const [openingTimeStr, closingTimeStr] = operatingHoursText.split(' - ');
+    const convertTo24Hour = (timeStr) => {
+      const [time, modifier] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':').map(Number);
 
-    if (modifier === 'PM' && hours !== 12) {
-      hours += 12;
-    } else if (modifier === 'AM' && hours === 12) {
-      hours = 0;
+      if (modifier === 'PM' && hours !== 12) {
+        hours += 12;
+      } else if (modifier === 'AM' && hours === 12) {
+        hours = 0;
+      }
+
+      return hours;
+    };
+
+    const openingTime = convertTo24Hour(openingTimeStr);
+    const closingTime = convertTo24Hour(closingTimeStr);
+
+    const currentDate = new Date();
+    const currentHour = currentDate.getHours();
+
+    // Check if the store is open
+    const isOpen = currentHour >= openingTime && currentHour < closingTime;
+
+    if (!isOpen) {
+      if (openMessage) {
+        openMessage.innerHTML = `
+          <div class="text-center">
+            <div class="flex items-center justify-center space-x-2">
+              <span class="font-bold text-orange-300">🏦</span>
+              <span class="text-sm font-medium">Facility Closed</span>
+            </div>
+            <div class="mt-1 text-xs text-orange-200">Come back during our operating hours</div>
+          </div>
+        `;
+      }
+      if (openMessageMobile) {
+        openMessageMobile.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="font-bold text-orange-300">🏦</span>
+              <span class="text-sm font-medium">Facility Closed</span>
+            </div>
+            <span class="text-xs text-orange-200">Come back during our operating hours</span>
+          </div>
+        `;
+      }
     }
-
-    return hours;
-  };
-
-  const openingTime = convertTo24Hour(openingTimeStr);
-  const closingTime = convertTo24Hour(closingTimeStr);
-
-  const currentDate = new Date();
-  const currentHour = currentDate.getHours();
-
-  // Check if the store is open
-  const isOpen = currentHour >= openingTime && currentHour < closingTime;
-
-  if (!isOpen) {
-    openMessage.innerHTML = `
-      <div class="text-center">
-        <div class="flex items-center justify-center space-x-2">
-          <span class="font-bold text-orange-300">🏦</span>
-          <span class="text-sm font-medium">Facility Closed</span>
-        </div>
-        <div class="mt-1 text-xs text-orange-200">Come back during our operating hours</div>
-      </div>
-    `;
-    openMessageMobile.innerHTML = `
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <span class="font-bold text-orange-300">🏦</span>
-          <span class="text-sm font-medium">Facility Closed</span>
-        </div>
-        <span class="text-xs text-orange-200">Come back during our operating hours</span>
-      </div>
-    `;
   }
+
   const startTimeInput = document.getElementById('startTime');
   const durationSelect = document.getElementById('duration');
   const endTimeInput = document.getElementById('endTime');
 
-  function updateEndTime() {
-    const startTimeValue = startTimeInput.value;
-    const durationValue = durationSelect.value;
-    if (!startTimeValue || !durationValue) {
-      return;
-    }
-    const [hours, minutes] = startTimeValue.split(':').map(Number);
-    const startDate = new Date();
-    startDate.setHours(hours, minutes, 0, 0);
-    const durationHours = parseInt(durationValue);
-    startDate.setHours(startDate.getHours() + durationHours);
-    const endHours = startDate.getHours().toString().padStart(2, '0');
-    const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
-    endTimeInput.value = `${endHours}:${endMinutes}`;
-  }
+  if (startTimeInput && durationSelect && endTimeInput) {
+    const updateEndTime = () => {
+      const startTimeValue = startTimeInput.value;
+      const durationValue = durationSelect.value;
+      if (!startTimeValue || !durationValue) return;
+      const [hours, minutes] = startTimeValue.split(':').map(Number);
+      const startDate = new Date();
+      startDate.setHours(hours, minutes, 0, 0);
+      const durationHours = parseInt(durationValue);
+      startDate.setHours(startDate.getHours() + durationHours);
+      const endHours = startDate.getHours().toString().padStart(2, '0');
+      const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
+      endTimeInput.value = `${endHours}:${endMinutes}`;
+    };
 
-  startTimeInput.addEventListener('change', updateEndTime);
-  durationSelect.addEventListener('change', updateEndTime);
+    startTimeInput.addEventListener('change', updateEndTime);
+    durationSelect.addEventListener('change', updateEndTime);
+  }
 
   // Load notifications on dashboard init
   loadCustomerNotifications();
