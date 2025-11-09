@@ -2611,19 +2611,153 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       });
     }
 
-    if (isOnlineTransaction) {
-      main.openConfirmationModal(
-        'Confirming<br><br>• Reference number is valid' +
-          (isOnlineTransaction && !isOnlineFacility && isStudent ? '<br>• Images provided are valid' : ''),
-        () => {
-          main.closeConfirmationModal(() => {
-            continueProcessPayment();
+    // Build a universal confirmation summary (receipt-like)
+    const amountPaidNum = Number(cashVal) + Number(cashlessVal);
+    const showRef = paymentMethod.includes('cashless') || paymentMethod.includes('hybrid') || isOnlineTransaction;
+    const hasCash = Number(cashVal) > 0;
+    const hasCashless = Number(cashlessVal) > 0;
+
+    // Format purpose and build a 3-column items table when it is a Purchasing list
+    let displayPurpose = main.fixText(purpose);
+    let itemsTableHtml = '';
+    try {
+      if (/^Purchasing\s/i.test(displayPurpose)) {
+        const itemsText = displayPurpose.replace(/^Purchasing\s*/i, '');
+        let parsed = [];
+        // Primary: robust regex to capture each item even when names contain commas
+        // Pattern: "<qty>x <name> ₱<amount>"; name is non-greedy up to the amount
+        const itemRe = /(\d+)x\s+(.+?)\s+₱([\d,]+(?:\.\d{2})?)/g;
+        let mm;
+        while ((mm = itemRe.exec(itemsText)) !== null) {
+          let qty = Number(mm[1]);
+          let name = mm[2].trim();
+          let amount = `₱${mm[3]}`;
+          name = name
+            .replace(/\b\d+(?:\.\d+)?\s*(?:ml|mL|l|L|g|kg|KG|Lb|LB|lb|lbs|LBS|oz|OZ)\b/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+          parsed.push({ name, qty, amount });
+        }
+        // Fallback: split on commas that are NOT thousand separators (i.e., not followed by exactly 3 digits)
+        if (parsed.length === 0) {
+          const rawItems = itemsText.split(/,(?!\d{3})\s*/).filter(Boolean);
+          parsed = rawItems.map((raw) => {
+            const str = raw.trim();
+            const pesoIdx = str.lastIndexOf('₱');
+            let amount = '';
+            let nameAndQty = str;
+            if (pesoIdx >= 0) {
+              amount = str.slice(pesoIdx).trim();
+              nameAndQty = str.slice(0, pesoIdx).trim();
+            }
+            const qtyMatch = nameAndQty.match(/^(\d+)x\s+(.+)$/i);
+            let qty = 1;
+            let name = nameAndQty;
+            if (qtyMatch) {
+              qty = Number(qtyMatch[1]);
+              name = qtyMatch[2].trim();
+            }
+            name = name
+              .replace(/\b\d+(?:\.\d+)?\s*(?:ml|mL|l|L|g|kg|KG|Lb|LB|lb|lbs|LBS|oz|OZ)\b/g, '')
+              .replace(/\s{2,}/g, ' ')
+              .trim();
+            return { name, qty, amount };
           });
         }
-      );
-    } else {
-      continueProcessPayment();
+
+        // Build table-like HTML
+        const header = `
+          <div style="display:flex; padding:6px 0; border-bottom:1px solid #000; font-weight:700; font-size:13px;">
+            <div style="flex:1; text-align:left;">Item</div>
+            <div style="width:80px; text-align:center;">Qty</div>
+            <div style="width:120px; text-align:right; white-space:nowrap;">Amount</div>
+          </div>`;
+        const rows = parsed
+          .map((it) => `
+            <div style="display:flex; padding:6px 0; font-size:13px;">
+              <div style="flex:1; text-align:left; word-break:break-word; padding-right:8px;">${it.name}</div>
+              <div style="width:80px; text-align:center;">${it.qty}</div>
+              <div style="width:120px; text-align:right; font-family:'Courier New',Courier,monospace; white-space:nowrap;">${it.amount}</div>
+            </div>`)
+          .join('');
+        itemsTableHtml = `<div style="margin:8px 0; width:100%;">${header}${rows}</div>`;
+
+        // Set concise purpose label only
+        displayPurpose = 'Purchasing';
+      }
+    } catch (_) {}
+
+    const receiptRows = [
+      { k: 'Transaction ID', v: id },
+      { k: 'Purpose', v: displayPurpose, ml: false },
+    ];
+
+    // Insert items table as a full-width row after Purpose
+    let rowsHtml = receiptRows
+      .map((r) => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0;">
+          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+          <div style="text-align:right; color:#111; ${r.mono ? 'font-family: \'Courier New\', Courier, monospace;' : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`)
+      .join('');
+
+    // Add items table if present
+    if (itemsTableHtml) {
+      rowsHtml += itemsTableHtml;
     }
+
+    // Add remaining rows
+    const remainingRows = [
+      { k: 'Amount to pay', v: main.formatPrice(amountToPay), mono: true, b: true },
+      { k: 'Amount tendered', v: main.formatPrice(amountPaidNum), mono: true, b: true },
+      ...(hasCash ? [{ k: '— Cash', v: main.formatPrice(cashVal), mono: true }] : []),
+      ...(hasCashless ? [{ k: '— Cashless', v: main.formatPrice(cashlessVal), mono: true }] : []),
+      { k: 'Change amount', v: main.formatPrice(main.decodePrice(change)), mono: true, b: true },
+      { k: 'Price rate', v: main.fixText(priceRate) },
+      { k: 'Payment method', v: main.fixText(paymentMethod) },
+      ...(showRef ? [{ k: 'Reference', v: refNum ? main.fixText(refNum) : 'N/A' }] : []),
+    ];
+
+    rowsHtml += remainingRows
+      .map((r) => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0;">
+          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+          <div style="text-align:right; color:#111; ${r.mono ? 'font-family: \'Courier New\', Courier, monospace;' : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`)
+      .join('');
+
+    const nowInfo = main.getDateOrTimeOrBoth();
+    const headerHtml = `
+      <div style="text-align:center; padding-bottom:16px; border-bottom:2px dashed #000;">
+        <div style="font-size:18px; font-weight:700; margin-bottom:2px;">FITWORX GYM</div>
+        <div style="font-size:12px; font-weight:600; color:#111; margin-bottom:4px;">Payment Reciept</div>
+        <div style="font-size:11px; color:#6b7280;">${nowInfo.date}</div>
+        <div style="font-size:11px; color:#6b7280;">${nowInfo.time}</div>
+      </div>`;
+
+    const footerHtml = `
+      <div style="text-align:center; padding-top:16px; border-top:2px dashed #000; margin-top:12px;">
+        <div style="font-size:11px; color:#6b7280;">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
+        <div style="font-size:10px; color:#9ca3af; margin-top:4px;">Please keep this receipt for your records</div>
+      </div>`;
+
+    const confirmationHtml = `
+      <div style="text-align:left; padding:20px 0">
+        <div style="background:#ffffff; color:#111; border:2px solid #000; padding:20px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
+          ${headerHtml}
+          <div style="padding:16px 0;">
+            ${rowsHtml}
+          </div>
+          ${footerHtml}
+        </div>
+      </div>
+    `;
+
+    main.openConfirmationModal(confirmationHtml, () => {
+      main.closeConfirmationModal(() => {
+        continueProcessPayment();
+      });
+    });
   });
 
   setTimeout(() => {
