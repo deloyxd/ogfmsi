@@ -868,6 +868,80 @@ function openConsolidateTransactionsModal() {
   }, 200);
   if (startInput) startInput.addEventListener('input', onRangeChange);
   if (endInput) endInput.addEventListener('input', onRangeChange);
+
+  // Inject category filter controls above the grid
+  const gridEl = document.getElementById('consolidateGrid');
+  if (gridEl && !document.getElementById('consolidateCategoryFilter')) {
+    gridEl.insertAdjacentHTML(
+      'beforebegin',
+      `
+      <div id="consolidateCategoryFilter" class="mb-3 flex items-center gap-2">
+        <span class="text-sm font-medium text-gray-700">Category</span>
+        <div class="inline-flex rounded-md border border-gray-300 overflow-hidden">
+          <button type="button" id="consolidateCatAll" data-cat="all" class="px-3 py-1 text-sm bg-emerald-600 text-white">All</button>
+          <button type="button" id="consolidateCatService" data-cat="service" class="px-3 py-1 text-sm bg-white text-gray-700 hover:bg-gray-50">Service</button>
+          <button type="button" id="consolidateCatSales" data-cat="sales" class="px-3 py-1 text-sm bg-white text-gray-700 hover:bg-gray-50">Sales</button>
+        </div>
+      </div>`
+    );
+
+    const btnAll = document.getElementById('consolidateCatAll');
+    const btnService = document.getElementById('consolidateCatService');
+    const btnSales = document.getElementById('consolidateCatSales');
+    const setButtonStyles = () => {
+      const active = consolidateActiveCategory;
+      btnAll.className = 'px-3 py-1 text-sm ' + (active === 'all' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
+      btnService.className = 'px-3 py-1 text-sm ' + (active === 'service' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
+      btnSales.className = 'px-3 py-1 text-sm ' + (active === 'sales' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
+    };
+    const setCategory = (cat) => {
+      if (cat !== 'service' && cat !== 'sales' && cat !== 'all') return;
+      consolidateActiveCategory = cat;
+      // Rebuild selection to match chosen mode and current visible items WITHIN date range
+      const inRange = (tx) => {
+        const start = consolidateRange.start;
+        const end = consolidateRange.end;
+        if (!start && !end) return true;
+        const d = new Date(tx.created_at);
+        const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        if (start && end) {
+          const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+          const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+          return t.getTime() >= s.getTime() && t.getTime() <= e.getTime();
+        }
+        if (start) {
+          const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+          return t.getTime() >= s.getTime();
+        }
+        if (end) {
+          const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+          return t.getTime() <= e.getTime();
+        }
+        return true;
+      };
+      const serviceList = (Array.isArray(consolidatedServiceData) ? consolidatedServiceData : []).filter(inRange);
+      const salesList = (Array.isArray(consolidatedSalesData) ? consolidatedSalesData : []).filter(inRange);
+      const serviceKeys = new Set(serviceList.map((tx) => `service:${tx.payment_id}`));
+      const salesKeys = new Set(salesList.map((tx) => `sales:${tx.payment_id}`));
+      consolidatedSelected.clear();
+      if (cat === 'service') {
+        serviceKeys.forEach((k) => consolidatedSelected.add(k));
+      } else if (cat === 'sales') {
+        salesKeys.forEach((k) => consolidatedSelected.add(k));
+      } else {
+        serviceKeys.forEach((k) => consolidatedSelected.add(k));
+        salesKeys.forEach((k) => consolidatedSelected.add(k));
+      }
+      setButtonStyles();
+      // Re-render to disable the non-active category and sync checkboxes
+      renderConsolidatedTransactions(consolidatedServiceData, consolidatedSalesData, '');
+      updateSelectedCountUI();
+    };
+    btnAll?.addEventListener('click', () => setCategory('all'));
+    btnService?.addEventListener('click', () => setCategory('service'));
+    btnSales?.addEventListener('click', () => setCategory('sales'));
+    setButtonStyles();
+  }
 }
 
 function closeConsolidateTransactionsModal() {
@@ -914,6 +988,9 @@ const consolidatedSelected = new Set();
 
 // Track if we've auto-selected all items on first render after opening
 let consolidateAutoSelectInitialized = false;
+
+// Single-active category filter: 'service' | 'sales' | 'all'
+let consolidateActiveCategory = 'all';
 
 // Track how many rows are currently rendered (to avoid rendering the whole dataset at once)
 const consolidateRenderState = { serviceShown: 0, salesShown: 0, pageSize: 50 };
@@ -1177,14 +1254,23 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       serviceListEl.innerHTML = visible.map((tx) => renderRow(tx, 'service')).join('');
     }
     if (!consolidateAutoSelectInitialized) {
-      const allowedServiceKeys = new Set(visible.map((tx) => `service:${tx.payment_id}`));
-      Array.from(consolidatedSelected).forEach((key) => {
-        if (key.startsWith('service:') && !allowedServiceKeys.has(key)) consolidatedSelected.delete(key);
-      });
-      allowedServiceKeys.forEach((k) => consolidatedSelected.add(k));
+      if (consolidateActiveCategory === 'service' || consolidateActiveCategory === 'all') {
+        const allowedServiceKeys = new Set(visible.map((tx) => `service:${tx.payment_id}`));
+        Array.from(consolidatedSelected).forEach((key) => {
+          if (key.startsWith('service:') && !allowedServiceKeys.has(key)) consolidatedSelected.delete(key);
+        });
+        allowedServiceKeys.forEach((k) => consolidatedSelected.add(k));
+      } else {
+        // Ensure service selections are cleared when not active
+        Array.from(consolidatedSelected).forEach((key) => {
+          if (key.startsWith('service:')) consolidatedSelected.delete(key);
+        });
+      }
     }
     const serviceSelectAll = document.getElementById('serviceSelectAll');
     if (serviceSelectAll) {
+      const disabled = !(consolidateActiveCategory === 'service' || consolidateActiveCategory === 'all');
+      serviceSelectAll.disabled = disabled;
       const selectedCount = visible.reduce(
         (acc, tx) => acc + (consolidatedSelected.has(`service:${tx.payment_id}`) ? 1 : 0),
         0
@@ -1192,6 +1278,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       serviceSelectAll.indeterminate = selectedCount > 0 && selectedCount < visible.length;
       serviceSelectAll.checked = visible.length > 0 && selectedCount === visible.length;
       serviceSelectAll.onchange = () => {
+        if (!(consolidateActiveCategory === 'service' || consolidateActiveCategory === 'all')) return; // ignore if not active
         const targetChecked = !!serviceSelectAll.checked;
         Array.from(serviceListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
           const cb = row.querySelector('.consolidate-check');
@@ -1208,8 +1295,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     Array.from(serviceListEl.querySelectorAll('.consolidate-check')).forEach((cb) => {
       const id = cb.dataset.id;
       const key = `service:${id}`;
+      cb.disabled = !(consolidateActiveCategory === 'service' || consolidateActiveCategory === 'all');
       cb.checked = consolidatedSelected.has(key);
       cb.addEventListener('change', () => {
+        if (!(consolidateActiveCategory === 'service' || consolidateActiveCategory === 'all')) return; // ignore when disabled
         if (cb.checked) consolidatedSelected.add(key);
         else consolidatedSelected.delete(key);
         updateSelectedCountUI();
@@ -1226,6 +1315,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     Array.from(serviceListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
       row.addEventListener('click', (e) => {
         if (e.target.closest('input[type="checkbox"]')) return;
+        if (!(consolidateActiveCategory === 'service' || consolidateActiveCategory === 'all')) return;
         const cb = row.querySelector('.consolidate-check');
         cb.checked = !cb.checked;
         cb.dispatchEvent(new Event('change'));
@@ -1246,16 +1336,25 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       salesListEl.innerHTML = visible.map((tx) => renderRow(tx, 'sales')).join('');
     }
     if (!consolidateAutoSelectInitialized) {
-      const allowedSalesKeys = new Set(visible.map((tx) => `sales:${tx.payment_id}`));
-      Array.from(consolidatedSelected).forEach((key) => {
-        if (key.startsWith('sales:') && !allowedSalesKeys.has(key)) consolidatedSelected.delete(key);
-      });
-      allowedSalesKeys.forEach((k) => consolidatedSelected.add(k));
+      if (consolidateActiveCategory === 'sales' || consolidateActiveCategory === 'all') {
+        const allowedSalesKeys = new Set(visible.map((tx) => `sales:${tx.payment_id}`));
+        Array.from(consolidatedSelected).forEach((key) => {
+          if (key.startsWith('sales:') && !allowedSalesKeys.has(key)) consolidatedSelected.delete(key);
+        });
+        allowedSalesKeys.forEach((k) => consolidatedSelected.add(k));
+      } else {
+        // Ensure sales selections are cleared when not active
+        Array.from(consolidatedSelected).forEach((key) => {
+          if (key.startsWith('sales:')) consolidatedSelected.delete(key);
+        });
+      }
       consolidateAutoSelectInitialized = true;
       updateSelectedCountUI();
     }
     const salesSelectAll = document.getElementById('salesSelectAll');
     if (salesSelectAll) {
+      const disabled = !(consolidateActiveCategory === 'sales' || consolidateActiveCategory === 'all');
+      salesSelectAll.disabled = disabled;
       const selectedCount = visible.reduce(
         (acc, tx) => acc + (consolidatedSelected.has(`sales:${tx.payment_id}`) ? 1 : 0),
         0
@@ -1263,6 +1362,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
       salesSelectAll.indeterminate = selectedCount > 0 && selectedCount < visible.length;
       salesSelectAll.checked = visible.length > 0 && selectedCount === visible.length;
       salesSelectAll.onchange = () => {
+        if (!(consolidateActiveCategory === 'sales' || consolidateActiveCategory === 'all')) return; // ignore if not active
         const targetChecked = !!salesSelectAll.checked;
         Array.from(salesListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
           const cb = row.querySelector('.consolidate-check');
@@ -1279,8 +1379,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     Array.from(salesListEl.querySelectorAll('.consolidate-check')).forEach((cb) => {
       const id = cb.dataset.id;
       const key = `sales:${id}`;
+      cb.disabled = !(consolidateActiveCategory === 'sales' || consolidateActiveCategory === 'all');
       cb.checked = consolidatedSelected.has(key);
       cb.addEventListener('change', () => {
+        if (!(consolidateActiveCategory === 'sales' || consolidateActiveCategory === 'all')) return; // ignore when disabled
         if (cb.checked) consolidatedSelected.add(key);
         else consolidatedSelected.delete(key);
         updateSelectedCountUI();
@@ -1297,6 +1399,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
     Array.from(salesListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
       row.addEventListener('click', (e) => {
         if (e.target.closest('input[type="checkbox"]')) return;
+        if (!(consolidateActiveCategory === 'sales' || consolidateActiveCategory === 'all')) return;
         const cb = row.querySelector('.consolidate-check');
         cb.checked = !cb.checked;
         cb.dispatchEvent(new Event('change'));
