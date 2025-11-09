@@ -743,7 +743,7 @@ function mainBtnFunction() {
 
 function subBtnFunction() {}
 
-// ===== Consolidate Transactions Modal =====
+ 
 function openConsolidateTransactionsModal() {
   // Build modal shell
   const modalHTML = `
@@ -842,6 +842,9 @@ function openConsolidateTransactionsModal() {
       consolidateRange.start = consolidateRange.end;
       consolidateRange.end = tmp;
     }
+
+    // Force auto-select on any date range change
+    consolidateAutoSelectInitialized = false;
 
     // Prune selections that are outside the current range
     pruneSelectionsByRange(consolidatedServiceData, consolidatedSalesData, consolidateRange);
@@ -948,7 +951,6 @@ function pruneSelectionsByRange(serviceList, salesList, range) {
     if (!toKeep.has(key)) consolidatedSelected.delete(key);
   });
   updateSelectedCountUI();
-  if (!consolidateAutoSelectInitialized) consolidateAutoSelectInitialized = true;
 }
 
 // Fetch filtered service and sales lists from backend using a query
@@ -1029,6 +1031,8 @@ async function fetchConsolidatedByQuery(query) {
     consolidatedSalesData = salesList;
     // When using search-by-date, map it into range for consistent filtering
     consolidateRange = { start: query ? new Date(query) : null, end: query ? new Date(query) : null };
+    // Force auto-select when searching by date
+    consolidateAutoSelectInitialized = false;
     pruneSelectionsByRange(consolidatedServiceData, consolidatedSalesData, consolidateRange);
     renderConsolidatedTransactions(serviceList, salesList, '');
   } catch (error) {
