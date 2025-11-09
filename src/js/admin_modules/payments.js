@@ -1170,8 +1170,7 @@ function renderConsolidatedTransactions(service, sales, query = '') {
 
   if (serviceListEl) {
     const filtered = (Array.isArray(service) ? service : []).filter(matcher);
-    const visible = filtered.slice(0, Math.max(consolidateRenderState.serviceShown || 0, 0) + consolidateRenderState.pageSize);
-    consolidateRenderState.serviceShown = visible.length;
+    const visible = filtered; // show all
     if (visible.length === 0) {
       serviceListEl.innerHTML = '<div class="text-sm text-gray-500">No service transactions found</div>';
     } else {
@@ -1232,24 +1231,15 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         cb.dispatchEvent(new Event('change'));
       });
     });
-    let moreBtn = document.getElementById('serviceLoadMoreBtn');
-    if (!moreBtn) {
-      moreBtn = document.createElement('button');
-      moreBtn.id = 'serviceLoadMoreBtn';
-      moreBtn.className = 'mt-3 w-full rounded-md border px-3 py-2 text-sm bg-white hover:bg-gray-50';
-      moreBtn.textContent = 'Load more';
-      serviceListEl.parentElement.appendChild(moreBtn);
+    const moreBtn = document.getElementById('serviceLoadMoreBtn');
+    if (moreBtn) {
+      moreBtn.style.display = 'none';
+      moreBtn.onclick = null;
     }
-    moreBtn.style.display = visible.length < filtered.length ? 'block' : 'none';
-    moreBtn.onclick = () => {
-      consolidateRenderState.serviceShown = Math.min(filtered.length, consolidateRenderState.serviceShown + consolidateRenderState.pageSize);
-      renderConsolidatedTransactions(service, sales, query);
-    };
   }
   if (salesListEl) {
     const filtered = (Array.isArray(sales) ? sales : []).filter(matcher);
-    const visible = filtered.slice(0, Math.max(consolidateRenderState.salesShown || 0, 0) + consolidateRenderState.pageSize);
-    consolidateRenderState.salesShown = visible.length;
+    const visible = filtered; // show all
     if (visible.length === 0) {
       salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
     } else {
