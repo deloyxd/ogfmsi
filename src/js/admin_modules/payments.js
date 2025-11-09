@@ -834,6 +834,9 @@ function openConsolidateTransactionsModal() {
   consolidateAutoSelectInitialized = false;
 
   // Fetch and render first 10 of each
+  // Reset paging state
+  consolidateRenderState.serviceShown = 0;
+  consolidateRenderState.salesShown = 0;
   fetchFirstFiveTransactions();
   // Wire up date range pickers
   const startInput = document.getElementById('consolidateStartDate');
@@ -853,6 +856,10 @@ function openConsolidateTransactionsModal() {
 
     // Force auto-select on any date range change
     consolidateAutoSelectInitialized = false;
+
+    // Reset paging so we only render the first page for the new range
+    consolidateRenderState.serviceShown = 0;
+    consolidateRenderState.salesShown = 0;
 
     // Prune selections that are outside the current range
     pruneSelectionsByRange(consolidatedServiceData, consolidatedSalesData, consolidateRange);
@@ -907,6 +914,9 @@ const consolidatedSelected = new Set();
 
 // Track if we've auto-selected all items on first render after opening
 let consolidateAutoSelectInitialized = false;
+
+// Track how many rows are currently rendered (to avoid rendering the whole dataset at once)
+const consolidateRenderState = { serviceShown: 0, salesShown: 0, pageSize: 50 };
 
 // Simple debounce utility
 function debounce(fn, delay) {
@@ -1160,31 +1170,28 @@ function renderConsolidatedTransactions(service, sales, query = '') {
 
   if (serviceListEl) {
     const filtered = (Array.isArray(service) ? service : []).filter(matcher);
-    if (filtered.length === 0) {
+    const visible = filtered.slice(0, Math.max(consolidateRenderState.serviceShown || 0, 0) + consolidateRenderState.pageSize);
+    consolidateRenderState.serviceShown = visible.length;
+    if (visible.length === 0) {
       serviceListEl.innerHTML = '<div class="text-sm text-gray-500">No service transactions found</div>';
     } else {
-      serviceListEl.innerHTML = filtered.map((tx) => renderRow(tx, 'service')).join('');
+      serviceListEl.innerHTML = visible.map((tx) => renderRow(tx, 'service')).join('');
     }
-    // Auto-select all service items on first render after opening
     if (!consolidateAutoSelectInitialized) {
-      const allowedServiceKeys = new Set(filtered.map((tx) => `service:${tx.payment_id}`));
-      // Prune non-visible service selections
+      const allowedServiceKeys = new Set(visible.map((tx) => `service:${tx.payment_id}`));
       Array.from(consolidatedSelected).forEach((key) => {
         if (key.startsWith('service:') && !allowedServiceKeys.has(key)) consolidatedSelected.delete(key);
       });
-      // Add all visible service items
       allowedServiceKeys.forEach((k) => consolidatedSelected.add(k));
     }
-    // Sync Select All header checkbox state (checked/indeterminate)
     const serviceSelectAll = document.getElementById('serviceSelectAll');
     if (serviceSelectAll) {
-      const selectedCount = filtered.reduce(
+      const selectedCount = visible.reduce(
         (acc, tx) => acc + (consolidatedSelected.has(`service:${tx.payment_id}`) ? 1 : 0),
         0
       );
-      serviceSelectAll.indeterminate = selectedCount > 0 && selectedCount < filtered.length;
-      serviceSelectAll.checked = filtered.length > 0 && selectedCount === filtered.length;
-      // Click to select/deselect all visible
+      serviceSelectAll.indeterminate = selectedCount > 0 && selectedCount < visible.length;
+      serviceSelectAll.checked = visible.length > 0 && selectedCount === visible.length;
       serviceSelectAll.onchange = () => {
         const targetChecked = !!serviceSelectAll.checked;
         Array.from(serviceListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
@@ -1195,7 +1202,6 @@ function renderConsolidatedTransactions(service, sales, query = '') {
           if (targetChecked) consolidatedSelected.add(key);
           else consolidatedSelected.delete(key);
         });
-        // After bulk change, clear indeterminate
         serviceSelectAll.indeterminate = false;
         updateSelectedCountUI();
       };
@@ -1208,74 +1214,64 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (cb.checked) consolidatedSelected.add(key);
         else consolidatedSelected.delete(key);
         updateSelectedCountUI();
-        // Update header checkbox state on individual change
         const serviceSelectAll = document.getElementById('serviceSelectAll');
         if (serviceSelectAll) {
-          const filtered = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
-          const total = filtered.length;
-          const selected = filtered.reduce(
-            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
-            0
-          );
+          const rows = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
+          const total = rows.length;
+          const selected = rows.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
           serviceSelectAll.indeterminate = selected > 0 && selected < total;
           serviceSelectAll.checked = total > 0 && selected === total;
         }
       });
     });
-    // Make entire row clickable to toggle selection
     Array.from(serviceListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
       row.addEventListener('click', (e) => {
-        // Ignore clicks originating from the checkbox itself to prevent double toggles
         if (e.target.closest('input[type="checkbox"]')) return;
         const cb = row.querySelector('.consolidate-check');
-        const id = row.dataset.id;
-        const key = `service:${id}`;
         cb.checked = !cb.checked;
-        if (cb.checked) consolidatedSelected.add(key);
-        else consolidatedSelected.delete(key);
-        updateSelectedCountUI();
-        // Update header checkbox state on row click
-        const serviceSelectAll = document.getElementById('serviceSelectAll');
-        if (serviceSelectAll) {
-          const filtered = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
-          const total = filtered.length;
-          const selected = filtered.reduce(
-            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
-            0
-          );
-          serviceSelectAll.indeterminate = selected > 0 && selected < total;
-          serviceSelectAll.checked = total > 0 && selected === total;
-        }
+        cb.dispatchEvent(new Event('change'));
       });
     });
+    let moreBtn = document.getElementById('serviceLoadMoreBtn');
+    if (!moreBtn) {
+      moreBtn = document.createElement('button');
+      moreBtn.id = 'serviceLoadMoreBtn';
+      moreBtn.className = 'mt-3 w-full rounded-md border px-3 py-2 text-sm bg-white hover:bg-gray-50';
+      moreBtn.textContent = 'Load more';
+      serviceListEl.parentElement.appendChild(moreBtn);
+    }
+    moreBtn.style.display = visible.length < filtered.length ? 'block' : 'none';
+    moreBtn.onclick = () => {
+      consolidateRenderState.serviceShown = Math.min(filtered.length, consolidateRenderState.serviceShown + consolidateRenderState.pageSize);
+      renderConsolidatedTransactions(service, sales, query);
+    };
   }
   if (salesListEl) {
     const filtered = (Array.isArray(sales) ? sales : []).filter(matcher);
-    if (filtered.length === 0) {
+    const visible = filtered.slice(0, Math.max(consolidateRenderState.salesShown || 0, 0) + consolidateRenderState.pageSize);
+    consolidateRenderState.salesShown = visible.length;
+    if (visible.length === 0) {
       salesListEl.innerHTML = '<div class="text-sm text-gray-500">No sales transactions found</div>';
     } else {
-      salesListEl.innerHTML = filtered.map((tx) => renderRow(tx, 'sales')).join('');
+      salesListEl.innerHTML = visible.map((tx) => renderRow(tx, 'sales')).join('');
     }
-    // Auto-select all sales items on first render after opening
     if (!consolidateAutoSelectInitialized) {
-      const allowedSalesKeys = new Set(filtered.map((tx) => `sales:${tx.payment_id}`));
-      // Prune non-visible sales selections
+      const allowedSalesKeys = new Set(visible.map((tx) => `sales:${tx.payment_id}`));
       Array.from(consolidatedSelected).forEach((key) => {
         if (key.startsWith('sales:') && !allowedSalesKeys.has(key)) consolidatedSelected.delete(key);
       });
-      // Add all visible sales items
       allowedSalesKeys.forEach((k) => consolidatedSelected.add(k));
+      consolidateAutoSelectInitialized = true;
+      updateSelectedCountUI();
     }
-    // Sync Select All header checkbox state (checked/indeterminate)
     const salesSelectAll = document.getElementById('salesSelectAll');
     if (salesSelectAll) {
-      const selectedCount = filtered.reduce(
+      const selectedCount = visible.reduce(
         (acc, tx) => acc + (consolidatedSelected.has(`sales:${tx.payment_id}`) ? 1 : 0),
         0
       );
-      salesSelectAll.indeterminate = selectedCount > 0 && selectedCount < filtered.length;
-      salesSelectAll.checked = filtered.length > 0 && selectedCount === filtered.length;
-      // Click to select/deselect all visible
+      salesSelectAll.indeterminate = selectedCount > 0 && selectedCount < visible.length;
+      salesSelectAll.checked = visible.length > 0 && selectedCount === visible.length;
       salesSelectAll.onchange = () => {
         const targetChecked = !!salesSelectAll.checked;
         Array.from(salesListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
@@ -1298,33 +1294,22 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (cb.checked) consolidatedSelected.add(key);
         else consolidatedSelected.delete(key);
         updateSelectedCountUI();
-        // Update header checkbox state on individual change
         const salesSelectAll = document.getElementById('salesSelectAll');
         if (salesSelectAll) {
-          const filtered = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
-          const total = filtered.length;
-          const selected = filtered.reduce(
-            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
-            0
-          );
+          const rows = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
+          const total = rows.length;
+          const selected = rows.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
           salesSelectAll.indeterminate = selected > 0 && selected < total;
           salesSelectAll.checked = total > 0 && selected === total;
         }
       });
     });
-    // Make entire row clickable to toggle selection
     Array.from(salesListEl.querySelectorAll('.consolidate-item')).forEach((row) => {
       row.addEventListener('click', (e) => {
         if (e.target.closest('input[type="checkbox"]')) return;
         const cb = row.querySelector('.consolidate-check');
-        const id = row.dataset.id;
-        const key = `sales:${id}`;
         cb.checked = !cb.checked;
-        if (cb.checked) consolidatedSelected.add(key);
-        else consolidatedSelected.delete(key);
-        updateSelectedCountUI();
-        // Update header checkbox state on row click
-        const salesSelectAll = document.getElementById('salesSelectAll');
+        cb.dispatchEvent(new Event('change'));
         if (salesSelectAll) {
           const filtered = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
           const total = filtered.length;
