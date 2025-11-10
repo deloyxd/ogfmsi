@@ -3231,28 +3231,31 @@ function openTransactionDetails(type, row) {
   const paymentMethod = row.dataset.paymentmethod || 'N/A';
   const dateTime = row.dataset.datetime || row.dataset.datetime_text || 'N/A';
 
+  const partyLabel = type === 'cart' ? 'Sales' : 'Customer';
+  const partyValue =
+    customerId && typeof customerId === 'string' && customerId.includes(':')
+      ? customerId.split(':')[1].split('Purchasing')[0].trim()
+      : customerId || 'N/A';
+
   const inputs = {
     header: {
       title: `Transaction Details ${getEmoji('🔏', 26)}`,
       subtitle: `Transaction ID: ${transactionId}`,
     },
-    short: [
-      {
-        placeholder: type === 'cart' ? 'Sales' : 'Customer',
-        value:
-          customerId && typeof customerId === 'string' && customerId.includes(':')
-            ? customerId.split(':')[1].split('Purchasing')[0].trim()
-            : customerId || 'N/A',
-        locked: true,
-      },
-      { placeholder: 'Purpose', value: purpose.replace(/<b>/g, '').replace(/<\/b>/g, ''), locked: true },
-      { placeholder: 'Amount to Pay', value: amountToPay, locked: true },
-      { placeholder: 'Amount Paid: Cash', value: paidCash, locked: true },
-      { placeholder: 'Amount Paid: Cashless', value: paidCashless, locked: true },
-      { placeholder: 'Change Amount', value: changeAmount, locked: true },
-      { placeholder: 'Price Rate', value: main.fixText(priceRate), locked: true },
-      { placeholder: 'Payment Method', value: main.fixText(paymentMethod), locked: true },
-    ],
+    receipt: true,
+    receiptData: {
+      dateTime,
+      transactionId,
+      partyLabel,
+      partyValue,
+      purpose: purpose.replace(/<b>/g, '').replace(/<\/b>/g, ''),
+      paymentMethod: main.fixText(paymentMethod),
+      priceRate: main.fixText(priceRate),
+      amountToPay,
+      paidCash,
+      paidCashless,
+      changeAmount,
+    },
     footer: {
       main: 'Close',
     },
