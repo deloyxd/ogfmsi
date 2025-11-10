@@ -432,8 +432,27 @@ async function addToCart(product, quantity) {
       });
       const data = await response.json();
       if (response.ok) {
-        // Re-sync with server to get real cart_id; non-blocking UX already updated
-        await loadCartFromServer();
+        // Try to update the temporary cart item's ID without reloading the entire cart
+        // This prevents the brief flicker caused by clearing and re-rendering the cart UI
+        const serverResult = data && data.result;
+        let newCartId = null;
+        if (serverResult && typeof serverResult === 'object') {
+          // Common shapes: { result: { cart_id: '...' } } or { result: { id: '...' } }
+          newCartId = serverResult.cart_id || serverResult.id || null;
+        }
+        // Edge case: some APIs return arrays
+        if (!newCartId && Array.isArray(serverResult) && serverResult.length > 0) {
+          newCartId = serverResult[0]?.cart_id || serverResult[0]?.id || null;
+        }
+
+        const tempItem = cart.find((i) => i.cart_id === tempId && i.id === product.id);
+        if (newCartId && tempItem) {
+          tempItem.cart_id = newCartId;
+          // Keep the optimistic UI; no need to re-render entire cart here
+        } else {
+          // Fallback: if we cannot infer the cart_id, perform a targeted reload
+          await loadCartFromServer();
+        }
         // main.toast(`${product.name.replace(/::\/\//g, ' ').trim()} successfully added to cart!`, 'success');
       } else {
         // Remove optimistic item on failure
