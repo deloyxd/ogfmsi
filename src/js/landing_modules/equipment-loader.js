@@ -37,7 +37,6 @@ function renderEquipmentCard(equip) {
     <div class="rounded-2xl overflow-hidden bg-white border border-orange-100 shadow hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
       <div class="relative">
         <img src="${img}" alt="${equip.equipment_name}" class="w-full h-40 object-cover cursor-pointer" onclick="window.showImageModal && window.showImageModal('${img}', '${equip.equipment_name}')" />
-        <div class="absolute right-3 top-3">${statusBadge(general)}</div>
       </div>
       <div class="p-4">
         <div class="flex items-start justify-between gap-3">
