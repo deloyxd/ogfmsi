@@ -2037,18 +2037,18 @@ function updateCustomerStats() {
     }
 
     // Active monthly customers are rows in tab 2
-    const activeMonthly = getCountFromTab(2);
+    // const activeMonthly = getCountFromTab(2);
 
     // Archived customers are rows in tab 4
-    const totalArchived = getCountFromTab(4);
+    // const totalArchived = getCountFromTab(4);
 
     // Active reservations are rows in inquiry-reservations tab 2
-    const activeReservations = (() => {
-      const emptyTextRes = document.getElementById(`inquiry-reservationsSectionOneListEmpty2`);
-      if (!emptyTextRes) return 0;
-      const items = emptyTextRes.parentElement.parentElement.children;
-      return Math.max(0, items.length - 1);
-    })();
+    // const activeReservations = (() => {
+    //   const emptyTextRes = document.getElementById(`inquiry-reservationsSectionOneListEmpty2`);
+    //   if (!emptyTextRes) return 0;
+    //   const items = emptyTextRes.parentElement.parentElement.children;
+    //   return Math.max(0, items.length - 1);
+    // })();
 
     // Update the cards based on their header labels to avoid index/order issues
     statElements.forEach((card) => {
@@ -2058,9 +2058,9 @@ function updateCustomerStats() {
       const label = header.textContent.toLowerCase();
       if (label.includes('regular')) valueEl.textContent = totalRegular;
       else if (label.includes('student')) valueEl.textContent = totalStudent;
-      else if (label.includes('monthly')) valueEl.textContent = activeMonthly;
-      else if (label.includes('reservations')) valueEl.textContent = activeReservations;
-      else if (label.includes('archived')) valueEl.textContent = totalArchived;
+      // else if (label.includes('monthly')) valueEl.textContent = activeMonthly;
+      // else if (label.includes('reservations')) valueEl.textContent = activeReservations;
+      // else if (label.includes('archived')) valueEl.textContent = totalArchived;
     });
   } catch (e) {}
 }

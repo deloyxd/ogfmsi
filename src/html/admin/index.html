@@ -63,7 +63,11 @@
       <!-- header -->
       <header id="vanta-bg" class="relative flex-shrink-0 border-b border-gray-700 p-6 text-white">
         <!-- 🔑 CLIENT -->
-        <div class="flex items-center justify-center text-xl font-bold text-black [text-shadow:-1px_-1px_0_white,1px_-1px_0_white,-1px_1px_0_white,1px_1px_0_white]">Fitworx Gym</div>
+        <div
+          class="flex items-center justify-center text-xl font-bold text-black [text-shadow:-1px_-1px_0_white,1px_-1px_0_white,-1px_1px_0_white,1px_1px_0_white]"
+        >
+          Fitworx Gym
+        </div>
         <div class="mt-3 text-sm">
           <p class="emoji flex gap-2 font-bold">
             <script>
@@ -170,7 +174,7 @@
           id="section-content"
           data-sectioncount="2"
           data-tabtitles="Active Monthly Customer Growth::Nearly expiring monthly pass"
-          data-subtitles="Monthly customer growth tracker::Customers due for monthly customer renewals"
+          data-subtitles="Monthly customer growth tracker::[count]"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="0"
           data-listemptytexts="::<p class='text-sm'>No nearly expiring monthly pass yet</p><p>Range: Two weeks notice</p>"
@@ -201,16 +205,16 @@
         ></div>
         <div
           id="section-stats"
-          data-toggles="0::0::0::0::0"
-          data-startingtexts="Total::Total::Active::Active::Total"
-          data-highlighttexts="Regular::Student::Monthly::Reservations::Archived"
-          data-endingtexts="Customers::Customers::Customers::::Customers"
+          data-toggles="0::0"
+          data-startingtexts="Total::Total"
+          data-highlighttexts="Student Rate::Regular Rate"
+          data-endingtexts="Customers::Customers"
         ></div>
         <div
           id="section-content"
           data-sectioncount="1"
           data-tabtitles="All Registered Customers::Active Monthly Customers::Past Monthly Customers::All Archived Customers"
-          data-subtitles="Manage all customers::Manage all monthly customers::View all past monthly customers::View all archived customers"
+          data-subtitles="[count]::[count]::[count]::[count]"
           data-sectiononesearchtext="Search keyword..."
           data-listemptytexts="No registered customers yet::No active monthly customers yet::No past monthly customers yet::No archived customers yet"
           data-listtitletexts="[Customer ID//Customer//Customer Type//Price Rate//Date Registered]::[Customer ID//Customer//Start Date//End Date//Days Left//Amount Paid//Price Rate//Log Date & Time]::[Customer ID//Customer//Start Date//End Date//Amount Paid//Price Rate//Log Date & Time]::[Customer ID//Customer//Log Date & Time]"
@@ -239,8 +243,8 @@
         <div
           id="section-content"
           data-sectioncount="1"
-          data-tabtitles="Non Monthly Registrants Logbook::Monthly Registrants Logbook"
-          data-subtitles="All regular customer check-ins::All monthly pass check-ins"
+          data-tabtitles="Regular Customers::Monthly Customers"
+          data-subtitles="[count]::[count]"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="0"
           data-listemptytexts="No regular customer check-ins yet::No monthly customer check-ins yet"
@@ -277,7 +281,7 @@
           id="section-content"
           data-sectioncount="2"
           data-tabtitles="Live Calendar::Live Schedules List::Past Schedules List"
-          data-subtitles="Auto updating tab::Upcoming reservations::Old reservations"
+          data-subtitles="Auto updating tab::[count]::[count]"
           data-sectiononesearchtext="Search keyword..."
           data-listemptytexts="::No upcoming schedules yet::No past schedules yet"
           data-listtitletexts="[]::[Reservation ID//Customer//Reservation Type//Schedule//Log Date & Time]::[Reservation ID//Customer//Reservation Type//Schedule//Log Date & Time]"
@@ -335,25 +339,19 @@
           data-middletext="<div id='liveDate'></div>"
           data-mainbtntext="Add Product [-🧊-]"
         ></div>
-        <div
-          id="section-stats"
-          data-toggles="0::0::0::0::0::0::0"
-          data-startingtexts="::::::::::::::::"
-          data-highlighttexts="Unique::Low Stock::Out of Stock::Best Selling::Least Selling::Super Low Stock::Disposed"
-          data-endingtexts="Products::Products::Products::Products::Products::Products::Products"
-        ></div>
+        <div id="section-stats"></div>
         <div
           id="section-content"
           data-sectioncount="1"
-          data-tabtitles="Unique Products::Low Stock Products::Out of Stock Products::Best Selling Products::Least Selling Products::Super Low Stock Products::Disposed Products"
-          data-subtitles="All stocks::About to be out of stock::Dead stocks::Fast moving stocks::Slow moving stocks::Critical stock levels::Expired or damaged products"
+          data-tabtitles="Unique Products::Low Stock Products::Critical Stock Products::Out of Stock Products::Disposed Products"
+          data-subtitles="[count]::[count]::[count]::[count]::[count]"
           data-sectiononesearchtext="Search keyword..."
-          data-listemptytexts="No unique products yet::No low stock products yet::No out of stock products yet::No fast moving stocks yet::No slow moving stocks yet::No super low stock products yet::No disposed products yet"
-          data-listtitletexts="[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]"
-          data-listdatasortby="[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]"
-          data-listitembtnids="[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]"
-          data-listitembtntexts="[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]"
-          data-listitembtncolors="[gray]::[gray]::[gray]::[gray]::[gray]::[gray]::[gray]"
+          data-listemptytexts="No unique products yet::No low stock products yet::No critical stock products yet::No out of stock products yet::No disposed products yet"
+          data-listtitletexts="[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]::[Product ID//Product Name//Price//Quantity//Status//Measurement//Measurement Unit//Category//Expiration Date//Date Added]"
+          data-listdatasortby="[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]::[name//name//number//number//name//number//name//name//date//date]"
+          data-listitembtnids="[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]::[productDetailsBtn]"
+          data-listitembtntexts="[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]::[Details [-⚙️-]]"
+          data-listitembtncolors="[gray]::[gray]::[gray]::[gray]::[gray]"
         ></div>
       </section>
 
@@ -409,7 +407,7 @@
           id="section-content"
           data-sectioncount="1"
           data-tabtitles="System Users::System Logs"
-          data-subtitles="All Users::All Logs"
+          data-subtitles="[count]::[count]"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="0"
           data-listemptytexts="No users yet::No logs yet"
@@ -441,7 +439,7 @@
           id="section-content"
           data-sectioncount="1"
           data-tabtitles="Monthly Users::All Check-ins::Supplements / Products::Reservations"
-          data-subtitles="Monthly registrants record::Logbook record::Products record::Reservations record"
+          data-subtitles="[count]::[count]::[count]::[count]"
           data-sectiononesearchtext="Search keyword..."
           data-sectiononesettings="0"
           data-listemptytexts="No monthly registrants found::No check-ins found::No products found::No reservations found"
@@ -474,7 +472,7 @@
           id="section-content"
           data-sectioncount="1"
           data-tabtitles="Equipment Maintenance Records::Disposal List::Disposed"
-          data-subtitles="Upcoming and past equipment maintenance::Items marked For Disposal::Disposed items log"
+          data-subtitles="[count]::[count]::[count]"
           data-sectiononesearchtext="Search equipment..."
           data-sectiononesettings="0"
           data-listemptytexts="No equipment maintenance records::No equipment items For Disposal::No disposed items yet"

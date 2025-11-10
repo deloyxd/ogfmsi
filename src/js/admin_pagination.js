@@ -318,7 +318,7 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
     // Create pagination container
     const paginationContainer = document.createElement('div');
     paginationContainer.id = `${sectionName}PaginationContainer${tabIndex}`;
-    paginationContainer.className = `pagination-container mt-4 flex items-center justify-between px-2 py-3 bg-gray-100 rounded-lg border border-gray-300`;
+    paginationContainer.className = `pagination-container mt-2 flex items-center justify-between px-2 py-3 bg-gray-100 rounded-lg border border-gray-300`;
     paginationContainer.innerHTML = `
     <div class="flex items-center gap-2 text-sm text-gray-600">
       <span class="font-medium">Page</span>

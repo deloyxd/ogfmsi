@@ -29,7 +29,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     searchInput.value = '';
     searchInput.dataset.tabindex = tabIndex;
     searchInput.dispatchEvent(new Event('input'));
-    
+
     // Reset pagination when switching tabs
     pagination.resetPagination(main.sharedState.sectionName, tabIndex);
 
@@ -49,6 +49,15 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
       } else {
         makeInactive(newTab);
         inactiveTabs.push(newTab);
+      }
+
+      const tabRowCount = newTab.children[1].children[0];
+      if (tabRowCount.innerText.toLowerCase().includes('items')) {
+        const tabContainer = tabRowCount.parentElement.parentElement;
+        const [sectionName, tabIndex] = tabContainer.id.split('_tab');
+        const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
+        const rowCount = emptyText.children.length - 1;
+        tabRowCount.innerText = `${rowCount} items`;
       }
     }
 

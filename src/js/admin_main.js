@@ -566,7 +566,8 @@ async function loadSectionSilently(sectionName) {
             clone.id = `${sectionName}_tab${i + 1}`;
 
             clone.children[0].innerHTML = dataset['tabtitles'][i];
-            clone.children[1].children[0].innerHTML = dataset['subtitles'][i];
+            clone.children[1].children[0].innerHTML =
+              dataset['subtitles'][i] === '[count]' ? 'counting items...' : dataset['subtitles'][i];
             if (dataset['sectiononesearchtext'] && i == 0) {
               sectionOne.parentElement.children[1].children[0].classList.remove('hidden');
               sectionOne.parentElement.children[1].children[0].children[0].placeholder =
@@ -652,7 +653,7 @@ async function loadSectionSilently(sectionName) {
               dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? screenHeight - 408 + 106 : screenHeight - 408}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? screenHeight - 345 + 88 : screenHeight - 345}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
@@ -705,17 +706,17 @@ async function loadSectionSilently(sectionName) {
             sectionOne.appendChild(clone);
 
             if (statsDisabled) {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 378 + 132}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 378 + 132}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 312 + 112}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 312 + 112}px]`);
             } else {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 358}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 358}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 292}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 292}px]`);
             }
           }
         }
 
         function setupSectionTwo() {
-          let totalSectionTwoListContainerHeight = screenHeight - 374;
+          let totalSectionTwoListContainerHeight = screenHeight - 308;
           if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].innerHTML = dataset['sectiontwotitletexts'][0];
@@ -826,7 +827,7 @@ async function loadSectionSilently(sectionName) {
 
           if (statsDisabled && sectionTwo.children[0].children[1].children[0]) {
             sectionTwo.children[0].children[1].children[0].classList.add(
-              `h-[${totalSectionTwoListContainerHeight + 112}px]`
+              `h-[${totalSectionTwoListContainerHeight + 92}px]`
             );
           }
         }
@@ -844,7 +845,7 @@ async function loadSectionSilently(sectionName) {
                 customContentSectionTwo.remove();
                 sectionTwo.children[0].children[1].children[0].appendChild(sectionTwoContent);
                 if (statsDisabled) {
-                  sectionTwoContent.classList.add(`h-[${screenHeight - 328 + 132}px]`);
+                  sectionTwoContent.classList.add(`h-[${screenHeight - 262 + 132}px]`);
                 }
               }
               const customContentSectionOne = tempCustomContent.querySelector('[data-sectionindex="1"]');
@@ -855,9 +856,9 @@ async function loadSectionSilently(sectionName) {
                   const customContent = tempCustomContent.querySelector(`[data-tabindex="${i}"]`).cloneNode(true);
                   sectionOneContent.appendChild(customContent);
                   if (statsDisabled) {
-                    customContent.className = `h-[${screenHeight - 314 + 132}px]`;
+                    customContent.className = `h-[${screenHeight - 348 + 132}px]`;
                   } else {
-                    customContent.className = `h-[${screenHeight - 510 + 132}px]`;
+                    customContent.className = `h-[${screenHeight - 444 + 132}px]`;
                   }
                 }
                 const removeSectionTwo = sectionOneContent.querySelector('[data-sectionindex="2"]');

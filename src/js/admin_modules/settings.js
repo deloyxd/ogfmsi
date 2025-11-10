@@ -158,7 +158,7 @@ function handleSavePreferences() {
     .filter((cb) => !cb.checked)
     .map((cb) => cb.dataset.key)
     .filter((key) => key !== 'settings' && key !== 'dashboard');
-    if (sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) hiddenSections.push('maintenance-accesscontrol');
+    if (sessionStorage.getItem('systemUserRole') && sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) hiddenSections.push('maintenance-accesscontrol');
 
   const compactSidebar = !!panel.querySelector('#ogfmsi-compact-sidebar')?.checked;
   const timeFormat = panel.querySelector('#ogfmsi-time-format')?.value || '12h';

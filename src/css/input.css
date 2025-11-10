@@ -172,14 +172,14 @@
 
   /* Responsive */
   /* xl */
-  @media (width >= 80rem) {
+  /* @media (width >= 80rem) {
     .section-h2-h img {
       @apply h-10 w-10;
     }
-  }
+  } */
 
   /* 2xl */
-  @media (width >= 96rem) {
+  /* @media (width >= 96rem) {
     .btn-main {
       @apply px-6 text-base;
     }
@@ -187,7 +187,7 @@
     .section-h-c {
       @apply px-5;
     }
-  }
+  } */
 }
 
 @layer utilities {
