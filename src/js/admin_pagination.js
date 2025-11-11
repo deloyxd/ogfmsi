@@ -59,7 +59,7 @@ function calculatePageSize(sectionName, tabIndex) {
 
     // Calculate available height for table rows (subtract header, padding, pagination space)
     const MIN_ROWS = 5;
-    const MAX_ROWS = 25;
+    const MAX_ROWS = 15;
     const headerHeight = 37;
     const paddingAndMargins = 16;
 

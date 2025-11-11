@@ -87,7 +87,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     // subBtn.classList.remove('hidden');
     subBtn.addEventListener('click', subBtnFunction);
 
-    if (sessionStorage.getItem('systemUserRole') && sessionStorage.getItem('systemUserRole').toLowerCase().includes('developer')) {
+    if (sessionStorage.getItem('systemUserRole') && sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) {
       document.getElementById(`${SECTION_NAME}SectionStats4`).remove();
       document.getElementById(`${SECTION_NAME}SectionStats5`).remove();
       document.getElementById(`${SECTION_NAME}SectionStats6`).remove();
