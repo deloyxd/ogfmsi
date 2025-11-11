@@ -119,7 +119,7 @@ function loadCustomerNotifications() {
             const d = new Date(dt);
             dateStr = isNaN(d.getTime()) ? String(dt) : d.toLocaleString();
           }
-          p.innerHTML = dateStr ? `${msg} • ${dateStr}` : msg;
+          p.innerHTML = dateStr ? `${msg}<br><br>${dateStr}` : msg;
 
           li.appendChild(b);
           li.appendChild(p);

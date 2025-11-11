@@ -44,7 +44,9 @@ window.saveEquipmentDetails = async () => {
     const equipmentName = document.getElementById('equipmentNameInput').value.trim();
     const equipmentNotes = document.getElementById('equipmentNotesInput').value.trim();
     const equipmentTypeSelect = document.getElementById('equipmentTypeSelect');
-    const equipmentType = equipmentTypeSelect ? equipmentTypeSelect.value : (document.getElementById('individualItemsModal').dataset.equipmentType || 'machine');
+    const equipmentType = equipmentTypeSelect
+      ? equipmentTypeSelect.value
+      : document.getElementById('individualItemsModal').dataset.equipmentType || 'machine';
 
     if (!equipmentName) {
       main.toast('Equipment name is required', 'error');
@@ -132,6 +134,10 @@ window.saveEquipmentDetails = async () => {
 };
 
 async function refreshIndividualItemsSection(equipmentId, equipmentName) {
+  equipmentName = equipmentName
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
   try {
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipmentId}/items`);
     const result = await response.json();
@@ -545,7 +551,9 @@ async function loadExistingEquipment() {
     if (tableBody) tableBody.innerHTML = '';
 
     // Abort any in-flight request to avoid overlap
-    try { loadEquipAbortCtrl?.abort(); } catch (_) {}
+    try {
+      loadEquipAbortCtrl?.abort();
+    } catch (_) {}
     loadEquipAbortCtrl = new AbortController();
 
     const response = await fetch(`${API_BASE_URL}/maintenance/equipment`, { signal: loadEquipAbortCtrl.signal });
@@ -1222,7 +1230,7 @@ async function renderDisposalList() {
             const equipmentName = item.equipment_name || '';
             const renderWithImage = (img) => {
               const imgSrc = img || '/src/images/client_logo.jpg';
-              nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, "&#39;")}')"><span>${equipmentName}</span></div>`;
+              nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, '&#39;')}')"><span>${equipmentName}</span></div>`;
             };
 
             const inlineImage = item.image_url || item.equipment_image_url || item.equipmentImageUrl;
@@ -1231,7 +1239,9 @@ async function renderDisposalList() {
             } else if (item.equipment_id) {
               (async () => {
                 try {
-                  const eqResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(item.equipment_id)}`);
+                  const eqResp = await fetch(
+                    `${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(item.equipment_id)}`
+                  );
                   const eqData = await eqResp.json();
                   const eq = eqResp.ok ? eqData.result || {} : {};
                   renderWithImage(eq.image_url || '/src/images/client_logo.jpg');
@@ -1294,7 +1304,7 @@ function confirmDisposeItem(item) {
 
   const proceed = document.getElementById('disposeProceedBtn');
   const cancel = document.getElementById('disposeCancelBtn');
-  
+
   cancel.addEventListener('click', () => closeDisposeModal());
   proceed.addEventListener('click', async () => {
     try {
@@ -1373,7 +1383,7 @@ async function renderDisposedList() {
             const equipmentName = item.equipment_name || '';
             const renderWithImage = (img) => {
               const imgSrc = img || '/src/images/client_logo.jpg';
-              nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, "&#39;")}')"><span>${equipmentName}</span></div>`;
+              nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, '&#39;')}')"><span>${equipmentName}</span></div>`;
             };
 
             const inlineImage = item.image_url || item.equipment_image_url || item.equipmentImageUrl;
@@ -1383,7 +1393,9 @@ async function renderDisposedList() {
               // Fallback: fetch the equipment to get its image
               (async () => {
                 try {
-                  const eqResp = await fetch(`${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(item.equipment_id)}`);
+                  const eqResp = await fetch(
+                    `${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(item.equipment_id)}`
+                  );
                   const eqData = await eqResp.json();
                   const eq = eqResp.ok ? eqData.result || {} : {};
                   renderWithImage(eq.image_url || '/src/images/client_logo.jpg');
@@ -1399,7 +1411,7 @@ async function renderDisposedList() {
           const timeCell = frontendResult.children[3];
           if (dateCell) dateCell.textContent = disposedDateDisp;
           if (timeCell) timeCell.textContent = disposedTimeDisp;
-          
+
           // Setup Details button for disposed items
           setupDisposedItemButtons(frontendResult, item);
         });
@@ -1422,9 +1434,9 @@ async function showDisposedItemDetails(item) {
     // Fetch the parent equipment details
     const equipmentResponse = await fetch(`${API_BASE_URL}/maintenance/equipment/${item.equipment_id}`);
     const equipmentResult = await equipmentResponse.json();
-    
+
     const equipment = equipmentResponse.ok ? equipmentResult.result : null;
-    
+
     // Create modal for disposed item details
     const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-20 hidden" id="disposedItemModal">
@@ -1470,10 +1482,10 @@ async function showDisposedItemDetails(item) {
               <div class="mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Image</label>
                 <div class="flex items-center gap-3">
-                  <img src="${equipment ? (equipment.image_url || '/src/images/client_logo.jpg') : '/src/images/client_logo.jpg'}" 
+                  <img src="${equipment ? equipment.image_url || '/src/images/client_logo.jpg' : '/src/images/client_logo.jpg'}" 
                        alt="${item.equipment_name}" 
                        class="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                       onclick="showImageModal(this.src, '${item.equipment_name.replace(/'/g, "&#39;")}')">
+                       onclick="showImageModal(this.src, '${item.equipment_name.replace(/'/g, '&#39;')}')">
                   <span class="text-sm text-gray-500">Click image to view full size</span>
                 </div>
               </div>
@@ -1482,35 +1494,47 @@ async function showDisposedItemDetails(item) {
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Disposed Date</label>
                   <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
-                    ${item.disposed_at ? new Date(item.disposed_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    }) : 'Unknown'}
+                    ${
+                      item.disposed_at
+                        ? new Date(item.disposed_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
+                        : 'Unknown'
+                    }
                   </div>
                 </div>
                 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Disposed Time</label>
                   <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
-                    ${item.disposed_at ? new Date(item.disposed_at).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: true
-                    }) : 'Unknown'}
+                    ${
+                      item.disposed_at
+                        ? new Date(item.disposed_at).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true,
+                          })
+                        : 'Unknown'
+                    }
                   </div>
                 </div>
               </div>
 
-              ${equipment && equipment.notes ? `
+              ${
+                equipment && equipment.notes
+                  ? `
                 <div class="mt-4">
                   <label class="block text-sm font-medium text-gray-700 mb-1">Equipment Notes</label>
                   <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
                     ${equipment.notes}
                   </div>
                 </div>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
             
             <div class="flex gap-3">
@@ -1548,7 +1572,6 @@ async function showDisposedItemDetails(item) {
     };
     document.addEventListener('keydown', handleEscape);
     modal.dataset.escapeHandler = 'true';
-
   } catch (error) {
     console.error('Error loading disposed item details:', error);
     main.toast('Network error: Failed to load disposed item details', 'error');

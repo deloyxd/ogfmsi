@@ -271,7 +271,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       () => {
                         if (isOnlineTransaction) {
                           const reasonSelect = document.getElementById('cancelReasonSelect');
-                          const selectedReason = reasonSelect ? reasonSelect.value : '';
+                          const selectedReason = reasonSelect
+                            ? reasonSelect.querySelector(`option[value="${reasonSelect.value}"]`).text
+                            : '';
 
                           if (!selectedReason) {
                             main.toast('Please select a reason for cancellation.', 'error');
@@ -2844,10 +2846,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       }
     } catch (_) {}
 
-    const receiptRows = [
-      { k: 'Transaction ID', v: id }
-    ];
-    
+    const receiptRows = [{ k: 'Transaction ID', v: id }];
+
     if (!displayPurpose.toLowerCase().includes('purchasing')) {
       receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
     }
@@ -2870,7 +2870,12 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
     // Add remaining rows
     const remainingRows = [
-      { k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount', v: main.formatPrice(amountToPay), mono: true, b: true },
+      {
+        k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount',
+        v: main.formatPrice(amountToPay),
+        mono: true,
+        b: true,
+      },
       { k: 'Price rate', v: main.fixText(priceRate) },
       { k: 'Payment method', v: main.fixText(paymentMethod) },
       ...(showRef ? [{ k: 'Reference', v: refNum ? main.fixText(refNum) : 'N/A' }] : []),

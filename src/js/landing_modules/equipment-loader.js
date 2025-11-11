@@ -168,6 +168,7 @@ async function loadAndRender() {
       const rows = Math.ceil(8 / cols);
       const maxHeight = rows * cardHeight + (rows - 1) * gap;
       holder.style.maxHeight = `${Math.ceil(maxHeight) + 16}px`;
+      holder.classList.add('scrollbar-dark');
       // holder.style.overflowY = 'auto';
     }
     // after layout paints
