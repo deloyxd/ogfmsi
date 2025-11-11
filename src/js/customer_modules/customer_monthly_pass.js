@@ -298,7 +298,9 @@ async function openRegistrationModal() {
     // Enforce min on start date and recompute
     if (startDateInput) {
       const minStr = formatDateInput(todayObj);
-      try { startDateInput.min = minStr; } catch (_) {}
+      try {
+        startDateInput.min = minStr;
+      } catch (_) {}
       startDateInput.addEventListener('change', () => {
         try {
           const minDate = new Date(minStr);
@@ -359,7 +361,8 @@ async function openRegistrationModal() {
     const studentId = /** @type {HTMLInputElement} */ (form.querySelector('#studentId'))?.files?.[0] || null;
     const startDate = /** @type {HTMLInputElement} */ (form.querySelector('#startDate'))?.value;
     const endDate = /** @type {HTMLInputElement} */ (form.querySelector('#endDate'))?.value;
-    const months = parseInt(/** @type {HTMLSelectElement} */ (form.querySelector('#monthDuration'))?.value || '1', 10) || 1;
+    const months =
+      parseInt(/** @type {HTMLSelectElement} */ (form.querySelector('#monthDuration'))?.value || '1', 10) || 1;
 
     // if (!memberName) {
     //   msg.textContent = 'Please enter the Member Name.';
@@ -383,7 +386,16 @@ async function openRegistrationModal() {
     }
 
     // Duplicate validation against existing customers (admin side)
-    const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate, months });
+    const prepared = prepareFormData({
+      membershipType,
+      memberName,
+      email,
+      profile,
+      studentId,
+      startDate,
+      endDate,
+      months,
+    });
     close();
     openPaymentModal(prepared);
   });
@@ -393,7 +405,7 @@ function openPaymentModal(preparedRegistrationData) {
   const months = parseInt(String(preparedRegistrationData.get('months') || '1'), 10) || 1;
   const base = preparedRegistrationData.get('membershipType') === 'student' ? 850 : 950;
   const totalAmount = base * months;
-  const totalLabel = `${preparedRegistrationData.get('membershipType') === 'student' ? 'Student' : 'Regular'} × ${months} month${months>1?'s':''}: ₱${totalAmount.toLocaleString('en-PH')}`;
+  const totalLabel = `${preparedRegistrationData.get('membershipType') === 'student' ? 'Student' : 'Regular'} (₱${base.toFixed(2)}) × ${months} month${months > 1 ? 's' : ''}: ₱${totalAmount.toFixed(2)}`;
 
   const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="monthlyPassPaymentModal">
@@ -435,7 +447,7 @@ function openPaymentModal(preparedRegistrationData) {
             </form>
           </div>
           <div class="flex gap-3 p-6">
-            <button type="button" id="mpPayCancel" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
+            <button type="button" id="mpPayCancel" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Back</button>
             <button type="button" id="mpPaySubmit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600">Submit Payment</button>
           </div>
         </div>
@@ -559,6 +571,7 @@ function openPaymentModal(preparedRegistrationData) {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
       modal.remove();
+      openRegistrationModal();
     }, 300);
   };
 
