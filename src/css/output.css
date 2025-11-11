@@ -1767,6 +1767,10 @@ video {
   height: 530px;
 }
 
+.h-\[600px\] {
+  height: 600px;
+}
+
 .h-\[723px\] {
   height: 723px;
 }
@@ -6087,10 +6091,6 @@ video {
 }
 
 @media (min-width: 1280px) {
-  .xl\:mb-3 {
-    margin-bottom: 0.75rem;
-  }
-
   .xl\:flex {
     display: flex;
   }
@@ -6099,20 +6099,8 @@ video {
     display: none;
   }
 
-  .xl\:min-h-\[108px\] {
-    min-height: 108px;
-  }
-
-  .xl\:w-40 {
-    width: 10rem;
-  }
-
   .xl\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .xl\:p-4 {
-    padding: 1rem;
   }
 
   .xl\:px-16 {
@@ -6120,34 +6108,9 @@ video {
     padding-right: 4rem;
   }
 
-  .xl\:text-3xl {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-  }
-
   .xl\:text-7xl {
     font-size: 4.5rem;
     line-height: 1;
-  }
-
-  .xl\:text-base {
-    font-size: 1rem;
-    line-height: 1.5rem;
-  }
-
-  .xl\:text-lg {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-  }
-
-  .xl\:text-sm {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  .xl\:text-xl {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
   }
 }
 
@@ -6172,10 +6135,6 @@ video {
     margin-top: 1.5rem;
   }
 
-  .\32xl\:w-48 {
-    width: 12rem;
-  }
-
   .\32xl\:grid-cols-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
@@ -6192,24 +6151,9 @@ video {
     gap: 1.5rem;
   }
 
-  .\32xl\:text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-
-  .\32xl\:text-lg {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-  }
-
   .\32xl\:text-sm {
     font-size: 0.875rem;
     line-height: 1.25rem;
-  }
-
-  .\32xl\:text-xl {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
   }
 
   .\32xl\:font-bold {

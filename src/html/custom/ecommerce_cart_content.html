@@ -6,7 +6,7 @@
   >
     No available products yet
   </div>
-  <div id="ecommerceCartTab1" class="grid grid-cols-4 gap-2 2xl:grid-cols-3 2xl:gap-6"></div>
+  <div id="ecommerceCartTab1" class="grid grid-cols-4 gap-2 pb-2"></div>
 
   <div
     id="ecommerceCartProduct"
@@ -17,7 +17,7 @@
         class="${productMeasurementStatus} absolute left-0 top-0 z-10 m-2 rounded-lg border border-white/20 bg-black/80 px-2 shadow-lg backdrop-blur-md"
       >
         <span
-          class="bg-gradient-to-r from-blue-300 to-sky-300 bg-clip-text text-xs font-semibold uppercase tracking-wide text-transparent 2xl:text-sm 2xl:font-bold"
+          class="bg-gradient-to-r from-blue-300 to-sky-300 bg-clip-text text-xs font-semibold uppercase tracking-wide text-transparent"
         >
           ${productMeasurement} ${productMeasurementUnit}
         </span>
@@ -37,20 +37,20 @@
 
     <div class="space-y-4 p-4">
       <div class="space-y-1">
-        <h2 class="truncate text-lg font-bold leading-tight text-gray-900">${productName}</h2>
-        <p class="truncate text-sm font-medium capitalize text-gray-600">${productCategory}</p>
+        <h2 class="truncate text-sm font-bold leading-tight text-gray-900">${productName}</h2>
+        <p class="truncate text-xs capitalize text-gray-600">${productCategory}</p>
       </div>
 
       <div
         class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm"
       >
-        <p class="stock-display ${statusColor} text-xs font-semibold uppercase tracking-wide 2xl:text-sm 2xl:font-bold">
+        <p class="stock-display ${statusColor} text-xs font-semibold uppercase tracking-wide">
           ${stockText}
         </p>
         <div class="flex items-center justify-between gap-2">
           <button
             type="button"
-            class="decrease-btn flex h-8 w-8 items-center justify-center rounded-l-md bg-gradient-to-r from-red-400 to-red-500 text-sm font-bold text-white transition-colors duration-200 hover:from-red-500 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            class="decrease-btn flex h-6 w-6 items-center justify-center rounded-l-md bg-gradient-to-r from-red-400 to-red-500 text-sm font-bold text-white transition-colors duration-200 hover:from-red-500 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             –
           </button>
@@ -58,14 +58,14 @@
             type="number"
             min="0"
             value="1"
-            class="quantity-input h-8 w-12 bg-white text-center text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 appearance-none"
+            class="quantity-input h-6 w-10 bg-white text-center text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 appearance-none"
             aria-label="Quantity"
             oninput="this.value = this.value.replace(/[^0-9]/g, '');"
             style="-moz-appearance: textfield;"
           />
           <button
             type="button"
-            class="increase-btn flex h-8 w-8 items-center justify-center rounded-r-md bg-gradient-to-r from-green-400 to-lime-500 text-sm font-bold text-white transition-colors duration-200 hover:from-green-500 hover:to-lime-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            class="increase-btn flex h-6 w-6 items-center justify-center rounded-r-md bg-gradient-to-r from-green-400 to-lime-500 text-sm font-bold text-white transition-colors duration-200 hover:from-green-500 hover:to-lime-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
           >
             +
           </button>
@@ -90,7 +90,7 @@
   >
     No best selling products yet
   </div>
-  <div id="ecommerceCartTab2" class="grid grid-cols-4 gap-2 2xl:grid-cols-3 2xl:gap-6"></div>
+  <div id="ecommerceCartTab2" class="grid grid-cols-4 gap-2"></div>
 </div>
 <div data-sectionindex="1" data-tabindex="3" class="h-[530px]">
   <div
@@ -99,5 +99,5 @@
   >
     No least selling products yet
   </div>
-  <div id="ecommerceCartTab3" class="grid grid-cols-4 gap-2 2xl:grid-cols-3 2xl:gap-6"></div>
+  <div id="ecommerceCartTab3" class="grid grid-cols-4 gap-2"></div>
 </div>

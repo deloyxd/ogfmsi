@@ -548,9 +548,9 @@ function updateCartDisplay() {
 
         <!-- Column 2: Name and Category -->
         <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-wrap text-lg">${main.decodeText(item.name)}</h3>
-            <p class="text-sm text-gray-500">${getMeasurementText(item.measurement, item.measurementUnit)}</p>
-            <p class="text-sm text-gray-500">${getCategoryLabel(item.category)}</p>
+            <p class="font-semibold text-wrap text-sm">${main.decodeText(item.name)}</p>
+            <p class="text-xs text-gray-500">${getMeasurementText(item.measurement, item.measurementUnit)}</p>
+            <p class="text-xs text-gray-500">${getCategoryLabel(item.category)}</p>
         </div>
 
         <!-- Column 3: Price, Quantity, Total, and Remove -->

@@ -56,7 +56,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
         const tabContainer = tabRowCount.parentElement.parentElement;
         const [sectionName, tabIndex] = tabContainer.id.split('_tab');
         const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
-        const rowCount = emptyText.children.length - 1;
+        const rowCount = emptyText.parentElement.parentElement.children.length - 1;
         tabRowCount.innerText = `${rowCount} items`;
       }
     }
