@@ -162,16 +162,36 @@ async function openRegistrationModal() {
             </div>
           </div>
 
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1" for="monthDuration">Month Duration</label>
+            <select id="monthDuration" name="monthDuration" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="1" selected>1 month</option>
+              <option value="2">2 months</option>
+              <option value="3">3 months</option>
+              <option value="4">4 months</option>
+              <option value="5">5 months</option>
+              <option value="6">6 months</option>
+              <option value="7">7 months</option>
+              <option value="8">8 months</option>
+              <option value="9">9 months</option>
+              <option value="10">10 months</option>
+              <option value="11">11 months</option>
+              <option value="12">12 months</option>
+            </select>
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-gray-700 mb-1" for="startDate">Start Date</label>
-              <input disabled=true id="startDate" name="startDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${today}" readonly />
+              <input id="startDate" name="startDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${today}" min="${today}" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-gray-700 mb-1" for="endDate">End Date</label>
               <input disabled=true id="endDate" name="endDate" type="date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value="${endDate}" readonly />
             </div>
           </div>
+
+          <p id="totalPreview" class="text-sm font-semibold text-orange-700"></p>
         </div>
       </form>
     `;
@@ -234,6 +254,32 @@ async function openRegistrationModal() {
   const studentFields = /** @type {HTMLDivElement|null} */ (document.getElementById('studentFields'));
   if (form && studentFields) {
     const typeInputs = form.querySelectorAll('input[name="membershipType"]');
+    const monthSelect = /** @type {HTMLSelectElement|null} */ (form.querySelector('#monthDuration'));
+    const startDateInput = /** @type {HTMLInputElement|null} */ (form.querySelector('#startDate'));
+    const endDateInput = /** @type {HTMLInputElement|null} */ (form.querySelector('#endDate'));
+    const totalPreview = /** @type {HTMLParagraphElement|null} */ (form.querySelector('#totalPreview'));
+
+    const computeTotal = () => {
+      const type = getSelectedMembershipType();
+      const months = parseInt(monthSelect?.value || '1', 10) || 1;
+      const base = type === 'student' ? 850 : 950;
+      return base * months;
+    };
+
+    const updateEndAndTotal = () => {
+      try {
+        const months = parseInt(monthSelect?.value || '1', 10) || 1;
+        // compute from selected start date; fallback to baseline (todayObj)
+        let baseStart = todayObj;
+        if (startDateInput && startDateInput.value) {
+          const d = new Date(startDateInput.value);
+          if (!isNaN(d.getTime())) baseStart = d;
+        }
+        if (endDateInput) endDateInput.value = formatDateInput(addMonths(baseStart, months));
+        if (totalPreview) totalPreview.textContent = `Total: ₱${computeTotal().toLocaleString('en-PH')}`;
+      } catch (_) {}
+    };
+
     const updateVariant = () => {
       const type = getSelectedMembershipType();
       if (type === 'student') studentFields.classList.remove('hidden');
@@ -245,9 +291,29 @@ async function openRegistrationModal() {
         const needs = type === 'student' && !(studentInput?.files && studentInput.files.length);
         studentBox.classList.toggle('border-red-500', !!needs);
       }
+      updateEndAndTotal();
     };
     typeInputs.forEach((i) => i.addEventListener('change', updateVariant));
+    monthSelect?.addEventListener('change', updateEndAndTotal);
+    // Enforce min on start date and recompute
+    if (startDateInput) {
+      const minStr = formatDateInput(todayObj);
+      try { startDateInput.min = minStr; } catch (_) {}
+      startDateInput.addEventListener('change', () => {
+        try {
+          const minDate = new Date(minStr);
+          const sel = new Date(startDateInput.value || minStr);
+          if (sel < minDate) {
+            startDateInput.value = minStr;
+          }
+        } catch (_) {
+          startDateInput.value = minStr;
+        }
+        updateEndAndTotal();
+      });
+    }
     updateVariant();
+    updateEndAndTotal();
   }
 
   form?.addEventListener('change', function (e) {
@@ -293,6 +359,7 @@ async function openRegistrationModal() {
     const studentId = /** @type {HTMLInputElement} */ (form.querySelector('#studentId'))?.files?.[0] || null;
     const startDate = /** @type {HTMLInputElement} */ (form.querySelector('#startDate'))?.value;
     const endDate = /** @type {HTMLInputElement} */ (form.querySelector('#endDate'))?.value;
+    const months = parseInt(/** @type {HTMLSelectElement} */ (form.querySelector('#monthDuration'))?.value || '1', 10) || 1;
 
     // if (!memberName) {
     //   msg.textContent = 'Please enter the Member Name.';
@@ -316,18 +383,17 @@ async function openRegistrationModal() {
     }
 
     // Duplicate validation against existing customers (admin side)
-    const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate });
+    const prepared = prepareFormData({ membershipType, memberName, email, profile, studentId, startDate, endDate, months });
     close();
     openPaymentModal(prepared);
   });
 }
 
 function openPaymentModal(preparedRegistrationData) {
-  const totalAmount = preparedRegistrationData.get('membershipType') === 'student' ? 850 : 950;
-  const totalLabel =
-    preparedRegistrationData.get('membershipType') === 'student'
-      ? 'Total for Student: ₱850'
-      : 'Total for Regular: ₱950';
+  const months = parseInt(String(preparedRegistrationData.get('months') || '1'), 10) || 1;
+  const base = preparedRegistrationData.get('membershipType') === 'student' ? 850 : 950;
+  const totalAmount = base * months;
+  const totalLabel = `${preparedRegistrationData.get('membershipType') === 'student' ? 'Student' : 'Regular'} × ${months} month${months>1?'s':''}: ₱${totalAmount.toLocaleString('en-PH')}`;
 
   const modalHTML = `
       <div class="fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/50 opacity-0 duration-300 z-50 hidden" id="monthlyPassPaymentModal">
@@ -634,7 +700,8 @@ function preparePaymentFormData(payload) {
 
 async function submitMonthlyRegistration(regData, payData) {
   const isStudent = String(regData.get('membershipType')) === 'student';
-  const amount = isStudent ? 850 : 950;
+  const months = parseInt(String(regData.get('months') || '1'), 10) || 1;
+  const amount = (isStudent ? 850 : 950) * months;
   const rate = isStudent ? 'student' : 'regular';
 
   // Generate ids similar to admin-side conventions
@@ -684,7 +751,7 @@ async function submitMonthlyRegistration(regData, payData) {
       customer_id: customerId,
       customer_start_date: startDate,
       customer_end_date: endDate,
-      customer_months: 1,
+      customer_months: months,
       customer_tid: transactionId,
       customer_pending: 1,
     }),
@@ -955,6 +1022,7 @@ function prepareFormData(payload) {
   data.set('email', payload.email);
   data.set('startDate', payload.startDate);
   data.set('endDate', payload.endDate);
+  if (typeof payload.months !== 'undefined') data.set('months', String(payload.months));
   data.set('profile', payload.profile);
   if (payload.studentId) data.set('studentId', payload.studentId);
   return data;
