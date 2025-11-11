@@ -1148,6 +1148,70 @@ export function openConfirmationModal(action, callback) {
   modalMainBtn.innerHTML = data.button.main;
   modalSubBtn.innerHTML = data.button.sub;
 
+  // Simple backdrop
+  tempModalConfirmationContainer.classList.add(
+    'backdrop-blur-sm',
+    'bg-black/40',
+    'p-4',
+    'ease-out'
+  );
+
+  // Clean panel
+  const panel = tempModalConfirmationContainer.children[0];
+  panel.classList.add(
+    'shadow-2xl',
+    'ring-1',
+    'ring-black/5',
+    'rounded-2xl'
+  );
+
+  // Clean title
+  modalTitle.classList.add(
+    'text-2xl',
+    'font-semibold',
+    'tracking-tight'
+  );
+
+  // Information highlight - make the subtitle stand out
+  modalSubtitle.classList.add(
+    'rounded-xl',
+    'border-2',
+    'border-amber-400',
+    'bg-amber-50',
+    'px-5',
+    'py-4',
+    'text-base',
+    'leading-relaxed',
+    'text-gray-800',
+    'shadow-md',
+    'mt-3',
+    'font-medium'
+  );
+
+  // Main button
+  modalMainBtn.classList.add(
+    'px-5',
+    'py-3',
+    'rounded-lg',
+    'focus:outline-none',
+    'focus:ring-4',
+    'focus:ring-amber-200',
+    'hover:scale-[1.02]',
+    'duration-200'
+  );
+
+  // Secondary button
+  modalSubBtn.classList.add(
+    'px-5',
+    'py-3',
+    'rounded-lg',
+    'focus:outline-none',
+    'focus:ring-4',
+    'focus:ring-gray-200',
+    'hover:scale-[1.02]',
+    'duration-200'
+  );
+
   modalMainBtn.onclick = () => {
     callback();
     modalMainBtn.classList.add('pointer-events-none');
@@ -1168,7 +1232,6 @@ export function openConfirmationModal(action, callback) {
   tempModalConfirmationContainer.classList.add('z-10');
   setTimeout(() => {
     tempModalConfirmationContainer.classList.add('opacity-100');
-
     tempModalConfirmationContainer.children[0].classList.add('translate-y-6');
     tempModalConfirmationContainer.children[0].classList.add('scale-100');
   }, 0);
