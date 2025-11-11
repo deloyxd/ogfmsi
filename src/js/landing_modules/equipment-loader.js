@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../_global.js';
 function statusBadge(status) {
   const map = {
     'All Available': 'bg-green-100 text-green-800 border-green-300',
-    'Warning': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    Warning: 'bg-yellow-100 text-yellow-800 border-yellow-300',
     'Pending Disposal': 'bg-amber-100 text-amber-800 border-amber-300',
     'Partially Available': 'bg-blue-100 text-blue-800 border-blue-300',
     'Disposed Items': 'bg-gray-100 text-gray-800 border-gray-300',
@@ -22,10 +22,10 @@ function itemStatusPill(s) {
     s === 'Available'
       ? 'bg-green-200 text-green-800'
       : s === 'Unavailable'
-      ? 'bg-red-200 text-red-800'
-      : s === 'For Disposal'
-      ? 'bg-yellow-200 text-yellow-800'
-      : 'bg-gray-200 text-gray-800';
+        ? 'bg-red-200 text-red-800'
+        : s === 'For Disposal'
+          ? 'bg-yellow-200 text-yellow-800'
+          : 'bg-gray-200 text-gray-800';
   return `<span class="text-[11px] px-2 py-0.5 rounded-full ${cls}">${s}</span>`;
 }
 
@@ -41,7 +41,7 @@ function renderEquipmentCard(equip) {
       <div class="p-4">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <h4 class="text-lg font-bold text-gray-900 dark:text-white">${equip.equipment_name}</h4>
+            <h4 class="text-lg font-bold text-gray-900 dark:text-white capitalize">${equip.equipment_name}</h4>
           </div>
           <div class="text-right">
             <div class="text-sm font-semibold text-orange-600">Qty: ${equip.total_quantity ?? 0}</div>
@@ -79,8 +79,8 @@ async function fetchEquipmentItems(equipmentId) {
 
 function renderItemsInto(container, items) {
   const cols = {
-    'Available': [],
-    'Unavailable': [],
+    Available: [],
+    Unavailable: [],
   };
   items.forEach((it) => {
     const s = it.individual_status || 'Available';
@@ -116,7 +116,8 @@ let __equipmentFilter = 'all'; // all | machine | non-machine
 async function computeAndFillCounts(equipmentId) {
   try {
     const items = await fetchEquipmentItems(equipmentId);
-    let a = 0, u = 0;
+    let a = 0,
+      u = 0;
     items.forEach((it) => {
       if (it.individual_status === 'Available') a++;
       else if (it.individual_status === 'Unavailable') u++;
@@ -142,7 +143,8 @@ async function computeAndFillCounts(equipmentId) {
 async function loadAndRender() {
   const holder = document.getElementById('equipment-container');
   if (!holder) return;
-  holder.innerHTML = '<div class="text-center text-sm text-gray-500">Loading equipment...</div>';
+  holder.innerHTML = '<h2 class="text-center text-3xl font-black text-gray-500">Updating equipments status...</h2>';
+  holder.className = 'scrollbar-dark grid gap-6 p-2 grid-cols-1';
   try {
     const list = await fetchEquipmentList();
     const filtered = list.filter((e) => {
@@ -150,9 +152,7 @@ async function loadAndRender() {
       if (__equipmentFilter === 'non-machine') return (e.equipment_type || '').toLowerCase() === 'non-machine';
       return true;
     });
-    holder.innerHTML = filtered
-      .map((e) => renderEquipmentCard(e))
-      .join('');
+    holder.innerHTML = filtered.map((e) => renderEquipmentCard(e)).join('');
     // compute counts asynchronously per equipment
     filtered.forEach((e) => computeAndFillCounts(e.equipment_id));
 
@@ -167,15 +167,16 @@ async function loadAndRender() {
       const cardHeight = firstCard.getBoundingClientRect().height;
       const rows = Math.ceil(8 / cols);
       const maxHeight = rows * cardHeight + (rows - 1) * gap;
-      holder.style.maxHeight = `${Math.ceil(maxHeight)}px`;
-      holder.style.overflowY = 'auto';
+      holder.style.maxHeight = `${Math.ceil(maxHeight) + 16}px`;
+      // holder.style.overflowY = 'auto';
     }
     // after layout paints
     requestAnimationFrame(applyScrollableLimit);
     // also re-apply on resize
     window.addEventListener('resize', applyScrollableLimit, { passive: true });
+    holder.className = 'scrollbar-dark grid gap-6 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
   } catch (e) {
-    holder.innerHTML = `<div class=\"text-center text-sm text-red-600\">${e.message}</div>`;
+    holder.innerHTML = `<h2 class="text-center text-3xl font-black text-red-600">${e.message}</h2>`;
   }
 }
 
@@ -190,11 +191,11 @@ function setupFilters() {
     // update active styles
     container.querySelectorAll('[data-filter]').forEach((b) => {
       if (b.getAttribute('data-filter') === __equipmentFilter) {
-        b.classList.add('bg-orange-600','text-white');
-        b.classList.remove('bg-white','text-orange-700','border-orange-300');
+        b.classList.add('bg-orange-600', 'text-white');
+        b.classList.remove('bg-white', 'text-orange-700', 'border-orange-300');
       } else {
-        b.classList.remove('bg-orange-600','text-white');
-        b.classList.add('bg-white','text-orange-700','border-orange-300');
+        b.classList.remove('bg-orange-600', 'text-white');
+        b.classList.add('bg-white', 'text-orange-700', 'border-orange-300');
       }
     });
     loadAndRender();
@@ -202,11 +203,15 @@ function setupFilters() {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    setupFilters();
-    loadAndRender();
-    setInterval(loadAndRender, 30000);
-  }, { once: true });
+  document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+      setupFilters();
+      loadAndRender();
+      setInterval(loadAndRender, 30000);
+    },
+    { once: true }
+  );
 } else {
   setupFilters();
   loadAndRender();

@@ -103,3 +103,44 @@ section.visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* custom scrollbar - light and dark */
+
+.scrollbar-light,
+.scrollbar-dark {
+  overflow-y: auto;
+}
+
+.scrollbar-light::-webkit-scrollbar,
+.scrollbar-dark::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-light::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.scrollbar-dark::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.scrollbar-light::-webkit-scrollbar-thumb,
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+}
+
+.scrollbar-light::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.scrollbar-light::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

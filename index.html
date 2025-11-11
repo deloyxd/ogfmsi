@@ -14,10 +14,7 @@
     <!-- add new css here 👆 -->
 
     <!-- icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <!-- tailwindcss (for easier css) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,10 +23,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- leaflet (for world map widget) -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
     <!-- firebase (for database) -->
@@ -46,18 +40,14 @@
       }
     </style> -->
   </head>
-  <body
-    class="dark:bg-dark-900 cursor-default overflow-y-auto overflow-x-hidden bg-orange-100 text-gray-900"
-  >
+  <body class="dark:bg-dark-900 cursor-default overflow-y-auto overflow-x-hidden bg-orange-100 text-gray-900">
     <!-- 🔴 README: comments with 🔥 are project main components -->
 
     <!-- do not remove: -->
     <div id="_global"></div>
 
     <!-- 🔥 header 🔥 -->
-    <nav
-      class="nav-shadow fixed top-0 z-50 w-full bg-orange-800 bg-opacity-95 p-4 text-white backdrop-blur-md"
-    >
+    <nav class="nav-shadow fixed top-0 z-50 w-full bg-orange-800 bg-opacity-95 p-4 text-white backdrop-blur-md">
       <div class="container mx-auto">
         <!-- desktop view -->
         <div class="hidden items-center justify-between lg:flex">
@@ -76,15 +66,11 @@
               style="cursor: pointer"
               class="redirect-to-dashboard transform rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-yellow-500 px-8 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
             >
-              <h1
-                class="text-3xl font-black uppercase tracking-wide text-white drop-shadow-lg"
-              >
+              <h1 class="text-3xl font-black uppercase tracking-wide text-white drop-shadow-lg">
                 <!-- 🔑 CLIENT -->
                 Fitworx Gym
               </h1>
-              <span
-                class="text-xs font-semibold uppercase tracking-widest text-orange-100"
-              >
+              <span class="text-xs font-semibold uppercase tracking-widest text-orange-100">
                 <!-- 🔑 CLIENT (update client motto) -->
                 Push Your Limits
               </span>
@@ -117,32 +103,20 @@
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
-                  <path
-                    d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
-                  />
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                 </svg>
               </span>
             </button>
 
             <!-- login dropdown -->
-            <!-- <div class="relative inline-block text-left">
-              <div
-                class="flex items-center overflow-hidden rounded-xl shadow-lg"
-              >
+            <div class="relative inline-block text-left">
+              <div class="flex items-center overflow-hidden rounded-xl shadow-lg">
                 <a
                   href="/login"
                   class="-mx-2 flex transform items-center gap-3 bg-gradient-to-r from-yellow-500 to-orange-500 px-8 py-3 font-bold text-white transition-all duration-300 hover:scale-105 hover:from-orange-500 hover:to-red-500"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 36 36"
-                  >
-                    <path
-                      fill="#000"
-                      d="M15.977 9.36h3.789a.78.78 0 0 0 .058-.673l-3.846-4.705V9.36z"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 36 36">
+                    <path fill="#000" d="M15.977 9.36h3.789a.78.78 0 0 0 .058-.673l-3.846-4.705V9.36z" />
                     <path
                       fill="#fff"
                       d="M12.804 22.277a9 9 0 0 0-.206-.973c-.62-2.223-1.14-3.164-.918-5.494c.29-1.584.273-4.763 4.483-4.268c1.112.131 2.843.927 3.834.91c.567-.01.98-1.157 1.017-1.539c.051-.526-.865-1.42-1.248-1.554a94 94 0 0 0-2.681-.824c-1.039-.301-.985-1.705-1.051-2.205a.6.6 0 0 1 .294-.591c.21-.124.375-.008.579.125l.885.648c.497.426-.874 1.24-.503 1.376c0 0 1.755.659 2.507.796c.412.075 1.834-1.529 1.917-2.47c.065-.74-3.398-4.083-5.867-5.381c-.868-.456-1.377-.721-1.949-.694c-.683.032-.898.302-1.748 1.03C8.302 4.46 4.568 11.577 4.02 13.152c-2.246 6.461-2.597 9.865-2.677 11.788a21 21 0 0 0-.076 1.758c.065 0-1 5 0 6s5.326 1 5.326 1c10 3.989 28.57 2.948 28.57-7.233c0-12.172-18.813-10.557-22.359-4.188"
@@ -151,12 +125,12 @@
                       fill="#000"
                       d="M20.63 32.078c-3.16-.332-5.628-1.881-5.767-1.97a1 1 0 0 1 1.075-1.687c.04.025 4.003 2.492 7.846 1.467c2.125-.566 3.867-2.115 5.177-4.601a1 1 0 0 1 1.77.932c-1.585 3.006-3.754 4.893-6.447 5.606c-1.257.332-2.502.374-3.654.253"
                     />
-                  </svg> -->
+                  </svg>
                   <!-- 🔑 CLIENT (in case client doesn't like this) -->
-                  <!-- Let's Go -->
-                <!-- </a>
+                  Get Started
+                </a>
               </div>
-            </div> -->
+            </div>
           </div>
         </div>
 
@@ -173,18 +147,12 @@
                 class="absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full border border-white bg-green-400"
               ></div>
             </div>
-            <div
-              class="rounded-lg bg-gradient-to-r from-orange-600 to-yellow-500 px-4 py-2 shadow-md"
-            >
-              <h1
-                class="text-xl font-black uppercase tracking-wider text-white drop-shadow-md"
-              >
+            <div class="rounded-lg bg-gradient-to-r from-orange-600 to-yellow-500 px-4 py-2 shadow-md">
+              <h1 class="text-xl font-black uppercase tracking-wider text-white drop-shadow-md">
                 <!-- 🔑 CLIENT -->
                 Fitworx Gym
               </h1>
-              <span
-                class="text-xs font-medium uppercase tracking-widest text-orange-100"
-              >
+              <span class="text-xs font-medium uppercase tracking-widest text-orange-100">
                 <!-- 🔑 CLIENT -->
                 Push Your Limits
               </span>
@@ -196,49 +164,35 @@
             id="mobile-menu-button"
             class="rounded-xl border border-white/80 bg-gradient-to-r from-orange-500 to-red-500 p-3 text-white shadow-lg transition-all duration-300"
           >
-            <svg
-              class="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16m-16 6h16"
-              ></path>
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path>
             </svg>
           </button>
         </div>
 
         <!-- mobile view: login dropdown options -->
-        <!-- <div id="mobile-menu" class="mt-6 hidden space-y-3 lg:hidden">
+        <div id="mobile-menu" class="mt-6 hidden space-y-3 lg:hidden">
           <a
             href="/login"
             class="block w-full rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 px-6 py-3 text-center font-bold text-white shadow-lg"
-          > -->
+          >
             <!-- 🔑 CLIENT -->
-            <!-- 💪 Let's Go! -->
-          <!-- </a> -->
-          <!-- <button
+            💪 Get Started
+          </a>
+          <button
             id="mobile-admin-login-btn"
             class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-6 py-3 font-bold text-white shadow-lg"
           >
             🔒 Staff Only
-          </button> -->
-        <!-- </div> -->
+          </button>
+        </div>
       </div>
     </nav>
 
     <!-- 🔥 carousel component 🔥 -->
     <header class="relative overflow-hidden pb-16 pt-32 text-white">
-      <div
-        class="duration-50 absolute inset-0 bg-orange-600 opacity-100 transition-opacity dark:opacity-0"
-      ></div>
-      <div
-        class="bg-dark-800 duration-50 absolute inset-0 opacity-0 transition-opacity dark:opacity-100"
-      ></div>
+      <div class="duration-50 absolute inset-0 bg-orange-600 opacity-100 transition-opacity dark:opacity-0"></div>
+      <div class="bg-dark-800 duration-50 absolute inset-0 opacity-0 transition-opacity dark:opacity-100"></div>
       <!-- animated background pattern -->
       <div class="absolute inset-0 opacity-10">
         <div
@@ -260,14 +214,10 @@
         <div
           class="absolute bottom-20 left-20 h-12 w-12 animate-[bounce_2s_infinite] rounded-full bg-white/10 blur-md"
         ></div>
-        <div
-          class="absolute right-1/4 top-1/3 h-8 w-8 rotate-12 transform animate-pulse bg-white/30"
-        ></div>
+        <div class="absolute right-1/4 top-1/3 h-8 w-8 rotate-12 transform animate-pulse bg-white/30"></div>
       </div>
 
-      <div
-        class="container relative z-10 mx-auto grid items-center gap-8 px-4 lg:grid-cols-2"
-      >
+      <div class="container relative z-10 mx-auto grid items-center gap-8 px-4 lg:grid-cols-2">
         <div class="animate-fade-in-left">
           <div
             class="mb-4 inline-block rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-sm"
@@ -275,10 +225,9 @@
             <!-- 🔑 CLIENT -->
             🏋️ Premium Fitness Experience
           </div>
-          <h2
-            class="mb-6 text-5xl font-black leading-tight tracking-tight lg:text-6xl"
-          >
-            Transform Your<br />
+          <h2 class="mb-6 text-5xl font-black leading-tight tracking-tight lg:text-6xl">
+            Transform Your
+            <br />
             <span
               class="text-orange-200 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] transition-all duration-300 dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
             >
@@ -288,20 +237,16 @@
           </h2>
           <p class="mb-8 max-w-lg text-xl leading-relaxed opacity-90">
             <!-- 🔑 CLIENT -->
-            Unleash your potential at Fitworx Gym! Our cutting-edge facilities,
-            expert trainers, and dynamic classes are designed to make every
-            workout an exciting adventure.
+            Unleash your potential at Fitworx Gym! Our cutting-edge facilities, expert trainers, and dynamic classes are
+            designed to make every workout an exciting adventure.
           </p>
-          <div class="flex flex-col gap-4 lg:flex-row">
+          <div class="flex flex-col gap-4 lg:grid lg:grid-cols-2">
             <a
               href="/login"
               class="group flex transform items-center justify-center gap-2 rounded-xl bg-white px-8 py-4 text-lg font-bold text-orange-600 transition-all duration-300 hover:scale-105 hover:bg-orange-50 hover:shadow-2xl"
             >
               Get Started
-              <span
-                class="transition-transform duration-300 group-hover:translate-x-1"
-                >💪</span
-              >
+              <span class="transition-transform duration-300 group-hover:translate-x-1">💪</span>
             </a>
             <button
               id="watchDemoBtn"
@@ -309,12 +254,22 @@
             >
               Quick Tour 😎
             </button>
+            <a
+              href="#equipmentStatus"
+              class="rounded-xl border-2 border-white/30 px-8 py-4 text-center text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:bg-white/10"
+            >
+              Equipment Status 🔍
+            </a>
+            <a
+              href="#pricing"
+              class="rounded-xl border-2 border-white/30 px-8 py-4 text-center text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:bg-white/10"
+            >
+              Pricing 💰
+            </a>
           </div>
 
           <!-- stats -->
-          <div
-            class="mt-12 grid grid-cols-3 gap-6 border-t border-white/20 pt-8"
-          >
+          <div class="mt-12 grid grid-cols-3 gap-6 border-t border-white/20 pt-8">
             <div class="text-center">
               <!-- 🔑 CLIENT (stats) -->
               <div class="text-2xl font-bold">200+</div>
@@ -332,9 +287,7 @@
         </div>
 
         <div class="relative hidden lg:block">
-          <div
-            class="absolute inset-0 rotate-3 transform rounded-2xl bg-orange-400/80"
-          ></div>
+          <div class="absolute inset-0 rotate-3 transform rounded-2xl bg-orange-400/80"></div>
           <div
             style="cursor: pointer"
             id="carousel"
@@ -343,67 +296,32 @@
             <!-- carousel items -->
             <div class="carousel-item active">
               <!-- 🔑 CLIENT (images) -->
-              <img
-                src="/src/images/carousel_image_1.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_1.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
             <div class="carousel-item">
-              <img
-                src="/src/images/carousel_image_2.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_2.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
             <div class="carousel-item">
-              <img
-                src="/src/images/carousel_image_3.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_3.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
             <div class="carousel-item">
-              <img
-                src="/src/images/carousel_image_4.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_4.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
             <div class="carousel-item">
-              <img
-                src="/src/images/carousel_image_5.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_5.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
             <div class="carousel-item">
-              <img
-                src="/src/images/carousel_image_6.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_6.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
             <div class="carousel-item">
-              <img
-                src="/src/images/carousel_image_7.jpg"
-                class="h-full w-full object-cover"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-              ></div>
+              <img src="/src/images/carousel_image_7.jpg" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
           </div>
         </div>
@@ -420,12 +338,8 @@
 
     <!-- 🔥 news component 🔥 -->
     <div class="relative">
-      <div
-        class="absolute inset-0 bg-orange-100 opacity-100 transition-opacity duration-300 dark:opacity-0"
-      ></div>
-      <div
-        class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"
-      ></div>
+      <div class="absolute inset-0 bg-orange-100 opacity-100 transition-opacity duration-300 dark:opacity-0"></div>
+      <div class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"></div>
       <section class="container relative z-10 mx-auto px-4 py-16">
         <h2
           class="mb-12 bg-gradient-to-r from-orange-300 to-red-600 bg-clip-text text-center text-3xl font-black text-transparent dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
@@ -434,42 +348,51 @@
           What's New at Fitworx Gym? Updates here!
         </h2>
 
-        <div id="announcements-container" class="grid gap-8 lg:grid-cols-3">
-        </div>
+        <div id="announcements-container" class="grid gap-8 lg:grid-cols-3"></div>
       </section>
     </div>
 
     <!-- equipment component -->
     <div class="relative">
-      <div
-        class="absolute inset-0 bg-orange-100 opacity-100 transition-opacity duration-300 dark:opacity-0"
-      ></div>
-      <div
-        class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"
-      ></div>
-      <section class="container relative z-10 mx-auto px-4 py-16">
-        <h2
-          class="mb-12 bg-gradient-to-r from-orange-300 to-red-600 bg-clip-text text-center text-3xl font-black text-transparent dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
-        >
-          Equipment Status
-        </h2>
+      <div class="absolute inset-0 bg-orange-100 opacity-100 transition-opacity duration-300 dark:opacity-0"></div>
+      <div class="bg-dark-900 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"></div>
+      <section id="equipmentStatus" class="container relative z-10 mx-auto px-4 py-16">
+        <h3 class="text-center mb-6 text-5xl font-black leading-tight text-gray-900 lg:text-6xl dark:text-white">
+          <span
+            class="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
+          >
+            Equipment Status
+          </span>
+        </h3>
 
         <div id="equipment-filters" class="mb-6 flex flex-wrap items-center justify-center gap-2">
-          <button type="button" data-filter="all"
-            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-orange-600 text-white">
+          <button
+            type="button"
+            data-filter="all"
+            class="rounded-lg border border-orange-300 bg-orange-600 px-3 py-1.5 text-sm text-white"
+          >
             All
           </button>
-          <button type="button" data-filter="machine"
-            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-white text-orange-700 dark:bg-gray-800 dark:text-orange-300">
+          <button
+            type="button"
+            data-filter="machine"
+            class="rounded-lg border border-orange-300 bg-white px-3 py-1.5 text-sm text-orange-700 dark:bg-gray-800 dark:text-orange-300"
+          >
             Machine
           </button>
-          <button type="button" data-filter="non-machine"
-            class="px-3 py-1.5 text-sm rounded-lg border border-orange-300 bg-white text-orange-700 dark:bg-gray-800 dark:text-orange-300">
+          <button
+            type="button"
+            data-filter="non-machine"
+            class="rounded-lg border border-orange-300 bg-white px-3 py-1.5 text-sm text-orange-700 dark:bg-gray-800 dark:text-orange-300"
+          >
             Non-Machine
           </button>
         </div>
 
-        <div id="equipment-container" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+        <div
+          id="equipment-container"
+          class="scrollbar-dark grid gap-6 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        ></div>
       </section>
     </div>
 
@@ -484,12 +407,8 @@
       <section class="z10 relative overflow-hidden py-20">
         <!-- background elements -->
         <div class="absolute inset-0 opacity-5">
-          <div
-            class="absolute left-10 top-10 h-32 w-32 rounded-full bg-orange-400 blur-2xl"
-          ></div>
-          <div
-            class="absolute bottom-20 right-20 h-40 w-40 rounded-full bg-orange-600 blur-3xl"
-          ></div>
+          <div class="absolute left-10 top-10 h-32 w-32 rounded-full bg-orange-400 blur-2xl"></div>
+          <div class="absolute bottom-20 right-20 h-40 w-40 rounded-full bg-orange-600 blur-3xl"></div>
           <div
             class="absolute left-1/2 top-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-orange-300 blur-3xl"
           ></div>
@@ -498,9 +417,7 @@
         <div class="container relative z-10 mx-auto px-4">
           <!-- header -->
           <div class="mb-16 text-center">
-            <h3
-              class="mb-6 text-5xl font-black leading-tight text-gray-900 lg:text-6xl dark:text-white"
-            >
+            <h3 class="mb-6 text-5xl font-black leading-tight text-gray-900 lg:text-6xl dark:text-white">
               Why Choose
               <span
                 class="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
@@ -509,12 +426,9 @@
                 Fitworx Gym?
               </span>
             </h3>
-            <p
-              class="mx-auto max-w-3xl text-xl text-gray-600 dark:text-gray-300"
-            >
+            <p class="mx-auto max-w-3xl text-xl text-gray-600 dark:text-gray-300">
               <!-- 🔑 CLIENT -->
-              Discover what makes us the premier fitness destination with
-              world-class facilities and unmatched support
+              Discover what makes us the premier fitness destination with world-class facilities and unmatched support
             </p>
           </div>
 
@@ -577,22 +491,17 @@
                       Premium Equipment
                     </h4>
                     <p class="leading-relaxed text-gray-600 dark:text-gray-300">
-                      Top-of-the-line Hammer Strength fitness equipment designed
-                      for optimal performance.
+                      Top-of-the-line Hammer Strength fitness equipment designed for optimal performance.
                     </p>
 
                     <!-- stats -->
-                    <div
-                      class="mt-6 flex justify-center space-x-6 border-t border-gray-200 pt-4 dark:border-gray-600"
-                    >
+                    <div class="mt-6 flex justify-center space-x-6 border-t border-gray-200 pt-4 dark:border-gray-600">
                       <div class="text-center">
                         <div class="text-lg font-bold text-orange-600">30+</div>
                         <div class="text-xs text-gray-500">Machines</div>
                       </div>
                       <div class="text-center">
-                        <div class="text-lg font-bold text-orange-600">
-                          Maintained
-                        </div>
+                        <div class="text-lg font-bold text-orange-600">Maintained</div>
                         <div class="text-xs text-gray-500">Daily</div>
                       </div>
                     </div>
@@ -654,21 +563,16 @@
                       Diverse Classes
                     </h4>
                     <p class="leading-relaxed text-gray-600 dark:text-gray-300">
-                      From high-energy Zumba to competitive basketball, we've
-                      got something for everyone!
+                      From high-energy Zumba to competitive basketball, we've got something for everyone!
                     </p>
 
-                    <div
-                      class="mt-6 flex justify-center space-x-6 border-t border-gray-200 pt-4 dark:border-gray-600"
-                    >
+                    <div class="mt-6 flex justify-center space-x-6 border-t border-gray-200 pt-4 dark:border-gray-600">
                       <div class="text-center">
                         <div class="text-lg font-bold text-orange-600">15+</div>
                         <div class="text-xs text-gray-500">Classes</div>
                       </div>
                       <div class="text-center">
-                        <div class="text-lg font-bold text-orange-600">
-                          Daily
-                        </div>
+                        <div class="text-lg font-bold text-orange-600">Daily</div>
                         <div class="text-xs text-gray-500">Sessions</div>
                       </div>
                     </div>
@@ -695,9 +599,7 @@
                     <div
                       class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     ></div>
-                    <div
-                      class="absolute right-4 top-4 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white"
-                    >
+                    <div class="absolute right-4 top-4 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white">
                       Premium
                     </div>
                   </div>
@@ -718,15 +620,9 @@
                         stroke-linejoin="round"
                         class="lucide lucide-hamburger-icon lucide-hamburger"
                       >
-                        <path
-                          d="M12 16H4a2 2 0 1 1 0-4h16a2 2 0 1 1 0 4h-4.25"
-                        />
-                        <path
-                          d="M5 12a2 2 0 0 1-2-2 9 7 0 0 1 18 0 2 2 0 0 1-2 2"
-                        />
-                        <path
-                          d="M5 16a2 2 0 0 0-2 2 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 2 2 0 0 0-2-2q0 0 0 0"
-                        />
+                        <path d="M12 16H4a2 2 0 1 1 0-4h16a2 2 0 1 1 0 4h-4.25" />
+                        <path d="M5 12a2 2 0 0 1-2-2 9 7 0 0 1 18 0 2 2 0 0 1-2 2" />
+                        <path d="M5 16a2 2 0 0 0-2 2 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 2 2 0 0 0-2-2q0 0 0 0" />
                         <path d="m6.67 12 6.13 4.6a2 2 0 0 0 2.8-.4l3.15-4.2" />
                       </svg>
                     </div>
@@ -737,23 +633,16 @@
                       Nutrition Support
                     </h4>
                     <p class="leading-relaxed text-gray-600 dark:text-gray-300">
-                      High-quality whey protein and nutritional supplements to
-                      support your fitness goals.
+                      High-quality whey protein and nutritional supplements to support your fitness goals.
                     </p>
 
-                    <div
-                      class="mt-6 flex justify-center space-x-6 border-t border-gray-200 pt-4 dark:border-gray-600"
-                    >
+                    <div class="mt-6 flex justify-center space-x-6 border-t border-gray-200 pt-4 dark:border-gray-600">
                       <div class="text-center">
-                        <div class="text-lg font-bold text-orange-600">
-                          100%
-                        </div>
+                        <div class="text-lg font-bold text-orange-600">100%</div>
                         <div class="text-xs text-gray-500">Natural</div>
                       </div>
                       <div class="text-center">
-                        <div class="text-lg font-bold text-orange-600">
-                          Expert
-                        </div>
+                        <div class="text-lg font-bold text-orange-600">Expert</div>
                         <div class="text-xs text-gray-500">Advice</div>
                       </div>
                     </div>
@@ -778,9 +667,7 @@
         <div class="container mx-auto max-w-6xl px-6">
           <div class="mb-16 text-center">
             <!-- 🔑 CLIENT -->
-            <h3
-              class="text-5xl font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-            >
+            <h3 class="text-5xl font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
               Exciting Classes That Will Get You
             </h3>
             <h3
@@ -805,9 +692,7 @@
                 class="relative -rotate-1 transform rounded-2xl border border-orange-100 bg-white p-10 shadow-xl transition-all duration-300 group-hover:rotate-0"
               >
                 <div class="mb-8 flex items-center justify-between">
-                  <h4 class="text-4xl font-bold text-orange-700">
-                    Basketball Court
-                  </h4>
+                  <h4 class="text-4xl font-bold text-orange-700">Basketball Court</h4>
                   <span class="relative flex size-10">
                     <span
                       class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"
@@ -818,12 +703,12 @@
                   </span>
                 </div>
 
-                <p
-                  class="mb-8 text-lg font-medium leading-relaxed text-gray-700"
-                >
-                  Unleash your inner athlete on our professional-grade
-                  basketball court! Whether you're a seasoned player or a
-                  beginner, you'll enjoy an energizing atmosphere here!<br /><br />Experience:
+                <p class="mb-8 text-lg font-medium leading-relaxed text-gray-700">
+                  Unleash your inner athlete on our professional-grade basketball court! Whether you're a seasoned
+                  player or a beginner, you'll enjoy an energizing atmosphere here!
+                  <br />
+                  <br />
+                  Experience:
                 </p>
 
                 <div class="mb-8 space-y-4">
@@ -831,9 +716,7 @@
                     <div
                       class="flex -rotate-1 transform items-center rounded-xl border border-l-4 border-orange-400 bg-orange-50 p-4 transition-all duration-300 hover:rotate-0 hover:shadow-lg hover:shadow-orange-500"
                     >
-                      <span class="font-semibold text-gray-800"
-                        >🏀 Half basketball court</span
-                      >
+                      <span class="font-semibold text-gray-800">🏀 Half basketball court</span>
                     </div>
                   </div>
 
@@ -841,9 +724,7 @@
                     <div
                       class="flex -rotate-1 transform items-center rounded-xl border border-l-4 border-orange-400 bg-orange-50 p-4 transition-all duration-300 hover:rotate-0 hover:shadow-lg hover:shadow-orange-500"
                     >
-                      <span class="font-semibold text-gray-800"
-                        >🏐 Professional-grade flooring</span
-                      >
+                      <span class="font-semibold text-gray-800">🏐 Professional-grade flooring</span>
                     </div>
                   </div>
                 </div>
@@ -877,11 +758,8 @@
                   </span>
                 </div>
 
-                <p
-                  class="mb-8 text-lg font-medium leading-relaxed text-gray-700"
-                >
-                  Get ready to sweat, smile, and have the time of your life with
-                  our explosive Zumba classes!
+                <p class="mb-8 text-lg font-medium leading-relaxed text-gray-700">
+                  Get ready to sweat, smile, and have the time of your life with our explosive Zumba classes!
                 </p>
 
                 <div class="mb-8 grid grid-cols-2 gap-3">
@@ -890,9 +768,7 @@
                       class="rotate-1 transform rounded-xl border border-orange-400 bg-orange-50 p-4 text-center transition-all duration-300 hover:-rotate-1 hover:shadow-lg hover:shadow-orange-500"
                     >
                       <div>🎶</div>
-                      <span class="text-sm font-semibold text-gray-800"
-                        >Dynamic, energizing upbeat music</span
-                      >
+                      <span class="text-sm font-semibold text-gray-800">Dynamic, energizing upbeat music</span>
                     </div>
                   </div>
                   <div class="class-b-item">
@@ -900,9 +776,7 @@
                       class="rotate-1 transform rounded-xl border border-orange-400 bg-orange-50 p-4 text-center transition-all duration-300 hover:-rotate-1 hover:shadow-lg hover:shadow-orange-500"
                     >
                       <div>👯‍♂️</div>
-                      <span class="text-sm font-semibold text-gray-800"
-                        >Professional dance instructors</span
-                      >
+                      <span class="text-sm font-semibold text-gray-800">Professional dance instructors</span>
                     </div>
                   </div>
                   <div class="class-b-item">
@@ -910,9 +784,7 @@
                       class="rotate-1 transform rounded-xl border border-orange-400 bg-orange-50 p-4 text-center transition-all duration-300 hover:-rotate-1 hover:shadow-lg hover:shadow-orange-500"
                     >
                       <div>😅</div>
-                      <span class="text-sm font-semibold text-gray-800"
-                        >Progressive, various levels of difficulty</span
-                      >
+                      <span class="text-sm font-semibold text-gray-800">Progressive, various levels of difficulty</span>
                     </div>
                   </div>
                   <div class="class-b-item">
@@ -920,9 +792,7 @@
                       class="rotate-1 transform rounded-xl border border-orange-400 bg-orange-50 p-4 text-center transition-all duration-300 hover:-rotate-1 hover:shadow-lg hover:shadow-orange-500"
                     >
                       <div>🤸‍♀️</div>
-                      <span class="text-sm font-semibold text-gray-800"
-                        >Fun, calorie-burning experience</span
-                      >
+                      <span class="text-sm font-semibold text-gray-800">Fun, calorie-burning experience</span>
                     </div>
                   </div>
                 </div>
@@ -954,21 +824,13 @@
           <div class="mb-16">
             <!-- 🔑 CLIENT -->
             <div>
-              <h3
-                class="inline-block text-5xl font-black text-gray-900 dark:text-white"
-              >
-                Your&nbsp;
-              </h3>
+              <h3 class="inline-block text-5xl font-black text-gray-900 dark:text-white">Your&nbsp;</h3>
               <h3
                 class="mb-4 inline-block bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text pb-4 text-5xl font-black text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
               >
                 Fitness
               </h3>
-              <h3
-                class="inline-block text-5xl font-black text-gray-900 dark:text-white"
-              >
-                , Your&nbsp;
-              </h3>
+              <h3 class="inline-block text-5xl font-black text-gray-900 dark:text-white">, Your&nbsp;</h3>
               <h3
                 class="mb-4 inline-block bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text pb-4 text-5xl font-black text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] dark:drop-shadow-[0_1.2px_1.2px_rgba(255,0,0,0.8)]"
               >
@@ -992,22 +854,14 @@
                 <div
                   class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600"
                 >
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-full bg-white"
-                  >
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white">
                     <div class="h-6 w-6 rounded-sm bg-yellow-500"></div>
                   </div>
                 </div>
-                <h4 class="mb-4 text-2xl font-bold text-gray-900">
-                  Weight Loss
-                </h4>
-                <p class="font-medium leading-relaxed text-gray-600">
-                  Personalized programs to help you shed pounds
-                </p>
+                <h4 class="mb-4 text-2xl font-bold text-gray-900">Weight Loss</h4>
+                <p class="font-medium leading-relaxed text-gray-600">Personalized programs to help you shed pounds</p>
                 <div class="mt-6 h-2 w-full rounded-full bg-yellow-100">
-                  <div
-                    class="h-2 w-3/4 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500"
-                  ></div>
+                  <div class="h-2 w-3/4 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500"></div>
                 </div>
               </div>
             </div>
@@ -1020,22 +874,14 @@
                 <div
                   class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600"
                 >
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-full bg-white"
-                  >
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white">
                     <div class="h-6 w-6 rounded-full bg-orange-500"></div>
                   </div>
                 </div>
-                <h4 class="mb-4 text-2xl font-bold text-gray-900">
-                  Muscle Gain
-                </h4>
-                <p class="font-medium leading-relaxed text-gray-600">
-                  Scientific approach to building muscle mass
-                </p>
+                <h4 class="mb-4 text-2xl font-bold text-gray-900">Muscle Gain</h4>
+                <p class="font-medium leading-relaxed text-gray-600">Scientific approach to building muscle mass</p>
                 <div class="mt-6 h-2 w-full rounded-full bg-orange-100">
-                  <div
-                    class="h-2 w-5/6 rounded-full bg-gradient-to-r from-orange-400 to-orange-500"
-                  ></div>
+                  <div class="h-2 w-5/6 rounded-full bg-gradient-to-r from-orange-400 to-orange-500"></div>
                 </div>
               </div>
             </div>
@@ -1048,20 +894,14 @@
                 <div
                   class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-red-600"
                 >
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-full bg-white"
-                  >
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white">
                     <div class="h-3 w-6 rounded-full bg-red-500"></div>
                   </div>
                 </div>
                 <h4 class="mb-4 text-2xl font-bold text-gray-900">Endurance</h4>
-                <p class="font-medium leading-relaxed text-gray-600">
-                  Build stamina and cardiovascular strength
-                </p>
+                <p class="font-medium leading-relaxed text-gray-600">Build stamina and cardiovascular strength</p>
                 <div class="mt-6 h-2 w-full rounded-full bg-red-100">
-                  <div
-                    class="h-2 w-2/3 rounded-full bg-gradient-to-r from-red-400 to-red-500"
-                  ></div>
+                  <div class="h-2 w-2/3 rounded-full bg-gradient-to-r from-red-400 to-red-500"></div>
                 </div>
               </div>
             </div>
@@ -1074,20 +914,14 @@
                 <div
                   class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-green-600"
                 >
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-full bg-white"
-                  >
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white">
                     <div class="h-6 w-6 rounded-lg bg-green-500"></div>
                   </div>
                 </div>
                 <h4 class="mb-4 text-2xl font-bold text-gray-900">Wellness</h4>
-                <p class="font-medium leading-relaxed text-gray-600">
-                  Holistic approach to health and fitness
-                </p>
+                <p class="font-medium leading-relaxed text-gray-600">Holistic approach to health and fitness</p>
                 <div class="mt-6 h-2 w-full rounded-full bg-green-100">
-                  <div
-                    class="h-2 w-4/5 rounded-full bg-gradient-to-r from-green-400 to-green-500"
-                  ></div>
+                  <div class="h-2 w-4/5 rounded-full bg-gradient-to-r from-green-400 to-green-500"></div>
                 </div>
               </div>
             </div>
@@ -1109,9 +943,7 @@
           <div class="mb-16 text-center">
             <!-- 🔑 CLIENT -->
             <div class="mb-4 pb-4">
-              <h2
-                class="inline-block text-5xl font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-              >
+              <h2 class="inline-block text-5xl font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                 Meet Our&nbsp;
               </h2>
               <h2
@@ -1120,9 +952,7 @@
                 Freelance Trainers
               </h2>
             </div>
-            <p
-              class="mx-auto max-w-2xl text-xl text-gray-600 dark:text-gray-300"
-            >
+            <p class="mx-auto max-w-2xl text-xl text-gray-600 dark:text-gray-300">
               <!-- 🔑 CLIENT -->
               Expert coaches dedicated to transforming your fitness journey
             </p>
@@ -1148,9 +978,7 @@
                     src="/src/images/trainer_image_1.jpg"
                     class="h-80 w-full transform object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
-                  ></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
                 <div class="p-8">
                   <div class="text-center">
@@ -1159,16 +987,11 @@
                     >
                       Lead Trainer
                     </div>
-                    <h3 class="mb-2 text-2xl font-bold text-gray-900">
-                      Coach Marc Gutierrez Villafuerte
-                    </h3>
-                    <p class="mb-4 text-lg font-semibold text-orange-600">
-                      Certified Freelance Personal Trainer
-                    </p>
+                    <h3 class="mb-2 text-2xl font-bold text-gray-900">Coach Marc Gutierrez Villafuerte</h3>
+                    <p class="mb-4 text-lg font-semibold text-orange-600">Certified Freelance Personal Trainer</p>
                     <p class="mb-6 leading-relaxed text-gray-600">
-                      Specializing in strength training and weight loss with
-                      over more than 10 years of experience helping clients
-                      achieve their fitness goals.
+                      Specializing in strength training and weight loss with over more than 10 years of experience
+                      helping clients achieve their fitness goals.
                     </p>
                     <div class="flex justify-center space-x-6">
                       <a
@@ -1214,9 +1037,7 @@
                     src="/src/images/modern aplha male.jpg"
                     class="h-80 w-full transform object-cover object-[center_25%] transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
-                  ></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
                 <div class="p-8">
                   <div class="text-center">
@@ -1225,16 +1046,11 @@
                     >
                       Multi-Specialist
                     </div>
-                    <h3 class="mb-2 text-2xl font-bold text-gray-900">
-                      Modern Alpha Male
-                    </h3>
-                    <p class="mb-4 text-lg font-semibold text-orange-600">
-                      Full Time Coach
-                    </p>
+                    <h3 class="mb-2 text-2xl font-bold text-gray-900">Modern Alpha Male</h3>
+                    <p class="mb-4 text-lg font-semibold text-orange-600">Full Time Coach</p>
                     <p class="mb-6 leading-relaxed text-gray-600">
-                      Specializing in strength training and weight loss with
-                      over more than 30 years of experience helping clients
-                      achieve their fitness goals.
+                      Specializing in strength training and weight loss with over more than 30 years of experience
+                      helping clients achieve their fitness goals.
                     </p>
                     <div class="flex justify-center space-x-6">
                       <a
@@ -1280,9 +1096,7 @@
                     src="/src/images/trainer_image_1.jpg"
                     class="h-80 w-full transform object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
-                  ></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
                 <div class="p-8">
                   <div class="text-center">
@@ -1291,16 +1105,11 @@
                     >
                       Senior Trainer
                     </div>
-                    <h3 class="mb-2 text-2xl font-bold text-gray-900">
-                      Coach Marc Gutierrez Villafuerte
-                    </h3>
-                    <p class="mb-4 text-lg font-semibold text-orange-600">
-                      Certified Freelance Personal Trainer
-                    </p>
+                    <h3 class="mb-2 text-2xl font-bold text-gray-900">Coach Marc Gutierrez Villafuerte</h3>
+                    <p class="mb-4 text-lg font-semibold text-orange-600">Certified Freelance Personal Trainer</p>
                     <p class="mb-6 leading-relaxed text-gray-600">
-                      Specializing in strength training and weight loss with
-                      over more than 10 years of experience helping clients
-                      achieve their fitness goals.
+                      Specializing in strength training and weight loss with over more than 10 years of experience
+                      helping clients achieve their fitness goals.
                     </p>
                     <div class="flex justify-center space-x-6">
                       <a
@@ -1339,19 +1148,13 @@
 
     <!-- 🔥 calculators component 🔥 -->
     <div class="relative">
-      <div
-        class="absolute inset-0 bg-orange-300 opacity-100 transition-opacity duration-300 dark:opacity-0"
-      ></div>
-      <div
-        class="bg-dark-700 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"
-      ></div>
+      <div class="absolute inset-0 bg-orange-300 opacity-100 transition-opacity duration-300 dark:opacity-0"></div>
+      <div class="bg-dark-700 absolute inset-0 opacity-0 transition-opacity duration-300 dark:opacity-100"></div>
       <section class="container relative z-10 mx-auto max-w-6xl px-6 py-20">
         <div class="mb-16 text-center">
           <div class="mb-4 pb-4">
             <!-- 🔑 CLIENT -->
-            <h2
-              class="inline-block text-5xl font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-            >
+            <h2 class="inline-block text-5xl font-black text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
               Try Our&nbsp;
             </h2>
             <h2
@@ -1403,20 +1206,14 @@
                     />
                   </svg>
                 </div>
-                <h3 class="mb-2 text-3xl font-bold text-gray-800">
-                  BMI Calculator
-                </h3>
+                <h3 class="mb-2 text-3xl font-bold text-gray-800">BMI Calculator</h3>
                 <p class="text-gray-600">Measure your body mass index</p>
               </div>
 
               <form id="bmiForm" class="space-y-6">
                 <div class="relative">
-                  <label
-                    class="mb-3 block flex items-center gap-2 font-semibold text-gray-700"
-                  >
-                    <div
-                      class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100"
-                    >
+                  <label class="mb-3 block flex items-center gap-2 font-semibold text-gray-700">
+                    <div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
@@ -1448,12 +1245,8 @@
                 </div>
 
                 <div class="relative">
-                  <label
-                    class="mb-3 block flex items-center gap-2 font-semibold text-gray-700"
-                  >
-                    <div
-                      class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100"
-                    >
+                  <label class="mb-3 block flex items-center gap-2 font-semibold text-gray-700">
+                    <div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
@@ -1517,12 +1310,10 @@
                 class="mt-8 hidden rounded-2xl border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100 p-6"
               >
                 <p class="mb-2 text-center text-2xl font-bold text-orange-800">
-                  Your BMI: <span id="bmiValue" class="text-orange-600"></span>
+                  Your BMI:
+                  <span id="bmiValue" class="text-orange-600"></span>
                 </p>
-                <p
-                  class="text-center font-medium text-gray-700"
-                  id="bmiCategory"
-                ></p>
+                <p class="text-center font-medium text-gray-700" id="bmiCategory"></p>
               </div>
             </div>
           </div>
@@ -1552,29 +1343,21 @@
                     class="lucide lucide-ham-icon lucide-ham"
                   >
                     <path d="M13.144 21.144A7.274 10.445 45 1 0 2.856 10.856" />
-                    <path
-                      d="M13.144 21.144A7.274 4.365 45 0 0 2.856 10.856a7.274 4.365 45 0 0 10.288 10.288"
-                    />
+                    <path d="M13.144 21.144A7.274 4.365 45 0 0 2.856 10.856a7.274 4.365 45 0 0 10.288 10.288" />
                     <path
                       d="M16.565 10.435 18.6 8.4a2.501 2.501 0 1 0 1.65-4.65 2.5 2.5 0 1 0-4.66 1.66l-2.024 2.025"
                     />
                     <path d="m8.5 16.5-1-1" />
                   </svg>
                 </div>
-                <h3 class="mb-2 text-3xl font-bold text-gray-800">
-                  Calorie Calculator
-                </h3>
+                <h3 class="mb-2 text-3xl font-bold text-gray-800">Calorie Calculator</h3>
                 <p class="text-gray-600">Calculate your daily caloric needs</p>
               </div>
 
               <form id="calorieForm" class="space-y-6">
                 <div class="relative">
-                  <label
-                    class="mb-3 block flex items-center gap-2 font-semibold text-gray-700"
-                  >
-                    <div
-                      class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100"
-                    >
+                  <label class="mb-3 block flex items-center gap-2 font-semibold text-gray-700">
+                    <div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
@@ -1603,12 +1386,8 @@
                 </div>
 
                 <div class="relative">
-                  <label
-                    class="mb-3 block flex items-center gap-2 font-semibold text-gray-700"
-                  >
-                    <div
-                      class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100"
-                    >
+                  <label class="mb-3 block flex items-center gap-2 font-semibold text-gray-700">
+                    <div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
@@ -1639,12 +1418,8 @@
                 </div>
 
                 <div class="relative">
-                  <label
-                    class="mb-3 block flex items-center gap-2 font-semibold text-gray-700"
-                  >
-                    <div
-                      class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100"
-                    >
+                  <label class="mb-3 block flex items-center gap-2 font-semibold text-gray-700">
+                    <div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
@@ -1716,10 +1491,7 @@
                   Daily Calories:
                   <span id="calorieValue" class="text-orange-600"></span>
                 </p>
-                <p
-                  class="text-center font-medium text-gray-700"
-                  id="calorieDescription"
-                ></p>
+                <p class="text-center font-medium text-gray-700" id="calorieDescription"></p>
               </div>
             </div>
           </div>
@@ -1823,12 +1595,7 @@
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 transition duration-200 group-hover/child:scale-110 group-hover/parent:bg-orange-700"
                       >
-                        <svg
-                          class="h-5 w-5 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -1849,9 +1616,7 @@
                         >
                           Address
                         </p>
-                        <p
-                          class="text-sm font-medium leading-relaxed text-gray-700"
-                        >
+                        <p class="text-sm font-medium leading-relaxed text-gray-700">
                           Capt. F. S. Samano, Caloocan, Metro Manila
                         </p>
                       </div>
@@ -1866,12 +1631,7 @@
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 transition duration-200 group-hover/child:scale-110 group-hover/parent:bg-orange-700"
                       >
-                        <svg
-                          class="h-5 w-5 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -1886,9 +1646,7 @@
                         >
                           Hours
                         </p>
-                        <p class="text-sm font-medium text-gray-700">
-                          Monday - Sunday | 9:00 AM - 11:00 PM
-                        </p>
+                        <p class="text-sm font-medium text-gray-700">Monday - Sunday | 9:00 AM - 11:00 PM</p>
                       </div>
                     </div>
                   </div>
@@ -1901,12 +1659,7 @@
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 transition duration-200 group-hover/child:scale-110 group-hover/parent:bg-orange-700"
                       >
-                        <svg
-                          class="h-5 w-5 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -1922,9 +1675,11 @@
                           Contact
                         </p>
                         <p class="text-sm font-medium text-gray-700">
-                          (63+) 933-874-5377 | fitworxgym082@gmail.com<br />(fb)
-                          @fitworxgymph | (ig) @fitworxgym<br />(tiktok)
-                          @fitworxgym
+                          (63+) 933-874-5377 | fitworxgym082@gmail.com
+                          <br />
+                          (fb) @fitworxgymph | (ig) @fitworxgym
+                          <br />
+                          (tiktok) @fitworxgym
                         </p>
                       </div>
                     </div>
@@ -1990,12 +1745,7 @@
                 <div
                   class="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-xl"
                 >
-                  <svg
-                    class="h-8 w-8 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
@@ -2024,9 +1774,7 @@
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
                     >
-                      <span class="pr-4 text-lg font-bold text-orange-600"
-                        >Do you offer personal training?</span
-                      >
+                      <span class="pr-4 text-lg font-bold text-orange-600">Do you offer personal training?</span>
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 transition-colors duration-300 group-hover:bg-orange-200"
                       >
@@ -2050,17 +1798,13 @@
                       class="faq-answer hidden border-t border-orange-100 bg-gradient-to-br from-gray-50 to-orange-50/30 px-6 pb-6 text-gray-700"
                     >
                       <div class="pt-4 text-base leading-relaxed">
-                        Yes, there are freelance personal trainers who work
-                        independently at our gym.
+                        Yes, there are freelance personal trainers who work independently at our gym.
                         <strong class="text-orange-600">
-                          They are not employed or managed by us, and the gym
-                          does not take any commission or cut from their
-                          services.
+                          They are not employed or managed by us, and the gym does not take any commission or cut from
+                          their services.
                         </strong>
                         If you're interested, you're welcome to
-                        <a href="#trainers-section" class="text-blue-500"
-                          >contact them</a
-                        >
+                        <a href="#trainers-section" class="text-blue-500">contact them</a>
                         directly to arrange sessions.
                       </div>
                     </div>
@@ -2074,9 +1818,7 @@
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
                     >
-                      <span class="pr-4 text-lg font-bold text-orange-600"
-                        >Are there any age restrictions?</span
-                      >
+                      <span class="pr-4 text-lg font-bold text-orange-600">Are there any age restrictions?</span>
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 transition-colors duration-300 group-hover:bg-orange-200"
                       >
@@ -2101,10 +1843,9 @@
                     >
                       <div class="pt-4 text-base leading-relaxed">
                         Members must be at least
-                        <strong class="text-orange-600">16 years old</strong>.
-                        Individuals between 16-18 years require parental
-                        consent. We offer student memberships with special rates
-                        for those in school.
+                        <strong class="text-orange-600">16 years old</strong>
+                        . Individuals between 16-18 years require parental consent. We offer student memberships with
+                        special rates for those in school.
                       </div>
                     </div>
                   </div>
@@ -2117,10 +1858,9 @@
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
                     >
-                      <span class="pr-4 text-lg font-bold text-orange-600"
-                        >What do I get access to with a daily or monthly
-                        pass?</span
-                      >
+                      <span class="pr-4 text-lg font-bold text-orange-600">
+                        What do I get access to with a daily or monthly pass?
+                      </span>
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 transition-colors duration-300 group-hover:bg-orange-200"
                       >
@@ -2145,10 +1885,8 @@
                     >
                       <div class="pt-4 text-base leading-relaxed">
                         Your daily or monthly pass includes
-                        <strong class="text-orange-600"
-                          >full access to our gym floor</strong
-                        >. You are free to use any equipment until you leave the
-                        gym.
+                        <strong class="text-orange-600">full access to our gym floor</strong>
+                        . You are free to use any equipment until you leave the gym.
                       </div>
                     </div>
                   </div>
@@ -2161,9 +1899,7 @@
                     <div
                       class="faq-question flex cursor-pointer items-center justify-between bg-gradient-to-r from-transparent to-orange-50/30 p-6 transition-all duration-300 group-hover:from-orange-50/50 group-hover:to-orange-100/50"
                     >
-                      <span class="pr-4 text-lg font-bold text-orange-600"
-                        >What are the gym pass pricing?</span
-                      >
+                      <span class="pr-4 text-lg font-bold text-orange-600">What are the gym pass pricing?</span>
                       <div
                         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 transition-colors duration-300 group-hover:bg-orange-200"
                       >
@@ -2188,13 +1924,9 @@
                     >
                       <div class="pt-4 text-base leading-relaxed">
                         You can choose to pay daily pass for
-                        <strong class="text-orange-600">
-                          ₱70 (₱60 for student)
-                        </strong>
+                        <strong class="text-orange-600">₱70 (₱60 for student)</strong>
                         or pay monthly pass for
-                        <strong class="text-orange-600">
-                          ₱950 (₱850 for student)
-                        </strong>
+                        <strong class="text-orange-600">₱950 (₱850 for student)</strong>
                         .
                       </div>
                     </div>
@@ -2209,12 +1941,7 @@
                 <div
                   class="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-xl"
                 >
-                  <svg
-                    class="h-8 w-8 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
@@ -2237,17 +1964,10 @@
                 <div
                   class="absolute -inset-1 rounded-3xl bg-gradient-to-r from-orange-400 to-orange-600 opacity-20 blur"
                 ></div>
-                <div
-                  class="relative rounded-3xl border-2 border-orange-100 bg-white p-10 shadow-2xl"
-                >
+                <div class="relative rounded-3xl border-2 border-orange-100 bg-white p-10 shadow-2xl">
                   <form id="feedback-form" class="space-y-8">
                     <div class="space-y-2">
-                      <label
-                        for="name"
-                        class="mb-3 block text-lg font-bold text-orange-600"
-                      >
-                        Your Name
-                      </label>
+                      <label for="name" class="mb-3 block text-lg font-bold text-orange-600">Your Name</label>
                       <div class="relative">
                         <input
                           type="text"
@@ -2257,15 +1977,8 @@
                           class="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-200"
                           placeholder="Enter your full name"
                         />
-                        <div
-                          class="absolute inset-y-0 right-0 flex items-center pr-4"
-                        >
-                          <svg
-                            class="h-5 w-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
@@ -2278,12 +1991,7 @@
                     </div>
 
                     <div class="space-y-2">
-                      <label
-                        for="email"
-                        class="mb-3 block text-lg font-bold text-orange-600"
-                      >
-                        Email Address
-                      </label>
+                      <label for="email" class="mb-3 block text-lg font-bold text-orange-600">Email Address</label>
                       <div class="relative">
                         <input
                           type="email"
@@ -2293,15 +2001,8 @@
                           class="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 py-4 text-lg transition-all duration-300 hover:bg-white focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-200"
                           placeholder="your.email@example.com"
                         />
-                        <div
-                          class="absolute inset-y-0 right-0 flex items-center pr-4"
-                        >
-                          <svg
-                            class="h-5 w-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
@@ -2314,12 +2015,7 @@
                     </div>
 
                     <div class="space-y-2">
-                      <label
-                        for="feedback"
-                        class="mb-3 block text-lg font-bold text-orange-600"
-                      >
-                        Your Feedback
-                      </label>
+                      <label for="feedback" class="mb-3 block text-lg font-bold text-orange-600">Your Feedback</label>
                       <!-- 🔑 CLIENT (placeholder) -->
                       <textarea
                         id="feedback"
@@ -2332,22 +2028,13 @@
                     </div>
 
                     <div class="space-y-4">
-                      <span class="block text-lg font-bold text-orange-600">
-                        How would you rate your experience?
-                      </span>
+                      <span class="block text-lg font-bold text-orange-600">How would you rate your experience?</span>
                       <div
                         class="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50 p-6"
                       >
                         <div class="flex flex-wrap justify-between gap-4">
-                          <label
-                            class="group relative flex cursor-pointer items-center"
-                          >
-                            <input
-                              type="radio"
-                              name="rating"
-                              value="1"
-                              class="peer sr-only"
-                            />
+                          <label class="group relative flex cursor-pointer items-center">
+                            <input type="radio" name="rating" value="1" class="peer sr-only" />
                             <div
                               class="mr-3 flex h-6 w-6 items-center justify-center rounded-full border-2 border-orange-300 transition-colors duration-200 group-hover:border-orange-500 peer-checked:border-orange-500"
                             ></div>
@@ -2356,18 +2043,12 @@
                             ></div>
                             <span
                               class="font-semibold text-gray-700 transition-colors duration-200 group-hover:text-orange-600 peer-checked:text-orange-600"
-                              >1 (Poor)</span
                             >
+                              1 (Poor)
+                            </span>
                           </label>
-                          <label
-                            class="group relative flex cursor-pointer items-center"
-                          >
-                            <input
-                              type="radio"
-                              name="rating"
-                              value="2"
-                              class="peer sr-only"
-                            />
+                          <label class="group relative flex cursor-pointer items-center">
+                            <input type="radio" name="rating" value="2" class="peer sr-only" />
                             <div
                               class="mr-3 flex h-6 w-6 items-center justify-center rounded-full border-2 border-orange-300 transition-colors duration-200 group-hover:border-orange-500 peer-checked:border-orange-500"
                             ></div>
@@ -2376,18 +2057,12 @@
                             ></div>
                             <span
                               class="font-semibold text-gray-700 transition-colors duration-200 group-hover:text-orange-600 peer-checked:text-orange-600"
-                              >2</span
                             >
+                              2
+                            </span>
                           </label>
-                          <label
-                            class="group relative flex cursor-pointer items-center"
-                          >
-                            <input
-                              type="radio"
-                              name="rating"
-                              value="3"
-                              class="peer sr-only"
-                            />
+                          <label class="group relative flex cursor-pointer items-center">
+                            <input type="radio" name="rating" value="3" class="peer sr-only" />
                             <div
                               class="mr-3 flex h-6 w-6 items-center justify-center rounded-full border-2 border-orange-300 transition-colors duration-200 group-hover:border-orange-500 peer-checked:border-orange-500"
                             ></div>
@@ -2396,18 +2071,12 @@
                             ></div>
                             <span
                               class="font-semibold text-gray-700 transition-colors duration-200 group-hover:text-orange-600 peer-checked:text-orange-600"
-                              >3 (Average)</span
                             >
+                              3 (Average)
+                            </span>
                           </label>
-                          <label
-                            class="group relative flex cursor-pointer items-center"
-                          >
-                            <input
-                              type="radio"
-                              name="rating"
-                              value="4"
-                              class="peer sr-only"
-                            />
+                          <label class="group relative flex cursor-pointer items-center">
+                            <input type="radio" name="rating" value="4" class="peer sr-only" />
                             <div
                               class="mr-3 flex h-6 w-6 items-center justify-center rounded-full border-2 border-orange-300 transition-colors duration-200 group-hover:border-orange-500 peer-checked:border-orange-500"
                             ></div>
@@ -2416,19 +2085,12 @@
                             ></div>
                             <span
                               class="font-semibold text-gray-700 transition-colors duration-200 group-hover:text-orange-600 peer-checked:text-orange-600"
-                              >4</span
                             >
+                              4
+                            </span>
                           </label>
-                          <label
-                            class="group relative flex cursor-pointer items-center"
-                          >
-                            <input
-                              type="radio"
-                              name="rating"
-                              value="5"
-                              class="peer sr-only"
-                              required
-                            />
+                          <label class="group relative flex cursor-pointer items-center">
+                            <input type="radio" name="rating" value="5" class="peer sr-only" required />
                             <div
                               class="mr-3 flex h-6 w-6 items-center justify-center rounded-full border-2 border-orange-300 transition-colors duration-200 group-hover:border-orange-500 peer-checked:border-orange-500"
                             ></div>
@@ -2437,8 +2099,9 @@
                             ></div>
                             <span
                               class="font-semibold text-gray-700 transition-colors duration-200 group-hover:text-orange-600 peer-checked:text-orange-600"
-                              >5 (Excellent)</span
                             >
+                              5 (Excellent)
+                            </span>
                           </label>
                         </div>
                       </div>
@@ -2455,11 +2118,7 @@
                         >
                           💨
                         </span>
-                        <span
-                          class="-mx-6 transition-transform duration-300 group-hover:translate-x-4"
-                        >
-                          💌
-                        </span>
+                        <span class="-mx-6 transition-transform duration-300 group-hover:translate-x-4">💌</span>
                       </button>
                     </div>
                   </form>
@@ -2479,7 +2138,7 @@
       <div
         class="from-dark-700 to-dark-800 absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-300 dark:opacity-100"
       ></div>
-      <section class="relative z-10 overflow-hidden py-20 text-white">
+      <section id="pricing" class="relative z-10 overflow-hidden py-20 text-white">
         <div class="absolute inset-0 bg-black/10"></div>
         <div class="container relative z-10 mx-auto px-6 text-center">
           <div class="mb-16">
@@ -2488,9 +2147,7 @@
               unleash your potential
             </h3>
             <div class="mx-auto mb-4 h-1 w-32 rounded-full bg-white"></div>
-            <p class="text-xl font-light text-orange-100">
-              Choose the plan that fits your goals
-            </p>
+            <p class="text-xl font-light text-orange-100">Choose the plan that fits your goals</p>
           </div>
 
           <div class="mx-auto max-w-5xl">
@@ -2500,35 +2157,23 @@
               <div
                 class="pricing-card group relative overflow-hidden rounded-3xl border-4 border-orange-200 bg-white text-gray-800 shadow-2xl transition duration-500 hover:-translate-y-2 hover:scale-105 hover:border-orange-400"
               >
-                <div
-                  class="relative bg-gradient-to-r from-orange-500 to-red-600 px-8 py-6"
-                >
+                <div class="relative bg-gradient-to-r from-orange-500 to-red-600 px-8 py-6">
                   <div
                     class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-white/20"
                   ></div>
                   <div class="relative z-10">
-                    <span
-                      class="mb-2 inline-block rounded-full bg-white/30 px-4 py-1 text-sm font-bold text-white"
-                    >
+                    <span class="mb-2 inline-block rounded-full bg-white/30 px-4 py-1 text-sm font-bold text-white">
                       Regular
                     </span>
-                    <h4 class="text-3xl font-black text-white">
-                      Regular Monthly Pass
-                    </h4>
+                    <h4 class="text-3xl font-black text-white">Regular Monthly Pass</h4>
                   </div>
                 </div>
 
                 <div class="p-8">
-                  <p class="mb-6 font-medium text-gray-600">
-                    Perfect for dedicated fitness enthusiasts
-                  </p>
+                  <p class="mb-6 font-medium text-gray-600">Perfect for dedicated fitness enthusiasts</p>
                   <div class="mb-8">
-                    <span class="text-6xl font-black text-orange-600"
-                      >₱950</span
-                    >
-                    <span class="text-lg font-semibold text-gray-600"
-                      >/month</span
-                    >
+                    <span class="text-6xl font-black text-orange-600">₱950</span>
+                    <span class="text-lg font-semibold text-gray-600">/month</span>
                   </div>
 
                   <div class="mb-8 space-y-3">
@@ -2536,12 +2181,8 @@
                       <div
                         class="flex items-center rounded-xl border border-l-4 border-orange-500 bg-orange-50 px-4 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-orange-600"
                       >
-                        <div
-                          class="mr-3 h-2 w-2 rounded-full bg-orange-500"
-                        ></div>
-                        <span class="font-semibold text-orange-700"
-                          >Full Gym Equipment Access</span
-                        >
+                        <div class="mr-3 h-2 w-2 rounded-full bg-orange-500"></div>
+                        <span class="font-semibold text-orange-700">Full Gym Equipment Access</span>
                       </div>
                     </div>
 
@@ -2549,12 +2190,8 @@
                       <div
                         class="flex items-center rounded-xl border border-l-4 border-orange-500 bg-orange-50 px-4 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-orange-600"
                       >
-                        <div
-                          class="mr-3 h-2 w-2 rounded-full bg-orange-500"
-                        ></div>
-                        <span class="font-semibold text-orange-700"
-                          >No Daily Entrance Fee</span
-                        >
+                        <div class="mr-3 h-2 w-2 rounded-full bg-orange-500"></div>
+                        <span class="font-semibold text-orange-700">No Daily Entrance Fee</span>
                       </div>
                     </div>
 
@@ -2562,12 +2199,8 @@
                       <div
                         class="flex items-center rounded-xl border border-l-4 border-orange-500 bg-orange-50 px-4 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-orange-600"
                       >
-                        <div
-                          class="mr-3 h-2 w-2 rounded-full bg-orange-500"
-                        ></div>
-                        <span class="font-semibold text-orange-700"
-                          >Automatic Daily Log with QR</span
-                        >
+                        <div class="mr-3 h-2 w-2 rounded-full bg-orange-500"></div>
+                        <span class="font-semibold text-orange-700">Automatic Daily Log with QR</span>
                       </div>
                     </div>
                   </div>
@@ -2585,35 +2218,23 @@
               <div
                 class="pricing-card group relative overflow-hidden rounded-3xl border-4 border-orange-200 bg-white text-gray-800 shadow-2xl transition duration-500 hover:-translate-y-2 hover:scale-105 hover:border-orange-400"
               >
-                <div
-                  class="relative bg-gradient-to-r from-orange-500 to-red-600 px-8 py-6"
-                >
+                <div class="relative bg-gradient-to-r from-orange-500 to-red-600 px-8 py-6">
                   <div
                     class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-white/20"
                   ></div>
                   <div class="relative z-10">
-                    <span
-                      class="mb-2 inline-block rounded-full bg-white/30 px-4 py-1 text-sm font-bold text-white"
-                    >
+                    <span class="mb-2 inline-block rounded-full bg-white/30 px-4 py-1 text-sm font-bold text-white">
                       Student
                     </span>
-                    <h4 class="text-3xl font-black text-white">
-                      Student Monthly Pass
-                    </h4>
+                    <h4 class="text-3xl font-black text-white">Student Monthly Pass</h4>
                   </div>
                 </div>
 
                 <div class="p-8">
-                  <p class="mb-6 font-medium text-gray-600">
-                    Special rate for students
-                  </p>
+                  <p class="mb-6 font-medium text-gray-600">Special rate for students</p>
                   <div class="mb-8">
-                    <span class="text-6xl font-black text-orange-600"
-                      >₱850</span
-                    >
-                    <span class="text-lg font-semibold text-gray-600"
-                      >/month</span
-                    >
+                    <span class="text-6xl font-black text-orange-600">₱850</span>
+                    <span class="text-lg font-semibold text-gray-600">/month</span>
                   </div>
 
                   <div class="mb-8 space-y-3">
@@ -2621,36 +2242,24 @@
                       <div
                         class="flex items-center rounded-xl border border-l-4 border-orange-500 bg-orange-50 px-4 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-orange-600"
                       >
-                        <div
-                          class="mr-3 h-2 w-2 rounded-full bg-orange-500"
-                        ></div>
-                        <span class="font-semibold text-orange-700"
-                          >Enjoy Regular Monthly Pass</span
-                        >
+                        <div class="mr-3 h-2 w-2 rounded-full bg-orange-500"></div>
+                        <span class="font-semibold text-orange-700">Enjoy Regular Monthly Pass</span>
                       </div>
                     </div>
                     <div class="pricing-b-item">
                       <div
                         class="flex items-center rounded-xl border border-l-4 border-orange-500 bg-orange-50 px-4 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-orange-600"
                       >
-                        <div
-                          class="mr-3 h-2 w-2 rounded-full bg-orange-500"
-                        ></div>
-                        <span class="font-semibold text-orange-700"
-                          >Student Rate</span
-                        >
+                        <div class="mr-3 h-2 w-2 rounded-full bg-orange-500"></div>
+                        <span class="font-semibold text-orange-700">Student Rate</span>
                       </div>
                     </div>
                     <div class="pricing-b-item">
                       <div
                         class="flex items-center rounded-xl border border-l-4 border-orange-500 bg-orange-50 px-4 py-3 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-orange-600"
                       >
-                        <div
-                          class="mr-3 h-2 w-2 rounded-full bg-orange-500"
-                        ></div>
-                        <span class="font-semibold text-orange-700"
-                          >Requires Valid Student ID</span
-                        >
+                        <div class="mr-3 h-2 w-2 rounded-full bg-orange-500"></div>
+                        <span class="font-semibold text-orange-700">Requires Valid Student ID</span>
                       </div>
                     </div>
                   </div>
@@ -2670,9 +2279,7 @@
     </div>
 
     <!-- 🔥 footer 🔥 -->
-    <footer
-      class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 py-8 text-white"
-    >
+    <footer class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 py-8 text-white">
       <div class="container mx-auto px-4">
         <!-- grid -->
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -2680,60 +2287,38 @@
           <div class="space-y-4">
             <div class="flex grid space-y-2">
               <div class="flex items-center space-x-3">
-                <img
-                  src="/src/images/client_logo.jpg"
-                  class="h-10 w-10 rounded-md object-cover"
-                />
+                <img src="/src/images/client_logo.jpg" class="h-10 w-10 rounded-md object-cover" />
                 <!-- 🔑 CLIENT -->
                 <h3 class="text-xl font-bold">Fitworx Gym</h3>
               </div>
               <p class="pb-4 pr-4 leading-relaxed text-gray-400">
-                Transform your fitness journey with our modern facilities and
-                expert guidance.
+                Transform your fitness journey with our modern facilities and expert guidance.
               </p>
               <p class="flex grid space-y-1 text-sm">
                 <b class="text-gray-300">Located at:</b>
-                <span class="text-gray-400"
-                  >Capt. F. S. Samano, Caloocan, Metro Manila</span
-                >
+                <span class="text-gray-400">Capt. F. S. Samano, Caloocan, Metro Manila</span>
               </p>
             </div>
           </div>
 
           <div class="space-y-4">
-            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">
-              Quick Links
-            </h3>
+            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">Quick Links</h3>
             <ul class="space-y-2">
               <li>
-                <a
-                  href="/about"
-                  class="text-gray-400 transition-colors hover:text-white"
-                  >About Us</a
-                >
+                <a href="/about" class="text-gray-400 transition-colors hover:text-white">About Us</a>
               </li>
               <li>
-                <a
-                  href="/privacy"
-                  class="text-gray-400 transition-colors hover:text-white"
-                  >Privacy Policy</a
-                >
+                <a href="/privacy" class="text-gray-400 transition-colors hover:text-white">Privacy Policy</a>
               </li>
               <li>
-                <a
-                  href="/terms"
-                  class="text-gray-400 transition-colors hover:text-white"
-                  >Terms of Service</a
-                >
+                <a href="/terms" class="text-gray-400 transition-colors hover:text-white">Terms of Service</a>
               </li>
             </ul>
           </div>
 
           <!-- 🔑 CLIENT -->
           <div class="space-y-4">
-            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">
-              Operating Hours
-            </h3>
+            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">Operating Hours</h3>
             <ul class="flex grid space-y-2 text-sm">
               <span class="text-gray-300"><b>Monday - Sunday:</b></span>
               <span class="text-gray-400">9:00 AM - 11:00 PM</span>
@@ -2741,16 +2326,16 @@
           </div>
 
           <div class="space-y-4">
-            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">
-              Contact Us
-            </h3>
+            <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">Contact Us</h3>
             <ul class="space-y-3">
               <!-- 🔑 CLIENT -->
               <li class="text-sm text-gray-400">
-                <b class="text-gray-300">Mobile:</b> (63+) 933-874-5377
+                <b class="text-gray-300">Mobile:</b>
+                (63+) 933-874-5377
               </li>
               <li class="text-sm text-gray-400">
-                <b class="text-gray-300">Email:</b> fitworxgym082@gmail.com
+                <b class="text-gray-300">Email:</b>
+                fitworxgym082@gmail.com
               </li>
               <li class="flex space-x-2 text-sm text-gray-400">
                 <b class="text-gray-300">Social Media:</b>
@@ -2771,9 +2356,7 @@
                       stroke-linejoin="round"
                       class="lucide lucide-facebook-icon lucide-facebook"
                     >
-                      <path
-                        d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"
-                      />
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
                     </svg>
                   </a>
                   <a
@@ -2793,9 +2376,7 @@
                       class="lucide lucide-instagram-icon lucide-instagram"
                     >
                       <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                      <path
-                        d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
-                      />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                       <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
                     </svg>
                   </a>
@@ -2845,24 +2426,14 @@
         </div>
 
         <div class="mt-8 border-t border-gray-600 pt-6">
-          <div
-            class="flex flex-col items-center justify-between text-gray-500 md:flex-row"
-          >
+          <div class="flex flex-col items-center justify-between text-gray-500 md:flex-row">
             <p class="order-2 mt-4 text-sm md:order-1 md:mt-0">
               <!-- 🔑 CLIENT -->
               &copy; 2025 Fitworx Gym. All rights reserved.
             </p>
             <div class="order-1 flex space-x-4 md:order-2">
-              <a
-                href="/privacy"
-                class="text-sm transition-colors hover:text-white"
-                >Privacy Policy</a
-              >
-              <a
-                href="/terms"
-                class="text-sm transition-colors hover:text-white"
-                >Terms of Service</a
-              >
+              <a href="/privacy" class="text-sm transition-colors hover:text-white">Privacy Policy</a>
+              <a href="/terms" class="text-sm transition-colors hover:text-white">Terms of Service</a>
             </div>
           </div>
         </div>
@@ -2876,9 +2447,7 @@
       id="successModal"
       class="modal fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-70"
     >
-      <div
-        class="rounded-lg border-2 border-green-500 bg-zinc-900 p-6 text-center shadow-xl"
-      >
+      <div class="rounded-lg border-2 border-green-500 bg-zinc-900 p-6 text-center shadow-xl">
         <div class="mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -2896,14 +2465,8 @@
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
         </div>
-        <h3
-          id="success-title"
-          class="text-xl font-bold uppercase text-white"
-        ></h3>
-        <p
-          id="success-message"
-          class="mt-2 text-sm uppercase tracking-wider text-gray-400"
-        ></p>
+        <h3 id="success-title" class="text-xl font-bold uppercase text-white"></h3>
+        <p id="success-message" class="mt-2 text-sm uppercase tracking-wider text-gray-400"></p>
       </div>
     </div>
 
@@ -2913,9 +2476,7 @@
       class="modal fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-70"
     >
       <!-- content -->
-      <div
-        class="mx-4 w-full max-w-md rounded-lg border-2 border-orange-500 bg-zinc-900 p-6 shadow-xl"
-      >
+      <div class="mx-4 w-full max-w-md rounded-lg border-2 border-orange-500 bg-zinc-900 p-6 shadow-xl">
         <!-- header -->
         <div class="mb-6 text-center">
           <div class="mb-2 flex items-center justify-center">
@@ -2931,9 +2492,7 @@
               stroke-linejoin="round"
               class="text-orange-500"
             >
-              <path
-                d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2z"
-              />
+              <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2z" />
               <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
               <path d="M8 16v4" />
               <path d="M16 16v4" />
@@ -2952,9 +2511,7 @@
         <!-- body -->
         <div class="space-y-4">
           <div class="relative">
-            <div
-              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-            >
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -2979,9 +2536,7 @@
             />
           </div>
           <div class="relative">
-            <div
-              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-            >
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -3080,9 +2635,7 @@
       id="videoModal"
       class="fixed inset-0 z-50 flex hidden items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm"
     >
-      <div
-        class="animate-fade-in relative flex h-full max-h-screen w-full max-w-7xl items-center justify-center p-4"
-      >
+      <div class="animate-fade-in relative flex h-full max-h-screen w-full max-w-7xl items-center justify-center p-4">
         <!-- glowing background effect -->
         <div
           class="absolute inset-0 scale-105 rounded-2xl bg-gradient-to-r from-orange-600/20 via-orange-400/30 to-orange-600/20 blur-xl"
@@ -3116,30 +2669,16 @@
           </video>
 
           <!-- decorative elements -->
-          <div
-            class="absolute -left-2 -top-2 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-orange-400"
-          ></div>
-          <div
-            class="absolute -right-2 -top-2 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-orange-400"
-          ></div>
-          <div
-            class="absolute -bottom-2 -left-2 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-orange-400"
-          ></div>
-          <div
-            class="absolute -bottom-2 -right-2 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-orange-400"
-          ></div>
+          <div class="absolute -left-2 -top-2 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-orange-400"></div>
+          <div class="absolute -right-2 -top-2 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-orange-400"></div>
+          <div class="absolute -bottom-2 -left-2 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-orange-400"></div>
+          <div class="absolute -bottom-2 -right-2 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-orange-400"></div>
         </div>
 
         <!-- floating particles effect -->
-        <div
-          class="absolute left-20 top-20 h-2 w-2 animate-ping rounded-full bg-orange-400"
-        ></div>
-        <div
-          class="absolute bottom-32 right-32 h-3 w-3 animate-pulse rounded-full bg-orange-300"
-        ></div>
-        <div
-          class="absolute right-24 top-40 h-1 w-1 animate-bounce rounded-full bg-white"
-        ></div>
+        <div class="absolute left-20 top-20 h-2 w-2 animate-ping rounded-full bg-orange-400"></div>
+        <div class="absolute bottom-32 right-32 h-3 w-3 animate-pulse rounded-full bg-orange-300"></div>
+        <div class="absolute right-24 top-40 h-1 w-1 animate-bounce rounded-full bg-white"></div>
 
         <!-- video title overlay -->
         <div
@@ -3149,9 +2688,7 @@
             <!-- 🔑 CLIENT -->
             Fitworx Gym - Quick Tour
           </h3>
-          <p class="text-center text-sm text-orange-200">
-            Experience the difference 💪
-          </p>
+          <p class="text-center text-sm text-orange-200">Experience the difference 💪</p>
         </div>
       </div>
     </div>
