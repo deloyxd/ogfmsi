@@ -114,7 +114,7 @@ async function loadTabData(tabIndex, force = false) {
 
     if (useCache) {
       renderFromCache(tabIndex, cached);
-      backgroundRefresh(tabIndex).catch(() => {});
+      // backgroundRefresh(tabIndex).catch(() => {});
     } else {
       switch (tabIndex) {
         case 1:

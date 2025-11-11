@@ -87,7 +87,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     // subBtn.classList.remove('hidden');
     subBtn.addEventListener('click', subBtnFunction);
 
-    if (sessionStorage.getItem('systemUserRole') && sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) {
+    if (
+      sessionStorage.getItem('systemUserRole') &&
+      sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')
+    ) {
       document.getElementById(`${SECTION_NAME}SectionStats4`).remove();
       document.getElementById(`${SECTION_NAME}SectionStats5`).remove();
       document.getElementById(`${SECTION_NAME}SectionStats6`).remove();
@@ -1463,77 +1466,81 @@ async function openProcessConsolidatedModal() {
   const uniqueIds = Array.from(new Set(ids));
 
   // Fetch purposes and amounts for each unique ID
-  const purposes = [];
-  const amounts = [];
   let startDate, endDate;
   let grandTotal = 0;
 
   // Create an array of fetch promises for each uniqueId
-  const fetchPromises = uniqueIds.map(async (id) => {
-    return fetch(`${API_BASE_URL}/payment/complete/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const salesTransaction = data.result[0].payment_purpose.includes('<b>');
-        if (salesTransaction) {
-          let purposeStr = '';
-          let amountStr = '';
+  const results = []; // holds { id, purpose, amount }
 
-          let cleanStr = data.result[0].payment_purpose.replace(/Purchasing /, '');
-          let regex = /(\d+)x <b>(.*?)<\/b>₱([\d,\.]+)/g;
-          let match;
-          while ((match = regex.exec(cleanStr)) !== null) {
-            let quantity = parseInt(match[1]);
-            let itemName = match[2];
-            let price = parseFloat(match[3].replace(/,/g, ''));
-            let totalPrice = +price * +quantity;
-            purposeStr += `${itemName}<br>`;
-            if (quantity > 1) {
-              amountStr += `x${quantity} * ${main.encodePrice(price)} = <b>${main.encodePrice(totalPrice)}</b><br>`;
-            } else {
-              amountStr += `<b>${main.encodePrice(totalPrice)}</b><br>`;
-            }
-            grandTotal += totalPrice;
+  const fetchPromises = uniqueIds.map(async (id, idx) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/payment/complete/${id}`);
+      const data = await res.json();
+
+      const result = data.result[0];
+      const salesTransaction = result.payment_purpose.includes('<b>');
+
+      let purposeStr = '';
+      let amountStr = '';
+
+      if (salesTransaction) {
+        let cleanStr = result.payment_purpose.replace(/Purchasing /, '');
+        let regex = /(\d+)x <b>(.*?)<\/b>₱([\d,\.]+)/g;
+        let match;
+        while ((match = regex.exec(cleanStr)) !== null) {
+          let quantity = parseInt(match[1]);
+          let itemName = match[2];
+          let price = parseFloat(match[3].replace(/,/g, ''));
+          let totalPrice = +price * +quantity;
+          purposeStr += `${itemName}<br>`;
+          if (quantity > 1) {
+            amountStr += `x${quantity} * ${main.encodePrice(price)} = <b>${main.encodePrice(totalPrice)}</b><br>`;
+          } else {
+            amountStr += `<b>${main.encodePrice(totalPrice)}</b><br>`;
           }
+          grandTotal += totalPrice;
+        }
+      } else {
+        purposeStr = result.payment_purpose;
+        amountStr = '<b>' + main.encodePrice(result.payment_amount_to_pay) + '</b>';
+        grandTotal += +result.payment_amount_to_pay;
+      }
 
-          purposes.push(purposeStr);
-          amounts.push(amountStr);
-        } else {
-          purposes.push(data.result[0].payment_purpose);
-          amounts.push('<b>' + main.encodePrice(data.result[0].payment_amount_to_pay) + '</b>');
-          grandTotal += +data.result[0].payment_amount_to_pay;
-        }
+      // Keep consistent ordering
+      results[idx] = {
+        id,
+        purpose: purposeStr,
+        amount: amountStr,
+        createdAt: new Date(result.created_at),
+      };
 
-        if (!startDate || startDate > new Date(data.result[0].created_at)) {
-          startDate = new Date(data.result[0].created_at);
-        }
-        if (!endDate || endDate < new Date(data.result[0].created_at)) {
-          endDate = new Date(data.result[0].created_at);
-        }
-      })
-      .catch((error) => {
-        console.error(`Error fetching data for ID ${id}:`, error);
-      });
+      if (!startDate || startDate > results[idx].createdAt) startDate = results[idx].createdAt;
+      if (!endDate || endDate < results[idx].createdAt) endDate = results[idx].createdAt;
+    } catch (error) {
+      console.error(`Error fetching data for ID ${id}:`, error);
+    }
   });
+
   main.sharedState.moduleLoad = SECTION_NAME;
   window.showGlobalLoading?.();
+
   try {
     await Promise.all(fetchPromises);
-  } catch (e) {
   } finally {
     window.hideGlobalLoading?.();
   }
 
   const rowsHTML =
-    uniqueIds.length === 0
+    results.length === 0
       ? '<tr><td colspan="3" class="px-3 py-2 text-sm text-gray-500 text-center">No transactions selected</td></tr>'
-      : uniqueIds
+      : results
           .map(
-            (id, index) => `
-            <tr class="border-b last:border-0 hover:bg-gray-50">
-              <td class="px-3 py-2 text-sm text-gray-900">${id}</td>
-              <td class="px-3 py-2 text-sm text-gray-600">${purposes[index].toLowerCase().includes('online') ? purposes[index].split(' - Reference:')[0] : purposes[index]}</td>
-              <td class="px-3 py-2 text-sm text-gray-600 text-right">${amounts[index]}</td>
-            </tr>`
+            ({ id, purpose, amount }) => `
+          <tr class="border-b last:border-0 hover:bg-gray-50">
+            <td class="px-3 py-2 text-sm text-gray-900">${id}</td>
+            <td class="px-3 py-2 text-sm text-gray-600">${purpose.toLowerCase().includes('online') ? purpose.split(' - Reference:')[0] : purpose}</td>
+            <td class="px-3 py-2 text-sm text-gray-600 text-right">${amount}</td>
+          </tr>`
           )
           .join('');
   const grandTotalRow = `
@@ -2226,6 +2233,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       // Determine which tab to place the completed transaction based on payment method
       let completedTabIndex;
       if (type === 'cart') {
+        image = '/src/images/🛒.png';
+        customerId = 'Sales: Cart Checkout';
         // For sales transactions
         if (paymentMethod === 'cash') {
           completedTabIndex = 7; // Sales (Cash) tab
@@ -2836,9 +2845,12 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     } catch (_) {}
 
     const receiptRows = [
-      { k: 'Transaction ID', v: id },
-      { k: 'Purpose', v: displayPurpose, ml: false },
+      { k: 'Transaction ID', v: id }
     ];
+    
+    if (!displayPurpose.toLowerCase().includes('purchasing')) {
+      receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
+    }
 
     // Insert items table as a full-width row after Purpose
     let rowsHtml = receiptRows
@@ -2858,11 +2870,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
     // Add remaining rows
     const remainingRows = [
-      { k: 'Amount to pay', v: main.formatPrice(amountToPay), mono: true, b: true },
-      { k: 'Amount tendered', v: main.formatPrice(amountPaidNum), mono: true, b: true },
-      ...(hasCash ? [{ k: '— Cash', v: main.formatPrice(cashVal), mono: true }] : []),
-      ...(hasCashless ? [{ k: '— Cashless', v: main.formatPrice(cashlessVal), mono: true }] : []),
-      { k: 'Change amount', v: main.formatPrice(main.decodePrice(change)), mono: true, b: true },
+      { k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount', v: main.formatPrice(amountToPay), mono: true, b: true },
       { k: 'Price rate', v: main.fixText(priceRate) },
       { k: 'Payment method', v: main.fixText(paymentMethod) },
       ...(showRef ? [{ k: 'Reference', v: refNum ? main.fixText(refNum) : 'N/A' }] : []),
@@ -3274,7 +3282,7 @@ function getIsoWeek(date) {
   return weekNo;
 }
 
-function openTransactionDetails(type, row) {
+async function openTransactionDetails(type, row) {
   const transactionId = row.dataset.id;
   const customerId = row.dataset.text;
   const purpose = row.dataset.purpose || row.dataset.custom2 || 'N/A';
@@ -3286,7 +3294,25 @@ function openTransactionDetails(type, row) {
   const paymentMethod = row.dataset.paymentmethod || 'N/A';
   const dateTime = row.dataset.datetime || row.dataset.datetime_text || 'N/A';
 
-  const partyLabel = type === 'cart' ? 'Sales' : 'Customer';
+  let refNum;
+  if (paymentMethod.toLowerCase() !== 'cash') {
+    main.sharedState.moduleLoad = SECTION_NAME;
+    window.showGlobalLoading?.();
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/complete/${transactionId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      const transactionData = result.result[0];
+      refNum = transactionData.payment_ref;
+    } catch (_) {
+    } finally {
+      window.hideGlobalLoading?.();
+    }
+  }
+
+  const partyLabel = type === 'cart' ? 'Product Sales' : 'Service';
   const partyValue =
     customerId && typeof customerId === 'string' && customerId.includes(':')
       ? customerId.split(':')[1].split('Purchasing')[0].trim()
@@ -3310,6 +3336,7 @@ function openTransactionDetails(type, row) {
       paidCash,
       paidCashless,
       changeAmount,
+      refNum,
     },
     footer: {
       main: 'Close',
