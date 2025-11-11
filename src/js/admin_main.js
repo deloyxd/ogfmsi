@@ -508,6 +508,7 @@ async function loadSectionSilently(sectionName) {
         original.parentElement.classList.add(`lg:grid-cols-${cloneCount}`);
         for (let i = 0; i < cloneCount; i++) {
           const clone = original.cloneNode(true);
+          clone.setAttribute('id', clone.getAttribute('id') + (i + 1));
 
           const statsTexts = clone.children[1];
           fields.forEach((field) => {
@@ -622,7 +623,7 @@ async function loadSectionSilently(sectionName) {
               clone.dataset.columncount = titleTexts.length;
               titleTexts.forEach((titleText, index) => {
                 const th = document.createElement('th');
-                th.className = 'group relative border border-gray-300 bg-gray-200 p-2 text-center';
+                th.className = 'group relative border border-gray-300 bg-gray-200 text-center';
                 th.innerHTML = titleText;
                 const sorter = document.createElement('div');
                 sorter.dataset.sortby = sortBys ? sortBys[index] : '';
@@ -653,15 +654,15 @@ async function loadSectionSilently(sectionName) {
               dataRow.className = 'relative';
               empty.id = `${sectionName}SectionOneListEmpty${i + 1}`;
               empty.className = 'absolute left-0 right-0';
-              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? screenHeight - 345 + 88 : screenHeight - 345}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
+              empty.innerHTML = `<div class="content-center text-center h-[${statsDisabled ? screenHeight - 317 + 88 : screenHeight - 317}px] font-bold text-xs text-gray-400">${dataset['listemptytexts'][i]}</div>`;
               dataRow.appendChild(empty);
 
               for (let j = 0; j < titleTexts.length + 1; j++) {
                 const td = document.createElement('td');
-                td.className = 'relative hidden border border-gray-300 p-2 h-[49px]';
+                td.className = 'pl-2 relative hidden border border-gray-300 h-[45px]';
                 if (dataset['listitembtnids'] && j == titleTexts.length) {
                   const itemBtns = document.createElement('div');
-                  itemBtns.className = 'absolute inset-0 justify-center m-2 flex gap-2';
+                  itemBtns.className = 'absolute inset-0 justify-center m-1 flex gap-2';
                   const itemBtnIds = dataset['listitembtnids'][i].slice(1, -1).split('//');
                   const itemBtnTexts = dataset['listitembtntexts'][i].slice(1, -1).split('//');
                   const itemBtnColors = dataset['listitembtncolors'][i].slice(1, -1).split('//');
@@ -706,17 +707,17 @@ async function loadSectionSilently(sectionName) {
             sectionOne.appendChild(clone);
 
             if (statsDisabled) {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 312 + 112}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 312 + 112}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 254 + 88}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 254 + 88}px]`);
             } else {
-              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 292}px]`);
-              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 292}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`min-h-[${screenHeight - 254}px]`);
+              sectionOne.parentElement.nextElementSibling.classList.add(`max-h-[${screenHeight - 254}px]`);
             }
           }
         }
 
         function setupSectionTwo() {
-          let totalSectionTwoListContainerHeight = screenHeight - 308;
+          let totalSectionTwoListContainerHeight = screenHeight - 280;
           if (cloneCount == 2) {
             const sectionTwoTitles = sectionTwo.children[0].children[0].children[0];
             sectionTwoTitles.children[0].innerHTML = dataset['sectiontwotitletexts'][0];
@@ -827,7 +828,7 @@ async function loadSectionSilently(sectionName) {
 
           if (statsDisabled && sectionTwo.children[0].children[1].children[0]) {
             sectionTwo.children[0].children[1].children[0].classList.add(
-              `h-[${totalSectionTwoListContainerHeight + 92}px]`
+              `h-[${totalSectionTwoListContainerHeight + 88}px]`
             );
           }
         }
@@ -845,7 +846,7 @@ async function loadSectionSilently(sectionName) {
                 customContentSectionTwo.remove();
                 sectionTwo.children[0].children[1].children[0].appendChild(sectionTwoContent);
                 if (statsDisabled) {
-                  sectionTwoContent.classList.add(`h-[${screenHeight - 262 + 132}px]`);
+                  sectionTwoContent.classList.add(`h-[${screenHeight - 234 + 132}px]`);
                 }
               }
               const customContentSectionOne = tempCustomContent.querySelector('[data-sectionindex="1"]');
@@ -856,9 +857,9 @@ async function loadSectionSilently(sectionName) {
                   const customContent = tempCustomContent.querySelector(`[data-tabindex="${i}"]`).cloneNode(true);
                   sectionOneContent.appendChild(customContent);
                   if (statsDisabled) {
-                    customContent.className = `h-[${screenHeight - 348 + 132}px]`;
+                    customContent.className = `h-[${screenHeight - 320 + 132}px]`;
                   } else {
-                    customContent.className = `h-[${screenHeight - 444 + 132}px]`;
+                    customContent.className = `h-[${screenHeight - 416 + 132}px]`;
                   }
                 }
                 const removeSectionTwo = sectionOneContent.querySelector('[data-sectionindex="2"]');
@@ -2318,7 +2319,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
         priceLine.test(clean) ||
         phpPrefixed.test(clean);
       if (currencyOnly) {
-        cell.classList.add('text-right');
+        cell.classList.add('text-right', 'pr-2');
       }
     } catch (_) {}
     cell.innerHTML = data;
@@ -2356,7 +2357,7 @@ async function fillUpCell(row, index, cell, data, sectionName, tabIndex) {
       priceLine.test(clean) ||
       phpPrefixed.test(clean);
     if (currencyOnly) {
-      cell.classList.add('text-right');
+      cell.classList.add('text-right', 'pr-2');
     }
   } catch (_) {}
   cell.innerHTML = data;
@@ -2653,7 +2654,7 @@ export function decodePrice(price) {
 }
 
 export function formatPrice(price) {
-  return `<p class="text-right">${encodePrice(price)}</p>`;
+  return `<p class="text-right pr-2">${encodePrice(price)}</p>`;
 }
 
 export function deformatPrice(price) {

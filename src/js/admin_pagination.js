@@ -39,7 +39,7 @@ function calculatePageSize(sectionName, tabIndex) {
     const containerHeight = parseHeightFromClasses(tableContainer);
 
     // Estimate row height - try to measure actual rows first
-    let rowHeight = 49; // Default estimated row height
+    let rowHeight = 45; // Default estimated row height
 
     const tbody = emptyText.closest('tbody');
     if (tbody) {
@@ -59,14 +59,14 @@ function calculatePageSize(sectionName, tabIndex) {
 
     // Calculate available height for table rows (subtract header, padding, pagination space)
     const MIN_ROWS = 5;
-    const MAX_ROWS = 15;
+    const MAX_ROWS = 25;
     const headerHeight = 37;
-    const paddingAndMargins = 86;
+    const paddingAndMargins = 16;
 
     const availableHeight = containerHeight - headerHeight - paddingAndMargins;
 
     // Calculate how many rows can fit
-    const calculatedSize = Math.floor(availableHeight / rowHeight);
+    const calculatedSize = Math.floor(availableHeight / rowHeight) - 1;
 
     // Clamp between min and max - clearer logic
     const finalSize = Math.min(MAX_ROWS, Math.max(MIN_ROWS, calculatedSize));
@@ -318,7 +318,7 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
     // Create pagination container
     const paginationContainer = document.createElement('div');
     paginationContainer.id = `${sectionName}PaginationContainer${tabIndex}`;
-    paginationContainer.className = `pagination-container mt-2 flex items-center justify-between px-2 py-3 bg-gray-100 rounded-lg border border-gray-300`;
+    paginationContainer.className = `pagination-container mt-1 flex items-center justify-between px-2 py-3 bg-gray-100 rounded-lg border border-gray-300`;
     paginationContainer.innerHTML = `
     <div class="flex items-center gap-2 text-sm text-gray-600">
       <span class="font-medium">Page</span>

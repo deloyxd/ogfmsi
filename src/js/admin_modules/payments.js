@@ -87,6 +87,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     // subBtn.classList.remove('hidden');
     subBtn.addEventListener('click', subBtnFunction);
 
+    if (sessionStorage.getItem('systemUserRole') && sessionStorage.getItem('systemUserRole').toLowerCase().includes('developer')) {
+      document.getElementById(`${SECTION_NAME}SectionStats4`).remove();
+      document.getElementById(`${SECTION_NAME}SectionStats5`).remove();
+      document.getElementById(`${SECTION_NAME}SectionStats6`).remove();
+      document.getElementById(`${SECTION_NAME}SectionStats`).parentElement.className =
+        'grid grid-cols-1 gap-1 lg:grid-cols-3';
+    }
+
     await fetchAllPendingPayments();
     await fetchAllServicePayments();
     await fetchAllSalesPayments();
@@ -171,7 +179,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                       const parts = (ci.name || '').split(' ');
                       const first = parts.shift() || '';
                       const last = parts.join(' ');
-                      customer = { customer_image_url: ci.image || '', customer_first_name: first, customer_last_name: last };
+                      customer = {
+                        customer_image_url: ci.image || '',
+                        customer_first_name: first,
+                        customer_last_name: last,
+                      };
                     } catch (_) {}
                   }
                   if (isOnlineTransaction && refFromPortal) {
@@ -349,125 +361,21 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             completePayment.payment_customer_id.startsWith('U') && completePayment.payment_customer_id !== 'U123'
         );
 
-        await mapWithConcurrency(filteredList, async (completePayment) => {
-          if (!completePayment.payment_customer_id.startsWith('U') || completePayment.payment_customer_id === 'U123')
-            return;
-          const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
-          if (customerInfo.name === '') {
-            return;
-          }
-
-          // First, add to the original Service Transactions tab (tab 3) - shows all service transactions
-          main.createAtSectionOne(
-            SECTION_NAME,
-            [
-              'id_' + completePayment.payment_id,
-              {
-                type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                data: [
-                  customerInfo.image,
-                  customerInfo.id,
-                  completePayment.payment_purpose,
-                  main.formatPrice(completePayment.payment_amount_to_pay),
-                  main.formatPrice(completePayment.payment_amount_paid_cash),
-                  main.formatPrice(completePayment.payment_amount_paid_cashless),
-                  main.formatPrice(completePayment.payment_amount_change),
-                  main.fixText(completePayment.payment_rate),
-                  main.fixText(completePayment.payment_method),
-                  `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-                ],
-              },
-              customerInfo.name,
-              `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-            ],
-            3, // Service Transactions tab (all service transactions)
-            (createResult) => {
-              const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-              transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
+        await mapWithConcurrency(
+          filteredList,
+          async (completePayment) => {
+            if (!completePayment.payment_customer_id.startsWith('U') || completePayment.payment_customer_id === 'U123')
+              return;
+            const customerInfo = await resolveCustomerInfo(completePayment.payment_customer_id);
+            if (customerInfo.name === '') {
+              return;
             }
-          );
 
-          // Determine which specific tab to place the transaction based on payment method
-          const paymentMethod = completePayment.payment_method?.toLowerCase() || '';
-          let tabIndex;
-
-          if (paymentMethod === 'cash') {
-            tabIndex = 4; // Service (Cash) tab
-          } else if (paymentMethod === 'cashless') {
-            tabIndex = 5; // Service (Cashless) tab
-          } else if (paymentMethod === 'hybrid') {
-            // For hybrid payments, we'll place them in both cash and cashless tabs
-            // First, add to cash tab (only cash portion)
+            // First, add to the original Service Transactions tab (tab 3) - shows all service transactions
             main.createAtSectionOne(
               SECTION_NAME,
               [
-                'id_' + completePayment.payment_id + '_cash',
-                {
-                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                  data: [
-                    customerInfo.image,
-                    customerInfo.id,
-                    completePayment.payment_purpose,
-                    main.formatPrice(completePayment.payment_amount_to_pay),
-                    main.formatPrice(completePayment.payment_amount_paid_cash),
-                    main.formatPrice(0), // No cashless for cash tab
-                    main.formatPrice(completePayment.payment_amount_change),
-                    main.fixText(completePayment.payment_rate),
-                    'Cash (Hybrid)',
-                    `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-                  ],
-                },
-                customerInfo.name,
-                `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-              ],
-              4, // Service (Cash) tab
-              (createResult) => {
-                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
-              }
-            );
-
-            // Then, add to cashless tab (only cashless portion)
-            main.createAtSectionOne(
-              SECTION_NAME,
-              [
-                'id_' + completePayment.payment_id + '_cashless',
-                {
-                  type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
-                  data: [
-                    customerInfo.image,
-                    customerInfo.id,
-                    completePayment.payment_purpose,
-                    main.formatPrice(completePayment.payment_amount_to_pay),
-                    main.formatPrice(0), // No cash for cashless tab
-                    main.formatPrice(completePayment.payment_amount_paid_cashless),
-                    main.formatPrice(completePayment.payment_amount_change),
-                    main.fixText(completePayment.payment_rate),
-                    'Cashless (Hybrid)',
-                    `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-                  ],
-                },
-                customerInfo.name,
-                `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
-              ],
-              5, // Service (Cashless) tab
-              (createResult) => {
-                const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
-                transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
-              }
-            );
-            return; // Skip the regular creation below for hybrid payments
-          } else {
-            // Default to cash tab for unknown payment methods
-            tabIndex = 4;
-          }
-
-          // Add to specific payment method tab (cash or cashless)
-          if (paymentMethod !== 'hybrid') {
-            main.createAtSectionOne(
-              SECTION_NAME,
-              [
-                'id_' + completePayment.payment_id + '_' + paymentMethod,
+                'id_' + completePayment.payment_id,
                 {
                   type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
                   data: [
@@ -486,14 +394,128 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 customerInfo.name,
                 `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
               ],
-              tabIndex,
+              3, // Service Transactions tab (all service transactions)
               (createResult) => {
                 const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
                 transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
               }
             );
-          }
-        }, 6);
+
+            // Determine which specific tab to place the transaction based on payment method
+            const paymentMethod = completePayment.payment_method?.toLowerCase() || '';
+            let tabIndex;
+
+            if (paymentMethod === 'cash') {
+              tabIndex = 4; // Service (Cash) tab
+            } else if (paymentMethod === 'cashless') {
+              tabIndex = 5; // Service (Cashless) tab
+            } else if (paymentMethod === 'hybrid') {
+              // For hybrid payments, we'll place them in both cash and cashless tabs
+              // First, add to cash tab (only cash portion)
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + completePayment.payment_id + '_cash',
+                  {
+                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    data: [
+                      customerInfo.image,
+                      customerInfo.id,
+                      completePayment.payment_purpose,
+                      main.formatPrice(completePayment.payment_amount_to_pay),
+                      main.formatPrice(completePayment.payment_amount_paid_cash),
+                      main.formatPrice(0), // No cashless for cash tab
+                      main.formatPrice(completePayment.payment_amount_change),
+                      main.fixText(completePayment.payment_rate),
+                      'Cash (Hybrid)',
+                      `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                    ],
+                  },
+                  customerInfo.name,
+                  `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                ],
+                4, // Service (Cash) tab
+                (createResult) => {
+                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                  transactionDetailsBtn.addEventListener('click', () =>
+                    openTransactionDetails('services', createResult)
+                  );
+                }
+              );
+
+              // Then, add to cashless tab (only cashless portion)
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + completePayment.payment_id + '_cashless',
+                  {
+                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    data: [
+                      customerInfo.image,
+                      customerInfo.id,
+                      completePayment.payment_purpose,
+                      main.formatPrice(completePayment.payment_amount_to_pay),
+                      main.formatPrice(0), // No cash for cashless tab
+                      main.formatPrice(completePayment.payment_amount_paid_cashless),
+                      main.formatPrice(completePayment.payment_amount_change),
+                      main.fixText(completePayment.payment_rate),
+                      'Cashless (Hybrid)',
+                      `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                    ],
+                  },
+                  customerInfo.name,
+                  `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                ],
+                5, // Service (Cashless) tab
+                (createResult) => {
+                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                  transactionDetailsBtn.addEventListener('click', () =>
+                    openTransactionDetails('services', createResult)
+                  );
+                }
+              );
+              return; // Skip the regular creation below for hybrid payments
+            } else {
+              // Default to cash tab for unknown payment methods
+              tabIndex = 4;
+            }
+
+            // Add to specific payment method tab (cash or cashless)
+            if (paymentMethod !== 'hybrid') {
+              main.createAtSectionOne(
+                SECTION_NAME,
+                [
+                  'id_' + completePayment.payment_id + '_' + paymentMethod,
+                  {
+                    type: 'object_purpose_amounttopay_amountpaidcash_amountpaidcashless_changeamount_pricerate_paymentmethod_datetime',
+                    data: [
+                      customerInfo.image,
+                      customerInfo.id,
+                      completePayment.payment_purpose,
+                      main.formatPrice(completePayment.payment_amount_to_pay),
+                      main.formatPrice(completePayment.payment_amount_paid_cash),
+                      main.formatPrice(completePayment.payment_amount_paid_cashless),
+                      main.formatPrice(completePayment.payment_amount_change),
+                      main.fixText(completePayment.payment_rate),
+                      main.fixText(completePayment.payment_method),
+                      `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                    ],
+                  },
+                  customerInfo.name,
+                  `${main.encodeDate(completePayment.created_at, main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long')} - ${main.encodeTime(completePayment.created_at, 'long')}`,
+                ],
+                tabIndex,
+                (createResult) => {
+                  const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
+                  transactionDetailsBtn.addEventListener('click', () =>
+                    openTransactionDetails('services', createResult)
+                  );
+                }
+              );
+            }
+          },
+          6
+        );
       } catch (error) {
         console.error('Error fetching service payments:', error);
       }
@@ -751,7 +773,6 @@ function mainBtnFunction() {
 
 function subBtnFunction() {}
 
- 
 function openConsolidateTransactionsModal() {
   // Build modal shell
   const modalHTML = `
@@ -890,9 +911,15 @@ function openConsolidateTransactionsModal() {
     const btnSales = document.getElementById('consolidateCatSales');
     const setButtonStyles = () => {
       const active = consolidateActiveCategory;
-      btnAll.className = 'px-3 py-1 text-sm ' + (active === 'all' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
-      btnService.className = 'px-3 py-1 text-sm ' + (active === 'service' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
-      btnSales.className = 'px-3 py-1 text-sm ' + (active === 'sales' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
+      btnAll.className =
+        'px-3 py-1 text-sm ' +
+        (active === 'all' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
+      btnService.className =
+        'px-3 py-1 text-sm ' +
+        (active === 'service' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
+      btnSales.className =
+        'px-3 py-1 text-sm ' +
+        (active === 'sales' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50');
     };
     const setCategory = (cat) => {
       if (cat !== 'service' && cat !== 'sales' && cat !== 'all') return;
@@ -1306,7 +1333,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (serviceSelectAll) {
           const rows = Array.from(serviceListEl.querySelectorAll('.consolidate-item'));
           const total = rows.length;
-          const selected = rows.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          const selected = rows.reduce(
+            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
+            0
+          );
           serviceSelectAll.indeterminate = selected > 0 && selected < total;
           serviceSelectAll.checked = total > 0 && selected === total;
         }
@@ -1390,7 +1420,10 @@ function renderConsolidatedTransactions(service, sales, query = '') {
         if (salesSelectAll) {
           const rows = Array.from(salesListEl.querySelectorAll('.consolidate-item'));
           const total = rows.length;
-          const selected = rows.reduce((acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0), 0);
+          const selected = rows.reduce(
+            (acc, row) => acc + (row.querySelector('.consolidate-check').checked ? 1 : 0),
+            0
+          );
           salesSelectAll.indeterminate = selected > 0 && selected < total;
           salesSelectAll.checked = total > 0 && selected === total;
         }
@@ -2297,7 +2330,11 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           (async () => {
             try {
               // Pre-check reference uniqueness before updating backend
-              if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+              if (
+                !isOnlineTransaction &&
+                refNum &&
+                (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))
+              ) {
                 try {
                   const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
                   if (refChk.ok) {
@@ -2491,7 +2528,11 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           (async () => {
             try {
               // Pre-check reference uniqueness before updating backend
-              if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+              if (
+                !isOnlineTransaction &&
+                refNum &&
+                (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))
+              ) {
                 try {
                   const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
                   if (refChk.ok) {
@@ -2633,7 +2674,11 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
         try {
           // Pre-check reference uniqueness before updating backend
-          if (!isOnlineTransaction && refNum && (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))) {
+          if (
+            !isOnlineTransaction &&
+            refNum &&
+            (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))
+          ) {
             try {
               const refChk = await fetch(`${API_BASE_URL}/payment/ref/check/${encodeURIComponent(refNum)}`);
               if (refChk.ok) {
@@ -2774,12 +2819,14 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             <div style="width:120px; text-align:right; white-space:nowrap;">Amount</div>
           </div>`;
         const rows = parsed
-          .map((it) => `
+          .map(
+            (it) => `
             <div style="display:flex; padding:6px 0; font-size:13px;">
               <div style="flex:1; text-align:left; word-break:break-word; padding-right:8px;">${it.name}</div>
               <div style="width:80px; text-align:center;">${it.qty}</div>
               <div style="width:120px; text-align:right; font-family:'Courier New',Courier,monospace; white-space:nowrap;">${it.amount}</div>
-            </div>`)
+            </div>`
+          )
           .join('');
         itemsTableHtml = `<div style="margin:8px 0; width:100%;">${header}${rows}</div>`;
 
@@ -2795,11 +2842,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
     // Insert items table as a full-width row after Purpose
     let rowsHtml = receiptRows
-      .map((r) => `
+      .map(
+        (r) => `
         <div style="display:flex; justify-content:space-between; padding:4px 0;">
           <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-          <div style="text-align:right; color:#111; ${r.mono ? 'font-family: \'Courier New\', Courier, monospace;' : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
-        </div>`)
+          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`
+      )
       .join('');
 
     // Add items table if present
@@ -2820,11 +2869,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     ];
 
     rowsHtml += remainingRows
-      .map((r) => `
+      .map(
+        (r) => `
         <div style="display:flex; justify-content:space-between; padding:4px 0;">
           <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-          <div style="text-align:right; color:#111; ${r.mono ? 'font-family: \'Courier New\', Courier, monospace;' : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
-        </div>`)
+          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`
+      )
       .join('');
 
     const nowInfo = main.getDateOrTimeOrBoth();
@@ -2900,7 +2951,11 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               w.document.write(docHtml);
               w.document.close();
               w.focus();
-              setTimeout(() => { try { w.print(); } catch (_) {} }, 300);
+              setTimeout(() => {
+                try {
+                  w.print();
+                } catch (_) {}
+              }, 300);
             } catch (_) {}
           });
         }

@@ -77,6 +77,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     setupChartOne();
     setupChartTwo();
     loadDashboardStats(); // Load dashboard stats
+    if (systemUserRole.toLowerCase().includes('staff')) {
+      document.getElementById('dashboardSectionStats1').remove();
+      document.getElementById('dashboardSectionStats2').remove();
+      document.getElementById('dashboardSectionStats3').remove();
+      document.getElementById('dashboardSectionStats4').remove();
+      document.getElementById('dashboardSectionStats').parentElement.className =
+        'grid grid-cols-1 gap-1 lg:grid-cols-2';
+    }
     main.toast(`Please wait while the system is initializing...`, 'info');
   }
 });
@@ -1049,7 +1057,7 @@ function getActiveReservationsCount() {
 // Updates dashboard stats display
 function updateDashboardStatsDisplay(stats) {
   try {
-    const statElements = document.querySelectorAll('#dashboardSectionStats');
+    const statElements = document.querySelectorAll('[id*="dashboard"][id*="SectionStats"]');
     if (!statElements || statElements.length < 1) return;
 
     statElements.forEach((card) => {
