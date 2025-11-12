@@ -26,38 +26,39 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     sectionTwoMainBtn.addEventListener('click', processCheckout);
   }
 
-function setupCategoryFilter() {
-  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
-  if (!searchInput) return;
+  function setupCategoryFilter() {
+    const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+    if (!searchInput) return;
 
-  if (document.getElementById(`${SECTION_NAME}CategoryFilter`)) return;
+    if (document.getElementById(`${SECTION_NAME}CategoryFilter`)) return;
 
-  const select = document.createElement('select');
-  select.id = `${SECTION_NAME}CategoryFilter`;
-  select.className = 'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+    const select = document.createElement('select');
+    select.id = `${SECTION_NAME}CategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
 
-  const optAll = document.createElement('option');
-  optAll.value = '';
-  optAll.textContent = 'All Products';
-  select.appendChild(optAll);
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = 'All Products';
+    select.appendChild(optAll);
 
-  (stock.CATEGORIES || []).forEach((c) => {
-    const opt = document.createElement('option');
-    opt.value = c.value;
-    opt.textContent = c.label;
-    select.appendChild(opt);
-  });
+    (stock.CATEGORIES || []).forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.value;
+      opt.textContent = c.label;
+      select.appendChild(opt);
+    });
 
-  select.addEventListener('change', (e) => {
-    selectedCategory = e.target.value || '';
-    refreshProductDisplays();
-  });
+    select.addEventListener('change', (e) => {
+      selectedCategory = e.target.value || '';
+      refreshProductDisplays();
+    });
 
-  if (searchInput.parentElement) {
-    if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
-    else searchInput.parentElement.appendChild(select);
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
   }
-}
 
   // Add clear all button
   addClearAllButton();
@@ -151,26 +152,26 @@ function canAddToCart(productId, additionalQuantity) {
 }
 
 async function loadCartFromServer() {
-    const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${sessionId}`);
-    const data = await response.json();
+  const response = await fetch(`${API_BASE_URL}/ecommerce/cart/${sessionId}`);
+  const data = await response.json();
 
-    if (response.ok) {
-      cart = data.result.map((item) => ({
-        id: item.product_id,
-        cart_id: item.cart_id,
-        image: item.product_image,
-        name: item.product_name,
-        price: +item.price,
-        quantity: +item.quantity,
-        measurement: item.measurement?.trim() || '',
-        measurementUnit: item.measurement_unit?.trim() || '',
-        category: item.category,
-      }));
+  if (response.ok) {
+    cart = data.result.map((item) => ({
+      id: item.product_id,
+      cart_id: item.cart_id,
+      image: item.product_image,
+      name: item.product_name,
+      price: +item.price,
+      quantity: +item.quantity,
+      measurement: item.measurement?.trim() || '',
+      measurementUnit: item.measurement_unit?.trim() || '',
+      category: item.category,
+    }));
 
-      updateCartDisplay();
-    } else {
-      console.error('Error loading cart:', data.error);
-    }
+    updateCartDisplay();
+  } else {
+    console.error('Error loading cart:', data.error);
+  }
 }
 
 function displayProductsForTab(products, tabIndex) {
@@ -899,7 +900,6 @@ export async function completeProcessCheckout(totalAmount, paymentMethod, custom
         // Update product stock
         await updateProductStock(item.id, item.quantity);
       }
-
 
       // Show success message with payment details
       main.toast(

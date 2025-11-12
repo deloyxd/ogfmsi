@@ -50,6 +50,665 @@ let activated = false,
 const seenCustomerIds = new Set();
 const fetchingCustomerIds = new Set();
 
+const CUSTOMER_CATEGORIES = [
+  {
+    tab: 1,
+    filter: [
+      {
+        label: 'Type: Daily',
+        value: 'daily',
+      },
+      {
+        label: 'Type: Active Monthly',
+        value: 'monthly-active',
+      },
+      {
+        label: 'Type: Pending Monthly',
+        value: 'monthly-pending',
+      },
+      {
+        label: 'Rate: Regular',
+        value: 'regular',
+      },
+      {
+        label: 'Rate: Student',
+        value: 'student',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 2,
+    filter: [
+      {
+        label: 'Start Date: Specific',
+        value: 'startdate-specific',
+      },
+      {
+        label: 'Start Date: Range',
+        value: 'startdate-range',
+      },
+      {
+        label: 'End Date: Specific',
+        value: 'enddate-specific',
+      },
+      {
+        label: 'End Date: Range',
+        value: 'enddate-range',
+      },
+      {
+        label: 'Days: Specific',
+        value: 'days-specific',
+      },
+      {
+        label: 'Days: Range',
+        value: 'days-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 3,
+    filter: [
+      {
+        label: 'Start Date: Specific',
+        value: 'startdate-specific',
+      },
+      {
+        label: 'Start Date: Range',
+        value: 'startdate-range',
+      },
+      {
+        label: 'End Date: Specific',
+        value: 'enddate-specific',
+      },
+      {
+        label: 'End Date: Range',
+        value: 'enddate-range',
+      },
+      {
+        label: 'Days: Specific',
+        value: 'days-specific',
+      },
+      {
+        label: 'Days: Range',
+        value: 'days-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 4,
+    filter: [
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+];
+
+let tabsCustomers = [
+  {
+    tab: 1,
+    filter: 'all',
+    customers: [],
+  },
+  {
+    tab: 2,
+    filter: 'all',
+    customers: [],
+  },
+  {
+    tab: 3,
+    filter: 'all',
+    customers: [],
+  },
+  {
+    tab: 4,
+    filter: 'all',
+    customers: [],
+  },
+];
+
+function resetDataForTab(tabNumber) {
+  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabNumber ? { ...t, customers: [] } : t));
+}
+
+function addDataForTab(tabNumber, newData) {
+  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabNumber ? { ...t, customers: [...t.customers, newData] } : t));
+}
+
+async function filterDataForTab(tabNumber, selectedFilter) {
+  const unfilteredTab = tabsCustomers.find((t) => t.tab === tabNumber);
+  if (!selectedFilter) {
+    selectedFilter = tabsCustomers.find((t) => t.tab === tabNumber)?.filter;
+    const select = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+    if (!select) return;
+    if (selectedFilter === 'all') select.selectedIndex = 0;
+    else select.value = selectedFilter;
+  }
+  const filteredTab = await getFilteredTab(tabNumber, selectedFilter, unfilteredTab);
+  if (!filteredTab && selectedFilter !== 'all') return;
+
+  main.deleteAllAtSectionOne(SECTION_NAME, tabNumber, () => {
+    if (selectedFilter === 'all') {
+      unfilteredTab.customers.forEach((customer) => {
+        renderCustomer(tabNumber, customer);
+      });
+    } else {
+      filteredTab.forEach((customer) => {
+        renderCustomer(tabNumber, customer);
+      });
+    }
+
+    function renderCustomer(tabNumber, customer) {
+      let columnsData;
+      switch (tabNumber) {
+        case 1:
+          columnsData = [
+            'id_' + customer.customer_id,
+            {
+              type: 'object_contact',
+              data: [
+                customer.customer_image_url,
+                customer.customer_first_name + ' ' + customer.customer_last_name,
+                customer.customer_contact,
+              ],
+            },
+            main.fixText(customer.customer_type),
+            main.fixText(customer.customer_rate),
+            'custom_date_' + main.encodeDate(customer.created_at, 'long'),
+          ];
+          break;
+        case 2:
+          main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 1, (findResult) => {
+            if (findResult) {
+              const endDate = new Date(customer.customer_end_date);
+              const today = new Date();
+              endDate.setHours(0, 0, 0, 0);
+              today.setHours(0, 0, 0, 0);
+              const diffTime = endDate - today;
+              const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              columnsData = [
+                'id_' + customer.customer_id,
+                {
+                  type: 'object_contact',
+                  data: [findResult.dataset.image, findResult.dataset.text, findResult.dataset.contact],
+                },
+                main.encodeDate(customer.customer_start_date, 'long'),
+                main.encodeDate(customer.customer_end_date, 'long'),
+                daysLeft + ' days',
+                main.formatPrice(
+                  customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                ),
+                findResult.dataset.custom3,
+                'custom_date_' +
+                  main.encodeDate(customer.created_at, 'long') +
+                  ' - ' +
+                  main.encodeTime(customer.created_at),
+              ];
+            }
+          });
+          break;
+        case 3:
+          columnsData = [
+            'id_' + customer.customer_id,
+            {
+              type: 'object_contact',
+              data: [
+                customer.customer_image_url,
+                customer.customer_first_name + ' ' + customer.customer_last_name,
+                customer.customer_contact,
+              ],
+            },
+            main.encodeDate(customer.customer_start_date, 'long'),
+            main.encodeDate(customer.customer_end_date, 'long'),
+            main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
+            main.fixText(customer.customer_rate),
+            'custom_date_' +
+              main.encodeDate(customer.created_at, 'long') +
+              ' - ' +
+              main.encodeTime(customer.created_at),
+          ];
+          break;
+        case 4:
+          columnsData = [
+            'id_' + customer.customer_id,
+            {
+              type: 'object_contact',
+              data: [
+                customer.customer_image_url,
+                customer.customer_first_name + ' ' + customer.customer_last_name,
+                customer.customer_contact,
+              ],
+            },
+            'custom_datetime_' + main.encodeDate(customer.created_at, 'long'),
+          ];
+          break;
+      }
+      if (!columnsData) return;
+      main.createAtSectionOne(SECTION_NAME, columnsData, tabNumber, (createResult) => {
+        switch (tabNumber) {
+          case 1:
+            if (customer.customer_type.includes('monthly')) {
+              if (customer.customer_pending == 1) {
+                createResult.dataset.tid = customer.customer_tid;
+                createResult.dataset.status = 'pending';
+                createResult.dataset.custom2 = 'Monthly - Pending';
+              } else {
+                createResult.dataset.status = 'fetching';
+                createResult.dataset.custom2 = 'Monthly - Fetching';
+                main.findAtSectionOne(SECTION_NAME, customer.customer_id, 'equal_id', 2, (findResult) => {
+                  if (findResult) {
+                    const startDate = new Date(findResult.dataset.custom2);
+                    startDate.setHours(0, 0, 0, 0);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (startDate <= today) {
+                      createResult.dataset.status = 'active';
+                      createResult.dataset.custom2 = 'Monthly - Active';
+                    } else {
+                      createResult.dataset.status = 'incoming';
+                      createResult.dataset.custom2 = 'Monthly - Incoming';
+                    }
+                    createResult.children[2].innerText = createResult.dataset.custom2;
+                    createResult.dataset.startDate = main.encodeDate(findResult.dataset.custom2, 'long');
+                    createResult.dataset.endDate = main.encodeDate(findResult.dataset.custom3, 'long');
+                  }
+                });
+              }
+              createResult.children[2].textContent = createResult.dataset.custom2;
+            } else {
+              if (customer.customer_pending == 1) {
+                createResult.dataset.tid = customer.customer_tid;
+                createResult.dataset.status = 'pending';
+              }
+            }
+          case 3:
+          case 4:
+            createResult.dataset.text = customer.customer_first_name + ':://' + customer.customer_last_name;
+            break;
+          case 2:
+            createResult.dataset.startDate = main.encodeDate(customer.customer_start_date, 'long');
+            createResult.dataset.endDate = main.encodeDate(customer.customer_end_date, 'long');
+            break;
+        }
+        switch (tabNumber) {
+          case 1:
+            const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+            customerEditDetailsBtn.addEventListener('click', () =>
+              customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+            );
+          case 2:
+            const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+            customerProcessBtn.addEventListener('click', () =>
+              customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+            );
+            break;
+          case 3:
+          case 4:
+            const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
+            customerDetailsBtn.addEventListener('click', () =>
+              customerDetailsBtnFunction(
+                createResult.dataset.id,
+                tabNumber === 3 ? 'Past Monthly Details' : 'Archive Details',
+                tabNumber === 3 ? '📅' : '🧾'
+              )
+            );
+            break;
+        }
+      });
+    }
+
+    // Refresh pagination after all customers are loaded and ensure rows are paginated
+    setTimeout(() => {
+      // Ensure pagination controls exist for tab 1
+      const existingPagination = document.getElementById(`${SECTION_NAME}PaginationContainer1`);
+      if (!existingPagination) {
+        // Controls don't exist yet, create them (use default color)
+        pagination.createPaginationControls(SECTION_NAME, 1, 'blue');
+      }
+
+      // Now refresh and apply pagination
+      pagination.refreshPagination(SECTION_NAME, 1);
+      // Also explicitly render page to ensure pagination is applied
+      pagination.renderPage(SECTION_NAME, 1, true); // skipSearchCheck = true
+      pagination.updatePaginationControls(SECTION_NAME, 1);
+    }, 200);
+  });
+}
+
+async function getFilteredTab(tabIndex, filter, unfilteredTab) {
+  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabIndex ? { ...t, filter: 'all' } : t));
+  if (filter === 'all') return null;
+  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabIndex ? { ...t, filter: filter } : t));
+  const filterParts = filter.split('-');
+  if (filterParts.length === 1) {
+    if (filter === 'daily') {
+      return unfilteredTab.customers.filter((c) => c.customer_type === filter);
+    }
+    if (tabIndex === 1) {
+      return unfilteredTab.customers.filter((c) => c.customer_rate === filter);
+    }
+  }
+
+  if (filterParts[0] === 'monthly') {
+    switch (filterParts[1]) {
+      case 'active':
+        return unfilteredTab.customers.filter((c) => c.customer_type === 'monthly' && c.customer_pending === 0);
+      case 'pending':
+        return unfilteredTab.customers.filter((c) => c.customer_type === 'monthly' && c.customer_pending === 1);
+    }
+  }
+
+  if (filterParts[0].includes('date') || filterParts[0].includes('days')) {
+    const resultFilter = await getDateFromUser(filterParts[1], filterParts[0].includes('date') ? 'calendar' : 'number');
+    if (!resultFilter) return null;
+    switch (filterParts[1]) {
+      case 'specific':
+        if (filterParts[0].includes('date')) {
+          const { date } = resultFilter;
+          const selectedDate = new Date(date);
+          selectedDate.setHours(0, 0, 0, 0);
+
+          return unfilteredTab.customers.filter((c) => {
+            let comparingColumn;
+            if (filterParts[0].includes('start')) {
+              comparingColumn = c.customer_start_date;
+            } else if (filterParts[0].includes('end')) {
+              comparingColumn = c.customer_end_date;
+            } else {
+              comparingColumn = c.created_at;
+            }
+            const created = new Date(comparingColumn);
+            created.setHours(0, 0, 0, 0);
+            return (
+              created.getFullYear() === selectedDate.getFullYear() &&
+              created.getMonth() === selectedDate.getMonth() &&
+              created.getDate() === selectedDate.getDate()
+            );
+          });
+        }
+        if (filterParts[0].includes('days')) {
+          const { days } = resultFilter;
+
+          return unfilteredTab.customers.filter((c) => {
+            const endDate = new Date(c.customer_end_date);
+            const today = new Date();
+            endDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            const diffTime = endDate - today;
+            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return daysLeft === days;
+          });
+        }
+      case 'range':
+        if (filterParts[0].includes('date')) {
+          const { startDate, endDate } = resultFilter;
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          start.setHours(0, 0, 0, 0);
+          end.setHours(0, 0, 0, 0);
+
+          return unfilteredTab.customers.filter((c) => {
+            let comparingColumn;
+            if (filterParts[0].includes('start')) {
+              comparingColumn = c.customer_start_date;
+            } else if (filterParts[0].includes('end')) {
+              comparingColumn = c.customer_end_date;
+            } else {
+              comparingColumn = c.created_at;
+            }
+            const created = new Date(comparingColumn);
+            created.setHours(0, 0, 0, 0);
+            return created >= start && created <= end;
+          });
+        }
+        if (filterParts[0].includes('days')) {
+          const { startDays, endDays } = resultFilter;
+
+          return unfilteredTab.customers.filter((c) => {
+            const endDate = new Date(c.customer_end_date);
+            const today = new Date();
+            endDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            const diffTime = endDate - today;
+            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return daysLeft >= startDays && daysLeft <= endDays;
+          });
+        }
+    }
+  }
+
+  return null;
+
+  function getDateFromUser(mode, type) {
+    return new Promise((resolve) => {
+      // === Create modal elements ===
+      const overlay = document.createElement('div');
+      overlay.className =
+        'fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-9999 flex items-center justify-center';
+
+      const modal = document.createElement('div');
+      modal.className = 'm-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300';
+      modal.onclick = (event) => event.stopPropagation();
+
+      const header = document.createElement('div');
+      header.className =
+        'flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-sky-500 via-blue-600 to-sky-600 p-4 text-center text-white';
+
+      const title = document.createElement('p');
+      title.className = 'text-base font-semibold';
+      title.textContent =
+        mode === 'specific'
+          ? 'Select ' + (type === 'calendar' ? 'a Date' : 'Days Left')
+          : 'Select ' + (type === 'calendar' ? 'Date Range' : 'Days Left Range');
+
+      const subtitle = document.createElement('p');
+      subtitle.className = 'text-xs';
+      subtitle.textContent =
+        mode === 'specific'
+          ? 'Choose a specific ' + (type === 'calendar' ? 'date' : 'days left')
+          : 'Select ' + (type === 'calendar' ? 'start and end dates' : 'days left range');
+
+      const content = document.createElement('div');
+      content.className = 'p-4';
+
+      if (mode === 'specific') {
+        if (type === 'calendar') {
+          content.innerHTML = `
+            <label class="mb-1 block text-sm font-medium text-gray-700">Date</label>
+            <input type="date" id="dateInput" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          `;
+        } else if (type === 'number') {
+          content.innerHTML = `
+            <label class="mb-1 block text-sm font-medium text-gray-700">Days Left</label>
+            <input type="number" id="daysInput" min="0" placeholder="Enter number of days" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          `;
+        }
+      } else {
+        if (type === 'calendar') {
+          content.innerHTML = `
+            <label class="mb-1 block text-sm font-medium text-gray-700">Date range</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="date" id="startDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="date" id="endDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          `;
+        } else if (type === 'number') {
+          content.innerHTML = `
+            <label class="mb-1 block text-sm font-medium text-gray-700">Days Left Range</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="number" id="startDays" min="0" placeholder="Min days" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="number" id="endDays" min="0" placeholder="Max days" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          `;
+        }
+      }
+
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'mt-4 flex items-center justify-end gap-2';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className =
+        'mb-4 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500';
+      cancelBtn.textContent = 'Cancel';
+
+      const confirmBtn = document.createElement('button');
+      confirmBtn.type = 'button';
+      confirmBtn.className =
+        'mb-4 mr-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
+      confirmBtn.textContent = 'Confirm';
+
+      // === Append elements ===
+      header.appendChild(title);
+      header.appendChild(subtitle);
+      buttonContainer.appendChild(cancelBtn);
+      buttonContainer.appendChild(confirmBtn);
+      modal.appendChild(header);
+      modal.appendChild(content);
+      modal.appendChild(buttonContainer);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Trigger animation
+      setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        modal.classList.remove('-translate-y-6');
+        modal.classList.remove('scale-95');
+      }, 10);
+
+      // === Helpers ===
+      const closeModal = () => {
+        overlay.classList.add('opacity-0');
+        modal.classList.add('-translate-y-6');
+        modal.classList.add('scale-95');
+        setTimeout(() => {
+          overlay.remove();
+        }, 300);
+      };
+
+      // === Event handlers ===
+      confirmBtn.onclick = () => {
+        let result = null;
+
+        if (mode === 'specific') {
+          if (type === 'calendar') {
+            const date = modal.querySelector('#dateInput').value;
+            if (date) result = { date };
+          } else if (type === 'number') {
+            const days = modal.querySelector('#daysInput').value;
+            if (days) result = { days: Number(days) };
+          }
+        } else {
+          if (type === 'calendar') {
+            const startDate = modal.querySelector('#startDate').value;
+            const endDate = modal.querySelector('#endDate').value;
+            if (startDate && endDate) result = { startDate, endDate };
+          } else if (type === 'number') {
+            const startDays = modal.querySelector('#startDays').value;
+            const endDays = modal.querySelector('#endDays').value;
+            if (startDays && endDays) result = { startDays: Number(startDays), endDays: Number(endDays) };
+          }
+        }
+
+        closeModal();
+        resolve(result);
+      };
+
+      cancelBtn.onclick = () => {
+        closeModal();
+        resolve(null);
+      };
+
+      // Close on overlay click
+      overlay.onclick = () => {
+        closeModal();
+        resolve(null);
+      };
+    });
+  }
+}
+
+document.addEventListener('beforeNewTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const savedActiveTab = main.sharedState.activeTab;
+  const savedFilter = tabsCustomers.find((t) => t.tab === savedActiveTab)?.filter;
+  // console.log('before:', savedActiveTab, savedFilter);
+  filterDataForTab(savedActiveTab, 'all');
+  tabsCustomers = tabsCustomers.map((t) => (t.tab === savedActiveTab ? { ...t, filter: savedFilter } : t));
+});
+
+document.addEventListener('newTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const savedActiveTab = main.sharedState.activeTab;
+  // console.log('after:', savedActiveTab, tabsCustomers.find((t) => t.tab === savedActiveTab)?.filter);
+  setupFilter(savedActiveTab);
+  filterDataForTab(savedActiveTab);
+});
+
+function setupFilter(tabNumber) {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  const checkSelect = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  const select = checkSelect ? checkSelect : document.createElement('select');
+  if (!checkSelect) {
+    select.id = `${SECTION_NAME}CategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      filterDataForTab(main.sharedState.activeTab, e.target.value || 'all');
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  CUSTOMER_CATEGORIES.find((t) => t.tab === tabNumber).filter.forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.value;
+    opt.textContent = c.label;
+    select.appendChild(opt);
+  });
+}
+
 document.addEventListener('ogfmsiAdminMainLoaded', async () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
 
@@ -70,6 +729,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await autoArchiveInactiveCustomers();
     await clearDuplicateMonthlyEntries();
     updateCustomerStats();
+    setupFilter(1);
 
     // Ensure pagination is properly applied after all initial data loads
     setTimeout(() => {
@@ -77,17 +737,17 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
       pagination.updatePaginationControls(SECTION_NAME, 1);
     }, 300);
 
-    setInterval(() => {
-      if (main.sharedState.sectionName === SECTION_NAME) {
-        fetchAllCustomers().then(() => {
-          // Refresh pagination after interval fetch
-          setTimeout(() => {
-            pagination.renderPage(SECTION_NAME, 1, true);
-            pagination.updatePaginationControls(SECTION_NAME, 1);
-          }, 100);
-        });
-      }
-    }, 5000);
+    // setInterval(() => {
+    //   if (main.sharedState.sectionName === SECTION_NAME) {
+    //     fetchAllCustomers().then(() => {
+    //       // Refresh pagination after interval fetch
+    //       setTimeout(() => {
+    //         pagination.renderPage(SECTION_NAME, 1, true);
+    //         pagination.updatePaginationControls(SECTION_NAME, 1);
+    //       }, 100);
+    //     });
+    //   }
+    // }, 5000);
 
     async function fetchAllCustomers() {
       try {
@@ -97,12 +757,17 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
         const customers = await response.json();
 
+        resetDataForTab(1);
+
         customers.result.forEach((customer) => {
           if (!customer || !customer.customer_id) return;
           // Skip archived customers from the "All Registered Customers" tab
           const customerTypeLower = String(customer.customer_type || '').toLowerCase();
           if (customerTypeLower.includes('archiv')) return;
           if (seenCustomerIds.has(customer.customer_id)) return;
+
+          addDataForTab(1, customer);
+
           main.createAtSectionOne(
             SECTION_NAME,
             [
@@ -185,6 +850,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
         const customers = await response.json();
 
+        resetDataForTab(2);
+
         // Track processed customers to avoid duplicates
         // const processedCustomers = new Set();
 
@@ -224,6 +891,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 // Check if monthly subscription has expired
                 if (daysLeft <= 0) {
                   // Move to Past Monthly Customers tab (tab 3)
+                  findResult.dataset.custom2 = 'Daily';
+                  findResult.children[2].innerText = findResult.dataset.custom2;
+                  const { firstName, lastName } = main.decodeName(findResult.dataset.text);
                   main.createAtSectionOne(
                     SECTION_NAME,
                     [
@@ -262,8 +932,34 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       updateCustomerStats();
                     }
                   );
+                  try {
+                    const response = await fetch(`${API_BASE_URL}/inquiry/customers/${customer.customer_id}`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        customer_image_url: findResult.dataset.image,
+                        customer_first_name: firstName,
+                        customer_last_name: lastName,
+                        customer_contact: findResult.dataset.contact || '',
+                        customer_type: 'daily',
+                        customer_tid: customer.customer_tid,
+                        customer_pending: customer.customer_pending,
+                        customer_rate: findResult.dataset.custom3.toLowerCase(),
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    await response.json();
+                  } catch (error) {
+                    console.error('Error updating customer:', error);
+                  }
                 } else {
-                  if (customer.customer_id === 'U1762550858205') console.log(customer);
+                  addDataForTab(2, customer);
                   main.createAtSectionOne(
                     SECTION_NAME,
                     [
@@ -379,7 +1075,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
         const pastMonthlyCustomers = await response.json();
 
+        resetDataForTab(3);
+
         pastMonthlyCustomers.result.forEach((customer) => {
+          addDataForTab(3, customer);
           main.createAtSectionOne(
             SECTION_NAME,
             [
@@ -434,7 +1133,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
         const archivedCustomers = await response.json();
 
+        resetDataForTab(4);
+
         archivedCustomers.result.forEach((customer) => {
+          addDataForTab(4, customer);
           main.createAtSectionOne(
             SECTION_NAME,
             [

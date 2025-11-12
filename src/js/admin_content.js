@@ -22,6 +22,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
       activeTimeout = null;
     }
 
+    document.dispatchEvent(new Event('beforeNewTab'));
     main.sharedState.activeTab = tabIndex;
     document.dispatchEvent(new Event('newTab'));
 

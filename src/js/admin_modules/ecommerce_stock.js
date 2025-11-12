@@ -414,29 +414,29 @@ async function loadProducts() {
       // Tab 3: Out of Stock Products (Dead stocks)
       displayProductsForTab(
         products.filter((p) => +p.quantity === 0 || p.stock_status === 'Out of Stock'),
-        3
-      );
-
-      // Tab 4: Best Selling Products (Fast moving stocks)
-      displayProductsForTab(
-        products.filter(
-          (p) =>
-            +p.quantity > 50 &&
-            !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
-        ),
         4
       );
 
+      // Tab 4: Best Selling Products (Fast moving stocks)
+      // displayProductsForTab(
+      //   products.filter(
+      //     (p) =>
+      //       +p.quantity > 50 &&
+      //       !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+      //   ),
+      //   4
+      // );
+
       // Tab 5: Least Selling Products (Slow moving stocks)
-      displayProductsForTab(
-        products.filter(
-          (p) =>
-            +p.quantity > 0 &&
-            +p.quantity <= 10 &&
-            !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
-        ),
-        5
-      );
+      // displayProductsForTab(
+      //   products.filter(
+      //     (p) =>
+      //       +p.quantity > 0 &&
+      //       +p.quantity <= 10 &&
+      //       !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
+      //   ),
+      //   5
+      // );
 
       // Tab 6: Super Low Stock Products (Critical stock levels)
       displayProductsForTab(
@@ -445,7 +445,7 @@ async function loadProducts() {
             ((+p.quantity > 0 && +p.quantity <= 10) || p.stock_status === 'Super Low Stock') &&
             !(p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed')))
         ),
-        6
+        3
       );
 
       // Tab 7: Disposed Products (Expired or damaged products)
@@ -454,7 +454,7 @@ async function loadProducts() {
           (p) =>
             p.disposal_status === 'Disposed' || (p.product_name && p.product_name.toLowerCase().includes('disposed'))
         ),
-        7
+        5
       );
 
       // Update stats using the same logic as the tabs
