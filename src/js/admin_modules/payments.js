@@ -3253,7 +3253,7 @@ function computeAndUpdatePaymentStats(payments) {
 
 function updatePaymentStatsDisplay(stats) {
   try {
-    const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+    const statElements = document.querySelectorAll(`[id*="${SECTION_NAME}"][id*="SectionStats"]`);
     if (!statElements || statElements.length < 1) return;
 
     statElements.forEach((card) => {

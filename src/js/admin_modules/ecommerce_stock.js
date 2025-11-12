@@ -554,7 +554,7 @@ function computeAndUpdateStats(products) {
 // [5] Super Low Stock Products (Critical stock levels)
 // Note: Disposed products stat is calculated but not displayed in the main stats
 function updateStatsDisplay(stats) {
-  const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+  const statElements = document.querySelectorAll(`[id*="${SECTION_NAME}"][id*="SectionStats"]`);
 
   if (statElements.length >= 7) {
     // Unique Products: All active stocks

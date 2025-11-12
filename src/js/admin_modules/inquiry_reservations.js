@@ -1122,7 +1122,7 @@ function getReservationCountForTab(tabIndex) {
 
 function updateReservationStats() {
   try {
-    const statElementsAll = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+    const statElementsAll = document.querySelectorAll(`[id*="${SECTION_NAME}"][id*="SectionStats"]`);
     const statElements = Array.from(statElementsAll).filter((el) => !el.classList.contains('hidden'));
     if (!statElements || statElements.length < 2) return;
     const activeCount = getReservationCountForTab(2);

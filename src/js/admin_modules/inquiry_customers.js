@@ -2723,7 +2723,7 @@ function getCountFromTab(tabIndex) {
 
 function updateCustomerStats() {
   try {
-    const statElements = document.querySelectorAll(`#${SECTION_NAME}SectionStats`);
+    const statElements = document.querySelectorAll(`[id*="${SECTION_NAME}"][id*="SectionStats"]`);
     if (!statElements || statElements.length < 1) return;
     const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty1`);
     let totalRegular = 0;
