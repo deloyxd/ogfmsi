@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   sendPasswordResetEmail,
+  deleteUser,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { app } from './firebase.js';
 import { API_BASE_URL } from './_global.js';
@@ -74,7 +75,7 @@ const lastNameField = document.getElementById('lastNameField');
 const formTitle = document.getElementById('formTitle');
 const formSubtitle = document.getElementById('formSubtitle');
 const toggleText = document.getElementById('toggleText');
-const toggleButton = document.getElementById('toggleForm');
+// const toggleButton = document.getElementById('toggleForm');
 const welcomeText = document.getElementById('welcomeText');
 const submitBtnLabel = document.getElementById('submitBtnLabel');
 const googleSignInBtn = document.getElementById('googleSignInBtn');
@@ -82,15 +83,21 @@ const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
 function setupLoginForm() {
   googleSignInBtn.addEventListener('click', async () => {
+    const submitBtn = document.getElementById('loginForm').lastChild.previousSibling;
+    const oldSubmitBtn = submitBtn.innerHTML;
     try {
+      submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+        5.291A7.962 7.962 0 014 12H0c0 3.042 
+        1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>`;
+      submitBtn.disabled = true;
+
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const info = getAdditionalUserInfo(result);
       const isNewUser = info?.isNewUser ?? false;
-
-      // Disable Google Sign-In button
-      googleSignInBtn.disabled = true;
-      googleSignInBtn.innerHTML = 'Logged in';
 
       // localStorage.setItem("fitworxUser", JSON.stringify({
       //   name: user.displayName,
@@ -98,143 +105,147 @@ function setupLoginForm() {
       //   photo: user.photoURL
       // }));
 
-      if (isNewUser) {
-        const fullName = user.displayName || '';
-        const [defaultFirst, ...rest] = fullName.split(' ');
-        const defaultLast = rest.join(' ');
+      // if (isNewUser) {
+      //   const fullName = user.displayName || '';
+      //   const [defaultFirst, ...rest] = fullName.split(' ');
+      //   const defaultLast = rest.join(' ');
 
-        const {
-          value: formValues,
-          isConfirmed,
-          isDismissed,
-        } = await Swal.fire({
-          title: 'Welcome to Fitworx Gym! 🏋️‍♀️',
-          html: `
-                  <p class="text-gray-700 mb-3">Please confirm or edit your name below to complete your registration.</p>
-                  <input id="swal-first" class="swal2-input" placeholder="First Name" value="${defaultFirst || ''}">
-                  <input id="swal-last" class="swal2-input" placeholder="Last Name" value="${defaultLast || ''}">
-                `,
-          focusConfirm: false,
-          showCancelButton: true,
-          confirmButtonText: 'Continue',
-          cancelButtonText: 'Cancel',
-          confirmButtonColor: '#f97316',
-          preConfirm: () => {
-            const first = Swal.getPopup().querySelector('#swal-first').value.trim();
-            const last = Swal.getPopup().querySelector('#swal-last').value.trim();
-            if (!first || !last) {
-              Swal.showValidationMessage('Please fill out both first and last name.');
-              return false;
-            }
-            return { first, last };
-          },
-        });
+      //   const {
+      //     value: formValues,
+      //     isConfirmed,
+      //     isDismissed,
+      //   } = await Swal.fire({
+      //     title: 'Welcome to Fitworx Gym! 🏋️‍♀️',
+      //     html: `
+      //             <p class="text-gray-700 mb-3">Please confirm or edit your name below to complete your registration.</p>
+      //             <input id="swal-first" class="swal2-input" placeholder="First Name" value="${defaultFirst || ''}">
+      //             <input id="swal-last" class="swal2-input" placeholder="Last Name" value="${defaultLast || ''}">
+      //           `,
+      //     focusConfirm: false,
+      //     showCancelButton: true,
+      //     confirmButtonText: 'Continue',
+      //     cancelButtonText: 'Cancel',
+      //     confirmButtonColor: '#f97316',
+      //     preConfirm: () => {
+      //       const first = Swal.getPopup().querySelector('#swal-first').value.trim();
+      //       const last = Swal.getPopup().querySelector('#swal-last').value.trim();
+      //       if (!first || !last) {
+      //         Swal.showValidationMessage('Please fill out both first and last name.');
+      //         return false;
+      //       }
+      //       return { first, last };
+      //     },
+      //   });
 
-        if (!isConfirmed) {
-          try {
-            await user.delete();
-            Swal.fire({
-              icon: 'info',
-              title: 'Registration Cancelled',
-              text: 'Your Google sign-in has been cancelled. No account was created.',
-              confirmButtonColor: '#ef4444',
-            });
-          } catch (err) {
-            console.error('⚠️ Error deleting temporary user:', err);
-          }
-          return;
-        }
+      //   if (!isConfirmed) {
+      //     try {
+      //       await user.delete();
+      //       Swal.fire({
+      //         icon: 'info',
+      //         title: 'Registration Cancelled',
+      //         text: 'Your Google sign-in has been cancelled. No account was created.',
+      //         confirmButtonColor: '#ef4444',
+      //       });
+      //     } catch (err) {
+      //       console.error('⚠️ Error deleting temporary user:', err);
+      //     }
+      //     return;
+      //   }
 
-        const { first, last } = formValues;
+      //   const { first, last } = formValues;
 
-        try {
-          const id = `U${Date.now()}`;
-          const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              customer_id: id,
-              customer_image_url: user.photoURL,
-              customer_first_name: first,
-              customer_last_name: last,
-              customer_contact: user.email,
-              customer_type: 'daily',
-              customer_tid: '',
-              customer_pending: 0,
-              customer_rate: 'regular',
-            }),
-          });
+      //   try {
+      //     const id = `U${Date.now()}`;
+      //     const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
+      //       method: 'POST',
+      //       headers: {
+      //         'Content-Type': 'application/json',
+      //       },
+      //       body: JSON.stringify({
+      //         customer_id: id,
+      //         customer_image_url: user.photoURL,
+      //         customer_first_name: first,
+      //         customer_last_name: last,
+      //         customer_contact: user.email,
+      //         customer_type: 'daily',
+      //         customer_tid: '',
+      //         customer_pending: 0,
+      //         customer_rate: 'regular',
+      //       }),
+      //     });
 
-          if (response.status !== 201) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+      //     if (response.status !== 201) {
+      //       throw new Error(`HTTP error! status: ${response.status}`);
+      //     }
 
-          const newCustomer = await response.json();
-          sessionStorage.setItem('id', newCustomer.result.customer_id);
-          sessionStorage.setItem('first_name', first);
-          sessionStorage.setItem('last_name', last);
-          sessionStorage.setItem('full_name', first + ' ' + last);
-          sessionStorage.setItem('email', user.email);
+      //     const newCustomer = await response.json();
+      //     sessionStorage.setItem('id', newCustomer.result.customer_id);
+      //     sessionStorage.setItem('first_name', first);
+      //     sessionStorage.setItem('last_name', last);
+      //     sessionStorage.setItem('full_name', first + ' ' + last);
+      //     sessionStorage.setItem('email', user.email);
 
-          Toastify({
-            text: 'Logging in, please wait...',
-            duration: 1500,
-            close: true,
-            gravity: 'top',
-            position: 'center',
-            backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-            stopOnFocus: true,
-            callback: () => (window.location.href = '/dashboard'),
-          }).showToast();
-        } catch (error) {
-          console.error('Error creating customer:', error);
-        }
-      } else {
-        try {
-          const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              customer_contact: user.email,
-            }),
-          });
+      //     Toastify({
+      //       text: 'Logging in, please wait...',
+      //       duration: 1500,
+      //       close: true,
+      //       gravity: 'top',
+      //       position: 'center',
+      //       backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+      //       stopOnFocus: true,
+      //       callback: () => (window.location.href = '/dashboard'),
+      //     }).showToast();
+      //   } catch (error) {
+      //     console.error('Error creating customer:', error);
+      //   }
+      // } else {
+      // }
+      const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_contact: user.email,
+        }),
+      });
 
-          if (response.status !== 200) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const customer = data.result;
-          sessionStorage.setItem('id', customer.customer_id);
-          sessionStorage.setItem('first_name', customer.customer_first_name);
-          sessionStorage.setItem('last_name', customer.customer_last_name);
-          sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
-          sessionStorage.setItem('email', user.email);
-
-          Toastify({
-            text: 'Logging in, please wait...',
-            duration: 1500,
-            close: true,
-            gravity: 'top',
-            position: 'center',
-            backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-            stopOnFocus: true,
-            callback: () => (window.location.href = '/dashboard'),
-          }).showToast();
-        } catch (error) {
-          console.error('Error fetching customer:', error);
-        }
+      if (response.status !== 200) {
+        await deleteUser(user);
+        throw new Error(response.status);
       }
+
+      const data = await response.json();
+      const customer = data.result;
+      sessionStorage.setItem('id', customer.customer_id);
+      sessionStorage.setItem('first_name', customer.customer_first_name);
+      sessionStorage.setItem('last_name', customer.customer_last_name);
+      sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
+      sessionStorage.setItem('email', user.email);
+
+      Toastify({
+        text: 'Successfully logged in!',
+        duration: 1500,
+        close: true,
+        gravity: 'top',
+        position: 'center',
+        backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+        stopOnFocus: true,
+        callback: () => (window.location.href = '/dashboard'),
+      }).showToast();
     } catch (error) {
-      console.error('❌ Google Sign-In Error:', error);
+      submitBtn.innerHTML = oldSubmitBtn;
+      submitBtn.disabled = false;
+      let errorMessage = '';
+      switch (+(error + '').split(' ')[1]) {
+        case 404:
+          errorMessage = `This online account does not exist!`;
+          break;
+      }
       Swal.fire({
         icon: 'error',
         title: 'Google Sign-In Failed',
-        text: error.message,
+        text: errorMessage,
         confirmButtonColor: '#ef4444',
       });
     }
@@ -248,7 +259,7 @@ function setupLoginForm() {
   loginForm.addEventListener('submit', submitClicked);
   showPassword1Button.addEventListener('click', showPassword1Clicked);
   showPassword2Button.addEventListener('click', showPassword2Clicked);
-  toggleButton.addEventListener('click', toggleFormClicked);
+  // toggleButton.addEventListener('click', toggleFormClicked);
   forgotPasswordLink.addEventListener('click', forgotPasswordClicked);
 }
 
@@ -282,188 +293,192 @@ async function submitClicked(e) {
     </svg>`;
   submitBtn.disabled = true;
 
+  // if (!isLoginMode) {
+  //   // Check empty fields
+  //   if (!sanitizedFirst || !sanitizedLast || !sanitizedEmail || !sanitizedPassword || !sanitizedConfirmPassword) {
+  //     throw new Error('Please fill out all required fields.');
+  //   }
+
+  //   // Validate email format
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   if (!emailRegex.test(sanitizedEmail)) {
+  //     throw new Error('Please enter a valid email address.');
+  //   }
+
+  //   // Check password match
+  //   if (sanitizedPassword !== sanitizedConfirmPassword) {
+  //     throw new Error('Passwords do not match. Please try again.');
+  //   }
+
+  //   // Check password strength
+  //   if (sanitizedPassword.length < 6) {
+  //     throw new Error('Password must be at least 6 characters long.');
+  //   }
+  //   // 🔹 Sign Up
+  //   const userCredential = await createUserWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
+  //   const user = userCredential.user;
+
+  //   await updateProfile(user, {
+  //     displayName: `${sanitizedFirst} ${sanitizedLast}`,
+  //   });
+
+  //   try {
+  //     const id = `U${Date.now()}`;
+  //     const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         customer_id: id,
+  //         customer_image_url: '/src/images/client_logo.jpg',
+  //         customer_first_name: sanitizedFirst,
+  //         customer_last_name: sanitizedLast,
+  //         customer_contact: sanitizedEmail,
+  //         customer_type: 'daily',
+  //         customer_tid: '',
+  //         customer_pending: 0,
+  //         customer_rate: 'regular',
+  //       }),
+  //     });
+
+  //     if (response.status !== 201) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+
+  //     const newCustomer = await response.json();
+  //     sessionStorage.setItem('id', newCustomer.result.customer_id);
+  //     sessionStorage.setItem('first_name', sanitizedFirst);
+  //     sessionStorage.setItem('last_name', sanitizedLast);
+  //     sessionStorage.setItem('full_name', sanitizedFirst + ' ' + sanitizedLast);
+  //     sessionStorage.setItem('email', sanitizedEmail);
+
+  //     Toastify({
+  //       text: 'Account created successfully! Please wait...',
+  //       duration: 3000,
+  //       close: true,
+  //       gravity: 'top',
+  //       position: 'center',
+  //       backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+  //       stopOnFocus: true,
+  //       callback: () => (window.location.href = '/dashboard'),
+  //     }).showToast();
+  //   } catch (error) {
+  //     console.error('Error creating customer:', error);
+  //     Swal.fire({
+  //       title: 'Sign Up Failed',
+  //       text: error?.message || 'We could not complete your registration. Please try again.',
+  //       icon: 'error',
+  //       confirmButtonText: 'OK',
+  //       confirmButtonColor: '#ef4444',
+  //     });
+  //     submitBtn.innerHTML = oldSubmitBtn;
+  //     submitBtn.disabled = false;
+  //     // Ensure Google button remains clickable after errors
+  //     if (googleSignInBtn) googleSignInBtn.disabled = false;
+  //   }
+  // } else {
+
+  // }
   try {
-    if (!isLoginMode) {
-      // Check empty fields
-      if (!sanitizedFirst || !sanitizedLast || !sanitizedEmail || !sanitizedPassword || !sanitizedConfirmPassword) {
-        throw new Error('Please fill out all required fields.');
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(sanitizedEmail)) {
-        throw new Error('Please enter a valid email address.');
-      }
-
-      // Check password match
-      if (sanitizedPassword !== sanitizedConfirmPassword) {
-        throw new Error('Passwords do not match. Please try again.');
-      }
-
-      // Check password strength
-      if (sanitizedPassword.length < 6) {
-        throw new Error('Password must be at least 6 characters long.');
-      }
-      // 🔹 Sign Up
-      const userCredential = await createUserWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
-      const user = userCredential.user;
-
-      await updateProfile(user, {
-        displayName: `${sanitizedFirst} ${sanitizedLast}`,
-      });
-
-      try {
-        const id = `U${Date.now()}`;
-        const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            customer_id: id,
-            customer_image_url: '/src/images/client_logo.jpg',
-            customer_first_name: sanitizedFirst,
-            customer_last_name: sanitizedLast,
-            customer_contact: sanitizedEmail,
-            customer_type: 'daily',
-            customer_tid: '',
-            customer_pending: 0,
-            customer_rate: 'regular',
-          }),
-        });
-
-        if (response.status !== 201) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const newCustomer = await response.json();
-        sessionStorage.setItem('id', newCustomer.result.customer_id);
-        sessionStorage.setItem('first_name', sanitizedFirst);
-        sessionStorage.setItem('last_name', sanitizedLast);
-        sessionStorage.setItem('full_name', sanitizedFirst + ' ' + sanitizedLast);
-        sessionStorage.setItem('email', sanitizedEmail);
-
-        Toastify({
-          text: 'Account created successfully! Please wait...',
-          duration: 3000,
-          close: true,
-          gravity: 'top',
-          position: 'center',
-          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-          stopOnFocus: true,
-          callback: () => (window.location.href = '/dashboard'),
-        }).showToast();
-      } catch (error) {
-        console.error('Error creating customer:', error);
-        Swal.fire({
-          title: 'Sign Up Failed',
-          text: error?.message || 'We could not complete your registration. Please try again.',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#ef4444',
-        });
-        submitBtn.innerHTML = oldSubmitBtn;
-        submitBtn.disabled = false;
-        // Ensure Google button remains clickable after errors
-        if (googleSignInBtn) googleSignInBtn.disabled = false;
-      }
-    } else {
-      if (!sanitizedEmail || !sanitizedPassword) {
-        throw new Error('Please enter your email and password.');
-      }
-      try {
-        // 🔹 Login
-        if (!sanitizedEmail.includes('@') && !sanitizedEmail.includes('.com')) {
-          const response = await fetch(`${API_BASE_URL}/admin/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: sanitizedEmail,
-              password: sanitizedPassword,
-            }),
-          });
-          if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          const systemUser = data.user;
-          if (!systemUser) throw new Error('System user not found');
-
-          sessionStorage.setItem('systemUserRole', systemUser.role);
-          sessionStorage.setItem('systemUserFullname', systemUser.name);
-          window.location.href = '/admin';
-          return;
-        }
-        const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
-        const user = userCredential.user;
-
-        const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            customer_contact: sanitizedEmail,
-          }),
-        });
-
-        if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        const customer = data.result;
-        if (!customer) throw new Error('Customer not found');
-        sessionStorage.setItem('id', customer.customer_id);
-        sessionStorage.setItem('first_name', customer.customer_first_name);
-        sessionStorage.setItem('last_name', customer.customer_last_name);
-        sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
-        sessionStorage.setItem('email', user.email);
-
-        Toastify({
-          text: 'Logging in, please wait...',
-          duration: 1500,
-          close: true,
-          gravity: 'top',
-          position: 'center',
-          backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-          stopOnFocus: true,
-          callback: () => (window.location.href = '/dashboard'),
-        }).showToast();
-      } catch (error) {
-        console.error('Error fetching customer:', error);
-        let message = 'Login failed. Please check your email and password.';
-        const code = error?.code || '';
-        if (code === 'auth/invalid-credential' || code === 'auth/wrong-password')
-          message = 'Incorrect email or password.';
-        else if (code === 'auth/user-not-found') message = 'No account found with this email.';
-        else if (code === 'auth/too-many-requests') message = 'Too many attempts. Try again later.';
-
-        Swal.fire({
-          title: 'Unable to Sign In',
-          text: message,
-          icon: 'error',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#ef4444',
-        });
-        submitBtn.innerHTML = oldSubmitBtn;
-        submitBtn.disabled = false;
-        // Ensure Google button remains clickable after errors
-        if (googleSignInBtn) googleSignInBtn.disabled = false;
-        return;
-      }
+    if (!sanitizedEmail || !sanitizedPassword) {
+      throw new Error('Please enter your email and password.');
     }
+    if (sanitizedEmail.includes('@gmail.com')) {
+      throw new Error('auth/wrong-button');
+    }
+    // 🔹 Login
+    if (!sanitizedEmail.includes('@') && !sanitizedEmail.includes('.com')) {
+      const response = await fetch(`${API_BASE_URL}/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: sanitizedEmail,
+          password: sanitizedPassword,
+        }),
+      });
+      if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      const systemUser = data.user;
+      if (!systemUser) throw new Error('System user not found');
+
+      sessionStorage.setItem('systemUserRole', systemUser.role);
+      sessionStorage.setItem('systemUserFullname', systemUser.name);
+      window.location.href = '/admin';
+      return;
+    }
+    const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
+    const user = userCredential.user;
+
+    const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customer_contact: sanitizedEmail,
+      }),
+    });
+
+    if (response.status !== 200) {
+      await deleteUser(user);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const customer = data.result;
+    if (!customer) {
+      await deleteUser(user);
+      throw new Error('Customer not found');
+    }
+    sessionStorage.setItem('id', customer.customer_id);
+    sessionStorage.setItem('first_name', customer.customer_first_name);
+    sessionStorage.setItem('last_name', customer.customer_last_name);
+    sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
+    sessionStorage.setItem('email', user.email);
+
+    Toastify({
+      text: 'Successfully logged in!',
+      duration: 1500,
+      close: true,
+      gravity: 'top',
+      position: 'center',
+      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+      stopOnFocus: true,
+      callback: () => (window.location.href = '/dashboard'),
+    }).showToast();
   } catch (error) {
-    console.error('Firebase Auth Error:', error);
+    console.error('Error fetching customer:', error);
+    let message = 'Login failed. Please check your email and password.';
+    const code = error?.code || '';
+    if (code === 'auth/too-many-requests') message = 'Too many attempts. Try again later.';
+    else if (error.message === 'auth/wrong-button')
+      message = `You must log in with "Sign in with Google" button instead.`;
+
     Swal.fire({
-      title: 'Authentication Error',
-      text: error.message,
+      title: 'Unable to Sign In',
+      text: message,
       icon: 'error',
       confirmButtonText: 'OK',
       confirmButtonColor: '#ef4444',
     });
     submitBtn.innerHTML = oldSubmitBtn;
     submitBtn.disabled = false;
-    // Ensure Google button remains clickable after errors
-    if (googleSignInBtn) googleSignInBtn.disabled = false;
+    return;
   }
+  // } catch (error) {
+  //   console.error('Firebase Auth Error:', error);
+  //   Swal.fire({
+  //     title: 'Authentication Error',
+  //     text: error.message,
+  //     icon: 'error',
+  //     confirmButtonText: 'OK',
+  //     confirmButtonColor: '#ef4444',
+  //   });
+  //   submitBtn.innerHTML = oldSubmitBtn;
+  //   submitBtn.disabled = false;
+  // }
 }
 
 function showPassword1Clicked() {
