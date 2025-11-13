@@ -268,7 +268,10 @@ async function filterDataForTab(tabNumber, selectedFilter) {
                   customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                 ),
                 findResult.dataset.custom3,
-                'custom_date_' + main.encodeDate(customer.created_at, 'long') + ' - ' + main.encodeTime(customer.created_at),
+                'custom_date_' +
+                main.encodeDate(customer.created_at, 'long') +
+                ' - ' +
+                main.encodeTime(customer.created_at),
               ];
             }
           });
@@ -288,7 +291,10 @@ async function filterDataForTab(tabNumber, selectedFilter) {
             main.encodeDate(customer.customer_end_date, 'long'),
             main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
             main.fixText(customer.customer_rate),
-            'custom_date_' + main.encodeDate(customer.created_at, 'long') + ' - ' + main.encodeTime(customer.created_at),
+            'custom_date_' +
+            main.encodeDate(customer.created_at, 'long') +
+            ' - ' +
+            main.encodeTime(customer.created_at),
           ];
           break;
         case 4:
@@ -705,7 +711,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     mainBtn?.addEventListener('click', () => mainBtnFunction());
     // subBtn?.classList.remove('hidden');
-    subBtn?.addEventListener('click', () => {});
+    subBtn?.addEventListener('click', () => { });
 
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
@@ -768,10 +774,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               main.fixText(customer.customer_type),
               main.fixText(customer.customer_rate),
               'custom_date_' +
-                main.encodeDate(
-                  customer.created_at,
-                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                ),
+              main.encodeDate(
+                customer.created_at,
+                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+              ),
             ],
             1,
             (createResult) => {
@@ -897,16 +903,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       ),
                       main.formatPrice(
                         customer.customer_months *
-                          PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                        PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                       ),
                       findResult.dataset.custom3,
                       'custom_date_' +
-                        main.encodeDate(
-                          customer.created_at,
-                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                        ) +
-                        ' - ' +
-                        main.encodeTime(customer.created_at),
+                      main.encodeDate(
+                        customer.created_at,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ) +
+                      ' - ' +
+                      main.encodeTime(customer.created_at),
                     ],
                     3,
                     (createResult) => {
@@ -964,16 +970,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       daysLeft + ' days',
                       main.formatPrice(
                         customer.customer_months *
-                          PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                        PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                       ),
                       findResult.dataset.custom3,
                       'custom_date_' +
-                        main.encodeDate(
-                          customer.created_at,
-                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                        ) +
-                        ' - ' +
-                        main.encodeTime(customer.created_at),
+                      main.encodeDate(
+                        customer.created_at,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ) +
+                      ' - ' +
+                      main.encodeTime(customer.created_at),
                     ],
                     2,
                     (createResult) => {
@@ -1087,12 +1093,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
               main.fixText(customer.customer_rate),
               'custom_date_' +
-                main.encodeDate(
-                  customer.created_at,
-                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                ) +
-                ' - ' +
-                main.encodeTime(customer.created_at),
+              main.encodeDate(
+                customer.created_at,
+                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+              ) +
+              ' - ' +
+              main.encodeTime(customer.created_at),
             ],
             3,
             (createResult) => {
@@ -1135,10 +1141,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 ],
               },
               'custom_datetime_' +
-                main.encodeDate(
-                  customer.created_at,
-                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                ),
+              main.encodeDate(
+                customer.created_at,
+                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+              ),
             ],
             4,
             (createResult) => {
@@ -1873,7 +1879,7 @@ function activeShortListener(monthInput, container) {
   totalPriceInput.dispatchEvent(new Event('input'));
 }
 
-function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
+function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount, priceRate, callback = () => { }) {
   const { firstName } = main.decodeName(columnsData[1].data[1]);
   main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult) => {
     let isCreating = true;
@@ -2194,9 +2200,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                     continueCustomerProcessBtnFunction,
                     selectedProcess.includes('renew')
                       ? {
-                          startDate: customer.dataset.startDate,
-                          endDate: customer.dataset.endDate,
-                        }
+                        startDate: customer.dataset.startDate,
+                        endDate: customer.dataset.endDate,
+                      }
                       : null,
                     true,
                     true
@@ -2280,9 +2286,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
               continueCustomerProcessBtnFunction,
               selectedProcess.includes('renew')
                 ? {
-                    startDate: customer.dataset.startDate,
-                    endDate: customer.dataset.endDate,
-                  }
+                  startDate: customer.dataset.startDate,
+                  endDate: customer.dataset.endDate,
+                }
                 : null,
               true,
               true
@@ -2670,13 +2676,13 @@ export function cancelPendingTransaction(transactionId, customerIdHint = null) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ customer_type: 'daily', customer_tid: '', customer_pending: 0 }),
             });
-          } catch (_) {}
+          } catch (_) { }
           try {
             await fetch(`${API_BASE_URL}/inquiry/monthly/${customerIdHint}`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
             });
-          } catch (_) {}
+          } catch (_) { }
 
           // Update UI by ID if present
           main.findAtSectionOne(SECTION_NAME, customerIdHint, 'equal_id', 1, (row) => {
@@ -2693,7 +2699,7 @@ export function cancelPendingTransaction(transactionId, customerIdHint = null) {
   }
 }
 
-export function getReserveCustomer(callback = () => {}) {
+export function getReserveCustomer(callback = () => { }) {
   main.findAtSectionOne(SECTION_NAME, main.sharedState.reserveCustomerId, 'equal_id', 1, (result) => {
     callback(result);
   });
@@ -2749,7 +2755,7 @@ function updateCustomerStats() {
       // else if (label.includes('reservations')) valueEl.textContent = activeReservations;
       // else if (label.includes('archived')) valueEl.textContent = totalArchived;
     });
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export function startRenewCustomer(customerId) {
@@ -2760,6 +2766,68 @@ export function startRenewCustomer(customerId) {
     }
   });
 }
+
+// Support the global "See list now" breakdown modal from admin_stats.js
+document.addEventListener('ogfmsi:statsBreakdown', (e) => {
+  try {
+    const { section, type, container, setTitle } = e.detail || {};
+    const sec = String(section || '');
+    const current = String(main.sharedState.sectionName || '');
+    if (!(sec.includes(SECTION_NAME) || (!sec && current === SECTION_NAME))) return;
+
+    const t = String(type || '').toLowerCase();
+
+    function rowsFromTab(tabIndex) {
+      const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
+      if (!emptyText) return [];
+      const tbody = emptyText.parentElement?.parentElement;
+      if (!tbody) return [];
+      const out = [];
+      for (let i = 1; i < tbody.children.length; i++) out.push(tbody.children[i]);
+      return out;
+    }
+
+    let rows = [];
+    let title = 'Customers';
+
+    if (t.includes('regular')) {
+      rows = rowsFromTab(1).filter((r) => String(r.dataset.custom3 || '').toLowerCase().includes('regular'));
+      title = 'Regular Customers';
+    } else if (t.includes('student')) {
+      rows = rowsFromTab(1).filter((r) => String(r.dataset.custom3 || '').toLowerCase().includes('student'));
+      title = 'Student Customers';
+    } else if (t.includes('active') && t.includes('monthly')) {
+      rows = rowsFromTab(2);
+      title = 'Active Monthly Customers';
+    } else if (t.includes('archiv')) {
+      rows = rowsFromTab(4);
+      title = 'Archived Customers';
+    } else {
+      rows = rowsFromTab(1);
+      title = 'All Customers';
+    }
+
+    try { setTitle?.(title); } catch (_) {}
+
+    const items = rows.map((r) => {
+      const img = r.querySelector('img')?.src || '/src/images/client_logo.jpg';
+      const name = r.dataset?.text ? main.decodeName(r.dataset.text).fullName : (r.querySelector('b, strong')?.textContent || '').trim();
+      const id = r.dataset?.id || '';
+      const meta = r.dataset?.custom2 || r.dataset?.custom3 || '';
+      return `
+        <div style="background:#fff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center">
+          <img src="${img}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover"/>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:#111827;font-size:14px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name || 'Customer'}</div>
+            <div style="color:#6b7280;font-size:12px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${id}</span>${meta ? ` • ${meta}` : ''}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = items || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No matching customers.</div>';
+    container.dataset.filled = '1';
+  } catch (_) {}
+});
 
 export default {
   completeCheckinPayment,
