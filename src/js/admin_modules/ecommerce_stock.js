@@ -133,6 +133,8 @@ function stopExpirationCheck() {
   }
 }
 
+let activated = false;
+
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) {
     stopExpirationCheck();
@@ -146,6 +148,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   // Start expiration check and load products
   startExpirationCheck();
   loadProductsDebounced();
+
+  if (!activated) {
+    activated = true;
+    setupFilter();
+  }
 });
 
 // Listen for section changes to refresh stats when this section becomes active
@@ -385,7 +392,9 @@ async function loadProducts() {
     await checkAndDisposeExpiredProducts();
 
     // Abort any in-flight load to avoid overlap
-    try { loadProductsAbortCtrl?.abort(); } catch (_) {}
+    try {
+      loadProductsAbortCtrl?.abort();
+    } catch (_) {}
     loadProductsAbortCtrl = new AbortController();
     const response = await fetch(`${API_BASE_URL}/ecommerce/products`, { signal: loadProductsAbortCtrl.signal });
     const data = await response.json();
@@ -622,6 +631,772 @@ function updateStatsDisplay(stats) {
   }
 }
 
+const FILTER_CATEGORIES = [
+  {
+    tab: 1,
+    filter: [
+      {
+        label: 'Category: Supplements & Nutrition',
+        value: 'supplements',
+      },
+      {
+        label: 'Category: Food & Meals',
+        value: 'food',
+      },
+      {
+        label: 'Category: Beverages',
+        value: 'beverages',
+      },
+      {
+        label: 'Category: Fitness Equipment',
+        value: 'equipment',
+      },
+      {
+        label: 'Category: Apparel',
+        value: 'apparel',
+      },
+      {
+        label: 'Category: Merchandise',
+        value: 'merchandise',
+      },
+      {
+        label: 'Category: Others',
+        value: 'others',
+      },
+      {
+        label: 'Price: Specific',
+        value: 'price-specific',
+      },
+      {
+        label: 'Price: Range',
+        value: 'price-range',
+      },
+      {
+        label: 'Quantity: Specific',
+        value: 'quantity-specific',
+      },
+      {
+        label: 'Quantity: Range',
+        value: 'quantity-range',
+      },
+      {
+        label: 'Measurement: Specific',
+        value: 'measurement-specific',
+      },
+      {
+        label: 'Measurement: Range',
+        value: 'measurement-range',
+      },
+      {
+        label: 'Expiration Date: Specific',
+        value: 'expdate-specific',
+      },
+      {
+        label: 'Expiration Date: Range',
+        value: 'expdate-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 2,
+    filter: [
+      {
+        label: 'Category: Supplements & Nutrition',
+        value: 'supplements',
+      },
+      {
+        label: 'Category: Food & Meals',
+        value: 'food',
+      },
+      {
+        label: 'Category: Beverages',
+        value: 'beverages',
+      },
+      {
+        label: 'Category: Fitness Equipment',
+        value: 'equipment',
+      },
+      {
+        label: 'Category: Apparel',
+        value: 'apparel',
+      },
+      {
+        label: 'Category: Merchandise',
+        value: 'merchandise',
+      },
+      {
+        label: 'Category: Others',
+        value: 'others',
+      },
+      {
+        label: 'Price: Specific',
+        value: 'price-specific',
+      },
+      {
+        label: 'Price: Range',
+        value: 'price-range',
+      },
+      {
+        label: 'Quantity: Specific',
+        value: 'quantity-specific',
+      },
+      {
+        label: 'Quantity: Range',
+        value: 'quantity-range',
+      },
+      {
+        label: 'Measurement: Specific',
+        value: 'measurement-specific',
+      },
+      {
+        label: 'Measurement: Range',
+        value: 'measurement-range',
+      },
+      {
+        label: 'Expiration Date: Specific',
+        value: 'expdate-specific',
+      },
+      {
+        label: 'Expiration Date: Range',
+        value: 'expdate-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 3,
+    filter: [
+      {
+        label: 'Category: Supplements & Nutrition',
+        value: 'supplements',
+      },
+      {
+        label: 'Category: Food & Meals',
+        value: 'food',
+      },
+      {
+        label: 'Category: Beverages',
+        value: 'beverages',
+      },
+      {
+        label: 'Category: Fitness Equipment',
+        value: 'equipment',
+      },
+      {
+        label: 'Category: Apparel',
+        value: 'apparel',
+      },
+      {
+        label: 'Category: Merchandise',
+        value: 'merchandise',
+      },
+      {
+        label: 'Category: Others',
+        value: 'others',
+      },
+      {
+        label: 'Price: Specific',
+        value: 'price-specific',
+      },
+      {
+        label: 'Price: Range',
+        value: 'price-range',
+      },
+      {
+        label: 'Quantity: Specific',
+        value: 'quantity-specific',
+      },
+      {
+        label: 'Quantity: Range',
+        value: 'quantity-range',
+      },
+      {
+        label: 'Measurement: Specific',
+        value: 'measurement-specific',
+      },
+      {
+        label: 'Measurement: Range',
+        value: 'measurement-range',
+      },
+      {
+        label: 'Expiration Date: Specific',
+        value: 'expdate-specific',
+      },
+      {
+        label: 'Expiration Date: Range',
+        value: 'expdate-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 4,
+    filter: [
+      {
+        label: 'Category: Supplements & Nutrition',
+        value: 'supplements',
+      },
+      {
+        label: 'Category: Food & Meals',
+        value: 'food',
+      },
+      {
+        label: 'Category: Beverages',
+        value: 'beverages',
+      },
+      {
+        label: 'Category: Fitness Equipment',
+        value: 'equipment',
+      },
+      {
+        label: 'Category: Apparel',
+        value: 'apparel',
+      },
+      {
+        label: 'Category: Merchandise',
+        value: 'merchandise',
+      },
+      {
+        label: 'Category: Others',
+        value: 'others',
+      },
+      {
+        label: 'Price: Specific',
+        value: 'price-specific',
+      },
+      {
+        label: 'Price: Range',
+        value: 'price-range',
+      },
+      {
+        label: 'Quantity: Specific',
+        value: 'quantity-specific',
+      },
+      {
+        label: 'Quantity: Range',
+        value: 'quantity-range',
+      },
+      {
+        label: 'Measurement: Specific',
+        value: 'measurement-specific',
+      },
+      {
+        label: 'Measurement: Range',
+        value: 'measurement-range',
+      },
+      {
+        label: 'Expiration Date: Specific',
+        value: 'expdate-specific',
+      },
+      {
+        label: 'Expiration Date: Range',
+        value: 'expdate-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 5,
+    filter: [
+      {
+        label: 'Category: Supplements & Nutrition',
+        value: 'supplements',
+      },
+      {
+        label: 'Category: Food & Meals',
+        value: 'food',
+      },
+      {
+        label: 'Category: Beverages',
+        value: 'beverages',
+      },
+      {
+        label: 'Category: Fitness Equipment',
+        value: 'equipment',
+      },
+      {
+        label: 'Category: Apparel',
+        value: 'apparel',
+      },
+      {
+        label: 'Category: Merchandise',
+        value: 'merchandise',
+      },
+      {
+        label: 'Category: Others',
+        value: 'others',
+      },
+      {
+        label: 'Price: Specific',
+        value: 'price-specific',
+      },
+      {
+        label: 'Price: Range',
+        value: 'price-range',
+      },
+      {
+        label: 'Quantity: Specific',
+        value: 'quantity-specific',
+      },
+      {
+        label: 'Quantity: Range',
+        value: 'quantity-range',
+      },
+      {
+        label: 'Measurement: Specific',
+        value: 'measurement-specific',
+      },
+      {
+        label: 'Measurement: Range',
+        value: 'measurement-range',
+      },
+      {
+        label: 'Expiration Date: Specific',
+        value: 'expdate-specific',
+      },
+      {
+        label: 'Expiration Date: Range',
+        value: 'expdate-range',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+];
+
+let tabsData = [
+  {
+    tab: 1,
+    filter: 'all',
+    data: [],
+  },
+  {
+    tab: 2,
+    filter: 'all',
+    data: [],
+  },
+  {
+    tab: 3,
+    filter: 'all',
+    data: [],
+  },
+  {
+    tab: 4,
+    filter: 'all',
+    data: [],
+  },
+  {
+    tab: 5,
+    filter: 'all',
+    data: [],
+  },
+];
+
+function resetDataForTab(tabNumber) {
+  tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [] } : t));
+}
+
+function addDataForTab(tabNumber, newData) {
+  tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
+}
+
+async function filterDataForTab(tabNumber, selectedFilter) {
+  const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
+  if (!selectedFilter) {
+    selectedFilter = tabsData.find((t) => t.tab === tabNumber)?.filter;
+    const select = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+    if (!select) return;
+    if (selectedFilter === 'all') select.selectedIndex = 0;
+    else select.value = selectedFilter;
+  }
+  const filteredTab = await getFilteredTab(tabNumber, selectedFilter, unfilteredTab);
+  if (!filteredTab && selectedFilter !== 'all') return;
+
+  main.deleteAllAtSectionOne(SECTION_NAME, tabNumber, () => {
+    if (selectedFilter === 'all') {
+      unfilteredTab.data.forEach((data) => {
+        renderData(tabNumber, data);
+      });
+    } else {
+      filteredTab.forEach((data) => {
+        renderData(tabNumber, data);
+      });
+    }
+
+    function renderData(tabNumber, product) {
+      const displayId =
+        (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
+      const isDisposed =
+        product.disposal_status === 'Disposed' ||
+        (product.product_name && product.product_name.toLowerCase().includes('disposed'));
+      const columnsData = [
+        displayId,
+        {
+          type: 'object',
+          data: [product.image_url || '/src/images/client_logo.jpg', product.product_name],
+        },
+        main.formatPrice(product.price),
+        product.quantity + '',
+        isDisposed
+          ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>`
+          : main.getStockStatus(product.quantity),
+        product.measurement_value || '',
+        product.measurement_unit || '',
+        main.getSelectedOption(product.category, CATEGORIES),
+        product.expiration_date ? main.encodeDate(product.expiration_date, 'short') : 'No expiration',
+        'custom_date_today',
+      ];
+      main.createAtSectionOne(SECTION_NAME, columnsData, tabNumber, (createResult) => {
+        if (product.created_at) {
+          const date = main.encodeDate(product.created_at, 'long');
+          createResult.dataset.date = date;
+          createResult.children[9].innerHTML = date;
+        }
+
+        createResult.dataset.id = product.product_id;
+        createResult.dataset.image = product.image_url || '/src/images/client_logo.jpg';
+        createResult.dataset.text = product.product_name;
+        createResult.dataset.custom2 = product.price_encoded;
+        createResult.dataset.custom3 = product.quantity;
+        createResult.dataset.custom4 = product.stock_status;
+        createResult.dataset.custom5 = product.measurement_value;
+        createResult.dataset.custom6 = product.measurement_unit;
+        createResult.dataset.custom7 = product.category;
+        createResult.dataset.custom8 = product.expiration_date || '';
+        createResult.dataset.disposalStatus = product.disposal_status || 'Active';
+        createResult.dataset.disposalReason = product.disposal_reason || '';
+        createResult.dataset.disposalNotes = product.disposal_notes || '';
+        createResult.dataset.disposedAt = product.disposed_at || '';
+
+        if (!isDisposed) {
+          setupProductDetailsButton(createResult);
+        } else {
+          setupDisposedProductButton(createResult);
+        }
+      });
+    }
+  });
+}
+
+async function getFilteredTab(tabIndex, filter, unfilteredTab) {
+  tabsData = tabsData.map((t) => (t.tab === tabIndex ? { ...t, filter: 'all' } : t));
+  if (filter === 'all') return null;
+  tabsData = tabsData.map((t) => (t.tab === tabIndex ? { ...t, filter: filter } : t));
+  const filterParts = filter.split('-');
+  if (filterParts.length === 1) {
+    return unfilteredTab.data.filter((data) => data.category.includes(filter));
+  }
+
+  const filterType = filterParts[0].includes('date') ? 'calendar' : 'number';
+  const resultFilter = await getDateFromUser(filterParts[0], filterParts[1], filterType);
+  if (!resultFilter) return null;
+  switch (filterParts[1]) {
+    case 'specific':
+      if (filterType === 'calendar') {
+        const { date } = resultFilter;
+        const selectedDate = new Date(date);
+        selectedDate.setHours(0, 0, 0, 0);
+
+        return unfilteredTab.data.filter((data) => {
+          let comparingColumn;
+          if (filterParts[0].includes('exp')) {
+            comparingColumn = data.expiration_date;
+          } else {
+            comparingColumn = data.created_at;
+          }
+          const created = new Date(comparingColumn);
+          created.setHours(0, 0, 0, 0);
+          return (
+            created.getFullYear() === selectedDate.getFullYear() &&
+            created.getMonth() === selectedDate.getMonth() &&
+            created.getDate() === selectedDate.getDate()
+          );
+        });
+      }
+      if (filterType === 'number') {
+        const { number } = resultFilter;
+
+        return unfilteredTab.data.filter((data) => {
+          let comparingColumn;
+          if (filterParts[0].includes('quantity')) {
+            comparingColumn = +data.quantity;
+          } else if (filterParts[0].includes('measurement')) {
+            comparingColumn = +data.measurement_value;
+          } else {
+            comparingColumn = +data.price;
+          }
+          return comparingColumn === number;
+        });
+      }
+    case 'range':
+      if (filterType === 'calendar') {
+        const { startDate, endDate } = resultFilter;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+
+        return unfilteredTab.data.filter((data) => {
+          let comparingColumn;
+          if (filterParts[0].includes('exp')) {
+            comparingColumn = data.expiration_date;
+          } else {
+            comparingColumn = data.created_at;
+          }
+          const created = new Date(comparingColumn);
+          created.setHours(0, 0, 0, 0);
+          return created >= start && created <= end;
+        });
+      }
+      if (filterType === 'number') {
+        const { startNumber, endNumber } = resultFilter;
+
+        return unfilteredTab.data.filter((data) => {
+          let comparingColumn;
+          if (filterParts[0].includes('quantity')) {
+            comparingColumn = +data.quantity;
+          } else if (filterParts[0].includes('measurement')) {
+            comparingColumn = +data.measurement_value;
+          } else {
+            comparingColumn = +data.price;
+          }
+          return comparingColumn >= startNumber && comparingColumn <= endNumber;
+        });
+      }
+  }
+
+  return null;
+}
+
+function getDateFromUser(titleText, mode, type) {
+  return new Promise((resolve) => {
+    // === Create modal elements ===
+    const overlay = document.createElement('div');
+    overlay.className =
+      'fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-9999 flex items-center justify-center';
+
+    const modal = document.createElement('div');
+    modal.className = 'm-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300';
+    modal.onclick = (event) => event.stopPropagation();
+
+    const header = document.createElement('div');
+    header.className =
+      'flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-sky-500 via-blue-600 to-sky-600 p-4 text-center text-white';
+
+    const title = document.createElement('p');
+    title.className = 'text-base font-semibold';
+    const titleSpecificString =
+      type === 'calendar' ? (titleText.includes('exp') ? 'Expiration ' : '') + 'Date' : main.fixText(titleText);
+    const titleRangeString =
+      (type === 'calendar' ? (titleText.includes('exp') ? 'Expiration ' : '') + 'Date' : main.fixText(titleText)) +
+      ' Range';
+    title.textContent = mode === 'specific' ? 'Select a ' + titleSpecificString : 'Select ' + titleRangeString;
+
+    const subtitle = document.createElement('p');
+    subtitle.className = 'text-xs';
+    subtitle.textContent =
+      mode === 'specific'
+        ? 'Choose a specific ' + (type === 'calendar' ? 'date' : titleText)
+        : 'Select ' + (type === 'calendar' ? 'start and end dates' : titleText + ' range');
+
+    const content = document.createElement('div');
+    content.className = 'p-4';
+
+    if (mode === 'specific') {
+      if (type === 'calendar') {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleSpecificString}</label>
+          <input type="date" id="dateInput" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+      } else {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleSpecificString}</label>
+          <input type="number" id="numberInput" min="0" placeholder="Enter ${titleText}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+      }
+    } else {
+      if (type === 'calendar') {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleRangeString}</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="date" id="startDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" id="endDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        `;
+      } else {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleRangeString}</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="number" id="startNumber" min="0" placeholder="Min ${titleText}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="number" id="endNumber" min="0" placeholder="Max ${titleText}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        `;
+      }
+    }
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'mt-4 flex items-center justify-end gap-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className =
+      'mb-4 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500';
+    cancelBtn.textContent = 'Cancel';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className =
+      'mb-4 mr-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
+    confirmBtn.textContent = 'Confirm';
+
+    // === Append elements ===
+    header.appendChild(title);
+    header.appendChild(subtitle);
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(confirmBtn);
+    modal.appendChild(header);
+    modal.appendChild(content);
+    modal.appendChild(buttonContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger animation
+    setTimeout(() => {
+      overlay.classList.remove('opacity-0');
+      modal.classList.remove('-translate-y-6');
+      modal.classList.remove('scale-95');
+    }, 10);
+
+    // === Helpers ===
+    const closeModal = () => {
+      overlay.classList.add('opacity-0');
+      modal.classList.add('-translate-y-6');
+      modal.classList.add('scale-95');
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
+    };
+
+    // === Event handlers ===
+    confirmBtn.onclick = () => {
+      let result = null;
+
+      if (mode === 'specific') {
+        if (type === 'calendar') {
+          const date = modal.querySelector('#dateInput').value;
+          if (date) result = { date };
+        } else {
+          const number = modal.querySelector('#numberInput').value;
+          if (number) result = { number: Number(number) };
+        }
+      } else {
+        if (type === 'calendar') {
+          const startDate = modal.querySelector('#startDate').value;
+          const endDate = modal.querySelector('#endDate').value;
+          if (startDate && endDate) result = { startDate, endDate };
+        } else {
+          const startNumber = modal.querySelector('#startNumber').value;
+          const endNumber = modal.querySelector('#endNumber').value;
+          if (startNumber && endNumber) result = { startNumber: Number(startNumber), endNumber: Number(endNumber) };
+        }
+      }
+
+      closeModal();
+      resolve(result);
+    };
+
+    cancelBtn.onclick = () => {
+      closeModal();
+      resolve(null);
+    };
+  });
+}
+
+document.addEventListener('beforeNewTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const savedActiveTab = main.sharedState.activeTab;
+  const savedFilter = tabsData.find((t) => t.tab === savedActiveTab)?.filter;
+  filterDataForTab(savedActiveTab, 'all');
+  tabsData = tabsData.map((t) => (t.tab === savedActiveTab ? { ...t, filter: savedFilter } : t));
+});
+
+document.addEventListener('newTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const savedActiveTab = main.sharedState.activeTab;
+  setupFilter(savedActiveTab);
+  filterDataForTab(savedActiveTab);
+});
+
+function setupFilter(tabNumber = 1) {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  const checkSelect = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  const select = checkSelect ? checkSelect : document.createElement('select');
+  if (!checkSelect) {
+    select.id = `${SECTION_NAME}CategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      filterDataForTab(main.sharedState.activeTab, e.target.value || 'all');
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  FILTER_CATEGORIES.find((t) => t.tab === tabNumber).filter.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.value;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  });
+}
+
 function displayProductsForTab(products, tabIndex) {
   // Clear existing products first on the specific tab
   const emptyCell = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
@@ -646,10 +1421,12 @@ function displayProductsForTab(products, tabIndex) {
   const CHUNK = 50;
   const total = products.length;
   const renderChunk = (startIndex) => {
+    resetDataForTab(tabIndex);
     const end = Math.min(startIndex + CHUNK, total);
     for (let i = startIndex; i < end; i++) {
       const product = products[i];
-      const displayId = (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
+      const displayId =
+        (product.product_id && product.product_id.split('_').slice(0, 2).join('_')) || product.product_id;
       const isDisposed =
         product.disposal_status === 'Disposed' ||
         (product.product_name && product.product_name.toLowerCase().includes('disposed'));
@@ -662,21 +1439,18 @@ function displayProductsForTab(products, tabIndex) {
         },
         main.formatPrice(product.price),
         product.quantity + '',
-        isDisposed ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>` : main.getStockStatus(product.quantity),
+        isDisposed
+          ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>`
+          : main.getStockStatus(product.quantity),
         product.measurement_value || '',
         product.measurement_unit || '',
         main.getSelectedOption(product.category, CATEGORIES),
-        product.expiration_date
-          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            })
-          : 'No expiration',
+        product.expiration_date ? main.encodeDate(product.expiration_date, 'short') : 'No expiration',
         'custom_date_today',
       ];
 
       main.createAtSectionOne(SECTION_NAME, columnsData, tabIndex, (frontendResult) => {
+        addDataForTab(tabIndex, product);
         // Set the actual date
         if (product.created_at) {
           const date = new Date(product.created_at).toLocaleDateString('en-US', {

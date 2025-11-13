@@ -50,7 +50,7 @@ let activated = false,
 const seenCustomerIds = new Set();
 const fetchingCustomerIds = new Set();
 
-const CUSTOMER_CATEGORIES = [
+const FILTER_CATEGORIES = [
   {
     tab: 1,
     filter: [
@@ -173,41 +173,41 @@ const CUSTOMER_CATEGORIES = [
   },
 ];
 
-let tabsCustomers = [
+let tabsData = [
   {
     tab: 1,
     filter: 'all',
-    customers: [],
+    data: [],
   },
   {
     tab: 2,
     filter: 'all',
-    customers: [],
+    data: [],
   },
   {
     tab: 3,
     filter: 'all',
-    customers: [],
+    data: [],
   },
   {
     tab: 4,
     filter: 'all',
-    customers: [],
+    data: [],
   },
 ];
 
 function resetDataForTab(tabNumber) {
-  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabNumber ? { ...t, customers: [] } : t));
+  tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [] } : t));
 }
 
 function addDataForTab(tabNumber, newData) {
-  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabNumber ? { ...t, customers: [...t.customers, newData] } : t));
+  tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
 }
 
 async function filterDataForTab(tabNumber, selectedFilter) {
-  const unfilteredTab = tabsCustomers.find((t) => t.tab === tabNumber);
+  const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
   if (!selectedFilter) {
-    selectedFilter = tabsCustomers.find((t) => t.tab === tabNumber)?.filter;
+    selectedFilter = tabsData.find((t) => t.tab === tabNumber)?.filter;
     const select = document.getElementById(`${SECTION_NAME}CategoryFilter`);
     if (!select) return;
     if (selectedFilter === 'all') select.selectedIndex = 0;
@@ -218,16 +218,16 @@ async function filterDataForTab(tabNumber, selectedFilter) {
 
   main.deleteAllAtSectionOne(SECTION_NAME, tabNumber, () => {
     if (selectedFilter === 'all') {
-      unfilteredTab.customers.forEach((customer) => {
-        renderCustomer(tabNumber, customer);
+      unfilteredTab.data.forEach((data) => {
+        renderData(tabNumber, data);
       });
     } else {
-      filteredTab.forEach((customer) => {
-        renderCustomer(tabNumber, customer);
+      filteredTab.forEach((data) => {
+        renderData(tabNumber, data);
       });
     }
 
-    function renderCustomer(tabNumber, customer) {
+    function renderData(tabNumber, customer) {
       let columnsData;
       switch (tabNumber) {
         case 1:
@@ -268,10 +268,7 @@ async function filterDataForTab(tabNumber, selectedFilter) {
                   customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                 ),
                 findResult.dataset.custom3,
-                'custom_date_' +
-                  main.encodeDate(customer.created_at, 'long') +
-                  ' - ' +
-                  main.encodeTime(customer.created_at),
+                'custom_date_' + main.encodeDate(customer.created_at, 'long') + ' - ' + main.encodeTime(customer.created_at),
               ];
             }
           });
@@ -291,10 +288,7 @@ async function filterDataForTab(tabNumber, selectedFilter) {
             main.encodeDate(customer.customer_end_date, 'long'),
             main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
             main.fixText(customer.customer_rate),
-            'custom_date_' +
-              main.encodeDate(customer.created_at, 'long') +
-              ' - ' +
-              main.encodeTime(customer.created_at),
+            'custom_date_' + main.encodeDate(customer.created_at, 'long') + ' - ' + main.encodeTime(customer.created_at),
           ];
           break;
         case 4:
@@ -405,25 +399,25 @@ async function filterDataForTab(tabNumber, selectedFilter) {
 }
 
 async function getFilteredTab(tabIndex, filter, unfilteredTab) {
-  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabIndex ? { ...t, filter: 'all' } : t));
+  tabsData = tabsData.map((t) => (t.tab === tabIndex ? { ...t, filter: 'all' } : t));
   if (filter === 'all') return null;
-  tabsCustomers = tabsCustomers.map((t) => (t.tab === tabIndex ? { ...t, filter: filter } : t));
+  tabsData = tabsData.map((t) => (t.tab === tabIndex ? { ...t, filter: filter } : t));
   const filterParts = filter.split('-');
   if (filterParts.length === 1) {
     if (filter === 'daily') {
-      return unfilteredTab.customers.filter((c) => c.customer_type === filter);
+      return unfilteredTab.data.filter((data) => data.customer_type === filter);
     }
     if (tabIndex === 1) {
-      return unfilteredTab.customers.filter((c) => c.customer_rate === filter);
+      return unfilteredTab.data.filter((data) => data.customer_rate === filter);
     }
   }
 
   if (filterParts[0] === 'monthly') {
     switch (filterParts[1]) {
       case 'active':
-        return unfilteredTab.customers.filter((c) => c.customer_type === 'monthly' && c.customer_pending === 0);
+        return unfilteredTab.data.filter((data) => data.customer_type === 'monthly' && data.customer_pending === 0);
       case 'pending':
-        return unfilteredTab.customers.filter((c) => c.customer_type === 'monthly' && c.customer_pending === 1);
+        return unfilteredTab.data.filter((data) => data.customer_type === 'monthly' && data.customer_pending === 1);
     }
   }
 
@@ -437,14 +431,14 @@ async function getFilteredTab(tabIndex, filter, unfilteredTab) {
           const selectedDate = new Date(date);
           selectedDate.setHours(0, 0, 0, 0);
 
-          return unfilteredTab.customers.filter((c) => {
+          return unfilteredTab.data.filter((data) => {
             let comparingColumn;
             if (filterParts[0].includes('start')) {
-              comparingColumn = c.customer_start_date;
+              comparingColumn = data.customer_start_date;
             } else if (filterParts[0].includes('end')) {
-              comparingColumn = c.customer_end_date;
+              comparingColumn = data.customer_end_date;
             } else {
-              comparingColumn = c.created_at;
+              comparingColumn = data.created_at;
             }
             const created = new Date(comparingColumn);
             created.setHours(0, 0, 0, 0);
@@ -458,8 +452,8 @@ async function getFilteredTab(tabIndex, filter, unfilteredTab) {
         if (filterParts[0].includes('days')) {
           const { days } = resultFilter;
 
-          return unfilteredTab.customers.filter((c) => {
-            const endDate = new Date(c.customer_end_date);
+          return unfilteredTab.data.filter((data) => {
+            const endDate = new Date(data.customer_end_date);
             const today = new Date();
             endDate.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
@@ -476,14 +470,14 @@ async function getFilteredTab(tabIndex, filter, unfilteredTab) {
           start.setHours(0, 0, 0, 0);
           end.setHours(0, 0, 0, 0);
 
-          return unfilteredTab.customers.filter((c) => {
+          return unfilteredTab.data.filter((data) => {
             let comparingColumn;
             if (filterParts[0].includes('start')) {
-              comparingColumn = c.customer_start_date;
+              comparingColumn = data.customer_start_date;
             } else if (filterParts[0].includes('end')) {
-              comparingColumn = c.customer_end_date;
+              comparingColumn = data.customer_end_date;
             } else {
-              comparingColumn = c.created_at;
+              comparingColumn = data.created_at;
             }
             const created = new Date(comparingColumn);
             created.setHours(0, 0, 0, 0);
@@ -493,8 +487,8 @@ async function getFilteredTab(tabIndex, filter, unfilteredTab) {
         if (filterParts[0].includes('days')) {
           const { startDays, endDays } = resultFilter;
 
-          return unfilteredTab.customers.filter((c) => {
-            const endDate = new Date(c.customer_end_date);
+          return unfilteredTab.data.filter((data) => {
+            const endDate = new Date(data.customer_end_date);
             const today = new Date();
             endDate.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
@@ -507,174 +501,166 @@ async function getFilteredTab(tabIndex, filter, unfilteredTab) {
   }
 
   return null;
+}
 
-  function getDateFromUser(mode, type) {
-    return new Promise((resolve) => {
-      // === Create modal elements ===
-      const overlay = document.createElement('div');
-      overlay.className =
-        'fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-9999 flex items-center justify-center';
+function getDateFromUser(mode, type) {
+  return new Promise((resolve) => {
+    // === Create modal elements ===
+    const overlay = document.createElement('div');
+    overlay.className =
+      'fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-9999 flex items-center justify-center';
 
-      const modal = document.createElement('div');
-      modal.className = 'm-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300';
-      modal.onclick = (event) => event.stopPropagation();
+    const modal = document.createElement('div');
+    modal.className = 'm-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300';
+    modal.onclick = (event) => event.stopPropagation();
 
-      const header = document.createElement('div');
-      header.className =
-        'flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-sky-500 via-blue-600 to-sky-600 p-4 text-center text-white';
+    const header = document.createElement('div');
+    header.className =
+      'flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-sky-500 via-blue-600 to-sky-600 p-4 text-center text-white';
 
-      const title = document.createElement('p');
-      title.className = 'text-base font-semibold';
-      title.textContent =
-        mode === 'specific'
-          ? 'Select ' + (type === 'calendar' ? 'a Date' : 'Days Left')
-          : 'Select ' + (type === 'calendar' ? 'Date Range' : 'Days Left Range');
+    const title = document.createElement('p');
+    title.className = 'text-base font-semibold';
+    title.textContent =
+      mode === 'specific'
+        ? 'Select ' + (type === 'calendar' ? 'a Date' : 'Days Left')
+        : 'Select ' + (type === 'calendar' ? 'Date Range' : 'Days Left Range');
 
-      const subtitle = document.createElement('p');
-      subtitle.className = 'text-xs';
-      subtitle.textContent =
-        mode === 'specific'
-          ? 'Choose a specific ' + (type === 'calendar' ? 'date' : 'days left')
-          : 'Select ' + (type === 'calendar' ? 'start and end dates' : 'days left range');
+    const subtitle = document.createElement('p');
+    subtitle.className = 'text-xs';
+    subtitle.textContent =
+      mode === 'specific'
+        ? 'Choose a specific ' + (type === 'calendar' ? 'date' : 'days left')
+        : 'Select ' + (type === 'calendar' ? 'start and end dates' : 'days left range');
 
-      const content = document.createElement('div');
-      content.className = 'p-4';
+    const content = document.createElement('div');
+    content.className = 'p-4';
 
-      if (mode === 'specific') {
-        if (type === 'calendar') {
-          content.innerHTML = `
+    if (mode === 'specific') {
+      if (type === 'calendar') {
+        content.innerHTML = `
             <label class="mb-1 block text-sm font-medium text-gray-700">Date</label>
             <input type="date" id="dateInput" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           `;
-        } else if (type === 'number') {
-          content.innerHTML = `
+      } else if (type === 'number') {
+        content.innerHTML = `
             <label class="mb-1 block text-sm font-medium text-gray-700">Days Left</label>
             <input type="number" id="daysInput" min="0" placeholder="Enter number of days" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           `;
-        }
-      } else {
-        if (type === 'calendar') {
-          content.innerHTML = `
+      }
+    } else {
+      if (type === 'calendar') {
+        content.innerHTML = `
             <label class="mb-1 block text-sm font-medium text-gray-700">Date range</label>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <input type="date" id="startDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <input type="date" id="endDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           `;
-        } else if (type === 'number') {
-          content.innerHTML = `
+      } else if (type === 'number') {
+        content.innerHTML = `
             <label class="mb-1 block text-sm font-medium text-gray-700">Days Left Range</label>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <input type="number" id="startDays" min="0" placeholder="Min days" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <input type="number" id="endDays" min="0" placeholder="Max days" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           `;
+      }
+    }
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'mt-4 flex items-center justify-end gap-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className =
+      'mb-4 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500';
+    cancelBtn.textContent = 'Cancel';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className =
+      'mb-4 mr-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
+    confirmBtn.textContent = 'Confirm';
+
+    // === Append elements ===
+    header.appendChild(title);
+    header.appendChild(subtitle);
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(confirmBtn);
+    modal.appendChild(header);
+    modal.appendChild(content);
+    modal.appendChild(buttonContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger animation
+    setTimeout(() => {
+      overlay.classList.remove('opacity-0');
+      modal.classList.remove('-translate-y-6');
+      modal.classList.remove('scale-95');
+    }, 10);
+
+    // === Helpers ===
+    const closeModal = () => {
+      overlay.classList.add('opacity-0');
+      modal.classList.add('-translate-y-6');
+      modal.classList.add('scale-95');
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
+    };
+
+    // === Event handlers ===
+    confirmBtn.onclick = () => {
+      let result = null;
+
+      if (mode === 'specific') {
+        if (type === 'calendar') {
+          const date = modal.querySelector('#dateInput').value;
+          if (date) result = { date };
+        } else if (type === 'number') {
+          const days = modal.querySelector('#daysInput').value;
+          if (days) result = { days: Number(days) };
+        }
+      } else {
+        if (type === 'calendar') {
+          const startDate = modal.querySelector('#startDate').value;
+          const endDate = modal.querySelector('#endDate').value;
+          if (startDate && endDate) result = { startDate, endDate };
+        } else if (type === 'number') {
+          const startDays = modal.querySelector('#startDays').value;
+          const endDays = modal.querySelector('#endDays').value;
+          if (startDays && endDays) result = { startDays: Number(startDays), endDays: Number(endDays) };
         }
       }
 
-      const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'mt-4 flex items-center justify-end gap-2';
+      closeModal();
+      resolve(result);
+    };
 
-      const cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.className =
-        'mb-4 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500';
-      cancelBtn.textContent = 'Cancel';
-
-      const confirmBtn = document.createElement('button');
-      confirmBtn.type = 'button';
-      confirmBtn.className =
-        'mb-4 mr-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
-      confirmBtn.textContent = 'Confirm';
-
-      // === Append elements ===
-      header.appendChild(title);
-      header.appendChild(subtitle);
-      buttonContainer.appendChild(cancelBtn);
-      buttonContainer.appendChild(confirmBtn);
-      modal.appendChild(header);
-      modal.appendChild(content);
-      modal.appendChild(buttonContainer);
-      overlay.appendChild(modal);
-      document.body.appendChild(overlay);
-
-      // Trigger animation
-      setTimeout(() => {
-        overlay.classList.remove('opacity-0');
-        modal.classList.remove('-translate-y-6');
-        modal.classList.remove('scale-95');
-      }, 10);
-
-      // === Helpers ===
-      const closeModal = () => {
-        overlay.classList.add('opacity-0');
-        modal.classList.add('-translate-y-6');
-        modal.classList.add('scale-95');
-        setTimeout(() => {
-          overlay.remove();
-        }, 300);
-      };
-
-      // === Event handlers ===
-      confirmBtn.onclick = () => {
-        let result = null;
-
-        if (mode === 'specific') {
-          if (type === 'calendar') {
-            const date = modal.querySelector('#dateInput').value;
-            if (date) result = { date };
-          } else if (type === 'number') {
-            const days = modal.querySelector('#daysInput').value;
-            if (days) result = { days: Number(days) };
-          }
-        } else {
-          if (type === 'calendar') {
-            const startDate = modal.querySelector('#startDate').value;
-            const endDate = modal.querySelector('#endDate').value;
-            if (startDate && endDate) result = { startDate, endDate };
-          } else if (type === 'number') {
-            const startDays = modal.querySelector('#startDays').value;
-            const endDays = modal.querySelector('#endDays').value;
-            if (startDays && endDays) result = { startDays: Number(startDays), endDays: Number(endDays) };
-          }
-        }
-
-        closeModal();
-        resolve(result);
-      };
-
-      cancelBtn.onclick = () => {
-        closeModal();
-        resolve(null);
-      };
-
-      // Close on overlay click
-      overlay.onclick = () => {
-        closeModal();
-        resolve(null);
-      };
-    });
-  }
+    cancelBtn.onclick = () => {
+      closeModal();
+      resolve(null);
+    };
+  });
 }
 
 document.addEventListener('beforeNewTab', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
   const savedActiveTab = main.sharedState.activeTab;
-  const savedFilter = tabsCustomers.find((t) => t.tab === savedActiveTab)?.filter;
-  // console.log('before:', savedActiveTab, savedFilter);
+  const savedFilter = tabsData.find((t) => t.tab === savedActiveTab)?.filter;
   filterDataForTab(savedActiveTab, 'all');
-  tabsCustomers = tabsCustomers.map((t) => (t.tab === savedActiveTab ? { ...t, filter: savedFilter } : t));
+  tabsData = tabsData.map((t) => (t.tab === savedActiveTab ? { ...t, filter: savedFilter } : t));
 });
 
 document.addEventListener('newTab', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
   const savedActiveTab = main.sharedState.activeTab;
-  // console.log('after:', savedActiveTab, tabsCustomers.find((t) => t.tab === savedActiveTab)?.filter);
   setupFilter(savedActiveTab);
   filterDataForTab(savedActiveTab);
 });
 
-function setupFilter(tabNumber) {
+function setupFilter(tabNumber = 1) {
   const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
   if (!searchInput) return;
 
@@ -701,10 +687,10 @@ function setupFilter(tabNumber) {
   optAll.textContent = 'All';
   select.appendChild(optAll);
 
-  CUSTOMER_CATEGORIES.find((t) => t.tab === tabNumber).filter.forEach((c) => {
+  FILTER_CATEGORIES.find((t) => t.tab === tabNumber).filter.forEach((f) => {
     const opt = document.createElement('option');
-    opt.value = c.value;
-    opt.textContent = c.label;
+    opt.value = f.value;
+    opt.textContent = f.label;
     select.appendChild(opt);
   });
 }
@@ -725,11 +711,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await fetchAllMonthlyCustomers();
     await autoArchiveAllCustomerDiscrepancy();
     await fetchAllPastMonthlyCustomers();
-    await fetchAllArchivedCustomers();
     await autoArchiveInactiveCustomers();
     await clearDuplicateMonthlyEntries();
     updateCustomerStats();
-    setupFilter(1);
+    setupFilter();
 
     // Ensure pagination is properly applied after all initial data loads
     setTimeout(() => {
