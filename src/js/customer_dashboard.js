@@ -62,6 +62,8 @@ import { DEV_MODE, API_BASE_URL } from './_global.js';
 function loadCustomerNotifications() {
   const listEl = document.getElementById('notifList');
   const countEl = document.getElementById('notifCount');
+  const dotEl = document.getElementById('notifDot');
+  const dotElMobile = document.getElementById('notifDotMobile');
 
   if (!listEl || !countEl) return;
 
@@ -91,23 +93,50 @@ function loadCustomerNotifications() {
         return res.json();
       })
       .then((data) => {
-        const items = Array.isArray(data) ? data : Array.isArray(data.result) ? data.result : [];
+        let items = Array.isArray(data) ? data : Array.isArray(data.result) ? data.result : [];
+        // Load read set from localStorage and filter out read notifications
+        const readKey = `readNotifs:${customerId}`;
+        let readSet = {};
+        try {
+          readSet = JSON.parse(localStorage.getItem(readKey) || '{}') || {};
+        } catch (_) {
+          readSet = {};
+        }
         countEl.textContent = String(items.length);
         listEl.innerHTML = '';
 
-        if (items.length === 0) {
+        // Sort newest first if timestamps exist
+        items.sort((a, b) => new Date(b.created_at || b.createdAt || b.created || 0) - new Date(a.created_at || a.createdAt || a.created || 0));
+
+        // Filter out read items
+        const keyed = items.map((n) => {
+          const title = n.notif_title || n.title || 'Notification';
+          const body = n.notif_body || n.message || '';
+          const dt = n.created_at || n.createdAt || n.created || '';
+          const key = `${title}|${body}|${dt}`;
+          return { data: n, key };
+        });
+        const unread = keyed.filter((k) => !readSet[k.key]).map((k) => k);
+
+        countEl.textContent = String(unread.length);
+
+        if (unread.length === 0) {
           showMessage('No notifications');
+          dotEl?.classList.add('hidden');
+          dotElMobile?.classList.add('hidden');
           return;
         }
 
         const frag = document.createDocumentFragment();
 
-        items.forEach((n) => {
+        unread.forEach(({ data: n, key }) => {
           const li = document.createElement('li');
-          li.className = 'border-b border-orange-100 pb-2';
+          li.className = 'border-b border-gray-100 pb-3 transition-opacity duration-200';
+          li.dataset.key = key;
 
           const b = document.createElement('b');
-          b.textContent = n.notif_title || n.title || 'Notification';
+          const title = n.notif_title || n.title || 'Notification';
+          b.textContent = title;
 
           const p = document.createElement('p');
           p.className = 'text-xs text-gray-500';
@@ -121,25 +150,80 @@ function loadCustomerNotifications() {
           }
           p.innerHTML = dateStr ? `${msg}<br><br>${dateStr}` : msg;
 
+          // X button to mark as read (remove locally)
+          const x = document.createElement('button');
+          x.type = 'button';
+          x.title = 'Mark as read';
+          x.className = 'float-right -mt-1 rounded px-2 py-0.5 text-xs text-red-600 hover:bg-red-50 hover:text-red-700';
+          x.textContent = '✖';
+          x.addEventListener('click', () => {
+            // Persist as read
+            const existing = JSON.parse(localStorage.getItem(readKey) || '{}') || {};
+            existing[key] = true;
+            localStorage.setItem(readKey, JSON.stringify(existing));
+
+            // UI: turn X to ✓ and fade, then remove
+            x.textContent = '✓';
+            x.title = 'Read';
+            x.className = 'float-right -mt-1 rounded px-2 py-0.5 text-xs text-green-600';
+            x.disabled = true;
+            li.classList.add('opacity-60');
+            li.dataset.markedRead = '1';
+
+            // Update count only (do not remove yet)
+            const remaining = Math.max(parseInt(countEl.textContent || '1', 10) - 1, 0);
+            countEl.textContent = String(remaining);
+            // Keep item visible until dropdown closes
+          });
+
           li.appendChild(b);
+          li.appendChild(x);
           li.appendChild(p);
           frag.appendChild(li);
         });
 
         listEl.appendChild(frag);
 
-        const openNotif = document.getElementById('openNotif');
-        openNotif.dispatchEvent(new Event('click'));
+        // Green dot based on new items vs last seen
+        const newest = items[0]?.created_at || items[0]?.createdAt || items[0]?.created || null;
+        const newestTime = newest ? new Date(newest).getTime() : 0;
+        const lastSeenKey = `lastSeenNotifAt:${customerId}`;
+        const lastSeen = parseInt(localStorage.getItem(lastSeenKey) || '0', 10);
+        const hasNew = newestTime && newestTime > lastSeen;
+        if (hasNew) {
+          dotEl?.classList.remove('hidden');
+          dotElMobile?.classList.remove('hidden');
+          // Play SFX for new notifications
+          try {
+            const notifyKey = `lastNotifiedAt:${customerId}`;
+            const lastNotified = parseInt(localStorage.getItem(notifyKey) || '0', 10);
+            if (newestTime > lastNotified) {
+              const audio = document.getElementById('notifSfx');
+              if (audio && typeof audio.play === 'function') {
+                audio.currentTime = 0;
+                audio.play();
+              }
+              localStorage.setItem(notifyKey, String(newestTime));
+            }
+          } catch (_) {}
+        } else {
+          dotEl?.classList.add('hidden');
+          dotElMobile?.classList.add('hidden');
+        }
       })
       .catch((err) => {
         console.error('Failed to load notifications:', err);
         countEl.textContent = '0';
         showMessage('Failed to load notifications', 'text-xs text-red-600');
+        dotEl?.classList.add('hidden');
+        dotElMobile?.classList.add('hidden');
       });
   } catch (err) {
     console.error('Failed to load notifications:', err);
     countEl.textContent = '0';
     showMessage('Failed to load notifications', 'text-xs text-red-600');
+    dotEl?.classList.add('hidden');
+    dotElMobile?.classList.add('hidden');
   }
 }
 
@@ -167,27 +251,98 @@ document.addEventListener('DOMContentLoaded', function () {
   const openNotif = document.getElementById('openNotif');
   const openNotifMobile = document.getElementById('openNotifMobile');
 
-  // Close animation: slide to right
+  // Helpers for dropdown animation
+  const showDropdown = () => {
+    if (!notifPanel) return;
+    notifPanel.classList.remove('hidden');
+    // Start from initial state (ensure classes are present)
+    notifPanel.classList.add('opacity-0', '-translate-y-2', 'scale-95');
+    // Next frame remove them to animate in
+    requestAnimationFrame(() => {
+      notifPanel.classList.remove('opacity-0', '-translate-y-2', 'scale-95');
+    });
+  };
+
+  const hideDropdown = () => {
+    if (!notifPanel) return;
+    // Animate out
+    notifPanel.classList.add('opacity-0', '-translate-y-2', 'scale-95');
+    setTimeout(() => {
+      notifPanel.classList.add('hidden');
+    }, 200); // Match duration-200
+  };
+
+  // Helper: prune items marked read when closing the dropdown
+  const pruneReadItems = () => {
+    const listEl = document.getElementById('notifList');
+    if (!listEl) return;
+    const targets = Array.from(listEl.querySelectorAll('li[data-marked-read="1"]'));
+    targets.forEach((li) => li.classList.add('opacity-0'));
+    // Remove after fade
+    setTimeout(() => {
+      targets.forEach((li) => li.remove());
+      const after = listEl.querySelectorAll('li').length;
+      if (after === 0) {
+        document.getElementById('notifDot')?.classList.add('hidden');
+        document.getElementById('notifDotMobile')?.classList.add('hidden');
+        // Show empty state
+        const countEl = document.getElementById('notifCount');
+        if (countEl) countEl.textContent = '0';
+        const msg = document.createElement('li');
+        msg.className = 'text-xs text-gray-500';
+        msg.textContent = 'No notifications';
+        listEl.appendChild(msg);
+      }
+    }, 200);
+  };
+
+  // Close: animate out then prune
   closeNotif?.addEventListener('click', () => {
-    notifPanel.classList.add('translate-x-full');
+    pruneReadItems();
+    hideDropdown();
   });
 
-  // Open animation: slide back in
+  // Open: show dropdown and clear new-dot (mark seen)
+  const clearNewDot = () => {
+    const customerId = sessionStorage.getItem('id');
+    if (!customerId) return;
+    const firstItem = document.querySelector('#notifList li');
+    let newest = 0;
+    if (firstItem) {
+      // Read newest timestamp from rendered list if present
+      const firstData = firstItem.querySelector('p')?.innerHTML || '';
+      // We already set new-dot based on API timestamps; safer to just set now
+    }
+    const now = Date.now();
+    localStorage.setItem(`lastSeenNotifAt:${customerId}`, String(now));
+    document.getElementById('notifDot')?.classList.add('hidden');
+    document.getElementById('notifDotMobile')?.classList.add('hidden');
+  };
+
   openNotif?.addEventListener('click', () => {
-    if (!notifPanel.classList.contains('translate-x-full')) {
-      closeNotif.dispatchEvent(new Event('click'));
-      return;
+    const isHidden = notifPanel.classList.contains('hidden');
+    if (isHidden) {
+      loadCustomerNotifications();
+      showDropdown();
+      clearNewDot();
+    } else {
+      // Closing via toggle
+      pruneReadItems();
+      hideDropdown();
     }
-    notifPanel.classList.remove('translate-x-full');
   });
 
-  // Open animation: slide back in
   openNotifMobile?.addEventListener('click', () => {
-    if (!notifPanel.classList.contains('translate-x-full')) {
-      closeNotif.dispatchEvent(new Event('click'));
-      return;
+    const isHidden = notifPanel.classList.contains('hidden');
+    if (isHidden) {
+      loadCustomerNotifications();
+      showDropdown();
+      clearNewDot();
+    } else {
+      // Closing via toggle (mobile)
+      pruneReadItems();
+      hideDropdown();
     }
-    notifPanel.classList.remove('translate-x-full');
   });
 
   displayMonthlyStatus((result) => {
@@ -500,4 +655,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Load notifications on dashboard init
   loadCustomerNotifications();
+
+  // Realtime polling for notifications
+  let notifPoller = null;
+  const startNotifPolling = () => {
+    if (notifPoller) return;
+    notifPoller = setInterval(() => {
+      loadCustomerNotifications();
+    }, 5000);
+  };
+
+  const stopNotifPolling = () => {
+    if (!notifPoller) return;
+    clearInterval(notifPoller);
+    notifPoller = null;
+  };
+  // Start polling immediately
+  startNotifPolling();
+  // Refresh when the tab becomes active
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      loadCustomerNotifications();
+      startNotifPolling();
+    } else {
+      stopNotifPolling();
+    }
+  });
 });

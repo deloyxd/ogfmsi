@@ -112,6 +112,10 @@ function renderItemsInto(container, items) {
 }
 
 let __equipmentFilter = 'all'; // all | machine | non-machine
+let __equipmentLoading = false;
+let __equipmentPoller = null;
+let __equipmentSnapshot = '';
+let __equipmentHasRendered = false;
 
 async function computeAndFillCounts(equipmentId) {
   try {
@@ -141,10 +145,14 @@ async function computeAndFillCounts(equipmentId) {
 }
 
 async function loadAndRender() {
+  if (__equipmentLoading) return;
+  __equipmentLoading = true;
   const holder = document.getElementById('equipment-container');
   if (!holder) return;
-  holder.innerHTML = '<h2 class="text-center text-3xl font-black text-gray-500">Updating equipments status...</h2>';
-  holder.className = 'scrollbar-dark grid gap-6 p-2 grid-cols-1';
+  if (!__equipmentHasRendered) {
+    holder.innerHTML = '<h2 class="text-center text-3xl font-black text-gray-500">Updating equipments status...</h2>';
+    holder.className = 'scrollbar-dark grid gap-6 p-2 grid-cols-1';
+  }
   try {
     const list = await fetchEquipmentList();
     const filtered = list.filter((e) => {
@@ -152,8 +160,46 @@ async function loadAndRender() {
       if (__equipmentFilter === 'non-machine') return (e.equipment_type || '').toLowerCase() === 'non-machine';
       return true;
     });
-    holder.innerHTML = filtered.map((e) => renderEquipmentCard(e)).join('');
-    // compute counts asynchronously per equipment
+    // Build a stable snapshot of the list to detect changes
+    const snapshot = JSON.stringify(
+      filtered
+        .map((e) => ({
+          id: e.equipment_id,
+          name: e.equipment_name,
+          qty: e.total_quantity ?? 0,
+          type: e.equipment_type || '',
+          img: e.image_url || '',
+          status: e.general_status || '',
+        }))
+        .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    );
+
+    const listChanged = snapshot !== __equipmentSnapshot;
+
+    if (listChanged || !__equipmentHasRendered) {
+      holder.innerHTML = filtered.map((e) => renderEquipmentCard(e)).join('');
+      // after layout paints, apply scroll limit and responsive grid
+      function applyScrollableLimit() {
+        const style = window.getComputedStyle(holder);
+        const template = style.getPropertyValue('grid-template-columns');
+        const cols = Math.max(1, (template || '').split(' ').filter(Boolean).length);
+        const firstCard = holder.firstElementChild;
+        if (!firstCard) return;
+        const gap = parseFloat(style.getPropertyValue('row-gap')) || 0;
+        const cardHeight = firstCard.getBoundingClientRect().height;
+        const rows = Math.ceil(8 / cols);
+        const maxHeight = rows * cardHeight + (rows - 1) * gap;
+        holder.style.maxHeight = `${Math.ceil(maxHeight) + 16}px`;
+        holder.classList.add('scrollbar-dark');
+      }
+      requestAnimationFrame(applyScrollableLimit);
+      window.addEventListener('resize', applyScrollableLimit, { passive: true });
+      holder.className = 'scrollbar-dark grid gap-6 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+      __equipmentSnapshot = snapshot;
+      __equipmentHasRendered = true;
+    }
+
+    // Always refresh counts; availability may change without list changes
     filtered.forEach((e) => computeAndFillCounts(e.equipment_id));
 
     // set container max height so only ~8 items are visible, rest scrollable
@@ -178,6 +224,8 @@ async function loadAndRender() {
     holder.className = 'scrollbar-dark grid gap-6 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
   } catch (e) {
     holder.innerHTML = `<h2 class="text-center text-3xl font-black text-red-600">${e.message}</h2>`;
+  } finally {
+    __equipmentLoading = false;
   }
 }
 
@@ -203,18 +251,47 @@ function setupFilters() {
   });
 }
 
+function startEquipmentPolling() {
+  if (__equipmentPoller) return;
+  __equipmentPoller = setInterval(() => {
+    loadAndRender();
+  }, 5000);
+}
+
+function stopEquipmentPolling() {
+  if (!__equipmentPoller) return;
+  clearInterval(__equipmentPoller);
+  __equipmentPoller = null;
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener(
     'DOMContentLoaded',
     () => {
       setupFilters();
       loadAndRender();
-      setInterval(loadAndRender, 30000);
+      startEquipmentPolling();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          loadAndRender();
+          startEquipmentPolling();
+        } else {
+          stopEquipmentPolling();
+        }
+      });
     },
     { once: true }
   );
 } else {
   setupFilters();
   loadAndRender();
-  setInterval(loadAndRender, 30000);
+  startEquipmentPolling();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      loadAndRender();
+      startEquipmentPolling();
+    } else {
+      stopEquipmentPolling();
+    }
+  });
 }

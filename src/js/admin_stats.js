@@ -10,9 +10,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
         const icon = e.target.closest('.section-stats-f');
         if (icon) {
           const rawType = icon.dataset.type;
-          const type = rawType && rawType !== 'undefined' ? rawType : '';
+          let type = rawType && rawType !== 'undefined' ? rawType : '';
           const section = sectionStats.dataset.section || '';
-          if (!type) return; // no breakdown for this stat
+          // Fallback: use the visible header text if type is not provided in HTML
+          if (!type) {
+            try {
+              const headerText = sectionStats.querySelector('.section-stats-h')?.textContent || '';
+              type = headerText.trim();
+            } catch (_) {}
+          }
+          if (!type) return;
           openStatsBreakdownModal({ section, type });
           return;
         }
@@ -308,42 +315,74 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       return true;
     }
     if (t.includes('active') && t.includes('monthly') && t.includes('customer')) {
-      const [monthlyRes, archivedRes] = await Promise.all([
+      const [monthlyRes, archivedRes, customersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/inquiry/monthly`),
         fetch(`${API_BASE_URL}/inquiry/archived`),
+        fetch(`${API_BASE_URL}/inquiry/customers`),
       ]);
       const monthlyData = await monthlyRes.json();
       const archivedData = await archivedRes.json().catch(() => ({ result: [] }));
+      const customersData = await customersRes.json().catch(() => ({ result: [] }));
       const monthly = Array.isArray(monthlyData.result) ? monthlyData.result : [];
       const archived = Array.isArray(archivedData.result) ? archivedData.result : [];
+      const customers = Array.isArray(customersData.result) ? customersData.result : [];
+      const customerMap = new Map(customers.map((c) => [String(c.customer_id), c]));
       const archivedIds = new Set(archived.map((c) => String(c.customer_id)));
       const rows = monthly
         .filter((m) => Number(m.customer_pending) === 0)
         .filter((m) => !archivedIds.has(String(m.customer_id)));
       const html = rows
-      .map((m) => {
-        return `
-        <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👤</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:2px">${(m.customer_first_name || '')} ${(m.customer_last_name || '')}</div>
-              <div style="color:#6b7280;font-size:12px">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${m.customer_id || ''}</span></div>
+        .map((m) => {
+          const ref = customerMap.get(String(m.customer_id)) || {};
+          const img = m.customer_image_url || ref.customer_image_url || '/src/images/client_logo.jpg';
+          const firstName = m.customer_first_name || ref.customer_first_name || '';
+          const lastName = m.customer_last_name || ref.customer_last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim();
+          const contact = m.customer_contact || ref.customer_contact || '';
+          const email = m.customer_email || ref.customer_email || '';
+          const startDate = m.customer_start_date ? new Date(m.customer_start_date) : null;
+          const endDate = m.customer_end_date ? new Date(m.customer_end_date) : null;
+          const today = new Date();
+          if (startDate) startDate.setHours(0, 0, 0, 0);
+          if (endDate) endDate.setHours(0, 0, 0, 0);
+          today.setHours(0, 0, 0, 0);
+          const daysLeft = endDate ? Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))) : null;
+          const rate = m.customer_rate ? String(m.customer_rate).toUpperCase() : '';
+          const fmtDate = (d) =>
+            d
+              ? d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+              : '';
+          return `
+          <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <img src="${img}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0"/>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <div style="font-weight:700;color:#111827;font-size:15px;line-height:1.4">${fullName || 'Customer'}</div>
+                  <span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-weight:700;font-size:11px;padding:2px 6px;border-radius:999px">Active</span>
+                </div>
+                <div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:2px">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${m.customer_id || ''}</span>${rate ? ` • ${rate}` : ''}</div>
+                ${(contact || email)
+                  ? `<div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:4px">${contact ? `📞 ${contact}` : ''}${contact && email ? ' • ' : ''}${email ? `✉️ ${email}` : ''}</div>`
+                  : ''}
+                ${(startDate || endDate)
+                  ? `<div style="color:#374151;font-size:12px;line-height:1.6;margin-top:6px">${fmtDate(startDate)} – ${fmtDate(endDate)}${daysLeft !== null ? ` • ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ''}</div>`
+                  : ''}
+              </div>
             </div>
-          </div>
-        </div>`;
-      })
-      .join('');
-    container.innerHTML = `
-      <div style="background:linear-gradient(135deg,#10b981,#059669);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(16,185,129,0.2)">
-        <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Active Monthly Customers</div>
-        <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${rows.length}</div>
-        <div style="color:#d1fae5;font-size:13px;margin-top:8px">Active memberships</div>
-      </div>
-      <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No active monthly customers.</div>'}</div>
-    `;
-    container.dataset.filled = '1';
-    return true;
+          </div>`;
+        })
+        .join('');
+      container.innerHTML = `
+        <div style="background:linear-gradient(135deg,#10b981,#059669);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(16,185,129,0.2)">
+          <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Active Monthly Customers</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${rows.length}</div>
+          <div style="color:#d1fae5;font-size:13px;margin-top:8px">Active monthly passes</div>
+        </div>
+        <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No active monthly customers.</div>'}</div>
+      `;
+      container.dataset.filled = '1';
+      return true;
     }
     if (t.includes('active') && t.includes('reservation') && !t.includes('revenue')) {
       try {

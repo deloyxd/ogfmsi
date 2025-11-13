@@ -72,6 +72,68 @@ function listenToReservationsFE(callback) {
   });
 }
 
+// Support the global "See list now" breakdown modal from admin_stats.js
+document.addEventListener('ogfmsi:statsBreakdown', (e) => {
+  try {
+    const { section, type, container, setTitle } = e.detail || {};
+    const sec = String(section || '');
+    const current = String(main.sharedState.sectionName || '');
+    if (!(sec.includes(SECTION_NAME) || (!sec && current === SECTION_NAME))) return;
+
+    const t = String(type || '').toLowerCase();
+
+    function rowsFromTab(tabIndex) {
+      const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
+      if (!emptyText) return [];
+      const tbody = emptyText.parentElement?.parentElement;
+      if (!tbody) return [];
+      const out = [];
+      for (let i = 1; i < tbody.children.length; i++) out.push(tbody.children[i]);
+      return out;
+    }
+
+    let rows = [];
+    let title = 'Reservations';
+
+    if (t.includes('active')) {
+      rows = rowsFromTab(2);
+      title = 'Active Reservations';
+    } else if (t.includes('past') || t.includes('expired')) {
+      rows = rowsFromTab(3);
+      title = 'Past Reservations';
+    } else if (t.includes('total')) {
+      rows = [...rowsFromTab(2), ...rowsFromTab(3)];
+      title = 'Total Reservations';
+    } else {
+      rows = rowsFromTab(2);
+      title = 'Reservations';
+    }
+
+    try { setTitle?.(title); } catch (_) {}
+
+    const items = rows.map((r) => {
+      const img = r.querySelector('img')?.src || '/src/images/client_logo.jpg';
+      const id = r.dataset?.id || '';
+      // cells: [0]=Reservation ID, [1]=Customer (object_cid), [2]=Type, [3]=Schedule, [4]=Status
+      const name = (r.children?.[1]?.innerText || '').trim();
+      const typeText = (r.children?.[2]?.innerText || '').trim();
+      const schedText = (r.children?.[3]?.innerText || '').trim();
+      const meta = [typeText, schedText].filter(Boolean).join(' • ');
+      return `
+        <div style="background:#fff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center">
+          <img src="${img}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover"/>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:#111827;font-size:14px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name || 'Reservation'}</div>
+            <div style="color:#6b7280;font-size:12px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${id}</span>${meta ? ` • ${meta}` : ''}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = items || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No matching reservations.</div>';
+    container.dataset.filled = '1';
+  } catch (_) {}
+});
+
 async function createReservation(reservation) {
   const response = await fetch(`${API_BASE_URL}/inquiry/reservations`, {
     method: 'POST',
