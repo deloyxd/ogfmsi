@@ -431,27 +431,41 @@
       <!-- Notification Dropdown -->
       <div
         id="notificationPanel"
-        class="fixed top-20 z-[60] hidden w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl left-3 right-3 md:left-auto md:right-6 md:w-96 md:max-w-none transform transition-all duration-200 ease-out opacity-0 -translate-y-2 scale-95"
+        class="fixed top-16 sm:top-20 z-[60] hidden w-[calc(100%-1.5rem)] max-w-sm overflow-hidden rounded-md border border-slate-200 bg-white shadow-2xl left-3 right-3 md:left-auto md:right-6 md:w-96 md:max-w-none transform transition-all duration-200 ease-out opacity-0 -translate-y-2 scale-95"
       >
-        <div class="flex items-center justify-between border-b border-gray-200 bg-white p-4">
-          <h2 class="flex items-center gap-2 font-semibold text-gray-800">
-            📢 Notifications
-            <span id="notifCount" class="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700">0</span>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 border-b border-slate-200 bg-slate-800 p-3 sm:p-4">
+          <h2 class="flex items-center gap-2 font-semibold text-white text-sm sm:text-base">
+            <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            Notifications
+            <span id="notifCount" class="rounded-md bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-200">0</span>
           </h2>
-          <button
-            id="closeNotif"
-            class="rounded-full bg-gray-100 px-2 py-1 text-sm text-gray-700 transition hover:bg-gray-200"
-            aria-label="Close Notifications"
-          >
-            ✖
-          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              id="markAllRead"
+              class="flex-1 sm:flex-none rounded-md bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-800 transition hover:bg-slate-100"
+              aria-label="Mark all notifications as read"
+            >
+              Mark all as read
+            </button>
+            <button
+              id="closeNotif"
+              class="rounded-md bg-slate-700 px-2 sm:px-2.5 py-1.5 text-sm text-white transition hover:bg-slate-600"
+              aria-label="Close Notifications"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div class="max-h-[60vh] overflow-y-auto p-4 md:max-h-80">
-          <ul id="notifList" class="space-y-3 text-sm text-gray-700">
-            <li class="hidden border-b border-gray-100 pb-3">
-              <b>Title</b>
-              <p class="text-xs text-gray-500">Some first part of the message...</p>
+        <div class="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto p-3 sm:p-4 md:max-h-80 bg-slate-50">
+          <ul id="notifList" class="space-y-2 sm:space-y-3 text-sm text-slate-700">
+            <li class="hidden border-l-4 border-slate-800 bg-white p-2.5 sm:p-3 shadow-sm">
+              <b class="text-slate-900 font-semibold text-sm">Title</b>
+              <p class="text-xs text-slate-600 mt-1">Some first part of the message...</p>
             </li>
           </ul>
         </div>

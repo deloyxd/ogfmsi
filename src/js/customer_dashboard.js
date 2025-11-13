@@ -296,6 +296,51 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 200);
   };
 
+  const markAllReadBtn = document.getElementById('markAllRead');
+  if (markAllReadBtn) {
+    markAllReadBtn.addEventListener('click', () => {
+      const customerId = sessionStorage.getItem('id');
+      if (!customerId) return;
+      const readKey = `readNotifs:${customerId}`;
+      let existing = {};
+      try {
+        existing = JSON.parse(localStorage.getItem(readKey) || '{}') || {};
+      } catch (_) {
+        existing = {};
+      }
+      const listEl = document.getElementById('notifList');
+      if (!listEl) return;
+      let changed = false;
+      Array.from(listEl.querySelectorAll('li')).forEach((li) => {
+        const key = li.dataset.key;
+        if (key) {
+          existing[key] = true;
+          const x = li.querySelector('button[title="Mark as read"]');
+          if (x) {
+            x.textContent = '✓';
+            x.title = 'Read';
+            x.className = 'float-right -mt-1 rounded px-2 py-0.5 text-xs text-green-600';
+            x.disabled = true;
+          }
+          li.classList.add('opacity-60');
+          li.dataset.markedRead = '1';
+          changed = true;
+        }
+      });
+      localStorage.setItem(readKey, JSON.stringify(existing));
+      const countEl = document.getElementById('notifCount');
+      if (countEl) countEl.textContent = '0';
+      document.getElementById('notifDot')?.classList.add('hidden');
+      document.getElementById('notifDotMobile')?.classList.add('hidden');
+      try {
+        localStorage.setItem(`lastSeenNotifAt:${customerId}`, String(Date.now()));
+      } catch (_) {}
+      if (changed) {
+        pruneReadItems();
+      }
+    });
+  }
+
   // Close: animate out then prune
   closeNotif?.addEventListener('click', () => {
     pruneReadItems();
