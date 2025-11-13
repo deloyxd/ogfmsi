@@ -137,7 +137,7 @@ let activated = false;
 
 document.addEventListener('ogfmsiAdminMainLoaded', () => {
   if (main.sharedState.sectionName !== SECTION_NAME) {
-    stopExpirationCheck();
+    // stopExpirationCheck();
     return;
   }
 
@@ -146,12 +146,14 @@ document.addEventListener('ogfmsiAdminMainLoaded', () => {
   mainBtn?.addEventListener('click', mainBtnFunction);
 
   // Start expiration check and load products
-  startExpirationCheck();
+  // startExpirationCheck();
   loadProductsDebounced();
 
   if (!activated) {
     activated = true;
     setupFilter();
+
+    checkAndDisposeExpiredProducts();
   }
 });
 
