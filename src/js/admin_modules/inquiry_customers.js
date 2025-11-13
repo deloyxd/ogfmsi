@@ -1307,7 +1307,7 @@ function nameAutoCaseListener(inputEl) {
 }
 
 // Validate customer registration for similar names
-async function validateCustomerRegistration(firstName, lastName, customerId = null) {
+async function validateCustomerRegistration(firstName, lastName, email = null, customerId = null) {
   try {
     // Validate name format - only letters, spaces, hyphens, and apostrophes allowed
     const nameRegex = /^[a-zA-Z\s\-']+$/;
@@ -1318,6 +1318,14 @@ async function validateCustomerRegistration(firstName, lastName, customerId = nu
     // Check for minimum length
     if (firstName.trim().length < 2 || lastName.trim().length < 2) {
       return { isValid: false, error: 'First and last names must be at least 2 characters long' };
+    }
+
+    // check if email is valid email
+    if (email && email !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { isValid: false, error: 'Invalid email' };
+      }
     }
 
     const newNameNorm = normalizeCustomerName(firstName, lastName);
@@ -1451,7 +1459,7 @@ function mainBtnFunction(
           required: true,
           listener: nameAutoCaseListener,
         },
-        { placeholder: 'Email / contact number', value: `${isCreating ? contact : customer.contact}` },
+        { placeholder: 'Email', value: `${isCreating ? contact : customer.contact}` },
       ],
     },
     spinner: [
@@ -1507,7 +1515,7 @@ function mainBtnFunction(
         main.sharedState.moduleLoad = SECTION_NAME;
         window.showGlobalLoading?.();
         try {
-          const validation = await validateCustomerRegistration(firstName, lastName, customer?.id);
+          const validation = await validateCustomerRegistration(firstName, lastName, contact, customer?.id);
           if (!validation.isValid) {
             if (validation.error) {
               main.toast(validation.error, 'error');
