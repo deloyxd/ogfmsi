@@ -485,13 +485,7 @@ function setupFAQandFeedbackComponent() {
 window.approvalState = [];
 
 // Global Image Modal Functions
-window.showImageModal = function (
-  imageSrc,
-  imageName,
-  type = '',
-  processId = '',
-  approvalType = 'monthly',
-) {
+window.showImageModal = function (imageSrc, imageName, type = '', processId = '', approvalType = 'monthly') {
   // Find the process in approvalState
   let process = window.approvalState.find((p) => p.id && p.id === processId);
   if (!process) {
@@ -568,7 +562,7 @@ window.showImageModal = function (
       if (approveLabel) {
         approveLabel.textContent = isChecked ? 'Approved' : `Approve?`;
       }
-      
+
       if (isChecked) closeImageModal();
     });
   }

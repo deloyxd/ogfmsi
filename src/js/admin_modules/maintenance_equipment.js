@@ -2,6 +2,8 @@ import main from '../admin_main.js';
 import accesscontrol from './maintenance_accesscontrol.js';
 import { API_BASE_URL } from '../_global.js';
 
+const SECTION_NAME = 'maintenance-equipment';
+
 let mainBtn, subBtn, sectionTwoMainBtn;
 function getEmoji(emoji, size = 16) {
   return `<img src="/src/images/${emoji}.png" class="inline size-[${size}px] 2xl:size-[${size + 4}px]">`;
@@ -537,13 +539,515 @@ window.confirmDeleteEquipment = async function () {
   }
 };
 
+const FILTER_CATEGORIES = [
+  {
+    tab: 1,
+    filter: [
+      {
+        label: 'Quantity: Specific',
+        value: 'quantity-specific',
+      },
+      {
+        label: 'Quantity: Range',
+        value: 'quantity-range',
+      },
+      {
+        label: 'Type: Machine',
+        value: 'typemachine',
+      },
+      {
+        label: 'Type: Non Machine',
+        value: 'typenon',
+      },
+      {
+        label: 'Status: All Available',
+        value: 'available',
+      },
+      {
+        label: 'Status: Partially Available',
+        value: 'Partially',
+      },
+      {
+        label: 'Status: Pending Disposal',
+        value: 'Pending',
+      },
+      {
+        label: 'Status: Need Repair',
+        value: 'Warning',
+      },
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 2,
+    filter: [
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+  {
+    tab: 3,
+    filter: [
+      {
+        label: 'Date: Specific',
+        value: 'date-specific',
+      },
+      {
+        label: 'Date: Range',
+        value: 'date-range',
+      },
+    ],
+  },
+];
+
+let tabsData = [
+  {
+    tab: 1,
+    filter: 'all',
+    data: [],
+  },
+  {
+    tab: 2,
+    filter: 'all',
+    data: [],
+  },
+  {
+    tab: 3,
+    filter: 'all',
+    data: [],
+  },
+];
+
+function resetDataForTab(tabNumber) {
+  tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [] } : t));
+}
+
+function addDataForTab(tabNumber, newData) {
+  tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
+}
+
+async function filterDataForTab(tabNumber, selectedFilter) {
+  const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
+  if (!selectedFilter) {
+    selectedFilter = tabsData.find((t) => t.tab === tabNumber)?.filter;
+    const select = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+    if (!select) return;
+    if (selectedFilter === 'all') select.selectedIndex = 0;
+    else select.value = selectedFilter;
+  }
+  const filteredTab = await getFilteredTab(tabNumber, selectedFilter, unfilteredTab);
+  if (!filteredTab && selectedFilter !== 'all') return;
+
+  main.deleteAllAtSectionOne(SECTION_NAME, tabNumber, () => {
+    if (selectedFilter === 'all') {
+      unfilteredTab.data.forEach((data) => {
+        renderData(tabNumber, data);
+      });
+    } else {
+      filteredTab.forEach((data) => {
+        renderData(tabNumber, data);
+      });
+    }
+
+    function renderData(tabNumber, equipment) {
+      let columnsData;
+      switch (tabNumber) {
+        case 1:
+          columnsData = [
+            equipment.equipment_id.split('_').slice(0, 2).join('_'),
+            `<div style="display:flex;align-items:center;gap:8px;"><img src="${equipment.image_url || '/src/images/client_logo.jpg'}" alt="${equipment.equipment_name}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipment.equipment_name}')"><span>${equipment.equipment_name}</span></div>`,
+            equipment.total_quantity + '',
+            equipment.equipment_type,
+            getGeneralStatusDisplay(equipment.general_status, equipment.unavailable_count || 0),
+            'custom_date_today',
+          ];
+          break;
+        case 2:
+          columnsData = [
+            equipment.item_code,
+            equipment.equipment_name,
+            equipment.individual_status,
+            'custom_date_today',
+          ];
+          break;
+        case 3:
+          const disposedAtRaw =
+            equipment.disposed_at ||
+            equipment.updated_at ||
+            equipment.status_updated_at ||
+            equipment.date ||
+            equipment.created_at;
+          let disposedDateDisp = '—';
+          let disposedTimeDisp = '—';
+          if (disposedAtRaw) {
+            disposedDateDisp = main.encodeDate(disposedAtRaw, 'short');
+            disposedTimeDisp = main.encodeTime(disposedAtRaw);
+          }
+          columnsData = [equipment.item_code, equipment.equipment_name, disposedDateDisp, disposedTimeDisp];
+          break;
+      }
+      main.createAtSectionOne(SECTION_NAME, columnsData, tabNumber, (createResult) => {
+        switch (tabNumber) {
+          case 1:
+            if (equipment.created_at) {
+              const date = main.encodeDate(equipment.created_at, 'long');
+              createResult.dataset.date = date;
+              createResult.children[5].innerHTML = date;
+            }
+
+            createResult.dataset.equipmentId = equipment.equipment_id;
+            setupEquipmentButtons(createResult, equipment);
+            break;
+          case 2:
+          case 3:
+            createResult.dataset.itemId = equipment.item_id;
+            const nameCell = createResult.children[1];
+            if (nameCell) {
+              const equipmentName = equipment.equipment_name || '';
+              const renderWithImage = (img) => {
+                const imgSrc = img || '/src/images/client_logo.jpg';
+                nameCell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${imgSrc}" alt="${equipmentName}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer" onclick="showImageModal(this.src, '${equipmentName.replace(/'/g, '&#39;')}')"><span>${equipmentName}</span></div>`;
+              };
+
+              const inlineImage = equipment.image_url || equipment.equipment_image_url || equipment.equipmentImageUrl;
+              if (inlineImage) {
+                renderWithImage(inlineImage);
+              } else if (equipment.equipment_id) {
+                (async () => {
+                  try {
+                    const eqResp = await fetch(
+                      `${API_BASE_URL}/maintenance/equipment/${encodeURIComponent(equipment.equipment_id)}`
+                    );
+                    const eqData = await eqResp.json();
+                    const eq = eqResp.ok ? eqData.result || {} : {};
+                    renderWithImage(eq.image_url || '/src/images/client_logo.jpg');
+                  } catch (_) {
+                    renderWithImage('/src/images/client_logo.jpg');
+                  }
+                })();
+              } else {
+                renderWithImage('/src/images/client_logo.jpg');
+              }
+            }
+            if (tabNumber == 2) {
+              const btn = createResult.querySelector('#disposeConfirmBtn');
+              if (sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) {
+                btn.classList.add('hidden');
+              }
+              if (btn && !sessionStorage.getItem('systemUserRole').toLowerCase().includes('staff')) {
+                btn.addEventListener('click', () => confirmDisposeItem(equipment));
+              }
+            } else {
+              const dateCell = createResult.children[2];
+              const timeCell = createResult.children[3];
+              if (dateCell) dateCell.textContent = disposedDateDisp;
+              if (timeCell) timeCell.textContent = disposedTimeDisp;
+              setupDisposedItemButtons(createResult, equipment);
+            }
+            break;
+        }
+      });
+    }
+  });
+}
+
+async function getFilteredTab(tabIndex, filter, unfilteredTab) {
+  tabsData = tabsData.map((t) => (t.tab === tabIndex ? { ...t, filter: 'all' } : t));
+  if (filter === 'all') return null;
+  tabsData = tabsData.map((t) => (t.tab === tabIndex ? { ...t, filter: filter } : t));
+  const filterParts = filter.split('-');
+  if (filterParts.length === 1) {
+    return unfilteredTab.data.filter((data) => {
+      if (filter.includes('type')) return data.equipment_type === (filter.includes('non') ? 'non-machine' : 'machine');
+      else return data.general_status.includes(filter === 'available' ? 'All' : filter);
+    });
+  }
+
+  const filterType = filterParts[0].includes('date') ? 'calendar' : 'number';
+  const resultFilter = await getDateFromUser(filterParts[0], filterParts[1], filterType);
+  if (!resultFilter) return null;
+  switch (filterParts[1]) {
+    case 'specific':
+      if (filterType === 'calendar') {
+        const { date } = resultFilter;
+        const selectedDate = new Date(date);
+        selectedDate.setHours(0, 0, 0, 0);
+
+        return unfilteredTab.data.filter((data) => {
+          let comparingColumn;
+          if (tabIndex === 3) {
+            comparingColumn = data.disposed_at;
+          } else {
+            comparingColumn = data.created_at;
+          }
+          const created = new Date(comparingColumn);
+          created.setHours(0, 0, 0, 0);
+          return (
+            created.getFullYear() === selectedDate.getFullYear() &&
+            created.getMonth() === selectedDate.getMonth() &&
+            created.getDate() === selectedDate.getDate()
+          );
+        });
+      }
+      if (filterType === 'number') {
+        const { number } = resultFilter;
+
+        return unfilteredTab.data.filter((data) => {
+          return +data.total_quantity === number;
+        });
+      }
+    case 'range':
+      if (filterType === 'calendar') {
+        const { startDate, endDate } = resultFilter;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+
+        return unfilteredTab.data.filter((data) => {
+          let comparingColumn;
+          if (tabIndex === 3) {
+            comparingColumn = data.disposed_at;
+          } else {
+            comparingColumn = data.created_at;
+          }
+          const created = new Date(comparingColumn);
+          created.setHours(0, 0, 0, 0);
+          return created >= start && created <= end;
+        });
+      }
+      if (filterType === 'number') {
+        const { startNumber, endNumber } = resultFilter;
+
+        return unfilteredTab.data.filter((data) => {
+          return +data.total_quantity >= startNumber && +data.total_quantity <= endNumber;
+        });
+      }
+  }
+
+  return null;
+}
+
+function getDateFromUser(titleText, mode, type) {
+  return new Promise((resolve) => {
+    // === Create modal elements ===
+    const overlay = document.createElement('div');
+    overlay.className =
+      'fixed inset-0 h-full w-full content-center overflow-y-auto bg-black/30 opacity-0 duration-300 z-9999 flex items-center justify-center';
+
+    const modal = document.createElement('div');
+    modal.className = 'm-auto w-full max-w-md -translate-y-6 scale-95 rounded-2xl bg-white shadow-xl duration-300';
+    modal.onclick = (event) => event.stopPropagation();
+
+    const header = document.createElement('div');
+    header.className =
+      'flex flex-col gap-1 rounded-t-2xl bg-gradient-to-br from-sky-500 via-blue-600 to-sky-600 p-4 text-center text-white';
+
+    const title = document.createElement('p');
+    title.className = 'text-base font-semibold';
+    const titleSpecificString =
+      type === 'calendar' ? (titleText.includes('exp') ? 'Expiration ' : '') + 'Date' : main.fixText(titleText);
+    const titleRangeString =
+      (type === 'calendar' ? (titleText.includes('exp') ? 'Expiration ' : '') + 'Date' : main.fixText(titleText)) +
+      ' Range';
+    title.textContent = mode === 'specific' ? 'Select a ' + titleSpecificString : 'Select ' + titleRangeString;
+
+    const subtitle = document.createElement('p');
+    subtitle.className = 'text-xs';
+    subtitle.textContent =
+      mode === 'specific'
+        ? 'Choose a specific ' + (type === 'calendar' ? 'date' : titleText)
+        : 'Select ' + (type === 'calendar' ? 'start and end dates' : titleText + ' range');
+
+    const content = document.createElement('div');
+    content.className = 'p-4';
+
+    if (mode === 'specific') {
+      if (type === 'calendar') {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleSpecificString}</label>
+          <input type="date" id="dateInput" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+      } else {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleSpecificString}</label>
+          <input type="number" id="numberInput" min="0" placeholder="Enter ${titleText}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+      }
+    } else {
+      if (type === 'calendar') {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleRangeString}</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="date" id="startDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" id="endDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        `;
+      } else {
+        content.innerHTML = `
+          <label class="mb-1 block text-sm font-medium text-gray-700">${titleRangeString}</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="number" id="startNumber" min="0" placeholder="Min ${titleText}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="number" id="endNumber" min="0" placeholder="Max ${titleText}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        `;
+      }
+    }
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'mt-4 flex items-center justify-end gap-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className =
+      'mb-4 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500';
+    cancelBtn.textContent = 'Cancel';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className =
+      'mb-4 mr-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
+    confirmBtn.textContent = 'Confirm';
+
+    // === Append elements ===
+    header.appendChild(title);
+    header.appendChild(subtitle);
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(confirmBtn);
+    modal.appendChild(header);
+    modal.appendChild(content);
+    modal.appendChild(buttonContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger animation
+    setTimeout(() => {
+      overlay.classList.remove('opacity-0');
+      modal.classList.remove('-translate-y-6');
+      modal.classList.remove('scale-95');
+    }, 10);
+
+    // === Helpers ===
+    const closeModal = () => {
+      overlay.classList.add('opacity-0');
+      modal.classList.add('-translate-y-6');
+      modal.classList.add('scale-95');
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
+    };
+
+    // === Event handlers ===
+    confirmBtn.onclick = () => {
+      let result = null;
+
+      if (mode === 'specific') {
+        if (type === 'calendar') {
+          const date = modal.querySelector('#dateInput').value;
+          if (date) result = { date };
+        } else {
+          const number = modal.querySelector('#numberInput').value;
+          if (number) result = { number: Number(number) };
+        }
+      } else {
+        if (type === 'calendar') {
+          const startDate = modal.querySelector('#startDate').value;
+          const endDate = modal.querySelector('#endDate').value;
+          if (startDate && endDate) result = { startDate, endDate };
+        } else {
+          const startNumber = modal.querySelector('#startNumber').value;
+          const endNumber = modal.querySelector('#endNumber').value;
+          if (startNumber && endNumber) result = { startNumber: Number(startNumber), endNumber: Number(endNumber) };
+        }
+      }
+
+      closeModal();
+      resolve(result);
+    };
+
+    cancelBtn.onclick = () => {
+      closeModal();
+      resolve(null);
+    };
+  });
+}
+
+document.addEventListener('beforeNewTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const savedActiveTab = main.sharedState.activeTab;
+  const savedFilter = tabsData.find((t) => t.tab === savedActiveTab)?.filter;
+  filterDataForTab(savedActiveTab, 'all');
+  tabsData = tabsData.map((t) => (t.tab === savedActiveTab ? { ...t, filter: savedFilter } : t));
+});
+
+document.addEventListener('newTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const savedActiveTab = main.sharedState.activeTab;
+  setupFilter(savedActiveTab);
+  filterDataForTab(savedActiveTab);
+});
+
+function setupFilter(tabNumber = 1) {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  const checkSelect = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  const select = checkSelect ? checkSelect : document.createElement('select');
+  if (!checkSelect) {
+    select.id = `${SECTION_NAME}CategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      filterDataForTab(main.sharedState.activeTab, e.target.value || 'all');
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  FILTER_CATEGORIES.find((t) => t.tab === tabNumber).filter.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.value;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  });
+}
+
+let activated = false;
+
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== 'maintenance-equipment') return;
 
   mainBtn = document.querySelector(`.section-main-btn[data-section="${main.sharedState.sectionName}"]`);
   mainBtn.addEventListener('click', mainBtnFunction);
 
-  refreshAllTabs();
+  if (!activated) {
+    activated = true;
+    refreshAllTabs();
+    setupFilter();
+  }
 });
 async function loadExistingEquipment() {
   try {
@@ -564,6 +1068,7 @@ async function loadExistingEquipment() {
       const CHUNK = 50;
       const total = items.length;
       const renderChunk = (start) => {
+        resetDataForTab(1);
         const end = Math.min(start + CHUNK, total);
         for (let i = start; i < end; i++) {
           const equipment = items[i];
@@ -577,6 +1082,7 @@ async function loadExistingEquipment() {
           ];
 
           main.createAtSectionOne('maintenance-equipment', columnsData, 1, (frontendResult) => {
+            addDataForTab(1, equipment);
             if (equipment.created_at) {
               const date = new Date(equipment.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -723,7 +1229,7 @@ function showIndividualItemsModal(equipment, individualItems, frontendResult) {
                              class="w-16 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-center">
                       <button type="button" onclick="addEquipmentQuantity()" 
                               class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">
-                        +
+                        Add Now
                       </button>
                     </div>
                   </div>
@@ -1221,9 +1727,12 @@ async function renderDisposalList() {
       existingRows.forEach((row) => row.remove());
       if (!items.length) return;
 
+      resetDataForTab(2);
+
       items.forEach((item) => {
         const columnsData = [item.item_code, item.equipment_name, item.individual_status, 'custom_date_today'];
         main.createAtSectionOne('maintenance-equipment', columnsData, 2, (frontendResult) => {
+          addDataForTab(2, item);
           frontendResult.dataset.itemId = item.item_id;
           const nameCell = frontendResult.children[1];
           if (nameCell) {
@@ -1351,6 +1860,7 @@ async function renderDisposedList() {
       const existingRows = Array.from(tbody.querySelectorAll('tr:not(:first-child)'));
       existingRows.forEach((row) => row.remove());
       if (!items.length) return;
+      resetDataForTab(3);
       items.forEach((item) => {
         const disposedAtRaw =
           item.disposed_at || item.updated_at || item.status_updated_at || item.date || item.created_at;
@@ -1377,6 +1887,7 @@ async function renderDisposedList() {
         }
         const columnsData = [item.item_code, item.equipment_name, disposedDateDisp, disposedTimeDisp];
         main.createAtSectionOne('maintenance-equipment', columnsData, 3, (frontendResult) => {
+          addDataForTab(3, item);
           frontendResult.dataset.itemId = item.item_id;
           const nameCell = frontendResult.children[1];
           if (nameCell) {

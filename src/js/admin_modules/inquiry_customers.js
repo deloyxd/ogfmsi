@@ -711,7 +711,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await fetchAllMonthlyCustomers();
     await autoArchiveAllCustomerDiscrepancy();
     await fetchAllPastMonthlyCustomers();
-    await autoArchiveInactiveCustomers();
+    await fetchAllArchivedCustomers();
+    // await autoArchiveInactiveCustomers();
     await clearDuplicateMonthlyEntries();
     updateCustomerStats();
     setupFilter();
