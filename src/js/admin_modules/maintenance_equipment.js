@@ -611,28 +611,62 @@ function setupEquipmentButtons(frontendResult, equipment) {
 
 async function showEquipmentDetails(frontendResult, equipment) {
   try {
-    const equipmentResponse = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipment.equipment_id}`);
-    const equipmentResult = await equipmentResponse.json();
+    // Open the modal immediately with whatever data we already have to remove perceived delay
+    showIndividualItemsModal(equipment, [], frontendResult);
+
+    // Fetch latest equipment and items in parallel
+    const [equipmentResponse, itemsResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/maintenance/equipment/${equipment.equipment_id}`),
+      fetch(`${API_BASE_URL}/maintenance/equipment/${equipment.equipment_id}/items`),
+    ]);
+
+    let equipmentResult = {};
+    let itemsResult = {};
+    try {
+      equipmentResult = await equipmentResponse.json();
+    } catch (_) {}
+    try {
+      itemsResult = await itemsResponse.json();
+    } catch (_) {}
 
     if (!equipmentResponse.ok) {
-      console.error('Error fetching equipment details:', equipmentResult.error);
+      console.error('Error fetching equipment details:', equipmentResult?.error);
       main.toast('Failed to load equipment details', 'error');
       return;
     }
-
-    const freshEquipment = equipmentResult.result || equipment;
-    const response = await fetch(`${API_BASE_URL}/maintenance/equipment/${equipment.equipment_id}/items`);
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('Error fetching equipment items:', result.error);
+    if (!itemsResponse.ok) {
+      console.error('Error fetching equipment items:', itemsResult?.error);
       main.toast('Failed to load equipment items', 'error');
       return;
     }
 
-    const individualItems = result.result || [];
+    const freshEquipment = equipmentResult.result || equipment;
 
-    showIndividualItemsModal(freshEquipment, individualItems, frontendResult);
+    // Update modal fields with fresh data
+    const modal = document.getElementById('individualItemsModal');
+    if (modal && freshEquipment) {
+      modal.dataset.equipmentId = freshEquipment.equipment_id;
+      modal.dataset.currentImageUrl = freshEquipment.image_url || '/src/images/client_logo.jpg';
+      modal.dataset.equipmentType = freshEquipment.equipment_type || 'machine';
+      modal.dataset.totalQuantity = (freshEquipment.total_quantity || 1).toString();
+      modal.dataset.generalStatus = freshEquipment.general_status || 'All Available';
+      modal.dataset.originalName = freshEquipment.equipment_name || '';
+      modal.dataset.originalNotes = freshEquipment.notes || '';
+
+      const nameInput = document.getElementById('equipmentNameInput');
+      const notesInput = document.getElementById('equipmentNotesInput');
+      const typeSelect = document.getElementById('equipmentTypeSelect');
+      const imgPrev = document.getElementById('equipmentImagePreview');
+      const qtyDisplay = document.getElementById('currentQuantityDisplay');
+      if (nameInput) nameInput.value = freshEquipment.equipment_name || '';
+      if (notesInput) notesInput.value = freshEquipment.notes || '';
+      if (typeSelect && freshEquipment.equipment_type) typeSelect.value = freshEquipment.equipment_type;
+      if (imgPrev) imgPrev.src = freshEquipment.image_url || '/src/images/client_logo.jpg';
+      if (qtyDisplay) qtyDisplay.value = freshEquipment.total_quantity || 1;
+    }
+
+    // Re-render items and status using existing refresher for consistency
+    await refreshIndividualItemsSection(freshEquipment.equipment_id, freshEquipment.equipment_name || '');
   } catch (error) {
     console.error('Error loading equipment items:', error);
     main.toast('Network error: Failed to load equipment items', 'error');
