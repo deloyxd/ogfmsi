@@ -5,6 +5,14 @@ import payments from './payments.js';
 import { refreshDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 import * as pagination from '../admin_pagination.js';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+import { app } from '../firebase.js';
+const auth = getAuth(app);
 
 const SECTION_NAME = 'inquiry-customers';
 
@@ -269,9 +277,9 @@ async function filterDataForTab(tabNumber, selectedFilter) {
                 ),
                 findResult.dataset.custom3,
                 'custom_date_' +
-                main.encodeDate(customer.created_at, 'long') +
-                ' - ' +
-                main.encodeTime(customer.created_at),
+                  main.encodeDate(customer.created_at, 'long') +
+                  ' - ' +
+                  main.encodeTime(customer.created_at),
               ];
             }
           });
@@ -292,9 +300,9 @@ async function filterDataForTab(tabNumber, selectedFilter) {
             main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
             main.fixText(customer.customer_rate),
             'custom_date_' +
-            main.encodeDate(customer.created_at, 'long') +
-            ' - ' +
-            main.encodeTime(customer.created_at),
+              main.encodeDate(customer.created_at, 'long') +
+              ' - ' +
+              main.encodeTime(customer.created_at),
           ];
           break;
         case 4:
@@ -711,7 +719,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     mainBtn?.addEventListener('click', () => mainBtnFunction());
     // subBtn?.classList.remove('hidden');
-    subBtn?.addEventListener('click', () => { });
+    subBtn?.addEventListener('click', () => {});
 
     await fetchAllCustomers();
     await fetchAllMonthlyCustomers();
@@ -1470,6 +1478,7 @@ function mainBtnFunction(
   priceRate = 1
 ) {
   const isCreating = !customer;
+  const isActivated = false;
   const inputs = {
     header: {
       title: `${isCreating ? 'Register New' : 'Edit'} Customer ${isCreating ? '' : 'Details'} ${getEmoji(isCreating ? '💪' : '⚙️', 26)}`,
@@ -1491,7 +1500,7 @@ function mainBtnFunction(
           required: true,
           listener: nameAutoCaseListener,
         },
-        { placeholder: 'Email', value: `${isCreating ? contact : customer.contact}` },
+        { placeholder: 'Email', value: `${isCreating ? contact : customer.contact}`, locked: isActivated },
       ],
     },
     spinner: [
@@ -1920,8 +1929,8 @@ function activeShortListener(monthInput, container) {
   totalPriceInput.dispatchEvent(new Event('input'));
 }
 
-function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount, priceRate, callback = () => { }) {
-  const { firstName } = main.decodeName(columnsData[1].data[1]);
+function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount, priceRate, callback = () => {}) {
+  const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
   main.findAtSectionOne(SECTION_NAME, customerId, 'equal_id', 1, (findResult) => {
     let isCreating = true;
     if (findResult) {
@@ -1985,6 +1994,12 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
           const newCustomer = await response.json();
         } catch (error) {
           console.error('Error creating customer:', error);
+        }
+
+        if (customer_contact !== '') {
+          await createUserWithEmailAndPassword(auth, customer_contact, lastName.toUpperCase() + 'FITWORXGYM');
+          await sendPasswordResetEmail(auth, customer_contact);
+          main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
         }
       });
     } else {
@@ -2063,6 +2078,26 @@ async function updateCustomer(newData, oldData, tabIndex) {
   }
   updateCustomerStats();
   refreshDashboardStats();
+  try {
+    if (oldData.dataset.contact !== '') {
+      const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: oldData.dataset.contact }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      main.toast(`Previous online account (${oldData.dataset.contact}) has been deactivated.`, 'warning');
+    }
+    if (newData[1].data[2] !== '') {
+      await createUserWithEmailAndPassword(auth, newData[1].data[2], lastName.toUpperCase() + 'FITWORXGYM');
+      await sendPasswordResetEmail(auth, newData[1].data[2]);
+      main.toast(`An email has sent to ${newData[1].data[2]} to set up their online account.`, 'success');
+    }
+  } catch (error) {
+    console.error('Error online account:', error);
+  }
 }
 
 function autoChangeButtonText(title, button, text) {

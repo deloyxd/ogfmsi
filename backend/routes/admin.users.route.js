@@ -1,8 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/mysql');
+const admin = require('../database/firebase');
 const { parsePageParams } = require('../utils/pagination');
 const crypto = require('crypto');
+
+router.delete('/delete-user', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const userRecord = await admin.auth().getUserByEmail(email);
+    await admin.auth().deleteUser(userRecord.uid);
+
+    res.json({ message: `User ${email} deleted successfully` });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
 
 function hashPassword(plain) {
   const salt = crypto.randomBytes(16).toString('hex');
