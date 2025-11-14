@@ -82,6 +82,98 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// ACTIVATE ROUTE
+router.post('/activate', async (req, res) => {
+  const { customer_contact } = req.body;
+
+  if (!customer_contact) {
+    return res.status(400).json({ error: 'customer_contact is required' });
+  }
+
+  try {
+    // Check if the customer exists
+    const [rows] = await db.query(
+      'SELECT * FROM customer_tbl WHERE customer_contact = ?', 
+      [customer_contact]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found. Please sign up.' });
+    }
+
+    // Update activated_at timestamp
+    const activatedAt = new Date();
+
+    const [updateResult] = await db.query(
+      'UPDATE customer_tbl SET activated_at = ? WHERE customer_contact = ?',
+      [activatedAt, customer_contact]
+    );
+
+    if (updateResult.affectedRows === 0) {
+      return res.status(500).json({ error: 'Activation failed.' });
+    }
+
+    res.status(200).json({
+      message: 'Account activated successfully',
+      activated_at: activatedAt,
+    });
+
+  } catch (err) {
+    console.error('Activation error:', err);
+    res.status(500).json({ error: 'Activation failed' });
+  }
+});
+
+// CHECK UNACTIVATE
+router.get('/check-unactivate', async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT *
+      FROM customer_tbl
+      WHERE customer_contact LIKE '%@%'
+        AND customer_contact LIKE '%.com%'
+        AND activated_at IS NULL
+        AND updated_at <= NOW() - INTERVAL 24 HOUR
+    `);
+
+    return res.status(200).json({
+      message: 'Customers with email but not activated for 24 hours',
+      count: rows.length,
+      result: rows
+    });
+
+  } catch (err) {
+    console.error('Check unactivated error:', err);
+    return res.status(500).json({ error: 'Failed to check unactivated accounts' });
+  }
+});
+
+// UNACTIVATE
+router.put('/unactivate/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    UPDATE customer_tbl 
+    SET customer_contact = '', activated_at = NULL
+    WHERE customer_id = ?
+  `;
+
+  try {
+    const result = await db.query(query, [
+      id,
+    ]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    } else {
+      res.status(200).json({ message: 'Customer updated successfully' });
+    }
+  } catch (error) {
+    console.error('Updating customer error:', error);
+    return res.status(500).json({ error: 'Updating customer failed' });
+  }
+});
+
+
 // SIGNUP ROUTE
 router.post('/signup', async (req, res) => {
   const {

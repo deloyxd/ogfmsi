@@ -227,7 +227,42 @@ function loadCustomerNotifications() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+async function activateOnlineAccount() {
+  if (typeof Toastify === 'function') {
+    Toastify({
+      text: 'Please wait while your online account is being activated...',
+      duration: 3000,
+      gravity: 'top',
+      position: 'right',
+      close: true,
+    }).showToast();
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/inquiry/activate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: sanitizedEmail,
+      }),
+    });
+    if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
+    if (typeof Toastify === 'function') {
+      Toastify({
+        text: 'Your online account has been activated! Please change your default password',
+        duration: 3000,
+        gravity: 'top',
+        position: 'right',
+        close: true,
+      }).showToast();
+    }
+  } catch (error) {
+    console.error('Online account activated failed: ', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
   let fullName = sessionStorage.getItem('full_name') || 'Guest';
   if (DEV_MODE) {
     sessionStorage.setItem('id', 'U123');
@@ -244,6 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   setupMobileDropdown();
   setupLogout();
+  await activateOnlineAccount();
   document.getElementById('welcomeUser').innerText = fullName;
 
   const notifPanel = document.getElementById('notificationPanel');

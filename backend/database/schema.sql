@@ -283,3 +283,6 @@ CREATE TABLE IF NOT EXISTS notif_tbl (
 ALTER TABLE payment_tbl 
 ADD COLUMN payment_monthly_url LONGTEXT AFTER payment_ref,
 ADD COLUMN payment_student_url LONGTEXT AFTER payment_monthly_url;
+
+ALTER TABLE customer_tbl
+ADD COLUMN activated_at TIMESTAMP AFTER updated_at;
