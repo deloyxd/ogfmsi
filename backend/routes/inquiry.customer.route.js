@@ -70,8 +70,6 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Customer not found. Please sign up.' });
     }
 
-    console.log(rows)
-
     res.status(200).json({
       message: 'Login successful',
       result: rows,
@@ -91,21 +89,11 @@ router.post('/activate', async (req, res) => {
   }
 
   try {
-    // Check if the customer exists
-    const [rows] = await db.query(
-      'SELECT * FROM customer_tbl WHERE customer_contact = ?', 
-      [customer_contact]
-    );
-
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: 'Customer not found. Please sign up.' });
-    }
-
     // Update activated_at timestamp
     const activatedAt = new Date();
 
     const [updateResult] = await db.query(
-      'UPDATE customer_tbl SET activated_at = ? WHERE customer_contact = ?',
+      'UPDATE customer_tbl SET activated_at = ? WHERE customer_contact = ? AND activated_at = NULL',
       [activatedAt, customer_contact]
     );
 
@@ -117,7 +105,6 @@ router.post('/activate', async (req, res) => {
       message: 'Account activated successfully',
       activated_at: activatedAt,
     });
-
   } catch (err) {
     console.error('Activation error:', err);
     res.status(500).json({ error: 'Activation failed' });

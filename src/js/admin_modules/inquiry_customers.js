@@ -720,6 +720,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
     await fetchAllArchivedCustomers();
     // await autoArchiveInactiveCustomers();
     await clearDuplicateMonthlyEntries();
+    await autoUnactiveEmails();
     updateCustomerStats();
     setupFilter();
 
@@ -775,10 +776,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               main.fixText(customer.customer_type),
               main.fixText(customer.customer_rate),
               'custom_date_' +
-              main.encodeDate(
-                customer.created_at,
-                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-              ),
+                main.encodeDate(
+                  customer.created_at,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                ),
             ],
             1,
             (createResult) => {
@@ -904,16 +905,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       ),
                       main.formatPrice(
                         customer.customer_months *
-                        PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                          PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                       ),
                       findResult.dataset.custom3,
                       'custom_date_' +
-                      main.encodeDate(
-                        customer.created_at,
-                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                      ) +
-                      ' - ' +
-                      main.encodeTime(customer.created_at),
+                        main.encodeDate(
+                          customer.created_at,
+                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                        ) +
+                        ' - ' +
+                        main.encodeTime(customer.created_at),
                     ],
                     3,
                     (createResult) => {
@@ -971,16 +972,16 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                       daysLeft + ' days',
                       main.formatPrice(
                         customer.customer_months *
-                        PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
+                          PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                       ),
                       findResult.dataset.custom3,
                       'custom_date_' +
-                      main.encodeDate(
-                        customer.created_at,
-                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                      ) +
-                      ' - ' +
-                      main.encodeTime(customer.created_at),
+                        main.encodeDate(
+                          customer.created_at,
+                          main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                        ) +
+                        ' - ' +
+                        main.encodeTime(customer.created_at),
                     ],
                     2,
                     (createResult) => {
@@ -1094,12 +1095,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
               main.formatPrice(customer.customer_months * PRICES_AUTOFILL[`${customer.customer_rate}_monthly`]),
               main.fixText(customer.customer_rate),
               'custom_date_' +
-              main.encodeDate(
-                customer.created_at,
-                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-              ) +
-              ' - ' +
-              main.encodeTime(customer.created_at),
+                main.encodeDate(
+                  customer.created_at,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                ) +
+                ' - ' +
+                main.encodeTime(customer.created_at),
             ],
             3,
             (createResult) => {
@@ -1142,10 +1143,10 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 ],
               },
               'custom_datetime_' +
-              main.encodeDate(
-                customer.created_at,
-                main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-              ),
+                main.encodeDate(
+                  customer.created_at,
+                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                ),
             ],
             4,
             (createResult) => {
@@ -1222,6 +1223,37 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
         }
       } catch (error) {
         console.error('Error clearing duplicate monthly entries:', error);
+      }
+    }
+
+    async function autoUnactiveEmails() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inquiry/check-unactivate`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const unactiveCustomers = await response.json();
+        if (unactiveCustomers.count <= 0) return;
+        unactiveCustomers.result.forEach(async (customer) => {
+          const response = await fetch(`${API_BASE_URL}/inquiry/unactivate/${customer.customer_id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          // const result = await response.json();
+          main.toast(
+            `${customer.customer_first_name + ' ' + customer.customer_last_name}'s email has been deactivated due to no activation within 24 hours`,
+            'warning'
+          );
+        });
+      } catch (error) {
+        console.error('Error auto unactive emails:', error);
       }
     }
   }

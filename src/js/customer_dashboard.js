@@ -228,15 +228,6 @@ function loadCustomerNotifications() {
 }
 
 async function activateOnlineAccount() {
-  if (typeof Toastify === 'function') {
-    Toastify({
-      text: 'Please wait while your online account is being activated...',
-      duration: 3000,
-      gravity: 'top',
-      position: 'right',
-      close: true,
-    }).showToast();
-  }
   try {
     const response = await fetch(`${API_BASE_URL}/inquiry/activate`, {
       method: 'POST',
@@ -258,7 +249,7 @@ async function activateOnlineAccount() {
       }).showToast();
     }
   } catch (error) {
-    console.error('Online account activated failed: ', 'error');
+    console.error('Online account activated failed: ', error);
   }
 }
 
