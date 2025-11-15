@@ -82,7 +82,6 @@ function loadCustomerNotifications() {
       showMessage('No notifications');
       return;
     }
-    console.log(customerId);
 
     fetch(`${API_BASE_URL}/notif/${encodeURIComponent(customerId)}`, {
       method: 'GET',
@@ -106,7 +105,11 @@ function loadCustomerNotifications() {
         listEl.innerHTML = '';
 
         // Sort newest first if timestamps exist
-        items.sort((a, b) => new Date(b.created_at || b.createdAt || b.created || 0) - new Date(a.created_at || a.createdAt || a.created || 0));
+        items.sort(
+          (a, b) =>
+            new Date(b.created_at || b.createdAt || b.created || 0) -
+            new Date(a.created_at || a.createdAt || a.created || 0)
+        );
 
         // Filter out read items
         const keyed = items.map((n) => {
@@ -227,7 +230,7 @@ function loadCustomerNotifications() {
   }
 }
 
-async function activateOnlineAccount(email) {
+async function activateOnlineAccount(customerEmail) {
   try {
     const response = await fetch(`${API_BASE_URL}/inquiry/activate`, {
       method: 'POST',
@@ -235,7 +238,7 @@ async function activateOnlineAccount(email) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email,
+        customer_contact: customerEmail,
       }),
     });
     if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
