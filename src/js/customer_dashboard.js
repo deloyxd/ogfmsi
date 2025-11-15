@@ -548,6 +548,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             </span>
           </div>
         `;
+      } else {
+        callback();
       }
 
       // Inject into DOM
