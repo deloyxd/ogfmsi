@@ -621,6 +621,10 @@ function setupFilter(tabNumber = 2) {
   });
 }
 
+let totalCashSalesToday = 0;
+let totalCashlessSalesToday = 0;
+let salesCalculatedToday = false;
+
 document.addEventListener('ogfmsiAdminMainLoaded', async function () {
   if (main.sharedState.sectionName != SECTION_NAME) return;
 
@@ -648,6 +652,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     await fetchAllCanceledPayments();
     await fetchAllServicePayments();
     await fetchAllSalesPayments();
+    salesCalculatedToday = true;
 
     // Light polling so new portal-submitted pendings show up without reload
     setInterval(() => {
@@ -951,6 +956,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               3, // Service Transactions tab (all service transactions)
               (createResult) => {
                 addDataForTab(3, completePayment);
+                if (!salesCalculatedToday) totalCashSalesToday += completePayment.payment_amount_to_pay;
                 const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
                 transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('services', createResult));
               }
@@ -1073,6 +1079,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 6, // Sales Transactions tab (all sales transactions)
                 (createResult) => {
                   addDataForTab(6, completePayment);
+                  
+                if (!salesCalculatedToday) totalCashlessSalesToday += completePayment.payment_amount_to_pay;
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
                   transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
                 }
@@ -3658,9 +3666,9 @@ function computeAndUpdatePaymentStats(payments) {
   };
 
   const stats = {
-    todays_cash: todaysCash,
-    todays_cashless: todaysCashless,
-    todays_overall_total: todaysCash + todaysCashless,
+    todays_cash: totalCashSalesToday,
+    todays_cashless: totalCashlessSalesToday,
+    todays_overall_total: totalCashSalesToday + totalCashlessSalesToday,
     avg_daily: avg(dayTotals),
     avg_weekly: avg(weekTotals),
     avg_monthly: avg(monthTotals),
@@ -3679,11 +3687,11 @@ function updatePaymentStatsDisplay(stats) {
       const valueEl = card.querySelector('.section-stats-c');
       if (!header || !valueEl) return;
       const label = (header.textContent || '').toLowerCase();
-      if (label.includes('cashless') && label.includes('today')) {
+      if (label.includes('cashless')) {
         valueEl.textContent = main.encodePrice(stats.todays_cashless || 0);
-      } else if (label.includes('cash sales') || (label.includes('cash') && label.includes('today'))) {
+      } else if (label.includes('cash')) {
         valueEl.textContent = main.encodePrice(stats.todays_cash || 0);
-      } else if (label.includes('overall') && label.includes('total')) {
+      } else if (label.includes('overall')) {
         valueEl.textContent = main.encodePrice(stats.todays_overall_total || 0);
       } else if (label.includes('daily')) {
         valueEl.textContent = main.encodePrice(stats.avg_daily || 0);
