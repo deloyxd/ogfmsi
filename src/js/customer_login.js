@@ -82,174 +82,7 @@ const googleSignInBtn = document.getElementById('googleSignInBtn');
 const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
 function setupLoginForm() {
-  googleSignInBtn.addEventListener('click', async () => {
-    const submitBtn = document.getElementById('loginForm').lastChild.previousSibling;
-    const oldSubmitBtn = submitBtn.innerHTML;
-    try {
-      submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
-        5.291A7.962 7.962 0 014 12H0c0 3.042 
-        1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>`;
-      submitBtn.disabled = true;
-
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const info = getAdditionalUserInfo(result);
-      const isNewUser = info?.isNewUser ?? false;
-
-      // localStorage.setItem("fitworxUser", JSON.stringify({
-      //   name: user.displayName,
-      //   email: user.email,
-      //   photo: user.photoURL
-      // }));
-
-      // if (isNewUser) {
-      //   const fullName = user.displayName || '';
-      //   const [defaultFirst, ...rest] = fullName.split(' ');
-      //   const defaultLast = rest.join(' ');
-
-      //   const {
-      //     value: formValues,
-      //     isConfirmed,
-      //     isDismissed,
-      //   } = await Swal.fire({
-      //     title: 'Welcome to Fitworx Gym! 🏋️‍♀️',
-      //     html: `
-      //             <p class="text-gray-700 mb-3">Please confirm or edit your name below to complete your registration.</p>
-      //             <input id="swal-first" class="swal2-input" placeholder="First Name" value="${defaultFirst || ''}">
-      //             <input id="swal-last" class="swal2-input" placeholder="Last Name" value="${defaultLast || ''}">
-      //           `,
-      //     focusConfirm: false,
-      //     showCancelButton: true,
-      //     confirmButtonText: 'Continue',
-      //     cancelButtonText: 'Cancel',
-      //     confirmButtonColor: '#f97316',
-      //     preConfirm: () => {
-      //       const first = Swal.getPopup().querySelector('#swal-first').value.trim();
-      //       const last = Swal.getPopup().querySelector('#swal-last').value.trim();
-      //       if (!first || !last) {
-      //         Swal.showValidationMessage('Please fill out both first and last name.');
-      //         return false;
-      //       }
-      //       return { first, last };
-      //     },
-      //   });
-
-      //   if (!isConfirmed) {
-      //     try {
-      //       await user.delete();
-      //       Swal.fire({
-      //         icon: 'info',
-      //         title: 'Registration Cancelled',
-      //         text: 'Your Google sign-in has been cancelled. No account was created.',
-      //         confirmButtonColor: '#ef4444',
-      //       });
-      //     } catch (err) {
-      //       console.error('⚠️ Error deleting temporary user:', err);
-      //     }
-      //     return;
-      //   }
-
-      //   const { first, last } = formValues;
-
-      //   try {
-      //     const id = `U${Date.now()}`;
-      //     const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
-      //       method: 'POST',
-      //       headers: {
-      //         'Content-Type': 'application/json',
-      //       },
-      //       body: JSON.stringify({
-      //         customer_id: id,
-      //         customer_image_url: user.photoURL,
-      //         customer_first_name: first,
-      //         customer_last_name: last,
-      //         customer_contact: user.email,
-      //         customer_type: 'daily',
-      //         customer_tid: '',
-      //         customer_pending: 0,
-      //         customer_rate: 'regular',
-      //       }),
-      //     });
-
-      //     if (response.status !== 201) {
-      //       throw new Error(`HTTP error! status: ${response.status}`);
-      //     }
-
-      //     const newCustomer = await response.json();
-      //     sessionStorage.setItem('id', newCustomer.result.customer_id);
-      //     sessionStorage.setItem('first_name', first);
-      //     sessionStorage.setItem('last_name', last);
-      //     sessionStorage.setItem('full_name', first + ' ' + last);
-      //     sessionStorage.setItem('email', user.email);
-
-      //     Toastify({
-      //       text: 'Logging in, please wait...',
-      //       duration: 1500,
-      //       close: true,
-      //       gravity: 'top',
-      //       position: 'center',
-      //       backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-      //       stopOnFocus: true,
-      //       callback: () => (window.location.href = '/dashboard'),
-      //     }).showToast();
-      //   } catch (error) {
-      //     console.error('Error creating customer:', error);
-      //   }
-      // } else {
-      // }
-      const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customer_contact: user.email,
-        }),
-      });
-
-      if (response.status !== 200) {
-        await deleteUser(user);
-        throw new Error(response.status);
-      }
-
-      const data = await response.json();
-      const customer = data.result;
-      sessionStorage.setItem('id', customer.customer_id);
-      sessionStorage.setItem('first_name', customer.customer_first_name);
-      sessionStorage.setItem('last_name', customer.customer_last_name);
-      sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
-      sessionStorage.setItem('email', user.email);
-
-      Toastify({
-        text: 'Successfully logged in!',
-        duration: 1500,
-        close: true,
-        gravity: 'top',
-        position: 'center',
-        backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-        stopOnFocus: true,
-        callback: () => (window.location.href = '/dashboard'),
-      }).showToast();
-    } catch (error) {
-      submitBtn.innerHTML = oldSubmitBtn;
-      submitBtn.disabled = false;
-      let errorMessage = '';
-      switch (+(error + '').split(' ')[1]) {
-        case 404:
-          errorMessage = `This online account does not exist!`;
-          break;
-      }
-      Swal.fire({
-        icon: 'error',
-        title: 'Google Sign-In Failed',
-        text: errorMessage,
-        confirmButtonColor: '#ef4444',
-      });
-    }
-  });
+  googleSignInBtn.addEventListener('click', googleSignInBtnFunction);
 
   const showPassword1Button = document.getElementById('showPassword1');
   const showPassword2Button = document.getElementById('showPassword2');
@@ -261,6 +94,177 @@ function setupLoginForm() {
   showPassword2Button.addEventListener('click', showPassword2Clicked);
   // toggleButton.addEventListener('click', toggleFormClicked);
   forgotPasswordLink.addEventListener('click', forgotPasswordClicked);
+}
+
+async function googleSignInBtnFunction() {
+  const submitBtn = loginForm.children[loginForm.children.length - 1].children[0];
+  const oldGoogleSignInBtn = googleSignInBtn.innerHTML;
+  try {
+    googleSignInBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+        5.291A7.962 7.962 0 014 12H0c0 3.042 
+        1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>`;
+    googleSignInBtn.disabled = true;
+    submitBtn.disabled = true;
+
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const info = getAdditionalUserInfo(result);
+    const isNewUser = info?.isNewUser ?? false;
+
+    // localStorage.setItem("fitworxUser", JSON.stringify({
+    //   name: user.displayName,
+    //   email: user.email,
+    //   photo: user.photoURL
+    // }));
+
+    // if (isNewUser) {
+    //   const fullName = user.displayName || '';
+    //   const [defaultFirst, ...rest] = fullName.split(' ');
+    //   const defaultLast = rest.join(' ');
+
+    //   const {
+    //     value: formValues,
+    //     isConfirmed,
+    //     isDismissed,
+    //   } = await Swal.fire({
+    //     title: 'Welcome to Fitworx Gym! 🏋️‍♀️',
+    //     html: `
+    //             <p class="text-gray-700 mb-3">Please confirm or edit your name below to complete your registration.</p>
+    //             <input id="swal-first" class="swal2-input" placeholder="First Name" value="${defaultFirst || ''}">
+    //             <input id="swal-last" class="swal2-input" placeholder="Last Name" value="${defaultLast || ''}">
+    //           `,
+    //     focusConfirm: false,
+    //     showCancelButton: true,
+    //     confirmButtonText: 'Continue',
+    //     cancelButtonText: 'Cancel',
+    //     confirmButtonColor: '#f97316',
+    //     preConfirm: () => {
+    //       const first = Swal.getPopup().querySelector('#swal-first').value.trim();
+    //       const last = Swal.getPopup().querySelector('#swal-last').value.trim();
+    //       if (!first || !last) {
+    //         Swal.showValidationMessage('Please fill out both first and last name.');
+    //         return false;
+    //       }
+    //       return { first, last };
+    //     },
+    //   });
+
+    //   if (!isConfirmed) {
+    //     try {
+    //       await user.delete();
+    //       Swal.fire({
+    //         icon: 'info',
+    //         title: 'Registration Cancelled',
+    //         text: 'Your Google sign-in has been cancelled. No account was created.',
+    //         confirmButtonColor: '#ef4444',
+    //       });
+    //     } catch (err) {
+    //       console.error('⚠️ Error deleting temporary user:', err);
+    //     }
+    //     return;
+    //   }
+
+    //   const { first, last } = formValues;
+
+    //   try {
+    //     const id = `U${Date.now()}`;
+    //     const response = await fetch(`${API_BASE_URL}/inquiry/signup`, {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({
+    //         customer_id: id,
+    //         customer_image_url: user.photoURL,
+    //         customer_first_name: first,
+    //         customer_last_name: last,
+    //         customer_contact: user.email,
+    //         customer_type: 'daily',
+    //         customer_tid: '',
+    //         customer_pending: 0,
+    //         customer_rate: 'regular',
+    //       }),
+    //     });
+
+    //     if (response.status !== 201) {
+    //       throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+
+    //     const newCustomer = await response.json();
+    //     sessionStorage.setItem('id', newCustomer.result.customer_id);
+    //     sessionStorage.setItem('first_name', first);
+    //     sessionStorage.setItem('last_name', last);
+    //     sessionStorage.setItem('full_name', first + ' ' + last);
+    //     sessionStorage.setItem('email', user.email);
+
+    //     Toastify({
+    //       text: 'Logging in, please wait...',
+    //       duration: 1500,
+    //       close: true,
+    //       gravity: 'top',
+    //       position: 'center',
+    //       backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+    //       stopOnFocus: true,
+    //       callback: () => (window.location.href = '/dashboard'),
+    //     }).showToast();
+    //   } catch (error) {
+    //     console.error('Error creating customer:', error);
+    //   }
+    // } else {
+    // }
+    const response = await fetch(`${API_BASE_URL}/inquiry/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customer_contact: user.email,
+      }),
+    });
+
+    if (response.status !== 200) {
+      await deleteUser(user);
+      throw new Error(response.status);
+    }
+
+    const data = await response.json();
+    const customer = data.result;
+    sessionStorage.setItem('id', customer.customer_id);
+    sessionStorage.setItem('first_name', customer.customer_first_name);
+    sessionStorage.setItem('last_name', customer.customer_last_name);
+    sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
+    sessionStorage.setItem('email', user.email);
+
+    Toastify({
+      text: 'Successfully logged in!',
+      duration: 1500,
+      close: true,
+      gravity: 'top',
+      position: 'center',
+      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+      stopOnFocus: true,
+      callback: () => (window.location.href = '/dashboard'),
+    }).showToast();
+  } catch (error) {
+    googleSignInBtn.innerHTML = oldGoogleSignInBtn;
+    googleSignInBtn.disabled = false;
+    submitBtn.disabled = false;
+    let errorMessage = '';
+    switch (+(error + '').split(' ')[1]) {
+      case 404:
+        errorMessage = `This online account does not exist!`;
+        break;
+    }
+    Swal.fire({
+      icon: 'error',
+      title: 'Google Sign-In Failed',
+      text: errorMessage,
+      confirmButtonColor: '#ef4444',
+    });
+  }
 }
 
 function resetInputFields() {
@@ -281,7 +285,7 @@ async function submitClicked(e) {
   const sanitizedFirst = sanitizeInput(firstName.value.trim());
   const sanitizedLast = sanitizeInput(lastName.value.trim());
 
-  const submitBtn = document.getElementById('loginForm').lastChild.previousSibling;
+  const submitBtn = e.target.children[e.target.children.length - 1].children[0];
   const oldSubmitBtn = submitBtn.innerHTML;
 
   // Spinner
@@ -292,6 +296,7 @@ async function submitClicked(e) {
       1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>`;
   submitBtn.disabled = true;
+  googleSignInBtn.disabled = true;
 
   // if (!isLoginMode) {
   //   // Check empty fields
@@ -465,6 +470,7 @@ async function submitClicked(e) {
     });
     submitBtn.innerHTML = oldSubmitBtn;
     submitBtn.disabled = false;
+    googleSignInBtn.disabled = false;
     return;
   }
   // } catch (error) {

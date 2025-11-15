@@ -1494,6 +1494,7 @@ async function mainBtnFunction(
         activation24hrs = new Date(result.updated_at);
         // add 24 hours
         activation24hrs = new Date(activation24hrs.getTime() + 24 * 60 * 60 * 1000);
+        activation24hrs = main.encodeDate(activation24hrs, 'short') + ' - ' + main.encodeTime(activation24hrs);
       }
     } catch (error) {
       console.error(`Error checking online account status: `, error);
@@ -1526,10 +1527,11 @@ async function mainBtnFunction(
             (isActivated
               ? ' (Activated)'
               : !isCreating && customer.contact !== ''
-                ? ' (Will be deleted at ' + activation24hrs + ')'
+                ? ' (due date: ' + activation24hrs + ')'
                 : ''),
           value: `${isCreating ? contact : customer.contact}`,
           locked: isActivated,
+          type: 'email',
         },
       ],
     },
@@ -2062,23 +2064,7 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
 }
 
 async function updateCustomer(newData, oldData, tabIndex) {
-  oldData.dataset.image = newData[1].data[0];
-  oldData.dataset.text = newData[1].data[1];
-  oldData.dataset.contact = newData[1].data[2];
   const { firstName, lastName, fullName } = main.decodeName(newData[1].data[1]);
-  oldData.children[1].children[0].children[0].src = newData[1].data[0];
-  oldData.children[1].children[0].children[1].textContent = fullName;
-
-  switch (tabIndex) {
-    case 1:
-      oldData.dataset.custom2 = newData[2];
-      oldData.dataset.custom3 = newData[3];
-      oldData.children[2].innerHTML = newData[2];
-      oldData.children[3].innerHTML = newData[3];
-      break;
-    case 2:
-      break;
-  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/inquiry/customers/${oldData.dataset.id}`, {
@@ -2127,6 +2113,23 @@ async function updateCustomer(newData, oldData, tabIndex) {
     }
   } catch (error) {
     console.error('Error online account:', error);
+  }
+
+  oldData.dataset.image = newData[1].data[0];
+  oldData.dataset.text = newData[1].data[1];
+  oldData.dataset.contact = newData[1].data[2];
+  oldData.children[1].children[0].children[0].src = newData[1].data[0];
+  oldData.children[1].children[0].children[1].textContent = fullName;
+
+  switch (tabIndex) {
+    case 1:
+      oldData.dataset.custom2 = newData[2];
+      oldData.dataset.custom3 = newData[3];
+      oldData.children[2].innerHTML = newData[2];
+      oldData.children[3].innerHTML = newData[3];
+      break;
+    case 2:
+      break;
   }
 }
 
