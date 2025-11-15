@@ -123,12 +123,15 @@ router.get('/check-unactivate', async (req, res) => {
         AND updated_at <= NOW() - INTERVAL 24 HOUR
     `);
 
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'check-unactivate rows empty' });
+    }
+
     return res.status(200).json({
       message: 'Customers with email but not activated for 24 hours',
       count: rows.length,
-      result: rows
+      result: rows,
     });
-
   } catch (err) {
     console.error('Check unactivated error:', err);
     return res.status(500).json({ error: 'Failed to check unactivated accounts' });
@@ -147,26 +150,19 @@ router.get('/check-activated/:customer_id', async (req, res) => {
     const [rows] = await db.query(
       `SELECT customer_id, updated_at, activated_at
        FROM customer_tbl
-       WHERE customer_id = ? AND activated_at IS NOT NULL`,
+       WHERE customer_id = ?`,
       [customer_id]
     );
 
-    if (rows.length === 0) {
-      return res.status(200).json({
-        message: 'Customer is not activated',
-        activated: false,
-        updated_at: rows[0].updated_at,
-        activated_at: rows[0].activated_at
-      });
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'check-activated rows null' });
     }
 
     return res.status(200).json({
-      message: 'Customer is activated',
-      activated: true,
+      message: 'Customer successfully fetched',
+      activated: rows[0].activated_at !== null,
       updated_at: rows[0].updated_at,
-      activated_at: rows[0].activated_at
     });
-
   } catch (err) {
     console.error('Check activated error:', err);
     return res.status(500).json({ error: 'Failed to check activation status' });
