@@ -135,6 +135,44 @@ router.get('/check-unactivate', async (req, res) => {
   }
 });
 
+// CHECK IF CUSTOMER IS ACTIVATED
+router.get('/check-activated/:customer_id', async (req, res) => {
+  const { customer_id } = req.params;
+
+  if (!customer_id) {
+    return res.status(400).json({ error: 'customer_id is required' });
+  }
+
+  try {
+    const [rows] = await db.query(
+      `SELECT customer_id, updated_at, activated_at
+       FROM customer_tbl
+       WHERE customer_id = ? AND activated_at IS NOT NULL`,
+      [customer_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(200).json({
+        message: 'Customer is not activated',
+        activated: false,
+        updated_at: rows[0].updated_at,
+        activated_at: rows[0].activated_at
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Customer is activated',
+      activated: true,
+      updated_at: rows[0].updated_at,
+      activated_at: rows[0].activated_at
+    });
+
+  } catch (err) {
+    console.error('Check activated error:', err);
+    return res.status(500).json({ error: 'Failed to check activation status' });
+  }
+});
+
 // UNACTIVATE
 router.put('/unactivate/:id', async (req, res) => {
   const { id } = req.params;

@@ -1468,7 +1468,7 @@ function showSimilarCustomerModal(similarCustomer, attemptedFirstName, attempted
   modal.dataset.escapeHandler = 'true';
 }
 
-function mainBtnFunction(
+async function mainBtnFunction(
   customer,
   image = '/src/images/client_logo.jpg',
   firstName = '',
@@ -1478,7 +1478,25 @@ function mainBtnFunction(
   priceRate = 1
 ) {
   const isCreating = !customer;
-  const isActivated = false;
+  let isActivated = false;
+  let activation24hrs = '';
+  if (!isCreating) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/inquiry/check-activated/${customer.id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      isActivated = result.activated;
+      if (!isActivated) {
+        activation24hrs = new Date(result.updated_at);
+        // add 24 hours
+        activation24hrs = new Date(activation24hrs.getTime() + 24 * 60 * 60 * 1000);
+      }
+    } catch (error) {
+      console.error(`Error checking online account status: `, error);
+    }
+  }
   const inputs = {
     header: {
       title: `${isCreating ? 'Register New' : 'Edit'} Customer ${isCreating ? '' : 'Details'} ${getEmoji(isCreating ? '💪' : '⚙️', 26)}`,
@@ -1500,7 +1518,17 @@ function mainBtnFunction(
           required: true,
           listener: nameAutoCaseListener,
         },
-        { placeholder: 'Email', value: `${isCreating ? contact : customer.contact}`, locked: isActivated },
+        {
+          placeholder:
+            'Email' +
+            (isActivated
+              ? ' (Activated)'
+              : !isCreating && customer.contact !== ''
+                ? ' (Will be deleted at ' + activation24hrs + ')'
+                : ''),
+          value: `${isCreating ? contact : customer.contact}`,
+          locked: isActivated,
+        },
       ],
     },
     spinner: [
