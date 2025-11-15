@@ -2014,7 +2014,7 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
               customer_contact,
               customer_type: customerType.includes('Monthly') ? 'monthly' : 'daily',
               customer_tid: '',
-              customer_pending: customerType.includes('Pending') ? 1 : 0,
+              customer_pending: 0,
               customer_rate: customerPriceRate.toLowerCase(),
             }),
           });
@@ -2083,7 +2083,7 @@ async function updateCustomer(newData, oldData, tabIndex) {
         customer_contact: newData[1].data[2],
         customer_type: newData[2].toLowerCase().includes('monthly') ? 'monthly' : 'daily',
         customer_tid: '',
-        customer_pending: newData[2].toLowerCase().includes('active') ? 0 : 1,
+        customer_pending: 0,
         customer_rate: newData[3].toLowerCase(),
       }),
     });

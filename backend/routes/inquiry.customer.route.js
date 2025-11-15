@@ -92,7 +92,7 @@ router.post('/activate', async (req, res) => {
     // Update activated_at timestamp
     const activatedAt = new Date();
 
-    const [updateResult] = await db.query(
+    const updateResult = await db.query(
       'UPDATE customer_tbl SET activated_at = ? WHERE customer_contact = ? AND activated_at = NULL',
       [activatedAt, customer_contact]
     );
