@@ -10,7 +10,7 @@ router.get('/customers', async (req, res) => {
   try {
     // ✅ if an email query param exists, fetch that specific customer
     if (email) {
-      const [rows] = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ? LIMIT 1', [email]);
+      const rows = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ? LIMIT 1', [email]);
 
       if (!rows) {
         return res.status(404).json({ error: 'Customer not found' });
@@ -64,7 +64,7 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ?', [customer_contact]);
+    const rows = await db.query('SELECT * FROM customer_tbl WHERE customer_contact = ?', [customer_contact]);
 
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found. Please sign up.' });
@@ -114,7 +114,7 @@ router.post('/activate', async (req, res) => {
 // CHECK UNACTIVATE
 router.get('/check-unactivate', async (req, res) => {
   try {
-    const [rows] = await db.query(`
+    const rows = await db.query(`
       SELECT *
       FROM customer_tbl
       WHERE customer_contact LIKE '%@%'
@@ -147,7 +147,7 @@ router.get('/check-activated/:customer_id', async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query(
+    const rows = await db.query(
       `SELECT customer_id, updated_at, activated_at
        FROM customer_tbl
        WHERE customer_id = ?`,
