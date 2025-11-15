@@ -244,7 +244,7 @@ async function activateOnlineAccount(customerEmail) {
     if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
     if (typeof Toastify === 'function') {
       Toastify({
-        text: 'Your online account has been activated! Please change your default password',
+        text: 'Your online account has been activated!',
         duration: 3000,
         gravity: 'top',
         position: 'right',
