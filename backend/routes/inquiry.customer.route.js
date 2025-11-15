@@ -124,7 +124,7 @@ router.get('/check-unactivate', async (req, res) => {
     `);
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: 'check-unactivate rows empty' });
+      return res.status(200).json({ message: 'check-unactivate rows empty', count: 0 });
     }
 
     return res.status(200).json({
@@ -155,13 +155,15 @@ router.get('/check-activated/:customer_id', async (req, res) => {
     );
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: 'check-activated rows null' });
+      return res.status(404).json({ error: 'Customer not found' });
     }
+
+    const customer = rows[0];
 
     return res.status(200).json({
       message: 'Customer successfully fetched',
-      activated: rows[0].activated_at !== null,
-      updated_at: rows[0].updated_at,
+      activated: !!customer.activated_at,
+      updated_at: customer.updated_at,
     });
   } catch (err) {
     console.error('Check activated error:', err);

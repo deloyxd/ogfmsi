@@ -1254,11 +1254,13 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          // const result = await response.json();
-          main.toast(
-            `${customer.customer_first_name + ' ' + customer.customer_last_name}'s email has been deactivated due to no activation within 24 hours`,
-            'warning'
-          );
+          const result = await response.json();
+          if (result.count > 0) {
+            main.toast(
+              `${customer.customer_first_name + ' ' + customer.customer_last_name}'s email has been deactivated due to no activation within 24 hours`,
+              'warning'
+            );
+          }
         });
       } catch (error) {
         console.error('Error auto unactive emails:', error);
