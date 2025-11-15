@@ -238,16 +238,18 @@ async function googleSignInBtnFunction() {
     sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
     sessionStorage.setItem('email', user.email);
 
-    Toastify({
-      text: 'Successfully logged in!',
-      duration: 1500,
-      close: true,
-      gravity: 'top',
-      position: 'center',
-      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-      stopOnFocus: true,
-      callback: () => (window.location.href = '/dashboard'),
-    }).showToast();
+    console.log(customer);
+
+    // Toastify({
+    //   text: 'Successfully logged in!',
+    //   duration: 1500,
+    //   close: true,
+    //   gravity: 'top',
+    //   position: 'center',
+    //   backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+    //   stopOnFocus: true,
+    //   callback: () => (window.location.href = '/dashboard'),
+    // }).showToast();
   } catch (error) {
     googleSignInBtn.innerHTML = oldGoogleSignInBtn;
     googleSignInBtn.disabled = false;
