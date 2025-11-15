@@ -119,7 +119,7 @@ router.get('/check-unactivate', async (req, res) => {
       FROM customer_tbl
       WHERE customer_contact LIKE '%@%'
         AND customer_contact LIKE '%.com%'
-        AND activated_at IS NULL
+        AND activated_at IS NOT NULL
         AND updated_at <= NOW() - INTERVAL 24 HOUR
     `);
 
