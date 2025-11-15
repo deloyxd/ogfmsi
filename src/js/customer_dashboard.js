@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           </div>
           <div class="-mt-[2px] flex items-center justify-center text-xs text-orange-200">
             Unregistered
-            <i id="monthlyInfo" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+            <i id="monthlyInfo" class="fa fa-circle-info pl-2 text-lg text-white opacity-0"></i>
           </div>
         </div>
       `;
@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           </div>
           <span class="flex items-center justify-center text-xs text-orange-200">
             Unregistered
-            <i id="monthlyInfoMobile" class="fa fa-circle-info pl-2 text-lg text-white cursor-pointer"></i>
+            <i id="monthlyInfoMobile" class="fa fa-circle-info pl-2 text-lg text-white opacity-0"></i>
           </span>
         </div>
       `;
@@ -550,9 +550,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         `;
       } else {
         callback();
+        return;
       }
 
-      // Inject into DOM
       monthlyStatus.innerHTML = displayHTML;
       monthlyStatusMobile.innerHTML = displayHTMLMobile;
 
