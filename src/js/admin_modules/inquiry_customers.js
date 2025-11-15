@@ -2030,8 +2030,12 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
 
         if (customer_contact !== '') {
           await createUserWithEmailAndPassword(auth, customer_contact, lastName.toUpperCase() + 'FITWORXGYM');
-          await sendPasswordResetEmail(auth, customer_contact);
-          main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
+          if (customer_contact.includes('gmail')) {
+            main.toast(`An online account for ${customer_contact} can now be used to sign in using Google.`, 'success');
+          } else {
+            await sendPasswordResetEmail(auth, customer_contact);
+            main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
+          }
         }
       });
     } else {
@@ -2108,8 +2112,12 @@ async function updateCustomer(newData, oldData, tabIndex) {
     }
     if (newData[1].data[2] !== '') {
       await createUserWithEmailAndPassword(auth, newData[1].data[2], lastName.toUpperCase() + 'FITWORXGYM');
-      await sendPasswordResetEmail(auth, newData[1].data[2]);
-      main.toast(`An email has sent to ${newData[1].data[2]} to set up their online account.`, 'success');
+      if (newData[1].data[2].includes('gmail')) {
+        main.toast(`An online account for ${newData[1].data[2]} can now be used to sign in using Google.`, 'success');
+      } else {
+        await sendPasswordResetEmail(auth, newData[1].data[2]);
+        main.toast(`An email has sent to ${newData[1].data[2]} to set up their online account.`, 'success');
+      }
     }
   } catch (error) {
     console.error('Error online account:', error);
