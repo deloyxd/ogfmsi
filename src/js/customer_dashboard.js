@@ -227,7 +227,7 @@ function loadCustomerNotifications() {
   }
 }
 
-async function activateOnlineAccount() {
+async function activateOnlineAccount(email) {
   try {
     const response = await fetch(`${API_BASE_URL}/inquiry/activate`, {
       method: 'POST',
@@ -235,7 +235,7 @@ async function activateOnlineAccount() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: sanitizedEmail,
+        email,
       }),
     });
     if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
   setupMobileDropdown();
   setupLogout();
-  await activateOnlineAccount();
+  if (!DEV_MODE) await activateOnlineAccount(sessionStorage.getItem('email'));
   document.getElementById('welcomeUser').innerText = fullName;
 
   const notifPanel = document.getElementById('notificationPanel');
