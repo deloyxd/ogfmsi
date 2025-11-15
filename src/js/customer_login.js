@@ -231,25 +231,23 @@ async function googleSignInBtnFunction() {
     }
 
     const data = await response.json();
-    const customer = data.result;
+    const customer = data.result[0];
     sessionStorage.setItem('id', customer.customer_id);
     sessionStorage.setItem('first_name', customer.customer_first_name);
     sessionStorage.setItem('last_name', customer.customer_last_name);
     sessionStorage.setItem('full_name', customer.customer_first_name + ' ' + customer.customer_last_name);
     sessionStorage.setItem('email', user.email);
 
-    console.log(customer);
-
-    // Toastify({
-    //   text: 'Successfully logged in!',
-    //   duration: 1500,
-    //   close: true,
-    //   gravity: 'top',
-    //   position: 'center',
-    //   backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-    //   stopOnFocus: true,
-    //   callback: () => (window.location.href = '/dashboard'),
-    // }).showToast();
+    Toastify({
+      text: 'Successfully logged in!',
+      duration: 1500,
+      close: true,
+      gravity: 'top',
+      position: 'center',
+      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+      stopOnFocus: true,
+      callback: () => (window.location.href = '/dashboard'),
+    }).showToast();
   } catch (error) {
     googleSignInBtn.innerHTML = oldGoogleSignInBtn;
     googleSignInBtn.disabled = false;
@@ -434,11 +432,12 @@ async function submitClicked(e) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    const customer = data.result;
-    if (!customer) {
+    const customers = data.result;
+    if (!customers) {
       await deleteUser(user);
       throw new Error('Customer not found');
     }
+    const customer = customers[0];
     sessionStorage.setItem('id', customer.customer_id);
     sessionStorage.setItem('first_name', customer.customer_first_name);
     sessionStorage.setItem('last_name', customer.customer_last_name);
