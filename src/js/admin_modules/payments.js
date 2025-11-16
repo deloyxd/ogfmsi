@@ -903,7 +903,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           ),
           ...servicePayments,
         ];
-        computeAndUpdatePaymentStats(completedPaymentsCache);
+        computeAndUpdatePaymentStats();
 
         // Process rows with limited concurrency to speed up while avoiding overload
         const list = Array.isArray(completePayments.result) ? completePayments.result : [];
@@ -1020,7 +1020,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           ),
           ...salesPayments,
         ];
-        computeAndUpdatePaymentStats(completedPaymentsCache);
+        computeAndUpdatePaymentStats();
 
         resetDataForTab(6);
         resetDataForTab(7);
@@ -2817,7 +2817,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   payment_method: paymentMethod,
                   created_at: nowIso,
                 });
-                computeAndUpdatePaymentStats(completedPaymentsCache);
+                computeAndUpdatePaymentStats();
                 await refreshDashboardStats();
               } catch (_) {}
 
@@ -3015,7 +3015,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   payment_method: paymentMethod,
                   created_at: nowIso,
                 });
-                computeAndUpdatePaymentStats(completedPaymentsCache);
+                computeAndUpdatePaymentStats();
                 await refreshDashboardStats();
               } catch (_) {}
 
@@ -3159,7 +3159,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               payment_method: paymentMethod,
               created_at: nowIso,
             });
-            computeAndUpdatePaymentStats(completedPaymentsCache);
+            computeAndUpdatePaymentStats();
             await refreshDashboardStats();
           } catch (_) {}
 
@@ -3608,65 +3608,38 @@ export function findPendingTransaction(customerId, callback = () => {}) {
 }
 
 // ===== Stats computation & display =====
-function computeAndUpdatePaymentStats(payments) {
-  if (!Array.isArray(payments)) return;
-
-  const toNumber = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  };
-
-  const today = new Date();
-  const todayKey = [today.getFullYear(), today.getMonth(), today.getDate()].join('-');
-
-  let todaysCash = 0;
-  let todaysCashless = 0;
-
-  const dayTotals = new Map(); // key: YYYY-M-D -> sum
-  const weekTotals = new Map(); // key: YYYY-W -> sum (ISO week)
-  const monthTotals = new Map(); // key: YYYY-M -> sum
-
-  for (const p of payments) {
-    if (!p) continue;
-    const created = new Date(p.created_at || p.createdAt || Date.now());
-    const keyDay = [created.getFullYear(), created.getMonth(), created.getDate()].join('-');
-    const keyMonth = [created.getFullYear(), created.getMonth()].join('-');
-    const isoWeek = getIsoWeek(created);
-    const keyWeek = [created.getFullYear(), isoWeek].join('-');
-
-    const paidCash = toNumber(p.payment_amount_paid_cash);
-    const paidCashless = toNumber(p.payment_amount_paid_cashless);
-    const totalPaid = paidCash + paidCashless;
-
-    if (keyDay === todayKey) {
-      // Include both pure cash and the cash component of hybrid
-      todaysCash += paidCash;
-      // Include both pure cashless and the cashless component of hybrid
-      todaysCashless += paidCashless;
+async function computeAndUpdatePaymentStats() {
+  try {
+    // Fetch today's cash/cashless totals
+    const todayResponse = await fetch(`${API_BASE_URL}/payment/summary/today`);
+    if (!todayResponse.ok) {
+      throw new Error(`HTTP error! status: ${todayResponse.status}`);
     }
+    const todayData = await todayResponse.json();
 
-    dayTotals.set(keyDay, (dayTotals.get(keyDay) || 0) + totalPaid);
-    weekTotals.set(keyWeek, (weekTotals.get(keyWeek) || 0) + totalPaid);
-    monthTotals.set(keyMonth, (monthTotals.get(keyMonth) || 0) + totalPaid);
+    // Fetch averages
+    const avgResponse = await fetch(`${API_BASE_URL}/payment/summary/averages`);
+    if (!avgResponse.ok) {
+      throw new Error(`HTTP error! status: ${avgResponse.status}`);
+    }
+    const avgData = await avgResponse.json();
+
+    const todaysCash = Number(todayData.result.total_cash) || 0;
+    const todaysCashless = Number(todayData.result.total_cashless_hybrid) || 0;
+
+    const stats = {
+      todays_cash: todaysCash,
+      todays_cashless: todaysCashless,
+      todays_overall_total: todaysCash + todaysCashless,
+      avg_daily: avgData.result.averageDaily,
+      avg_weekly: avgData.result.averageWeekly,
+      avg_monthly: avgData.result.averageMonthly,
+    };
+
+    updatePaymentStatsDisplay(stats);
+  } catch (error) {
+    console.error('Error fetching payment stats:', error);
   }
-
-  const avg = (mapObj) => {
-    const values = Array.from(mapObj.values());
-    if (values.length === 0) return 0;
-    const sum = values.reduce((a, b) => a + b, 0);
-    return sum / values.length;
-  };
-
-  const stats = {
-    todays_cash: todaysCash,
-    todays_cashless: todaysCashless,
-    todays_overall_total: todaysCash + todaysCashless,
-    avg_daily: avg(dayTotals),
-    avg_weekly: avg(weekTotals),
-    avg_monthly: avg(monthTotals),
-  };
-
-  updatePaymentStatsDisplay(stats);
 }
 
 function updatePaymentStatsDisplay(stats) {
@@ -3679,11 +3652,11 @@ function updatePaymentStatsDisplay(stats) {
       const valueEl = card.querySelector('.section-stats-c');
       if (!header || !valueEl) return;
       const label = (header.textContent || '').toLowerCase();
-      if (label.includes('cashless') && label.includes('today')) {
+      if (label.includes('cashless')) {
         valueEl.textContent = main.encodePrice(stats.todays_cashless || 0);
-      } else if (label.includes('cash sales') || (label.includes('cash') && label.includes('today'))) {
+      } else if (label.includes('cash')) {
         valueEl.textContent = main.encodePrice(stats.todays_cash || 0);
-      } else if (label.includes('overall') && label.includes('total')) {
+      } else if (label.includes('overall')) {
         valueEl.textContent = main.encodePrice(stats.todays_overall_total || 0);
       } else if (label.includes('daily')) {
         valueEl.textContent = main.encodePrice(stats.avg_daily || 0);

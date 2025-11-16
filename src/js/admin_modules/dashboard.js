@@ -915,16 +915,32 @@ async function loadDashboardStats() {
 
 // Computes dashboard stats from cached data
 async function computeAndUpdateDashboardStats() {
-  const stats = {
-    gym_revenue: calculateGymRevenue(dashboardStatsCache.payments),
-    product_sales: await calculateProductSales(dashboardStatsCache.payments),
-    reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
-    overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
-    active_monthly_customers: getActiveMonthlyCustomersCount(),
-    active_reservations: getActiveReservationsCount(),
-  };
+  try {
+    // Fetch revenue data
+    const revenueResponse = await fetch(`${API_BASE_URL}/payment/summary/revenue`);
+    if (!revenueResponse.ok) {
+      throw new Error(`HTTP error! status: ${revenueResponse.status}`);
+    }
+    const revenueData = await revenueResponse.json();
 
-  updateDashboardStatsDisplay(stats);
+    const gymRevenue = Number(revenueData.result.gym_revenue) || 0;
+    const productsRevenue = Number(revenueData.result.products_revenue) || 0;
+    const reservationRevenue = Number(revenueData.result.reservation_revenue) || 0;
+    const allIncome = gymRevenue + productsRevenue + reservationRevenue;
+
+    const stats = {
+      gym_revenue: gymRevenue,
+      product_sales: productsRevenue,
+      reservation_revenue: reservationRevenue,
+      overall_total_sales: allIncome,
+      active_monthly_customers: getActiveMonthlyCustomersCount(),
+      active_reservations: getActiveReservationsCount(),
+    };
+
+    updateDashboardStatsDisplay(stats);
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+  }
 }
 
 // Calculates gym revenue from payment data (membership fees, gym services)
