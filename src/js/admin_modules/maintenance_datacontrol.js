@@ -240,11 +240,6 @@ async function loadMonthlyUsers() {
               ? MONTHLY_PRICES.student
               : MONTHLY_PRICES.regular)
         ),
-        main.encodePrice(
-          String(customerData?.customer_rate || '').toLowerCase() === 'student'
-            ? MONTHLY_PRICES.student
-            : MONTHLY_PRICES.regular
-        ),
       ];
       rows.push({ _id: String(user.customer_id), columnsData });
     }
@@ -318,9 +313,7 @@ async function loadRegularUsers() {
       const typeLabel = record._src === 'monthly' ? 'Monthly' : 'Daily';
       const amount =
         record._src === 'monthly'
-          ? isStudentRate
-            ? MONTHLY_PRICES.student
-            : MONTHLY_PRICES.regular
+          ? 0
           : isStudentRate
             ? 60
             : 70;
@@ -467,8 +460,6 @@ async function loadSupplements() {
         main.encodePrice(product.price),
         String(product.measurement_value || ''),
         String(product.measurement_unit || ''),
-        String(aggregate.quantity || 0),
-        main.encodePrice(aggregate.total || 0),
         product.expiration_date
           ? new Date(product.expiration_date).toLocaleDateString('en-US', {
               year: 'numeric',
