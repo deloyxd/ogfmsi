@@ -1083,17 +1083,17 @@ function updateDashboardStatsDisplay(stats) {
 
       const label = (header.textContent || '').toLowerCase();
 
-      if (label.includes('overall') && label.includes('total') && label.includes('sales')) {
+      if (label.includes('overall')) {
         valueEl.textContent = main.encodePrice(stats.overall_total_sales || 0);
-      } else if (label.includes('gym') && label.includes('revenue')) {
+      } else if (label.includes('gym')) {
         valueEl.textContent = main.encodePrice(stats.gym_revenue || 0);
       } else if (label.includes('reservation') && label.includes('revenue')) {
         valueEl.textContent = main.encodePrice(stats.reservation_revenue || 0);
-      } else if (label.includes('product') && label.includes('sales')) {
+      } else if (label.includes('product')) {
         valueEl.textContent = main.encodePrice(stats.product_sales || 0);
-      } else if (label.includes('monthly') && label.includes('customer')) {
+      } else if (label.includes('monthly')) {
         valueEl.textContent = stats.active_monthly_customers || 0;
-      } else if (label.includes('reservation') && !label.includes('revenue')) {
+      } else if (label.includes('reservation')) {
         valueEl.textContent = stats.active_reservations || 0;
       }
     });
@@ -1114,14 +1114,5 @@ function getIsoWeek(date) {
 
 // Refreshes dashboard stats (called when new payments are added)
 export async function refreshDashboardStats() {
-  const stats = {
-    gym_revenue: calculateGymRevenue(dashboardStatsCache.payments),
-    product_sales: await calculateProductSales(dashboardStatsCache.payments),
-    reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
-    overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
-    active_monthly_customers: getActiveMonthlyCustomersCount(),
-    active_reservations: getActiveReservationsCount(),
-  };
-
-  updateDashboardStatsDisplay(stats);
+  computeAndUpdateDashboardStats();
 }
