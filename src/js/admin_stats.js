@@ -230,14 +230,27 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
   async function renderPaymentsBreakdown(list, filterFn, title, explain) {
     const rows = list.filter(filterFn);
-    const total = rows.reduce(
-      (s, p) =>
+    const total = rows.reduce((s, p) => {
+      let displayAmount =
         s +
         (Number(p.payment_amount_paid_cash) || 0) +
         (Number(p.payment_amount_paid_cashless) || 0) -
-        (Number(p.payment_amount_change) || 0),
-      0
-    );
+        (Number(p.payment_amount_change) || 0);
+      if (title === "Today's Cash Sales" || title === "Today's Cashless Sales") {
+        if (p.payment_method === 'cash') {
+          displayAmount = s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0);
+        } else if (p.payment_method === 'cashless') {
+          displayAmount = s + (Number(p.payment_amount_paid_cashless) || 0);
+        } else if (p.payment_method === 'hybrid') {
+          if (title === "Today's Cash Sales") {
+            displayAmount = s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0);
+          } else if (title === "Today's Cashless Sales") {
+            displayAmount = s + (Number(p.payment_amount_paid_cashless) || 0);
+          }
+        }
+      }
+      return displayAmount;
+    }, 0);
     const htmlRows = rows
       .map((p) => {
         const date = (p.created_at && new Date(p.created_at)) || null;
@@ -255,9 +268,9 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
             displayAmount = fmt(cashless);
           } else if (p.payment_method === 'hybrid') {
             if (title === "Today's Cash Sales") {
-              displayAmount = fmt(cash - change);
+              displayAmount = fmt(cash - change) + ' (Hybrid)';
             } else if (title === "Today's Cashless Sales") {
-              displayAmount = fmt(cashless);
+              displayAmount = fmt(cashless) + ' (Hybrid)';
             }
           }
         }
