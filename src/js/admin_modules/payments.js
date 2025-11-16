@@ -667,8 +667,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
         pendingPayments.result.forEach((pendingPayment) => {
           if (!pendingPayment || !pendingPayment.payment_id) return;
-          if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
-          seenPendingPaymentIds.add(pendingPayment.payment_id);
           // Normalize optional fields coming from customer portal
           const refFromPortal = pendingPayment.payment_ref || pendingPayment.payment_reference || '';
 
@@ -678,6 +676,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             async (findResult) => {
+              if (!findResult) return;
+              if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
+              seenPendingPaymentIds.add(pendingPayment.payment_id);
               let imageSrc = '';
               let customerIdText = pendingPayment.payment_customer_id;
               let fullName = '';
@@ -2691,6 +2692,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashColumnsData, 7, (createResult) => {
+            addDataForTab(7, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2718,6 +2731,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 8, (createResult) => {
+            addDataForTab(8, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2885,6 +2910,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashColumnsData, 4, async (createResult) => {
+            addDataForTab(4, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2913,6 +2950,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 5, async (createResult) => {
+            addDataForTab(5, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2925,7 +2974,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           main.createNotifDot(SECTION_NAME, 5);
           main.deleteAtSectionOne(SECTION_NAME, 1, id);
           try {
-            seenPendingPaymentIds.delete(effectiveId);
+            // seenPendingPaymentIds.delete(effectiveId);
           } catch (_) {}
 
           main.closeModal(() => {
@@ -3055,6 +3104,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       // Create entry in the original Service/Sales Transactions tab first
       const originalTabIndex = type === 'cart' ? 6 : 3; // Sales Transactions (tab 6) or Service Transactions (tab 3)
       main.createAtSectionOne(SECTION_NAME, columnsData, originalTabIndex, async (createResult) => {
+        addDataForTab(originalTabIndex, {
+          payment_customer_id: customerId,
+          payment_id: createResult.dataset.id,
+          payment_purpose: createResult.dataset.purpose,
+          payment_amount_to_pay: createResult.dataset.amounttopay,
+          payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+          payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+          payment_amount_change: createResult.dataset.changeamount,
+          payment_rate: createResult.dataset.pricerate,
+          payment_method: createResult.dataset.paymentmethod,
+          created_at: main.encodeDate(new Date(), 'long'),
+        });
         createResult.dataset.refnum = refNum;
         const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
         transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -3062,6 +3123,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
       // Then create entry in the specific payment method tab
       main.createAtSectionOne(SECTION_NAME, columnsData, completedTabIndex, async (createResult) => {
+        addDataForTab(completedTabIndex, {
+          payment_customer_id: customerId,
+          payment_id: createResult.dataset.id,
+          payment_purpose: createResult.dataset.purpose,
+          payment_amount_to_pay: createResult.dataset.amounttopay,
+          payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+          payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+          payment_amount_change: createResult.dataset.changeamount,
+          payment_rate: createResult.dataset.pricerate,
+          payment_method: createResult.dataset.paymentmethod,
+          created_at: main.encodeDate(new Date(), 'long'),
+        });
         createResult.dataset.refnum = refNum;
 
         main.toast(`Transaction successfully completed!`, 'success');
@@ -3070,7 +3143,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         main.createNotifDot(SECTION_NAME, completedTabIndex);
         main.deleteAtSectionOne(SECTION_NAME, 1, id);
         try {
-          seenPendingPaymentIds.delete(effectiveId);
+          // seenPendingPaymentIds.delete(effectiveId);
         } catch (_) {}
 
         const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
@@ -3464,7 +3537,21 @@ export function cancelCheckinPayment(transactionId, reason = '') {
       findResult.dataset.custom2 || 'N/A',
       `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
     ];
-    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
+    main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+      console.log('adding:', createResult.dataset.id);
+      addDataForTab(2, {
+        payment_customer_id: createResult.dataset.text,
+        payment_id: createResult.dataset.id,
+        payment_purpose: createResult.dataset.purpose,
+        payment_amount_to_pay: createResult.dataset.amounttopay,
+        payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+        payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+        payment_amount_change: createResult.dataset.changeamount,
+        payment_rate: createResult.dataset.pricerate,
+        payment_method: createResult.dataset.paymentmethod,
+        created_at: main.encodeDate(new Date(), 'long'),
+      });
+    });
 
     // Remove from pending list
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
@@ -3596,7 +3683,20 @@ export function cancelReservationPayment(transactionId) {
       findResult.dataset.custom2 || 'Reservation fee',
       `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
     ];
-    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
+    main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+      addDataForTab(2, {
+        payment_customer_id: createResult.dataset.text,
+        payment_id: createResult.dataset.id,
+        payment_purpose: createResult.dataset.purpose,
+        payment_amount_to_pay: createResult.dataset.amounttopay,
+        payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+        payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+        payment_amount_change: createResult.dataset.changeamount,
+        payment_rate: createResult.dataset.pricerate,
+        payment_method: createResult.dataset.paymentmethod,
+        created_at: main.encodeDate(new Date(), 'long'),
+      });
+    });
 
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
     try {
