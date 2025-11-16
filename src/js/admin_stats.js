@@ -231,7 +231,11 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
   async function renderPaymentsBreakdown(list, filterFn, title, explain) {
     const rows = list.filter(filterFn);
     const total = rows.reduce(
-      (s, p) => s + (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0),
+      (s, p) =>
+        s +
+        (Number(p.payment_amount_paid_cash) || 0) +
+        (Number(p.payment_amount_paid_cashless) || 0) -
+        (Number(p.payment_amount_change) || 0),
       0
     );
     const htmlRows = rows
@@ -243,17 +247,31 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         const cash = Number(p.payment_amount_paid_cash) || 0;
         const cashless = Number(p.payment_amount_paid_cashless) || 0;
         const change = Number(p.payment_amount_change) || 0;
+        let displayAmount = fmt(cash + cashless - change);
+        if (title === "Today's Cash Sales" || title === "Today's Cashless Sales") {
+          if (p.payment_method === 'cash') {
+            displayAmount = fmt(cash - change);
+          } else if (p.payment_method === 'cashless') {
+            displayAmount = fmt(cashless);
+          } else if (p.payment_method === 'hybrid') {
+            if (title === "Today's Cash Sales") {
+              displayAmount = fmt(cash - change);
+            } else if (title === "Today's Cashless Sales") {
+              displayAmount = fmt(cashless);
+            }
+          }
+        }
         return `
-          <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:4px;line-height:1.4">${(p.payment_purpose || '').trim()}</div>
-                <div style="color:#6b7280;font-size:13px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px;font-size:12px">${p.payment_id || ''}</span></div>
-              </div>
-              <div style="font-weight:800;color:#10b981;font-size:17px;white-space:nowrap">${fmt(cash + cashless - change)}</div>
+        <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:4px;line-height:1.4">${(p.payment_purpose || '').trim()}</div>
+              <div style="color:#6b7280;font-size:13px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px;font-size:12px">${p.payment_id || ''}</span></div>
             </div>
-            ${dateText ? `<div style="color:#9ca3af;font-size:12px;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">🕐 ${dateText}</div>` : ''}
-          </div>`;
+            <div style="font-weight:800;color:#10b981;font-size:17px;white-space:nowrap">${displayAmount}</div>
+          </div>
+          ${dateText ? `<div style="color:#9ca3af;font-size:12px;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">🕐 ${dateText}</div>` : ''}
+        </div>`;
       })
       .join('');
     container.innerHTML = `
@@ -520,7 +538,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const todaysCashless = list
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
-      const total = todaysCash + todaysCashless;
+      const todaysHybrid = list
+        .filter((p) => String(p.payment_method || '').toLowerCase() === 'hybrid' && isTodayLocal(p.created_at))
+        .reduce((s, p) => s + sumAmt(p), 0);
+      const total = todaysCash + todaysCashless + todaysHybrid;
       try {
         setTitle('Avg Overall Total');
       } catch (e) {}
@@ -528,7 +549,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
           <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
           <div style="font-weight:900;font-size:28px">${fmt(total)}</div>
-          <div style="color:#dbeafe;font-size:13px;margin-top:8px">Today's Cash (${fmt(todaysCash)}) + Today's Cashless (${fmt(todaysCashless)})</div>
+          <div style="color:#dbeafe;font-size:13px;margin-top:8px">Today's Cash (${fmt(todaysCash)}) + Today's Cashless (${fmt(todaysCashless)}) + Today's Hybrid (${fmt(todaysHybrid)})</div>
         </div>
       `;
       container.dataset.filled = '1';
@@ -538,7 +559,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const list = await getPayments('/payment/complete');
       await renderPaymentsBreakdown(
         list,
-        (p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at),
+        (p) =>
+          (String(p.payment_method || '').toLowerCase() === 'cash' ||
+            String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+          isTodayLocal(p.created_at),
         "Today's Cash Sales",
         'Filter: payment_method = cash AND created_at is today.'
       );
@@ -548,7 +572,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const list = await getPayments('/payment/complete');
       await renderPaymentsBreakdown(
         list,
-        (p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at),
+        (p) =>
+          (String(p.payment_method || '').toLowerCase() === 'cashless' ||
+            String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+          isTodayLocal(p.created_at),
         "Today's Cashless Sales",
         'Filter: payment_method = cashless AND created_at is today.'
       );
