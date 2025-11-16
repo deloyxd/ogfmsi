@@ -2,7 +2,7 @@ import main from '../admin_main.js';
 import checkins from './inquiry_checkins.js';
 import reservations from './inquiry_reservations.js';
 import payments from './payments.js';
-import { refreshDashboardStats } from './dashboard.js';
+import { computeAndUpdateDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 import * as pagination from '../admin_pagination.js';
 import {
@@ -1989,7 +1989,7 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
           customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
         );
         updateCustomerStats();
-        refreshDashboardStats();
+        computeAndUpdateDashboardStats();
 
         const [customer_id, customer_image_url, customer_contact, customerType, customerPriceRate] = [
           createResult.dataset.id,
@@ -2097,7 +2097,7 @@ async function updateCustomer(newData, oldData, tabIndex) {
     console.error('Error updating customer:', error);
   }
   updateCustomerStats();
-  refreshDashboardStats();
+  computeAndUpdateDashboardStats();
   try {
     if (oldData.dataset.contact !== '') {
       const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
@@ -2317,9 +2317,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                     continueCustomerProcessBtnFunction,
                     selectedProcess.includes('renew')
                       ? {
-                        startDate: customer.dataset.startDate,
-                        endDate: customer.dataset.endDate,
-                      }
+                          startDate: customer.dataset.startDate,
+                          endDate: customer.dataset.endDate,
+                        }
                       : null,
                     true,
                     true
@@ -2403,9 +2403,9 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
               continueCustomerProcessBtnFunction,
               selectedProcess.includes('renew')
                 ? {
-                  startDate: customer.dataset.startDate,
-                  endDate: customer.dataset.endDate,
-                }
+                    startDate: customer.dataset.startDate,
+                    endDate: customer.dataset.endDate,
+                  }
                 : null,
               true,
               true
@@ -2595,7 +2595,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
               console.error('Error updating customer:', error);
             }
             updateCustomerStats();
-            refreshDashboardStats();
+            computeAndUpdateDashboardStats();
           });
         })();
 
