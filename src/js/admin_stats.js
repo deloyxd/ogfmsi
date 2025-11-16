@@ -230,7 +230,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
   async function renderPaymentsBreakdown(list, filterFn, title, explain) {
     const rows = list.filter(filterFn);
-    const total = rows.reduce((s, p) => s + (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0), 0);
+    const total = rows.reduce(
+      (s, p) => s + (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0),
+      0
+    );
     const htmlRows = rows
       .map((p) => {
         const date = (p.created_at && new Date(p.created_at)) || null;
@@ -239,6 +242,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
           : '';
         const cash = Number(p.payment_amount_paid_cash) || 0;
         const cashless = Number(p.payment_amount_paid_cashless) || 0;
+        const change = Number(p.payment_amount_change) || 0;
         return `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
@@ -246,7 +250,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
                 <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:4px;line-height:1.4">${(p.payment_purpose || '').trim()}</div>
                 <div style="color:#6b7280;font-size:13px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px;font-size:12px">${p.payment_id || ''}</span></div>
               </div>
-              <div style="font-weight:800;color:#10b981;font-size:17px;white-space:nowrap">${fmt(cash + cashless)}</div>
+              <div style="font-weight:800;color:#10b981;font-size:17px;white-space:nowrap">${fmt(cash + cashless - change)}</div>
             </div>
             ${dateText ? `<div style="color:#9ca3af;font-size:12px;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">🕐 ${dateText}</div>` : ''}
           </div>`;
@@ -359,9 +363,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
           const daysLeft = endDate ? Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))) : null;
           const rate = m.customer_rate ? String(m.customer_rate).toUpperCase() : '';
           const fmtDate = (d) =>
-            d
-              ? d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-              : '';
+            d ? d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
           return `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;align-items:flex-start;gap:12px">
@@ -372,12 +374,16 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
                   <span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-weight:700;font-size:11px;padding:2px 6px;border-radius:999px">Active</span>
                 </div>
                 <div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:2px">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${m.customer_id || ''}</span>${rate ? ` • ${rate}` : ''}</div>
-                ${(contact || email)
-                  ? `<div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:4px">${contact ? `📞 ${contact}` : ''}${contact && email ? ' • ' : ''}${email ? `✉️ ${email}` : ''}</div>`
-                  : ''}
-                ${(startDate || endDate)
-                  ? `<div style="color:#374151;font-size:12px;line-height:1.6;margin-top:6px">${fmtDate(startDate)} – ${fmtDate(endDate)}${daysLeft !== null ? ` • ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ''}</div>`
-                  : ''}
+                ${
+                  contact || email
+                    ? `<div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:4px">${contact ? `📞 ${contact}` : ''}${contact && email ? ' • ' : ''}${email ? `✉️ ${email}` : ''}</div>`
+                    : ''
+                }
+                ${
+                  startDate || endDate
+                    ? `<div style="color:#374151;font-size:12px;line-height:1.6;margin-top:6px">${fmtDate(startDate)} – ${fmtDate(endDate)}${daysLeft !== null ? ` • ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ''}</div>`
+                    : ''
+                }
               </div>
             </div>
           </div>`;
@@ -403,8 +409,12 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         const now = new Date();
         const parseDate = (mmddyyyy, time) => {
           if (!mmddyyyy) return null;
-          const [m, d, y] = String(mmddyyyy).split('-').map((n) => parseInt(n, 10));
-          const [hh, mm] = String(time || '00:00').split(':').map((n) => parseInt(n, 10));
+          const [m, d, y] = String(mmddyyyy)
+            .split('-')
+            .map((n) => parseInt(n, 10));
+          const [hh, mm] = String(time || '00:00')
+            .split(':')
+            .map((n) => parseInt(n, 10));
           const dt = new Date(y || 1970, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
           return isNaN(dt) ? null : dt;
         };
@@ -429,9 +439,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
               ? `${start.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })} · ${start.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true })} – ${end ? end.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true }) : ''}`
               : '';
             const amount = Number(r.amount) || 0;
-            const typeLabel = typeof r.reservationType === 'number'
-              ? ['Basketball', 'Zumba'][r.reservationType] || String(r.reservationType)
-              : String(r.reservationType || '').trim();
+            const typeLabel =
+              typeof r.reservationType === 'number'
+                ? ['Basketball', 'Zumba'][r.reservationType] || String(r.reservationType)
+                : String(r.reservationType || '').trim();
             return `
               <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
@@ -473,7 +484,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
   async function handlePayments() {
     if (t.includes('avg') && t.includes('overall') && t.includes('total')) {
       const list = await getPayments('/payment/complete');
-      const sumAmt = (p) => (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+      const sumAmt = (p) =>
+        (Number(p.payment_amount_paid_cash) || 0) +
+        (Number(p.payment_amount_paid_cashless) || 0) -
+        (Number(p.payment_amount_change) || 0);
       const todaysCash = list
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
@@ -481,7 +495,9 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
       const total = todaysCash + todaysCashless;
-      try { setTitle('Avg Overall Total'); } catch (e) {}
+      try {
+        setTitle('Avg Overall Total');
+      } catch (e) {}
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
           <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
@@ -492,9 +508,12 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       container.dataset.filled = '1';
       return true;
     }
-    if (t.includes("overall total sales")) {
+    if (t.includes('overall total sales')) {
       const list = await getPayments('/payment/complete');
-      const sumAmt = (p) => (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+      const sumAmt = (p) =>
+        (Number(p.payment_amount_paid_cash) || 0) +
+        (Number(p.payment_amount_paid_cashless) || 0) -
+        (Number(p.payment_amount_change) || 0);
       const todaysCash = list
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
@@ -502,7 +521,9 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
       const total = todaysCash + todaysCashless;
-      try { setTitle('Avg Overall Total'); } catch (e) {}
+      try {
+        setTitle('Avg Overall Total');
+      } catch (e) {}
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
           <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
@@ -551,20 +572,25 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const byDay = new Map();
       filtered.forEach((p) => {
         const day = String(p.created_at || '').slice(0, 10);
-        const amt = (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+        const amt =
+          (Number(p.payment_amount_paid_cash) || 0) +
+          (Number(p.payment_amount_paid_cashless) || 0) -
+          (Number(p.payment_amount_change) || 0);
         byDay.set(day, (byDay.get(day) || 0) + amt);
       });
       const entries = Array.from(byDay.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
       const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
-        .map(([day, sum]) => `
+        .map(
+          ([day, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
               <div style="color:#374151;font-weight:600;font-size:14px">${day}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
-        `)
+        `
+        )
         .join('');
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(139,92,246,0.2)">
@@ -589,20 +615,25 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const byWeek = new Map();
       list.forEach((p) => {
         const key = isoWeek(p.created_at || new Date());
-        const amt = (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+        const amt =
+          (Number(p.payment_amount_paid_cash) || 0) +
+          (Number(p.payment_amount_paid_cashless) || 0) -
+          (Number(p.payment_amount_change) || 0);
         byWeek.set(key, (byWeek.get(key) || 0) + amt);
       });
       const entries = Array.from(byWeek.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
       const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
-        .map(([w, sum]) => `
+        .map(
+          ([w, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
               <div style="color:#374151;font-weight:600;font-size:14px">${w}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
-        `)
+        `
+        )
         .join('');
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#ec4899,#db2777);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(236,72,153,0.2)">
@@ -620,20 +651,25 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const byMon = new Map();
       list.forEach((p) => {
         const key = String(p.created_at || '').slice(0, 7);
-        const amt = (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+        const amt =
+          (Number(p.payment_amount_paid_cash) || 0) +
+          (Number(p.payment_amount_paid_cashless) || 0) -
+          (Number(p.payment_amount_change) || 0);
         byMon.set(key, (byMon.get(key) || 0) + amt);
       });
       const entries = Array.from(byMon.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
       const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
-        .map(([m, sum]) => `
+        .map(
+          ([m, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
               <div style="color:#374151;font-weight:600;font-size:14px">${m}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
-        `)
+        `
+        )
         .join('');
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(245,158,11,0.2)">
