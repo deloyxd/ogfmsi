@@ -3625,7 +3625,7 @@ async function computeAndUpdatePaymentStats() {
     const avgData = await avgResponse.json();
 
     const todaysCash = Number(todayData.result.total_cash) || 0;
-    const todaysCashless = Number(todayData.result.total_cashless_hybrid) || 0;
+    const todaysCashless = Number(todayData.result.total_cashless) || 0;
 
     const stats = {
       todays_cash: todaysCash,

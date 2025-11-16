@@ -56,8 +56,8 @@ router.get('/summary/today', async (req, res) => {
     SELECT
       SUM(
         CASE 
-          WHEN payment_method = 'cash' 
-          THEN CAST(payment_amount_to_pay AS DECIMAL(12,2)) 
+          WHEN payment_method IN ('cash', 'hybrid') 
+          THEN CAST(payment_amount_paid_cash AS DECIMAL(12,2)) - CAST(COALESCE(payment_amount_change, 0) AS DECIMAL(12,2))
           ELSE 0 
         END
       ) AS total_cash,
@@ -65,10 +65,10 @@ router.get('/summary/today', async (req, res) => {
       SUM(
         CASE 
           WHEN payment_method IN ('cashless', 'hybrid') 
-          THEN CAST(payment_amount_to_pay AS DECIMAL(12,2)) 
+          THEN CAST(payment_amount_paid_cashless AS DECIMAL(12,2)) 
           ELSE 0 
         END
-      ) AS total_cashless_hybrid
+      ) AS total_cashless
     FROM payment_tbl
     WHERE payment_type IN ('sales', 'service')
       AND DATE(created_at) = CURDATE()

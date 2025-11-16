@@ -541,20 +541,23 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     }
     if (t.includes('overall total sales')) {
       const list = await getPayments('/payment/complete');
-      const sumAmt = (p) =>
-        (Number(p.payment_amount_paid_cash) || 0) +
-        (Number(p.payment_amount_paid_cashless) || 0) -
-        (Number(p.payment_amount_change) || 0);
       const todaysCash = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
+        .filter(
+          (p) =>
+            (String(p.payment_method || '').toLowerCase() === 'cash' ||
+              String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+            isTodayLocal(p.created_at)
+        )
+        .reduce((s, p) => s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0), 0);
       const todaysCashless = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
-      const todaysHybrid = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'hybrid' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
-      const total = todaysCash + todaysCashless + todaysHybrid;
+        .filter(
+          (p) =>
+            (String(p.payment_method || '').toLowerCase() === 'cashless' ||
+              String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+            isTodayLocal(p.created_at)
+        )
+        .reduce((s, p) => s + (Number(p.payment_amount_paid_cashless) || 0), 0);
+      const total = todaysCash + todaysCashless;
       try {
         setTitle('Avg Overall Total');
       } catch (e) {}
@@ -562,7 +565,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
           <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
           <div style="font-weight:900;font-size:28px">${fmt(total)}</div>
-          <div style="color:#dbeafe;font-size:13px;margin-top:8px">Today's Cash (${fmt(todaysCash)}) + Today's Cashless (${fmt(todaysCashless)}) + Today's Hybrid (${fmt(todaysHybrid)})</div>
+          <div style="color:#dbeafe;font-size:13px;margin-top:8px">Today's Cash (${fmt(todaysCash)}) + Today's Cashless (${fmt(todaysCashless)})</div>
         </div>
       `;
       container.dataset.filled = '1';
@@ -596,30 +599,37 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     }
     if (t.includes('average daily sales')) {
       const list = await getPayments('/payment/complete');
-      // Exclude canceled payments and limit to last 30 days to match Payments metrics
-      const nowLocal = new Date();
-      const startWindow = new Date(nowLocal);
-      startWindow.setDate(startWindow.getDate() - 29); // inclusive 30-day window including today
-      const toLocalDateStr = (d) => new Date(d).toLocaleDateString('en-CA'); // YYYY-MM-DD
-      const startKey = toLocalDateStr(startWindow);
 
+      // Filter only sales and service payments (matching backend logic)
       const filtered = list.filter((p) => {
-        if (String(p.payment_type || '').toLowerCase() === 'canceled') return false;
-        const key = String(p.created_at || '').slice(0, 10);
-        return key >= startKey; // only last 30 days
+        const type = String(p.payment_type || '').toLowerCase();
+        return type === 'sales' || type === 'service';
       });
 
+      // Calculate total income (matching backend logic)
+      const totalIncome = filtered.reduce((sum, p) => {
+        return sum + (Number(p.payment_amount_to_pay) || 0);
+      }, 0);
+
+      // Count distinct days (matching backend logic)
+      const distinctDays = new Set();
+      filtered.forEach((p) => {
+        const day = String(p.created_at || '').slice(0, 10);
+        if (day) distinctDays.add(day);
+      });
+
+      const totalDays = Math.max(distinctDays.size, 1); // Avoid division by zero
+      const averageDaily = totalIncome / totalDays;
+
+      // Generate display data (optional - for showing daily breakdown)
       const byDay = new Map();
       filtered.forEach((p) => {
         const day = String(p.created_at || '').slice(0, 10);
-        const amt =
-          (Number(p.payment_amount_paid_cash) || 0) +
-          (Number(p.payment_amount_paid_cashless) || 0) -
-          (Number(p.payment_amount_change) || 0);
+        const amt = Number(p.payment_amount_to_pay) || 0;
         byDay.set(day, (byDay.get(day) || 0) + amt);
       });
+
       const entries = Array.from(byDay.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-      const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
         .map(
           ([day, sum]) => `
@@ -632,90 +642,140 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         `
         )
         .join('');
+
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(139,92,246,0.2)">
           <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Average Daily Sales</div>
-          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(avg)}</div>
-          <div style="color:#ede9fe;font-size:13px;margin-top:8px">${entries.length} day${entries.length !== 1 ? 's' : ''} recorded</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(averageDaily)}</div>
+          <div style="color:#ede9fe;font-size:13px;margin-top:8px">${distinctDays.size} distinct day${distinctDays.size !== 1 ? 's' : ''}</div>
         </div>
         <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No records found.</div>'}</div>
       `;
       container.dataset.filled = '1';
       return true;
     }
+
     if (t.includes('average weekly sales')) {
       const list = await getPayments('/payment/complete');
-      function isoWeek(d) {
-        const date = new Date(Date.UTC(new Date(d).getFullYear(), new Date(d).getMonth(), new Date(d).getDate()));
-        const dayNum = date.getUTCDay() || 7;
-        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-        return `${date.getUTCFullYear()}-W${String(Math.ceil(((date - yearStart) / 86400000 + 1) / 7)).padStart(2, '0')}`;
-      }
-      const byWeek = new Map();
-      list.forEach((p) => {
-        const key = isoWeek(p.created_at || new Date());
-        const amt =
-          (Number(p.payment_amount_paid_cash) || 0) +
-          (Number(p.payment_amount_paid_cashless) || 0) -
-          (Number(p.payment_amount_change) || 0);
-        byWeek.set(key, (byWeek.get(key) || 0) + amt);
+
+      // Filter only sales and service payments
+      const filtered = list.filter((p) => {
+        const type = String(p.payment_type || '').toLowerCase();
+        return type === 'sales' || type === 'service';
       });
+
+      // Calculate total income
+      const totalIncome = filtered.reduce((sum, p) => {
+        return sum + (Number(p.payment_amount_to_pay) || 0);
+      }, 0);
+
+      // Count distinct weeks (matching backend YEARWEEK logic)
+      const distinctWeeks = new Set();
+      function getYearWeek(date) {
+        const d = new Date(date);
+        // Get Thursday of current week (to handle year boundaries correctly)
+        const thursday = new Date(d);
+        thursday.setDate(d.getDate() + (4 - (d.getDay() || 7)));
+        // Get first day of year
+        const yearStart = new Date(thursday.getFullYear(), 0, 1);
+        // Calculate week number
+        const weekNum = Math.ceil(((thursday - yearStart) / 86400000 + 1) / 7);
+        return `${thursday.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      }
+
+      filtered.forEach((p) => {
+        const week = getYearWeek(p.created_at || new Date());
+        distinctWeeks.add(week);
+      });
+
+      const totalWeeks = Math.max(distinctWeeks.size, 1);
+      const averageWeekly = totalIncome / totalWeeks;
+
+      // Generate display data
+      const byWeek = new Map();
+      filtered.forEach((p) => {
+        const week = getYearWeek(p.created_at || new Date());
+        const amt = Number(p.payment_amount_to_pay) || 0;
+        byWeek.set(week, (byWeek.get(week) || 0) + amt);
+      });
+
       const entries = Array.from(byWeek.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-      const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
         .map(
-          ([w, sum]) => `
+          ([week, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
-              <div style="color:#374151;font-weight:600;font-size:14px">${w}</div>
+              <div style="color:#374151;font-weight:600;font-size:14px">${week}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
         `
         )
         .join('');
+
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#ec4899,#db2777);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(236,72,153,0.2)">
           <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Average Weekly Sales</div>
-          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(avg)}</div>
-          <div style="color:#fce7f3;font-size:13px;margin-top:8px">${entries.length} week${entries.length !== 1 ? 's' : ''} recorded</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(averageWeekly)}</div>
+          <div style="color:#fce7f3;font-size:13px;margin-top:8px">${distinctWeeks.size} distinct week${distinctWeeks.size !== 1 ? 's' : ''}</div>
         </div>
         <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No records found.</div>'}</div>
       `;
       container.dataset.filled = '1';
       return true;
     }
+
     if (t.includes('average monthly sales')) {
       const list = await getPayments('/payment/complete');
-      const byMon = new Map();
-      list.forEach((p) => {
-        const key = String(p.created_at || '').slice(0, 7);
-        const amt =
-          (Number(p.payment_amount_paid_cash) || 0) +
-          (Number(p.payment_amount_paid_cashless) || 0) -
-          (Number(p.payment_amount_change) || 0);
-        byMon.set(key, (byMon.get(key) || 0) + amt);
+
+      // Filter only sales and service payments
+      const filtered = list.filter((p) => {
+        const type = String(p.payment_type || '').toLowerCase();
+        return type === 'sales' || type === 'service';
       });
+
+      // Calculate total income
+      const totalIncome = filtered.reduce((sum, p) => {
+        return sum + (Number(p.payment_amount_to_pay) || 0);
+      }, 0);
+
+      // Count distinct months
+      const distinctMonths = new Set();
+      filtered.forEach((p) => {
+        const month = String(p.created_at || '').slice(0, 7); // YYYY-MM
+        if (month) distinctMonths.add(month);
+      });
+
+      const totalMonths = Math.max(distinctMonths.size, 1);
+      const averageMonthly = totalIncome / totalMonths;
+
+      // Generate display data
+      const byMon = new Map();
+      filtered.forEach((p) => {
+        const month = String(p.created_at || '').slice(0, 7);
+        const amt = Number(p.payment_amount_to_pay) || 0;
+        byMon.set(month, (byMon.get(month) || 0) + amt);
+      });
+
       const entries = Array.from(byMon.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-      const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
         .map(
-          ([m, sum]) => `
+          ([month, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
-              <div style="color:#374151;font-weight:600;font-size:14px">${m}</div>
+              <div style="color:#374151;font-weight:600;font-size:14px">${month}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
         `
         )
         .join('');
+
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(245,158,11,0.2)">
           <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Average Monthly Sales</div>
-          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(avg)}</div>
-          <div style="color:#fef3c7;font-size:13px;margin-top:8px">${entries.length} month${entries.length !== 1 ? 's' : ''} recorded</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(averageMonthly)}</div>
+          <div style="color:#fef3c7;font-size:13px;margin-top:8px">${distinctMonths.size} distinct month${distinctMonths.size !== 1 ? 's' : ''}</div>
         </div>
         <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No records found.</div>'}</div>
       `;
