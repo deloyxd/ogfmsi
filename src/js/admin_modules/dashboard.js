@@ -101,7 +101,7 @@ document.addEventListener('newTab', function () {
     }
   }
   // Refresh dashboard stats when switching tabs
-  refreshDashboardStats();
+  computeAndUpdateDashboardStats();
 });
 
 const maxAnnouncementCount = 3;
