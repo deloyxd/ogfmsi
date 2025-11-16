@@ -271,7 +271,7 @@ async function filterDataForTab(tabNumber, selectedFilter) {
                 },
                 main.encodeDate(customer.customer_start_date, 'long'),
                 main.encodeDate(customer.customer_end_date, 'long'),
-                daysLeft + ' days',
+                daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : daysLeft + ' days',
                 main.formatPrice(
                   customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                 ),
@@ -890,7 +890,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 findResult.dataset.tid = customer.customer_tid;
               } else {
                 // Check if monthly subscription has expired
-                if (daysLeft <= 0) {
+                if (daysLeft < 0) {
                   // Move to Past Monthly Customers tab (tab 3)
                   findResult.dataset.custom2 = 'Daily';
                   findResult.children[2].innerText = findResult.dataset.custom2;
@@ -977,7 +977,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                         customer.customer_end_date,
                         main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
                       ),
-                      daysLeft + ' days',
+                      daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : daysLeft + ' days',
                       main.formatPrice(
                         customer.customer_months *
                           PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']

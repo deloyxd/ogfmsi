@@ -2,7 +2,7 @@ import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import reservations from './inquiry_reservations.js';
 import cart from './ecommerce_cart.js';
-import { refreshDashboardStats } from './dashboard.js';
+import { computeAndUpdateDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
 import { db } from '../firebase.js';
@@ -2818,7 +2818,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   created_at: nowIso,
                 });
                 computeAndUpdatePaymentStats();
-                await refreshDashboardStats();
+                await computeAndUpdateDashboardStats();
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
@@ -3016,7 +3016,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   created_at: nowIso,
                 });
                 computeAndUpdatePaymentStats();
-                await refreshDashboardStats();
+                await computeAndUpdateDashboardStats();
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
@@ -3160,7 +3160,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               created_at: nowIso,
             });
             computeAndUpdatePaymentStats();
-            await refreshDashboardStats();
+            await computeAndUpdateDashboardStats();
           } catch (_) {}
 
           // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)

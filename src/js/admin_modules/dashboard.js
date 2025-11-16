@@ -835,7 +835,7 @@ async function loadUpcomingRenewals() {
 
         const endDate = new Date(monthlyCustomer.customer_end_date);
         const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-        const daysText = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
+        const daysText = daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : daysLeft + ' days';
 
         const columnsData = [
           'id_' + customer.customer_id,
@@ -914,7 +914,7 @@ async function loadDashboardStats() {
 }
 
 // Computes dashboard stats from cached data
-async function computeAndUpdateDashboardStats() {
+export async function computeAndUpdateDashboardStats() {
   try {
     // Fetch revenue data
     const revenueResponse = await fetch(`${API_BASE_URL}/payment/summary/revenue`);
@@ -1110,9 +1110,4 @@ function getIsoWeek(date) {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   return weekNo;
-}
-
-// Refreshes dashboard stats (called when new payments are added)
-export async function refreshDashboardStats() {
-  computeAndUpdateDashboardStats();
 }

@@ -268,9 +268,13 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     if (String(section || '').toLowerCase() !== 'dashboard') return false;
     if (t.includes('overall total sales')) {
       const payments = await getPayments('/payment/complete');
+      const isComplete = (p) => {
+        const s = (p.payment_type || '').toLowerCase();
+        return s.includes('service') || s.includes('sales');
+      };
       await renderPaymentsBreakdown(
         payments,
-        () => true,
+        isComplete,
         'Overall Total Sales',
         'Sum of all completed payments: amount_paid_cash + amount_paid_cashless per transaction.'
       );
@@ -280,7 +284,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const payments = await getPayments('/payment/complete');
       const isGym = (p) => {
         const s = (p.payment_purpose || '').toLowerCase();
-        return s.includes('monthly') || s.includes('membership') || s.includes('gym') || s.includes('pass') || s.includes('subscription');
+        const s2 = (p.payment_type || '').toLowerCase();
+        return !s.includes('reservation') && s2.includes('service');
       };
       await renderPaymentsBreakdown(
         payments,
@@ -294,7 +299,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const payments = await getPayments('/payment/complete');
       const isRes = (p) => {
         const s = (p.payment_purpose || '').toLowerCase();
-        return s.includes('reservation') || s.includes('booking') || s.includes('facility') || s.includes('class') || s.includes('session');
+        const s2 = (p.payment_type || '').toLowerCase();
+        return s.includes('reservation') && s2.includes('service');
       };
       await renderPaymentsBreakdown(
         payments,
@@ -306,11 +312,15 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     }
     if (t.includes('product') && t.includes('sales')) {
       const payments = await getPayments('/payment/sales');
+      const isProd = (p) => {
+        const s = (p.payment_type || '').toLowerCase();
+        return s.includes('sales');
+      };
       await renderPaymentsBreakdown(
         payments,
-        () => true,
+        isProd,
         'Product Sales',
-        'Sales Transactions Log. Total = cash + cashless per transaction.'
+        'Product Sales Transactions Log. Total = cash + cashless per transaction.'
       );
       return true;
     }
