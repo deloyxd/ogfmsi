@@ -2578,6 +2578,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.toast(`Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)}`, 'error');
       return;
     }
+    if ((paymentMethod.includes('cashless') || paymentMethod.includes('hybrid')) && +cashlessVal > +amountToPay) {
+      main.toast(
+        `Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)} cannot exceed ${main.encodePrice(amountToPay)} (total amount to pay)`,
+        'error'
+      );
+      return;
+    }
     let amountPaid = Number(cashVal) + cashlessVal;
     // Validate numeric/format first
     if (!main.isValidPaymentAmount(+amountPaid)) {
