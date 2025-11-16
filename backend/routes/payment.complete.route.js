@@ -137,7 +137,7 @@ router.get('/summary/averages', async (req, res) => {
       SUM(CAST(payment_amount_to_pay AS DECIMAL(12,2))) AS total_income,
 
       COUNT(DISTINCT DATE(created_at)) AS total_days,
-      COUNT(DISTINCT YEARWEEK(created_at)) AS total_weeks,
+      COUNT(DISTINCT YEARWEEK(created_at, 3)) AS total_weeks,
       COUNT(DISTINCT DATE_FORMAT(created_at, '%Y-%m')) AS total_months
     FROM payment_tbl
     WHERE payment_type IN ('sales', 'service')
