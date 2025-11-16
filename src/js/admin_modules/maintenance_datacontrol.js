@@ -12,6 +12,60 @@ const CACHE_TTL_MS = 60 * 1000;
 const customerCache = new Map();
 const tabCacheMem = { 1: null, 2: null, 3: null };
 
+const FILTER_CATEGORIES = [
+  {
+    tab: 1,
+    filter: [
+      { label: 'Status: Active', value: 'status-active' },
+      { label: 'Status: Pending', value: 'status-pending' },
+      { label: 'Status: Incoming', value: 'status-incoming' },
+      { label: 'Rate: Regular', value: 'rate-regular' },
+      { label: 'Rate: Student', value: 'rate-student' },
+    ],
+  },
+  {
+    tab: 2,
+    filter: [
+      { label: 'Type: Daily', value: 'type-daily' },
+      { label: 'Type: Monthly', value: 'type-monthly' },
+      { label: 'Rate: Regular', value: 'rate-regular' },
+      { label: 'Rate: Student', value: 'rate-student' },
+    ],
+  },
+  {
+    tab: 3,
+    filter: [
+      { label: 'Stock: In Stock (> 0)', value: 'stock-in' },
+      { label: 'Stock: Out of Stock (0)', value: 'stock-out' },
+      { label: 'Expiration: With Date', value: 'exp-has' },
+      { label: 'Expiration: No Expiration', value: 'exp-none' },
+    ],
+  },
+  {
+    tab: 4,
+    filter: [
+      { label: 'Type: Basketball', value: 'type-basketball' },
+      { label: 'Type: Zumba', value: 'type-zumba' },
+      { label: 'Type: Others', value: 'type-others' },
+    ],
+  },
+];
+
+const tabFilterState = {
+  1: 'all',
+  2: 'all',
+  3: 'all',
+  4: 'all',
+};
+
+// When a new tab becomes active in this section, rebuild and apply the filter
+document.addEventListener('newTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const activeTab = main.sharedState.activeTab || 1;
+  setupFilter(activeTab);
+  filterDataForTab(activeTab);
+});
+
 let activated = false,
   mainBtn,
   subBtn,
@@ -45,6 +99,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
     setupTabSwitching();
     setupRefreshFunctionality();
+    setupFilter(1);
     await loadTabData(1);
   }
 });
@@ -87,7 +142,11 @@ async function switchToTab(tabIndex) {
     activeTab.classList.add('bg-gray-300', 'text-gray-800');
   }
 
+  // Reset filter state for this tab to 'all' when switching
+  tabFilterState[tabIndex] = 'all';
+  setupFilter(tabIndex);
   await loadTabData(tabIndex);
+  await filterDataForTab(tabIndex, 'all');
 }
 
 // Load data for specified tab with throttle guard
@@ -197,6 +256,154 @@ async function backgroundRefresh(tabIndex) {
       await loadReservations();
       break;
   }
+}
+
+async function filterDataForTab(tabIndex, selectedFilter) {
+  if (!FILTER_CATEGORIES.find((t) => t.tab === tabIndex)) return;
+
+  const select = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  if (!selectedFilter) {
+    selectedFilter = tabFilterState[tabIndex] || 'all';
+    if (select) {
+      if (selectedFilter === 'all') select.selectedIndex = 0;
+      else select.value = selectedFilter;
+    }
+  }
+
+  tabFilterState[tabIndex] = selectedFilter || 'all';
+
+  const baseRows = getTabCache(tabIndex) || tabCacheMem[tabIndex];
+  if (!baseRows || !Array.isArray(baseRows) || baseRows.length === 0) {
+    await loadTabData(tabIndex, true);
+    return;
+  }
+
+  let rowsToRender = baseRows;
+  if (selectedFilter && selectedFilter !== 'all') {
+    rowsToRender = baseRows.filter((entry) => {
+      const cols = entry.columnsData || [];
+      const valLower = (s) => String(s || '').toLowerCase();
+
+      if (tabIndex === 1) {
+        if (selectedFilter.startsWith('status-')) {
+          const status = valLower(cols[3]);
+          if (selectedFilter === 'status-active') return status.includes('active');
+          if (selectedFilter === 'status-pending') return status.includes('pending');
+          if (selectedFilter === 'status-incoming') return status.includes('incoming');
+        }
+        if (selectedFilter.startsWith('rate-')) {
+          const rate = valLower(cols[6]);
+          if (selectedFilter === 'rate-regular') return rate.includes('regular');
+          if (selectedFilter === 'rate-student') return rate.includes('student');
+        }
+        return true;
+      }
+
+      if (tabIndex === 2) {
+        if (selectedFilter.startsWith('type-')) {
+          const type = valLower(cols[1]);
+          if (selectedFilter === 'type-daily') return type.includes('daily');
+          if (selectedFilter === 'type-monthly') return type.includes('monthly');
+        }
+        if (selectedFilter.startsWith('rate-')) {
+          const rate = valLower(cols[4]);
+          if (selectedFilter === 'rate-regular') return rate.includes('regular');
+          if (selectedFilter === 'rate-student') return rate.includes('student');
+        }
+        return true;
+      }
+
+      if (tabIndex === 3) {
+        if (selectedFilter.startsWith('stock-')) {
+          const qty = Number(cols[2] || 0) || 0;
+          if (selectedFilter === 'stock-in') return qty > 0;
+          if (selectedFilter === 'stock-out') return qty === 0;
+        }
+        if (selectedFilter.startsWith('exp-')) {
+          const expText = valLower(cols[6]);
+          if (selectedFilter === 'exp-has') return !expText.includes('no expiration');
+          if (selectedFilter === 'exp-none') return expText.includes('no expiration');
+        }
+        return true;
+      }
+
+      if (tabIndex === 4) {
+        if (selectedFilter.startsWith('type-')) {
+          const typeText = valLower(cols[1]);
+          if (selectedFilter === 'type-basketball') return typeText.includes('basketball');
+          if (selectedFilter === 'type-zumba') return typeText.includes('zumba');
+          if (selectedFilter === 'type-others') return !typeText.includes('basketball') && !typeText.includes('zumba');
+        }
+        return true;
+      }
+
+      return true;
+    });
+  }
+
+  main.deleteAllAtSectionOne(SECTION_NAME, tabIndex);
+
+  rowsToRender.forEach((entry) => {
+    const existing = document
+      .querySelector(`#${SECTION_NAME}SectionOneListEmpty${tabIndex}`)
+      ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+    if (existing) return;
+
+    main.createAtSectionOne(SECTION_NAME, entry.columnsData, tabIndex, (createResult) => {
+      if (tabIndex === 1) {
+        setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+      } else if (tabIndex === 2) {
+        setupRowEditing(createResult, 'regular', {});
+      } else if (tabIndex === 3) {
+        createResult.dataset.id = entry._id;
+        setupRowEditing(createResult, 'supplement', {});
+      } else if (tabIndex === 4) {
+        setupRowEditing(createResult, 'reservation', {});
+      }
+    });
+  });
+}
+
+function setupFilter(tabNumber = 1) {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  const checkSelect = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  const select = checkSelect ? checkSelect : document.createElement('select');
+  if (!checkSelect) {
+    select.id = `${SECTION_NAME}CategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      const activeTab = main.sharedState.activeTab || currentTab || 1;
+      filterDataForTab(activeTab, e.target.value || 'all');
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  const config = FILTER_CATEGORIES.find((t) => t.tab === tabNumber);
+  if (!config) return;
+
+  config.filter.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.value;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  });
+
+  // Ensure the dropdown visually resets to "All" for the active tab
+  select.selectedIndex = 0;
 }
 
 // Fetch and display monthly users
