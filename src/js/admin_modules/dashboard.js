@@ -91,11 +91,17 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
 document.addEventListener('newTab', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
+  const searchContainer = document.getElementById(`dashboardSectionOneSearch`)?.parentElement;
+  const filterSelect = document.getElementById(`dashboardCategoryFilter`);
+
   if (main.sharedState.activeTab == 2) {
-    document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.remove('hidden');
+    if (searchContainer) searchContainer.classList.remove('hidden');
+    if (filterSelect) filterSelect.classList.remove('hidden');
+    setupDashboardFilter(2);
     loadUpcomingRenewals();
   } else {
-    document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.add('hidden');
+    if (searchContainer) searchContainer.classList.add('hidden');
+    if (filterSelect) filterSelect.classList.add('hidden');
     if (main.sharedState.activeTab == 1) {
       loadMonthlyGrowthData();
     }
@@ -103,6 +109,114 @@ document.addEventListener('newTab', function () {
   // Refresh dashboard stats when switching tabs
   computeAndUpdateDashboardStats();
 });
+
+const DASHBOARD_FILTER_CATEGORIES = [
+  {
+    tab: 2,
+    filter: [
+      {
+        label: 'Ends today',
+        value: 'today',
+      },
+      {
+        label: 'Ends tomorrow',
+        value: 'tomorrow',
+      },
+      {
+        label: '0-3 days left',
+        value: '0-3',
+      },
+      {
+        label: '4-7 days left',
+        value: '4-7',
+      },
+      {
+        label: '8-14 days left',
+        value: '8-14',
+      },
+    ],
+  },
+];
+
+function setupDashboardFilter(tabNumber = 2) {
+  const searchInput = document.getElementById(`dashboardSectionOneSearch`);
+  if (!searchInput) return;
+
+  const existingSelect = document.getElementById(`dashboardCategoryFilter`);
+  const select = existingSelect ? existingSelect : document.createElement('select');
+
+  if (!existingSelect) {
+    select.id = `dashboardCategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      const value = e.target.value || 'all';
+      applyUpcomingRenewalsFilter(value);
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  const tabFilter = DASHBOARD_FILTER_CATEGORIES.find((t) => t.tab === tabNumber);
+  if (!tabFilter) return;
+
+  tabFilter.filter.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.value;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  });
+}
+
+function applyUpcomingRenewalsFilter(filterValue) {
+  const tabContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="2"]');
+  if (!tabContainer) return;
+
+  const rows = tabContainer.querySelectorAll('.dynamic-renewal-row');
+  if (!rows.length) return;
+
+  rows.forEach((row) => {
+    const daysLeft = Number(row.dataset.daysLeft || '0');
+    let show = true;
+
+    switch (filterValue) {
+      case 'today':
+        show = daysLeft === 0;
+        break;
+      case 'tomorrow':
+        show = daysLeft === 1;
+        break;
+      case '0-3':
+        show = daysLeft >= 0 && daysLeft <= 3;
+        break;
+      case '4-7':
+        show = daysLeft >= 4 && daysLeft <= 7;
+        break;
+      case '8-14':
+        show = daysLeft >= 8 && daysLeft <= 14;
+        break;
+      default:
+        show = true;
+    }
+
+    if (show) {
+      row.classList.remove('hidden');
+    } else {
+      row.classList.add('hidden');
+    }
+  });
+}
 
 const maxAnnouncementCount = 3;
 let announcementCount = 0;
@@ -862,6 +976,11 @@ async function loadUpcomingRenewals() {
           createResult.classList.add('dynamic-renewal-row');
         });
       });
+      const filterSelect = document.getElementById('dashboardCategoryFilter');
+      if (filterSelect) {
+        const value = filterSelect.value || 'all';
+        applyUpcomingRenewalsFilter(value);
+      }
     }
   } catch (error) {
     console.error('Failed to load upcoming renewals:', error);
