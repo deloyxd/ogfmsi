@@ -926,6 +926,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                     ],
                     3,
                     (createResult) => {
+                      addDataForTab(3, customer);
                       const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
                       customerDetailsBtn.addEventListener('click', () =>
                         customerDetailsBtnFunction(createResult.dataset.id, 'Past Monthly Details', '📅')
@@ -1712,6 +1713,13 @@ async function mainBtnFunction(
                 'custom_datetime_today',
               ];
               main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
+                addDataForTab(4, {
+                  customer_id: customer.id,
+                  customer_image_url: customer.image,
+                  customer_first_name: customer.firstName,
+                  customer_last_name: customer.lastName,
+                  customer_contact: customer.contact,
+                });
                 main.createNotifDot(SECTION_NAME, 4);
                 main.deleteAtSectionOne(SECTION_NAME, 1, customer.id);
                 seenCustomerIds.delete(customer.id);
@@ -1999,6 +2007,18 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
           createResult.dataset.custom3,
         ];
         const { firstName, lastName } = main.decodeName(createResult.dataset.text);
+        addDataForTab(1, {
+          customer_id: customer_id,
+          customer_image_url: customer_image_url,
+          customer_first_name: firstName,
+          customer_last_name: lastName,
+          customer_contact: customer_contact,
+          customer_type: customerType,
+          customer_tid: '',
+          customer_pending: 0,
+          customer_rate: customerPriceRate,
+          created_at: main.encodeDate(new Date(), 'long'),
+        });
 
         try {
           const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
@@ -2541,6 +2561,15 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           ];
 
           main.createAtSectionOne(SECTION_NAME, columnsData, 2, async (createResult) => {
+            addDataForTab(2, {
+              customer_id: findResult1.dataset.id,
+              customer_start_date: startDisplay,
+              customer_end_date: endDisplay,
+              customer_months: Math.round(daysVal / 30),
+              customer_tid: '',
+              customer_pending: 0,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             main.createNotifDot(SECTION_NAME, 2);
 
             const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
@@ -2693,6 +2722,19 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
             ];
 
             main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+              const { firstName, lastName } = main.decodeName(customer.dataset.text);
+              addDataForTab(1, {
+                customer_id: customerId,
+                customer_image_url: customer.dataset.image,
+                customer_first_name: firstName,
+                customer_last_name: lastName,
+                customer_contact: customer.dataset.contact,
+                customer_type: uiCustomerType,
+                customer_tid: '',
+                customer_pending: 0,
+                customer_rate: uiRate,
+                created_at: main.encodeDate(new Date(), 'long'),
+              });
               seenCustomerIds.add(customerId);
               const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
               customerProcessBtn.addEventListener('click', () =>

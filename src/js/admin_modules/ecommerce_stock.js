@@ -1084,6 +1084,7 @@ async function filterDataForTab(tabNumber, selectedFilter) {
         'custom_date_today',
       ];
       main.createAtSectionOne(SECTION_NAME, columnsData, tabNumber, (createResult) => {
+        addDataForTab(tabNumber, product);
         if (product.created_at) {
           const date = main.encodeDate(product.created_at, 'long');
           createResult.dataset.date = date;

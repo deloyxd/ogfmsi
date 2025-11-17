@@ -211,31 +211,34 @@ function dataSignature(rows) {
 function renderFromCache(tabIndex, rows) {
   try {
     if (tabIndex === 1) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 1);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, () => {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 1, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, () => {});
+        });
       });
     } else if (tabIndex === 2) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 2);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, () => {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 2, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, () => {});
+        });
       });
     } else if (tabIndex === 3) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 3);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, () => {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 3, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, () => {});
+        });
       });
     }
   } catch (_) {}
@@ -341,25 +344,25 @@ async function filterDataForTab(tabIndex, selectedFilter) {
     });
   }
 
-  main.deleteAllAtSectionOne(SECTION_NAME, tabIndex);
+  main.deleteAllAtSectionOne(SECTION_NAME, tabIndex, () => {
+    rowsToRender.forEach((entry) => {
+      const existing = document
+        .querySelector(`#${SECTION_NAME}SectionOneListEmpty${tabIndex}`)
+        ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+      if (existing) return;
 
-  rowsToRender.forEach((entry) => {
-    const existing = document
-      .querySelector(`#${SECTION_NAME}SectionOneListEmpty${tabIndex}`)
-      ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-    if (existing) return;
-
-    main.createAtSectionOne(SECTION_NAME, entry.columnsData, tabIndex, (createResult) => {
-      if (tabIndex === 1) {
-        setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
-      } else if (tabIndex === 2) {
-        setupRowEditing(createResult, 'regular', {});
-      } else if (tabIndex === 3) {
-        createResult.dataset.id = entry._id;
-        setupRowEditing(createResult, 'supplement', {});
-      } else if (tabIndex === 4) {
-        setupRowEditing(createResult, 'reservation', {});
-      }
+      main.createAtSectionOne(SECTION_NAME, entry.columnsData, tabIndex, (createResult) => {
+        if (tabIndex === 1) {
+          setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+        } else if (tabIndex === 2) {
+          setupRowEditing(createResult, 'regular', {});
+        } else if (tabIndex === 3) {
+          createResult.dataset.id = entry._id;
+          setupRowEditing(createResult, 'supplement', {});
+        } else if (tabIndex === 4) {
+          setupRowEditing(createResult, 'reservation', {});
+        }
+      });
     });
   });
 }
@@ -454,18 +457,19 @@ async function loadMonthlyUsers() {
     const prevRows = getTabCache(1) || tabCacheMem[1];
     const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
     if (changed) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 1);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, (createResult) => {
-          setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+      main.deleteAllAtSectionOne(SECTION_NAME, 1, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, (createResult) => {
+            setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+          });
         });
+        tabCacheMem[1] = rows;
+        setTabCache(1, rows);
       });
-      tabCacheMem[1] = rows;
-      setTabCache(1, rows);
     }
   } catch (error) {
     console.error('Error loading monthly users:', error);
@@ -518,12 +522,7 @@ async function loadRegularUsers() {
       const isStudentRate = String(c?.customer_rate || '').toLowerCase() === 'student';
       const priceRateLabel = isStudentRate ? 'Student' : 'Regular';
       const typeLabel = record._src === 'monthly' ? 'Monthly' : 'Daily';
-      const amount =
-        record._src === 'monthly'
-          ? 0
-          : isStudentRate
-            ? 60
-            : 70;
+      const amount = record._src === 'monthly' ? 0 : isStudentRate ? 60 : 70;
 
       const columnsData = [
         'id_' + customerId,
@@ -549,18 +548,19 @@ async function loadRegularUsers() {
     const prevRows = getTabCache(2) || tabCacheMem[2];
     const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
     if (changed) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 2);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, (createResult) => {
-          setupRowEditing(createResult, 'regular', {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 2, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, (createResult) => {
+            setupRowEditing(createResult, 'regular', {});
+          });
         });
+        tabCacheMem[2] = rows;
+        setTabCache(2, rows);
       });
-      tabCacheMem[2] = rows;
-      setTabCache(2, rows);
     }
   } catch (error) {
     console.error('Error loading daily check-ins:', error);
@@ -642,67 +642,68 @@ async function loadSupplements() {
     });
     tableData.supplements = products;
 
-    main.deleteAllAtSectionOne(SECTION_NAME, 3);
+    main.deleteAllAtSectionOne(SECTION_NAME, 3, async () => {
+      // Build sales aggregates per product (quantity_sold, total_sales)
+      const salesAggregates = await getProductSalesAggregates();
 
-    // Build sales aggregates per product (quantity_sold, total_sales)
-    const salesAggregates = await getProductSalesAggregates();
+      const seenProducts = new Set();
+      const rows = [];
+      products.forEach((product) => {
+        if (!product || !product.product_id) return;
+        if (seenProducts.has(product.product_id)) return;
+        seenProducts.add(product.product_id);
 
-    const seenProducts = new Set();
-    const rows = [];
-    products.forEach((product) => {
-      if (!product || !product.product_id) return;
-      if (seenProducts.has(product.product_id)) return;
-      seenProducts.add(product.product_id);
-
-      const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
-      const displayId =
-        String(product.product_id || '')
-          .split('_')
-          .slice(0, 2)
-          .join('_') || String(product.product_id || '');
-      const columnsData = [
-        displayId,
-        { type: 'object', data: [product.image_url || '/src/images/client_logo.jpg', product.product_name || ''] },
-        String(product.quantity),
-        main.encodePrice(product.price),
-        String(product.measurement_value || ''),
-        String(product.measurement_unit || ''),
-        product.expiration_date
-          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })
-          : 'No expiration',
-        'custom_date_' +
-          (product.created_at
-            ? new Date(product.created_at).toLocaleDateString('en-US', {
+        const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
+        const displayId =
+          String(product.product_id || '')
+            .split('_')
+            .slice(0, 2)
+            .join('_') || String(product.product_id || '');
+        const columnsData = [
+          displayId,
+          { type: 'object', data: [product.image_url || '/src/images/client_logo.jpg', product.product_name || ''] },
+          String(product.quantity),
+          main.encodePrice(product.price),
+          String(product.measurement_value || ''),
+          String(product.measurement_unit || ''),
+          product.expiration_date
+            ? new Date(product.expiration_date).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
               })
-            : main.encodeDate(new Date(), 'long')),
-      ];
-      rows.push({ _id: String(product.product_id), columnsData });
-    });
-
-    const prevRows = getTabCache(3) || tabCacheMem[3];
-    const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
-    if (changed) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 3);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id=\"${entry._id}\"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, (createResult) => {
-          createResult.dataset.id = entry._id;
-          setupRowEditing(createResult, 'supplement', {});
-        });
+            : 'No expiration',
+          'custom_date_' +
+            (product.created_at
+              ? new Date(product.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : main.encodeDate(new Date(), 'long')),
+        ];
+        rows.push({ _id: String(product.product_id), columnsData });
       });
-      tabCacheMem[3] = rows;
-      setTabCache(3, rows);
-    }
+
+      const prevRows = getTabCache(3) || tabCacheMem[3];
+      const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
+      if (changed) {
+        main.deleteAllAtSectionOne(SECTION_NAME, 3, () => {
+          rows.forEach((entry) => {
+            const existing = document
+              .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
+              ?.parentElement?.parentElement?.querySelector(`[data-id=\"${entry._id}\"]`);
+            if (existing) return;
+            main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, (createResult) => {
+              createResult.dataset.id = entry._id;
+              setupRowEditing(createResult, 'supplement', {});
+            });
+          });
+          tabCacheMem[3] = rows;
+          setTabCache(3, rows);
+        });
+      }
+    });
   } catch (error) {
     console.error('Error loading supplements:', error);
     main.toast('Error loading supplements', 'error');
@@ -797,62 +798,62 @@ async function loadReservations() {
 
           tableData.reservations = normalized;
 
-          main.deleteAllAtSectionOne(SECTION_NAME, 4);
-
-          tableData.reservations.forEach((reservation) => {
-            const resTypeRaw = reservation.reservationType || reservation.serviceType || 'gym';
-            const dateStr = reservation.date || reservation.reservationDate || '';
-            const startTime = reservation.startTime || '';
-            const endTime = reservation.endTime || '';
-            const amount = reservation.amount != null ? reservation.amount : reservation.price || 0;
-            const customerNameEncoded = reservation.customerName || '';
-            let displayName = 'Unknown';
-            try {
-              const { fullName } = main.decodeName(customerNameEncoded);
-              displayName = fullName || 'Unknown';
-            } catch (_) {
-              displayName = customerNameEncoded || 'Unknown';
-            }
-
-            // Normalize reservation type to human-readable label
-            let reservationTypeText = 'Unknown';
-            try {
-              if (typeof resTypeRaw === 'number') {
-                const typeLabels = ['Basketball', 'Zumba'];
-                reservationTypeText = typeLabels[resTypeRaw] || String(resTypeRaw);
-              } else if (typeof resTypeRaw === 'string') {
-                reservationTypeText = main.fixText(resTypeRaw);
-              } else {
-                reservationTypeText = 'Basketball';
+          main.deleteAllAtSectionOne(SECTION_NAME, 4, () => {
+            tableData.reservations.forEach((reservation) => {
+              const resTypeRaw = reservation.reservationType || reservation.serviceType || 'gym';
+              const dateStr = reservation.date || reservation.reservationDate || '';
+              const startTime = reservation.startTime || '';
+              const endTime = reservation.endTime || '';
+              const amount = reservation.amount != null ? reservation.amount : reservation.price || 0;
+              const customerNameEncoded = reservation.customerName || '';
+              let displayName = 'Unknown';
+              try {
+                const { fullName } = main.decodeName(customerNameEncoded);
+                displayName = fullName || 'Unknown';
+              } catch (_) {
+                displayName = customerNameEncoded || 'Unknown';
               }
-            } catch (_) {
-              reservationTypeText = String(resTypeRaw || 'Basketball');
-            }
 
-            const columnsData = [
-              'id_' + reservation.id,
-              reservationTypeText,
-              displayName,
-              startTime ? main.decodeTime(startTime) : 'N/A',
-              endTime ? main.decodeTime(endTime) : 'N/A',
-              dateStr ? main.decodeDate(dateStr) : main.decodeDate(new Date()),
-              main.encodePrice(amount),
-            ];
+              // Normalize reservation type to human-readable label
+              let reservationTypeText = 'Unknown';
+              try {
+                if (typeof resTypeRaw === 'number') {
+                  const typeLabels = ['Basketball', 'Zumba'];
+                  reservationTypeText = typeLabels[resTypeRaw] || String(resTypeRaw);
+                } else if (typeof resTypeRaw === 'string') {
+                  reservationTypeText = main.fixText(resTypeRaw);
+                } else {
+                  reservationTypeText = 'Basketball';
+                }
+              } catch (_) {
+                reservationTypeText = String(resTypeRaw || 'Basketball');
+              }
 
-            const existing = document
-              .querySelector(`#${SECTION_NAME}SectionOneListEmpty4`)
-              ?.parentElement?.parentElement?.querySelector(`[data-id="${reservation.id}"]`);
-            if (existing) return;
-            main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
-              setupRowEditing(createResult, 'reservation', reservation);
+              const columnsData = [
+                'id_' + reservation.id,
+                reservationTypeText,
+                displayName,
+                startTime ? main.decodeTime(startTime) : 'N/A',
+                endTime ? main.decodeTime(endTime) : 'N/A',
+                dateStr ? main.decodeDate(dateStr) : main.decodeDate(new Date()),
+                main.encodePrice(amount),
+              ];
+
+              const existing = document
+                .querySelector(`#${SECTION_NAME}SectionOneListEmpty4`)
+                ?.parentElement?.parentElement?.querySelector(`[data-id="${reservation.id}"]`);
+              if (existing) return;
+              main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
+                setupRowEditing(createResult, 'reservation', reservation);
+              });
             });
+            if (!reservationsLoadedOnce) {
+              reservationsLoadedOnce = true;
+              try {
+                main.toast('Reservations loaded', 'success');
+              } catch (_) {}
+            }
           });
-          if (!reservationsLoadedOnce) {
-            reservationsLoadedOnce = true;
-            try {
-              main.toast('Reservations loaded', 'success');
-            } catch (_) {}
-          }
         } catch (e) {
           console.error('Reservations listener processing error:', e);
         }

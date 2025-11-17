@@ -1696,6 +1696,7 @@ async function registerNewProduct(image, name, quantity, category) {
           notes: '',
           created_at: new Date().toISOString(),
         };
+        addDataForTab(1, equipmentData);
 
         frontendResult.dataset.equipmentId = result.result.equipment_id;
 
