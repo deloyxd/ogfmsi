@@ -48,6 +48,7 @@ const SUBCATEGORY_OPTIONS = {
     { value: 'shorts', label: 'Shorts' },
     { value: 'hoodie', label: 'Hoodies' },
     { value: 'leggings', label: 'Leggings' },
+    { value: 'drifit', label: 'Drifit'}
   ],
   merchandise: [
     { value: '', label: 'All Merchandise' },
