@@ -650,20 +650,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -723,20 +715,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -796,20 +780,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -869,20 +845,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -942,20 +910,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
