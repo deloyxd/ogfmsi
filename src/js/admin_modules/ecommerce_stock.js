@@ -33,10 +33,10 @@ export const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
   { value: 'food-meals', label: 'Food & Meals' },
   { value: 'beverages', label: 'Beverages' },
-  { value: 'fitness-equipment', label: 'Fitness Equipment' },
+  // { value: 'fitness-equipment', label: 'Fitness Equipment' },
   { value: 'apparel', label: 'Apparel' },
   { value: 'merchandise', label: 'Merchandise' },
-  { value: 'other', label: 'Other' },
+  // { value: 'other', label: 'Other' },
 ];
 
 export default { CATEGORIES };

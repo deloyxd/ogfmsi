@@ -16,6 +16,62 @@ let cart = [],
 // Search term for filtering products
 let searchTerm = '';
 let selectedCategory = '';
+let selectedSubcategory = '';
+
+// Static subcategory options for cart filtering (matched against product names)
+const SUBCATEGORY_OPTIONS = {
+  'supplements-nutrition': [
+    { value: '', label: 'All Supplements' },
+    { value: 'whey', label: 'Whey' },
+    { value: 'mass', label: 'Mass Gainer' },
+    { value: 'pre-workout', label: 'Pre-Workout' },
+    { value: 'bcaa', label: 'BCAA' },
+    { value: 'creatine', label: 'Creatine' },
+  ],
+  'food-meals': [
+    { value: '', label: 'All Food & Meals' },
+    { value: 'rice', label: 'Rice Meals' },
+    { value: 'pasta', label: 'Pasta Meals' },
+    { value: 'sandwich', label: 'Sandwiches' },
+  ],
+  beverages: [
+    { value: '', label: 'All Beverages' },
+    { value: 'coffee', label: 'Coffee' },
+    { value: 'tea', label: 'Tea' },
+    { value: 'juice', label: 'Juice' },
+    { value: 'shake', label: 'Shakes' },
+    { value: 'energy drink', label: 'Energy Drinks' },
+  ],
+  apparel: [
+    { value: '', label: 'All Apparel' },
+    { value: 'shirt', label: 'Shirts' },
+    { value: 'shorts', label: 'Shorts' },
+    { value: 'hoodie', label: 'Hoodies' },
+    { value: 'leggings', label: 'Leggings' },
+  ],
+  merchandise: [
+    { value: '', label: 'All Merchandise' },
+    { value: 'towel', label: 'Towels' },
+    { value: 'bottle', label: 'Bottles' },
+    { value: 'cap', label: 'Caps' },
+    { value: 'bag', label: 'Bags' },
+  ],
+};
+
+function getAvailableSubcategoriesByCategory(category) {
+  const options = SUBCATEGORY_OPTIONS[category];
+  if (!options || options.length === 0) return [];
+
+  return options.filter((opt) => {
+    if (!opt.value) return true;
+    const keyword = String(opt.value).toLowerCase();
+    return inventoryItems.some((p) => {
+      if (p.category !== category) return false;
+      const { fullName } = main.decodeName(p.name);
+      return fullName.toLowerCase().includes(keyword);
+    });
+  });
+}
 
 document.addEventListener('ogfmsiAdminMainLoaded', function () {
   if (main.sharedState.sectionName !== SECTION_NAME) return;
@@ -37,6 +93,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
     select.className =
       'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
 
+    const subSelect = document.createElement('select');
+    subSelect.id = `${SECTION_NAME}SubcategoryFilter`;
+    subSelect.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2 hidden';
+
     const optAll = document.createElement('option');
     optAll.value = '';
     optAll.textContent = 'All Products';
@@ -49,14 +110,46 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
       select.appendChild(opt);
     });
 
+    function configureSubcategoryOptions(category) {
+      const options = getAvailableSubcategoriesByCategory(category);
+      selectedSubcategory = '';
+      subSelect.innerHTML = '';
+
+      if (!options || options.length <= 1) {
+        subSelect.classList.add('hidden');
+        refreshProductDisplays();
+        return;
+      }
+
+      options.forEach((optConfig) => {
+        const opt = document.createElement('option');
+        opt.value = optConfig.value;
+        opt.textContent = optConfig.label;
+        subSelect.appendChild(opt);
+      });
+
+      subSelect.classList.remove('hidden');
+      refreshProductDisplays();
+    }
+
     select.addEventListener('change', (e) => {
       selectedCategory = e.target.value || '';
+      configureSubcategoryOptions(selectedCategory);
+    });
+
+    subSelect.addEventListener('change', (e) => {
+      selectedSubcategory = (e.target.value || '').trim().toLowerCase();
       refreshProductDisplays();
     });
 
     if (searchInput.parentElement) {
-      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
-      else searchInput.parentElement.appendChild(select);
+      if (searchInput.nextSibling) {
+        searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+        searchInput.parentElement.insertBefore(subSelect, select.nextSibling);
+      } else {
+        searchInput.parentElement.appendChild(select);
+        searchInput.parentElement.appendChild(subSelect);
+      }
     }
   }
 
@@ -124,6 +217,14 @@ function setupSearch() {
 function getFilteredInventory() {
   let list = inventoryItems;
   if (selectedCategory) list = list.filter((p) => p.category === selectedCategory);
+
+  if (selectedSubcategory) {
+    const subValue = selectedSubcategory.toLowerCase();
+    list = list.filter((p) => {
+      const { fullName } = main.decodeName(p.name);
+      return fullName.toLowerCase().includes(subValue);
+    });
+  }
   if (!searchTerm) return list;
   return list.filter((p) => {
     const { fullName } = main.decodeName(p.name);

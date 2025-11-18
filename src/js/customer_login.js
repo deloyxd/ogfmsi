@@ -255,15 +255,13 @@ async function googleSignInBtnFunction() {
     let errorMessage = '';
     switch (+(error + '').split(' ')[1]) {
       case 404:
-        errorMessage = `We couldn't find an account linked to this Google email. Please make sure you're using the same Google account you registered`;
+        errorMessage = `This online account does not exist!`;
         break;
     }
     Swal.fire({
       icon: 'error',
-      title: "We couldn't sign you in with Google",
-      text:
-        errorMessage ||
-        "We couldn't find an account linked to this Google email. Please check that you're using the correct Google account",
+      title: 'Google Sign-In Failed',
+      text: errorMessage,
       confirmButtonColor: '#ef4444',
     });
   }
