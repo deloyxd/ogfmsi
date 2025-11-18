@@ -9,10 +9,30 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 import { app } from '../firebase.js';
 const auth = getAuth(app);
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    if (user.emailVerified) {
+      try {
+        await fetch(`${API_BASE_URL}/inquiry/activate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_contact: user.email,
+          }),
+        });
+      } catch (_) {}
+    }
+  }
+});
 
 const SECTION_NAME = 'inquiry-customers';
 
@@ -2049,13 +2069,15 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
         }
 
         if (customer_contact !== '') {
-          await createUserWithEmailAndPassword(auth, customer_contact, lastName.toUpperCase() + 'FITWORXGYM');
-          if (customer_contact.includes('gmail')) {
-            main.toast(`An online account for ${customer_contact} can now be used to sign in using Google.`, 'success');
-          } else {
-            await sendPasswordResetEmail(auth, customer_contact);
-            main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
-          }
+          main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            customer_contact,
+            lastName.toUpperCase() + 'FITWORXGYM'
+          );
+          const user = userCredential.user;
+          await sendEmailVerification(user);
+          await sendPasswordResetEmail(auth, customer_contact);
         }
       });
     } else {
@@ -2131,13 +2153,13 @@ async function updateCustomer(newData, oldData, tabIndex) {
       main.toast(`Previous online account (${oldData.dataset.contact}) has been deactivated.`, 'warning');
     }
     if (newData[1].data[2] !== '') {
-      await createUserWithEmailAndPassword(auth, newData[1].data[2], lastName.toUpperCase() + 'FITWORXGYM');
-      if (newData[1].data[2].includes('gmail')) {
-        main.toast(`An online account for ${newData[1].data[2]} can now be used to sign in using Google.`, 'success');
-      } else {
-        await sendPasswordResetEmail(auth, newData[1].data[2]);
-        main.toast(`An email has sent to ${newData[1].data[2]} to set up their online account.`, 'success');
-      }
+      const customer_contact = newData[1].data[2];
+      const defaultPassword = lastName.toUpperCase() + 'FITWORXGYM';
+      main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
+      const userCredential = await createUserWithEmailAndPassword(auth, customer_contact, defaultPassword);
+      const user = userCredential.user;
+      await sendEmailVerification(user);
+      await sendPasswordResetEmail(auth, customer_contact);
     }
   } catch (error) {
     console.error('Error online account:', error);
