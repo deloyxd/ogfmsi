@@ -318,12 +318,12 @@ async function filterDataForTab(tabIndex, selectedFilter) {
 
       if (tabIndex === 3) {
         if (selectedFilter.startsWith('stock-')) {
-          const qty = Number(cols[2] || 0) || 0;
+          const qty = Number(cols[3] || 0) || 0;
           if (selectedFilter === 'stock-in') return qty > 0;
           if (selectedFilter === 'stock-out') return qty === 0;
         }
         if (selectedFilter.startsWith('exp-')) {
-          const expText = valLower(cols[6]);
+          const expText = valLower(cols[8]);
           if (selectedFilter === 'exp-has') return !expText.includes('no expiration');
           if (selectedFilter === 'exp-none') return expText.includes('no expiration');
         }
@@ -659,13 +659,26 @@ async function loadSupplements() {
             .split('_')
             .slice(0, 2)
             .join('_') || String(product.product_id || '');
+        const isDisposed =
+          product.disposal_status === 'Disposed' ||
+          (product.product_name && product.product_name.toLowerCase().includes('disposed'));
         const columnsData = [
           displayId,
           { type: 'object', data: [product.image_url || '/src/images/client_logo.jpg', product.product_name || ''] },
-          String(product.quantity),
           main.encodePrice(product.price),
+          String(product.quantity),
+          isDisposed
+            ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>`
+            : main.getStockStatus(product.quantity),
           String(product.measurement_value || ''),
           String(product.measurement_unit || ''),
+          main.getSelectedOption(product.category, [
+            { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
+            { value: 'food-meals', label: 'Food & Meals' },
+            { value: 'beverages', label: 'Beverages' },
+            { value: 'apparel', label: 'Apparel' },
+            { value: 'merchandise', label: 'Merchandise' },
+          ]),
           product.expiration_date
             ? new Date(product.expiration_date).toLocaleDateString('en-US', {
                 year: 'numeric',

@@ -2475,7 +2475,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     ],
     radio: [
       {
-        label: isOnlineTransaction ? 'Pictures provided' : 'Payment method',
+        label: isOnlineTransaction && !isOnlineFacility ? 'Pictures provided' : 'Payment method',
         selected: isOnlineTransaction && !isStudent ? 2 : 1,
       },
     ],

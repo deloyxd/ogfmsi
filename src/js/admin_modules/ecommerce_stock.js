@@ -1037,6 +1037,21 @@ function addDataForTab(tabNumber, newData) {
   tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
 }
 
+function updateDataById(tabNumber, newData) {
+  tabsData = tabsData.map((tab) => {
+    if (tab.tab !== tabNumber) return tab;
+
+    const exists = tab.data.some((d) => d.product_id === newData.product_id);
+
+    return {
+      ...tab,
+      data: exists
+        ? tab.data.map((d) => (d.product_id === newData.product_id ? { ...d, ...newData } : d))
+        : [...tab.data, newData],
+    };
+  });
+}
+
 async function filterDataForTab(tabNumber, selectedFilter) {
   const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
   if (!selectedFilter) {
@@ -1745,6 +1760,26 @@ async function updateProduct(result, newResult, name) {
         },
         'product_update'
       );
+
+      const newProductData = {
+        product_id: result.dataset.id,
+        product_name: newName,
+        product_name_encoded: main.encodeText(newName),
+        price: +newPrice,
+        price_encoded: main.encodePrice(newPrice),
+        quantity: +newQuantity,
+        measurement_value: newMeasurement,
+        measurement_unit: measurementUnit,
+        category: category,
+        image_url: newResult.image.src,
+        expiration_date: newExpirationDate || null,
+        created_at: result.dataset.date,
+      };
+      updateDataById(1, newProductData);
+      updateDataById(2, newProductData);
+      updateDataById(3, newProductData);
+      updateDataById(4, newProductData);
+      updateDataById(5, newProductData);
 
       main.toast('Successfully updated product details!', 'info');
       main.closeConfirmationModal();

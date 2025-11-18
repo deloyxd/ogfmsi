@@ -232,6 +232,21 @@ function addDataForTab(tabNumber, newData) {
   tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
 }
 
+function updateDataById(tabNumber, newData) {
+  tabsData = tabsData.map((tab) => {
+    if (tab.tab !== tabNumber) return tab;
+
+    const exists = tab.data.some((d) => d.customer_id === newData.customer_id);
+
+    return {
+      ...tab,
+      data: exists
+        ? tab.data.map((d) => (d.customer_id === newData.customer_id ? { ...d, ...newData } : d))
+        : [...tab.data, newData],
+    };
+  });
+}
+
 async function filterDataForTab(tabNumber, selectedFilter) {
   const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
   if (!selectedFilter) {
@@ -1681,6 +1696,7 @@ async function mainBtnFunction(
               goBackCallback,
               null,
               true,
+              true,
               !isMonthlyCustomerAlready
             );
           } else {
@@ -1690,6 +1706,7 @@ async function mainBtnFunction(
                 columnsData,
                 goBackCallback,
                 null,
+                true,
                 true,
                 !isMonthlyCustomerAlready
               );
@@ -1781,6 +1798,7 @@ function checkIfSameData(newData, oldData) {
   );
 }
 
+const DEFAULT_PASSWORD_MESSAGE = `Placing an email for customer sets up an online account:<br><br>Customer:<br>Email:<br>Default Password:<br><br>Where default password is the customer's last name + "FITWORXGYM" in all uppercase without spaces.`;
 const STUDENT_VERIFICATION_MESSAGE = `Verification of student discount rate via:<br><br>${getEmoji('📌')} Student ID's picture matches the customer's face<br>${getEmoji('📌')} Student ID's school name is legitimate<br>${getEmoji('📌')} Student ID's validity duration still not expired yet`;
 
 function validateCustomer(
@@ -1788,14 +1806,47 @@ function validateCustomer(
   columnsData,
   goBackCallback,
   renewalData = null,
+  noteForDefaultPassword = true,
   checkPriceRate = true,
   checkCustomerType = true
 ) {
+  const emailValue = columnsData[1].data[2];
+  if (noteForDefaultPassword) {
+    if (emailValue !== '') {
+      const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
+      const passwordValue = lastName.toUpperCase() + 'FITWORXGYM';
+      const updatedMessage = DEFAULT_PASSWORD_MESSAGE.replace('Customer:', '<b class="text-lg">' + fullName + '</b>')
+        .replace('Email:', 'Email: ' + emailValue)
+        .replace('Password:', 'Password: ' + passwordValue);
+      main.openConfirmationModal(updatedMessage, () => {
+        validateCustomer(
+          customerId,
+          columnsData,
+          goBackCallback,
+          renewalData,
+          false,
+          checkPriceRate,
+          checkCustomerType
+        );
+        main.closeConfirmationModal();
+      });
+      return;
+    }
+  }
+
   const priceRate = columnsData[3].toLowerCase();
   if (checkPriceRate) {
     if (priceRate.toLowerCase().includes('student')) {
       main.openConfirmationModal(STUDENT_VERIFICATION_MESSAGE, () => {
-        validateCustomer(customerId, columnsData, goBackCallback, renewalData, false, checkCustomerType);
+        validateCustomer(
+          customerId,
+          columnsData,
+          goBackCallback,
+          renewalData,
+          noteForDefaultPassword,
+          false,
+          checkCustomerType
+        );
         main.closeConfirmationModal();
       });
       return;
@@ -2152,7 +2203,7 @@ async function updateCustomer(newData, oldData, tabIndex) {
       }
       main.toast(`Previous online account (${oldData.dataset.contact}) has been deactivated.`, 'warning');
     }
-    if (newData[1].data[2] !== '') {
+    if (tabIndex === 1 && newData[1].data[2] !== '') {
       const customer_contact = newData[1].data[2];
       const defaultPassword = lastName.toUpperCase() + 'FITWORXGYM';
       main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
@@ -2177,6 +2228,20 @@ async function updateCustomer(newData, oldData, tabIndex) {
       oldData.dataset.custom3 = newData[3];
       oldData.children[2].innerHTML = newData[2];
       oldData.children[3].innerHTML = newData[3];
+
+      const newCustomerData = {
+        customer_id: oldData.dataset.id,
+        customer_image_url: newData[1].data[0],
+        customer_first_name: firstName,
+        customer_last_name: lastName,
+        customer_contact: newData[1].data[2],
+        customer_type: newData[2],
+        customer_tid: '',
+        customer_pending: 0,
+        customer_rate: newData[3],
+        created_at: main.encodeDate(oldData.children[4].innerText, 'long'),
+      };
+      updateDataById(1, newCustomerData);
       break;
     case 2:
       break;
@@ -2364,6 +2429,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                         }
                       : null,
                     true,
+                    true,
                     true
                   );
                   return;
@@ -2449,6 +2515,7 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                     endDate: customer.dataset.endDate,
                   }
                 : null,
+              true,
               true,
               true
             );
