@@ -1506,6 +1506,9 @@ function setupProductDetailsButton(result) {
   if (!productDetailsBtn) return;
 
   productDetailsBtn.addEventListener('click', () => {
+    const [day, month, year] = main.encodeDate(result.dataset.custom8, 'numeric').split('-');
+    const expirationDate = `${year}-${month}-${day}`;
+
     const productData = {
       image: result.dataset.image,
       name: main.decodeText(result.dataset.text),
@@ -1514,7 +1517,7 @@ function setupProductDetailsButton(result) {
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
       category: result.dataset.custom7,
-      expirationDate: result.dataset.custom8,
+      expirationDate,
     };
 
     const inputs = createModalInputs(true, productData);
