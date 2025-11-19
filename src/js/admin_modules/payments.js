@@ -2,7 +2,7 @@ import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import reservations from './inquiry_reservations.js';
 import cart from './ecommerce_cart.js';
-import { refreshDashboardStats } from './dashboard.js';
+import { computeAndUpdateDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
 import { db } from '../firebase.js';
@@ -672,8 +672,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
         pendingPayments.result.forEach((pendingPayment) => {
           if (!pendingPayment || !pendingPayment.payment_id) return;
-          if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
-          seenPendingPaymentIds.add(pendingPayment.payment_id);
           // Normalize optional fields coming from customer portal
           const refFromPortal = pendingPayment.payment_ref || pendingPayment.payment_reference || '';
 
@@ -683,6 +681,9 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             async (findResult) => {
+              if (!findResult) return;
+              if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
+              seenPendingPaymentIds.add(pendingPayment.payment_id);
               let imageSrc = '';
               let customerIdText = pendingPayment.payment_customer_id;
               let fullName = '';
@@ -908,7 +909,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           ),
           ...servicePayments,
         ];
-        computeAndUpdatePaymentStats(completedPaymentsCache);
+        computeAndUpdatePaymentStats();
 
         // Process rows with limited concurrency to speed up while avoiding overload
         const list = Array.isArray(completePayments.result) ? completePayments.result : [];
@@ -1026,7 +1027,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
           ),
           ...salesPayments,
         ];
-        computeAndUpdatePaymentStats(completedPaymentsCache);
+        computeAndUpdatePaymentStats();
 
         resetDataForTab(6);
         resetDataForTab(7);
@@ -2482,7 +2483,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     ],
     radio: [
       {
-        label: isOnlineTransaction ? 'Pictures provided' : 'Payment method',
+        label: isOnlineTransaction && !isOnlineFacility ? 'Pictures provided' : 'Payment method',
         selected: isOnlineTransaction && !isStudent ? 2 : 1,
       },
     ],
@@ -2584,6 +2585,13 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       (paymentMethod.includes('cashless') || paymentMethod.includes('hybrid'))
     ) {
       main.toast(`Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)}`, 'error');
+      return;
+    }
+    if ((paymentMethod.includes('cashless') || paymentMethod.includes('hybrid')) && +cashlessVal > +amountToPay) {
+      main.toast(
+        `Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)} cannot exceed ${main.encodePrice(amountToPay)} (total amount to pay)`,
+        'error'
+      );
       return;
     }
     let amountPaid = Number(cashVal) + cashlessVal;
@@ -2692,6 +2700,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashColumnsData, 7, (createResult) => {
+            addDataForTab(7, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2719,6 +2739,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 8, (createResult) => {
+            addDataForTab(8, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2825,8 +2857,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   payment_method: paymentMethod,
                   created_at: nowIso,
                 });
-                computeAndUpdatePaymentStats(completedPaymentsCache);
-                await refreshDashboardStats();
+                computeAndUpdatePaymentStats();
+                await computeAndUpdateDashboardStats();
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
@@ -2886,6 +2918,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashColumnsData, 4, async (createResult) => {
+            addDataForTab(4, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2914,6 +2958,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           ];
 
           main.createAtSectionOne(SECTION_NAME, cashlessColumnsData, 5, async (createResult) => {
+            addDataForTab(5, {
+              payment_customer_id: customerId,
+              payment_id: createResult.dataset.id,
+              payment_purpose: createResult.dataset.purpose,
+              payment_amount_to_pay: createResult.dataset.amounttopay,
+              payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+              payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+              payment_amount_change: createResult.dataset.changeamount,
+              payment_rate: createResult.dataset.pricerate,
+              payment_method: createResult.dataset.paymentmethod,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             createResult.dataset.refnum = refNum;
             const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
             transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -2926,7 +2982,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
           main.createNotifDot(SECTION_NAME, 5);
           main.deleteAtSectionOne(SECTION_NAME, 1, id);
           try {
-            seenPendingPaymentIds.delete(effectiveId);
+            // seenPendingPaymentIds.delete(effectiveId);
           } catch (_) {}
 
           main.closeModal(() => {
@@ -3023,8 +3079,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
                   payment_method: paymentMethod,
                   created_at: nowIso,
                 });
-                computeAndUpdatePaymentStats(completedPaymentsCache);
-                await refreshDashboardStats();
+                computeAndUpdatePaymentStats();
+                await computeAndUpdateDashboardStats();
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
@@ -3056,6 +3112,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       // Create entry in the original Service/Sales Transactions tab first
       const originalTabIndex = type === 'cart' ? 6 : 3; // Sales Transactions (tab 6) or Service Transactions (tab 3)
       main.createAtSectionOne(SECTION_NAME, columnsData, originalTabIndex, async (createResult) => {
+        addDataForTab(originalTabIndex, {
+          payment_customer_id: customerId,
+          payment_id: createResult.dataset.id,
+          payment_purpose: createResult.dataset.purpose,
+          payment_amount_to_pay: createResult.dataset.amounttopay,
+          payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+          payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+          payment_amount_change: createResult.dataset.changeamount,
+          payment_rate: createResult.dataset.pricerate,
+          payment_method: createResult.dataset.paymentmethod,
+          created_at: main.encodeDate(new Date(), 'long'),
+        });
         createResult.dataset.refnum = refNum;
         const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
         transactionDetailsBtn.addEventListener('click', () => openTransactionDetails(type, createResult));
@@ -3063,6 +3131,18 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
 
       // Then create entry in the specific payment method tab
       main.createAtSectionOne(SECTION_NAME, columnsData, completedTabIndex, async (createResult) => {
+        addDataForTab(completedTabIndex, {
+          payment_customer_id: customerId,
+          payment_id: createResult.dataset.id,
+          payment_purpose: createResult.dataset.purpose,
+          payment_amount_to_pay: createResult.dataset.amounttopay,
+          payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+          payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+          payment_amount_change: createResult.dataset.changeamount,
+          payment_rate: createResult.dataset.pricerate,
+          payment_method: createResult.dataset.paymentmethod,
+          created_at: main.encodeDate(new Date(), 'long'),
+        });
         createResult.dataset.refnum = refNum;
 
         main.toast(`Transaction successfully completed!`, 'success');
@@ -3071,7 +3151,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         main.createNotifDot(SECTION_NAME, completedTabIndex);
         main.deleteAtSectionOne(SECTION_NAME, 1, id);
         try {
-          seenPendingPaymentIds.delete(effectiveId);
+          // seenPendingPaymentIds.delete(effectiveId);
         } catch (_) {}
 
         const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
@@ -3167,8 +3247,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               payment_method: paymentMethod,
               created_at: nowIso,
             });
-            computeAndUpdatePaymentStats(completedPaymentsCache);
-            await refreshDashboardStats();
+            computeAndUpdatePaymentStats();
+            await computeAndUpdateDashboardStats();
           } catch (_) {}
 
           // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
@@ -3465,7 +3545,21 @@ export function cancelCheckinPayment(transactionId, reason = '') {
       findResult.dataset.custom2 || 'N/A',
       `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
     ];
-    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
+    main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+      console.log('adding:', createResult.dataset.id);
+      addDataForTab(2, {
+        payment_customer_id: createResult.dataset.text,
+        payment_id: createResult.dataset.id,
+        payment_purpose: createResult.dataset.purpose,
+        payment_amount_to_pay: createResult.dataset.amounttopay,
+        payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+        payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+        payment_amount_change: createResult.dataset.changeamount,
+        payment_rate: createResult.dataset.pricerate,
+        payment_method: createResult.dataset.paymentmethod,
+        created_at: main.encodeDate(new Date(), 'long'),
+      });
+    });
 
     // Remove from pending list
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
@@ -3597,7 +3691,20 @@ export function cancelReservationPayment(transactionId) {
       findResult.dataset.custom2 || 'Reservation fee',
       `${main.getDateOrTimeOrBoth().date} - ${main.getDateOrTimeOrBoth().time}`,
     ];
-    main.createAtSectionOne(SECTION_NAME, columnsData, 2, () => {});
+    main.createAtSectionOne(SECTION_NAME, columnsData, 2, (createResult) => {
+      addDataForTab(2, {
+        payment_customer_id: createResult.dataset.text,
+        payment_id: createResult.dataset.id,
+        payment_purpose: createResult.dataset.purpose,
+        payment_amount_to_pay: createResult.dataset.amounttopay,
+        payment_amount_paid_cash: createResult.dataset.amountpaidcash,
+        payment_amount_paid_cashless: createResult.dataset.amountpaidcashless,
+        payment_amount_change: createResult.dataset.changeamount,
+        payment_rate: createResult.dataset.pricerate,
+        payment_method: createResult.dataset.paymentmethod,
+        created_at: main.encodeDate(new Date(), 'long'),
+      });
+    });
 
     main.deleteAtSectionOne(SECTION_NAME, 1, transactionId);
     try {
@@ -3616,65 +3723,38 @@ export function findPendingTransaction(customerId, callback = () => {}) {
 }
 
 // ===== Stats computation & display =====
-function computeAndUpdatePaymentStats(payments) {
-  if (!Array.isArray(payments)) return;
-
-  const toNumber = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  };
-
-  const today = new Date();
-  const todayKey = [today.getFullYear(), today.getMonth(), today.getDate()].join('-');
-
-  let todaysCash = 0;
-  let todaysCashless = 0;
-
-  const dayTotals = new Map(); // key: YYYY-M-D -> sum
-  const weekTotals = new Map(); // key: YYYY-W -> sum (ISO week)
-  const monthTotals = new Map(); // key: YYYY-M -> sum
-
-  for (const p of payments) {
-    if (!p) continue;
-    const created = new Date(p.created_at || p.createdAt || Date.now());
-    const keyDay = [created.getFullYear(), created.getMonth(), created.getDate()].join('-');
-    const keyMonth = [created.getFullYear(), created.getMonth()].join('-');
-    const isoWeek = getIsoWeek(created);
-    const keyWeek = [created.getFullYear(), isoWeek].join('-');
-
-    const paidCash = toNumber(p.payment_amount_paid_cash);
-    const paidCashless = toNumber(p.payment_amount_paid_cashless);
-    const totalPaid = paidCash + paidCashless;
-
-    if (keyDay === todayKey) {
-      // Include both pure cash and the cash component of hybrid
-      todaysCash += paidCash;
-      // Include both pure cashless and the cashless component of hybrid
-      todaysCashless += paidCashless;
+async function computeAndUpdatePaymentStats() {
+  try {
+    // Fetch today's cash/cashless totals
+    const todayResponse = await fetch(`${API_BASE_URL}/payment/summary/today`);
+    if (!todayResponse.ok) {
+      throw new Error(`HTTP error! status: ${todayResponse.status}`);
     }
+    const todayData = await todayResponse.json();
 
-    dayTotals.set(keyDay, (dayTotals.get(keyDay) || 0) + totalPaid);
-    weekTotals.set(keyWeek, (weekTotals.get(keyWeek) || 0) + totalPaid);
-    monthTotals.set(keyMonth, (monthTotals.get(keyMonth) || 0) + totalPaid);
+    // Fetch averages
+    const avgResponse = await fetch(`${API_BASE_URL}/payment/summary/averages`);
+    if (!avgResponse.ok) {
+      throw new Error(`HTTP error! status: ${avgResponse.status}`);
+    }
+    const avgData = await avgResponse.json();
+
+    const todaysCash = Number(todayData.result.total_cash) || 0;
+    const todaysCashless = Number(todayData.result.total_cashless) || 0;
+
+    const stats = {
+      todays_cash: todaysCash,
+      todays_cashless: todaysCashless,
+      todays_overall_total: todaysCash + todaysCashless,
+      avg_daily: avgData.result.averageDaily,
+      avg_weekly: avgData.result.averageWeekly,
+      avg_monthly: avgData.result.averageMonthly,
+    };
+
+    updatePaymentStatsDisplay(stats);
+  } catch (error) {
+    console.error('Error fetching payment stats:', error);
   }
-
-  const avg = (mapObj) => {
-    const values = Array.from(mapObj.values());
-    if (values.length === 0) return 0;
-    const sum = values.reduce((a, b) => a + b, 0);
-    return sum / values.length;
-  };
-
-  const stats = {
-    todays_cash: totalCashSalesToday,
-    todays_cashless: totalCashlessSalesToday,
-    todays_overall_total: totalCashSalesToday + totalCashlessSalesToday,
-    avg_daily: avg(dayTotals),
-    avg_weekly: avg(weekTotals),
-    avg_monthly: avg(monthTotals),
-  };
-
-  updatePaymentStatsDisplay(stats);
 }
 
 function updatePaymentStatsDisplay(stats) {

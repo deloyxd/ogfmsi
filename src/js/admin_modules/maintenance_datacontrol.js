@@ -12,6 +12,60 @@ const CACHE_TTL_MS = 60 * 1000;
 const customerCache = new Map();
 const tabCacheMem = { 1: null, 2: null, 3: null };
 
+const FILTER_CATEGORIES = [
+  {
+    tab: 1,
+    filter: [
+      { label: 'Status: Active', value: 'status-active' },
+      { label: 'Status: Pending', value: 'status-pending' },
+      { label: 'Status: Incoming', value: 'status-incoming' },
+      { label: 'Rate: Regular', value: 'rate-regular' },
+      { label: 'Rate: Student', value: 'rate-student' },
+    ],
+  },
+  {
+    tab: 2,
+    filter: [
+      { label: 'Type: Daily', value: 'type-daily' },
+      { label: 'Type: Monthly', value: 'type-monthly' },
+      { label: 'Rate: Regular', value: 'rate-regular' },
+      { label: 'Rate: Student', value: 'rate-student' },
+    ],
+  },
+  {
+    tab: 3,
+    filter: [
+      { label: 'Stock: In Stock (> 0)', value: 'stock-in' },
+      { label: 'Stock: Out of Stock (0)', value: 'stock-out' },
+      { label: 'Expiration: With Date', value: 'exp-has' },
+      { label: 'Expiration: No Expiration', value: 'exp-none' },
+    ],
+  },
+  {
+    tab: 4,
+    filter: [
+      { label: 'Type: Basketball', value: 'type-basketball' },
+      { label: 'Type: Zumba', value: 'type-zumba' },
+      { label: 'Type: Others', value: 'type-others' },
+    ],
+  },
+];
+
+const tabFilterState = {
+  1: 'all',
+  2: 'all',
+  3: 'all',
+  4: 'all',
+};
+
+// When a new tab becomes active in this section, rebuild and apply the filter
+document.addEventListener('newTab', () => {
+  if (main.sharedState.sectionName !== SECTION_NAME) return;
+  const activeTab = main.sharedState.activeTab || 1;
+  setupFilter(activeTab);
+  filterDataForTab(activeTab);
+});
+
 let activated = false,
   mainBtn,
   subBtn,
@@ -45,6 +99,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
 
     setupTabSwitching();
     setupRefreshFunctionality();
+    setupFilter(1);
     await loadTabData(1);
   }
 });
@@ -87,7 +142,11 @@ async function switchToTab(tabIndex) {
     activeTab.classList.add('bg-gray-300', 'text-gray-800');
   }
 
+  // Reset filter state for this tab to 'all' when switching
+  tabFilterState[tabIndex] = 'all';
+  setupFilter(tabIndex);
   await loadTabData(tabIndex);
+  await filterDataForTab(tabIndex, 'all');
 }
 
 // Load data for specified tab with throttle guard
@@ -152,31 +211,34 @@ function dataSignature(rows) {
 function renderFromCache(tabIndex, rows) {
   try {
     if (tabIndex === 1) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 1);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, () => {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 1, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, () => {});
+        });
       });
     } else if (tabIndex === 2) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 2);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, () => {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 2, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, () => {});
+        });
       });
     } else if (tabIndex === 3) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 3);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, () => {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 3, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, () => {});
+        });
       });
     }
   } catch (_) {}
@@ -197,6 +259,154 @@ async function backgroundRefresh(tabIndex) {
       await loadReservations();
       break;
   }
+}
+
+async function filterDataForTab(tabIndex, selectedFilter) {
+  if (!FILTER_CATEGORIES.find((t) => t.tab === tabIndex)) return;
+
+  const select = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  if (!selectedFilter) {
+    selectedFilter = tabFilterState[tabIndex] || 'all';
+    if (select) {
+      if (selectedFilter === 'all') select.selectedIndex = 0;
+      else select.value = selectedFilter;
+    }
+  }
+
+  tabFilterState[tabIndex] = selectedFilter || 'all';
+
+  const baseRows = getTabCache(tabIndex) || tabCacheMem[tabIndex];
+  if (!baseRows || !Array.isArray(baseRows) || baseRows.length === 0) {
+    await loadTabData(tabIndex, true);
+    return;
+  }
+
+  let rowsToRender = baseRows;
+  if (selectedFilter && selectedFilter !== 'all') {
+    rowsToRender = baseRows.filter((entry) => {
+      const cols = entry.columnsData || [];
+      const valLower = (s) => String(s || '').toLowerCase();
+
+      if (tabIndex === 1) {
+        if (selectedFilter.startsWith('status-')) {
+          const status = valLower(cols[3]);
+          if (selectedFilter === 'status-active') return status.includes('active');
+          if (selectedFilter === 'status-pending') return status.includes('pending');
+          if (selectedFilter === 'status-incoming') return status.includes('incoming');
+        }
+        if (selectedFilter.startsWith('rate-')) {
+          const rate = valLower(cols[6]);
+          if (selectedFilter === 'rate-regular') return rate.includes('regular');
+          if (selectedFilter === 'rate-student') return rate.includes('student');
+        }
+        return true;
+      }
+
+      if (tabIndex === 2) {
+        if (selectedFilter.startsWith('type-')) {
+          const type = valLower(cols[1]);
+          if (selectedFilter === 'type-daily') return type.includes('daily');
+          if (selectedFilter === 'type-monthly') return type.includes('monthly');
+        }
+        if (selectedFilter.startsWith('rate-')) {
+          const rate = valLower(cols[4]);
+          if (selectedFilter === 'rate-regular') return rate.includes('regular');
+          if (selectedFilter === 'rate-student') return rate.includes('student');
+        }
+        return true;
+      }
+
+      if (tabIndex === 3) {
+        if (selectedFilter.startsWith('stock-')) {
+          const qty = Number(cols[3] || 0) || 0;
+          if (selectedFilter === 'stock-in') return qty > 0;
+          if (selectedFilter === 'stock-out') return qty === 0;
+        }
+        if (selectedFilter.startsWith('exp-')) {
+          const expText = valLower(cols[8]);
+          if (selectedFilter === 'exp-has') return !expText.includes('no expiration');
+          if (selectedFilter === 'exp-none') return expText.includes('no expiration');
+        }
+        return true;
+      }
+
+      if (tabIndex === 4) {
+        if (selectedFilter.startsWith('type-')) {
+          const typeText = valLower(cols[1]);
+          if (selectedFilter === 'type-basketball') return typeText.includes('basketball');
+          if (selectedFilter === 'type-zumba') return typeText.includes('zumba');
+          if (selectedFilter === 'type-others') return !typeText.includes('basketball') && !typeText.includes('zumba');
+        }
+        return true;
+      }
+
+      return true;
+    });
+  }
+
+  main.deleteAllAtSectionOne(SECTION_NAME, tabIndex, () => {
+    rowsToRender.forEach((entry) => {
+      const existing = document
+        .querySelector(`#${SECTION_NAME}SectionOneListEmpty${tabIndex}`)
+        ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+      if (existing) return;
+
+      main.createAtSectionOne(SECTION_NAME, entry.columnsData, tabIndex, (createResult) => {
+        if (tabIndex === 1) {
+          setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+        } else if (tabIndex === 2) {
+          setupRowEditing(createResult, 'regular', {});
+        } else if (tabIndex === 3) {
+          createResult.dataset.id = entry._id;
+          setupRowEditing(createResult, 'supplement', {});
+        } else if (tabIndex === 4) {
+          setupRowEditing(createResult, 'reservation', {});
+        }
+      });
+    });
+  });
+}
+
+function setupFilter(tabNumber = 1) {
+  const searchInput = document.getElementById(`${SECTION_NAME}SectionOneSearch`);
+  if (!searchInput) return;
+
+  const checkSelect = document.getElementById(`${SECTION_NAME}CategoryFilter`);
+  const select = checkSelect ? checkSelect : document.createElement('select');
+  if (!checkSelect) {
+    select.id = `${SECTION_NAME}CategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      const activeTab = main.sharedState.activeTab || currentTab || 1;
+      filterDataForTab(activeTab, e.target.value || 'all');
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  const config = FILTER_CATEGORIES.find((t) => t.tab === tabNumber);
+  if (!config) return;
+
+  config.filter.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.value;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  });
+
+  // Ensure the dropdown visually resets to "All" for the active tab
+  select.selectedIndex = 0;
 }
 
 // Fetch and display monthly users
@@ -240,11 +450,6 @@ async function loadMonthlyUsers() {
               ? MONTHLY_PRICES.student
               : MONTHLY_PRICES.regular)
         ),
-        main.encodePrice(
-          String(customerData?.customer_rate || '').toLowerCase() === 'student'
-            ? MONTHLY_PRICES.student
-            : MONTHLY_PRICES.regular
-        ),
       ];
       rows.push({ _id: String(user.customer_id), columnsData });
     }
@@ -252,18 +457,19 @@ async function loadMonthlyUsers() {
     const prevRows = getTabCache(1) || tabCacheMem[1];
     const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
     if (changed) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 1);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, (createResult) => {
-          setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+      main.deleteAllAtSectionOne(SECTION_NAME, 1, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty1`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 1, (createResult) => {
+            setupRowEditing(createResult, 'monthly', { customer_id: entry._id });
+          });
         });
+        tabCacheMem[1] = rows;
+        setTabCache(1, rows);
       });
-      tabCacheMem[1] = rows;
-      setTabCache(1, rows);
     }
   } catch (error) {
     console.error('Error loading monthly users:', error);
@@ -316,14 +522,7 @@ async function loadRegularUsers() {
       const isStudentRate = String(c?.customer_rate || '').toLowerCase() === 'student';
       const priceRateLabel = isStudentRate ? 'Student' : 'Regular';
       const typeLabel = record._src === 'monthly' ? 'Monthly' : 'Daily';
-      const amount =
-        record._src === 'monthly'
-          ? isStudentRate
-            ? MONTHLY_PRICES.student
-            : MONTHLY_PRICES.regular
-          : isStudentRate
-            ? 60
-            : 70;
+      const amount = record._src === 'monthly' ? 0 : isStudentRate ? 60 : 70;
 
       const columnsData = [
         'id_' + customerId,
@@ -349,18 +548,19 @@ async function loadRegularUsers() {
     const prevRows = getTabCache(2) || tabCacheMem[2];
     const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
     if (changed) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 2);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, (createResult) => {
-          setupRowEditing(createResult, 'regular', {});
+      main.deleteAllAtSectionOne(SECTION_NAME, 2, () => {
+        rows.forEach((entry) => {
+          const existing = document
+            .querySelector(`#${SECTION_NAME}SectionOneListEmpty2`)
+            ?.parentElement?.parentElement?.querySelector(`[data-id="${entry._id}"]`);
+          if (existing) return;
+          main.createAtSectionOne(SECTION_NAME, entry.columnsData, 2, (createResult) => {
+            setupRowEditing(createResult, 'regular', {});
+          });
         });
+        tabCacheMem[2] = rows;
+        setTabCache(2, rows);
       });
-      tabCacheMem[2] = rows;
-      setTabCache(2, rows);
     }
   } catch (error) {
     console.error('Error loading daily check-ins:', error);
@@ -442,69 +642,81 @@ async function loadSupplements() {
     });
     tableData.supplements = products;
 
-    main.deleteAllAtSectionOne(SECTION_NAME, 3);
+    main.deleteAllAtSectionOne(SECTION_NAME, 3, async () => {
+      // Build sales aggregates per product (quantity_sold, total_sales)
+      const salesAggregates = await getProductSalesAggregates();
 
-    // Build sales aggregates per product (quantity_sold, total_sales)
-    const salesAggregates = await getProductSalesAggregates();
+      const seenProducts = new Set();
+      const rows = [];
+      products.forEach((product) => {
+        if (!product || !product.product_id) return;
+        if (seenProducts.has(product.product_id)) return;
+        seenProducts.add(product.product_id);
 
-    const seenProducts = new Set();
-    const rows = [];
-    products.forEach((product) => {
-      if (!product || !product.product_id) return;
-      if (seenProducts.has(product.product_id)) return;
-      seenProducts.add(product.product_id);
-
-      const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
-      const displayId =
-        String(product.product_id || '')
-          .split('_')
-          .slice(0, 2)
-          .join('_') || String(product.product_id || '');
-      const columnsData = [
-        displayId,
-        { type: 'object', data: [product.image_url || '/src/images/client_logo.jpg', product.product_name || ''] },
-        String(product.quantity),
-        main.encodePrice(product.price),
-        String(product.measurement_value || ''),
-        String(product.measurement_unit || ''),
-        String(aggregate.quantity || 0),
-        main.encodePrice(aggregate.total || 0),
-        product.expiration_date
-          ? new Date(product.expiration_date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })
-          : 'No expiration',
-        'custom_date_' +
-          (product.created_at
-            ? new Date(product.created_at).toLocaleDateString('en-US', {
+        const aggregate = salesAggregates.get(product.product_id) || { quantity: 0, total: 0 };
+        const displayId =
+          String(product.product_id || '')
+            .split('_')
+            .slice(0, 2)
+            .join('_') || String(product.product_id || '');
+        const isDisposed =
+          product.disposal_status === 'Disposed' ||
+          (product.product_name && product.product_name.toLowerCase().includes('disposed'));
+        const columnsData = [
+          displayId,
+          { type: 'object', data: [product.image_url || '/src/images/client_logo.jpg', product.product_name || ''] },
+          main.encodePrice(product.price),
+          String(product.quantity),
+          isDisposed
+            ? `<div class="text-center">Disposed ${getEmoji('🗑️')}</div>`
+            : main.getStockStatus(product.quantity),
+          String(product.measurement_value || ''),
+          String(product.measurement_unit || ''),
+          main.getSelectedOption(product.category, [
+            { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
+            { value: 'food-meals', label: 'Food & Meals' },
+            { value: 'beverages', label: 'Beverages' },
+            { value: 'apparel', label: 'Apparel' },
+            { value: 'merchandise', label: 'Merchandise' },
+          ]),
+          product.expiration_date
+            ? new Date(product.expiration_date).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
               })
-            : main.encodeDate(new Date(), 'long')),
-      ];
-      rows.push({ _id: String(product.product_id), columnsData });
-    });
-
-    const prevRows = getTabCache(3) || tabCacheMem[3];
-    const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
-    if (changed) {
-      main.deleteAllAtSectionOne(SECTION_NAME, 3);
-      rows.forEach((entry) => {
-        const existing = document
-          .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
-          ?.parentElement?.parentElement?.querySelector(`[data-id=\"${entry._id}\"]`);
-        if (existing) return;
-        main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, (createResult) => {
-          createResult.dataset.id = entry._id;
-          setupRowEditing(createResult, 'supplement', {});
-        });
+            : 'No expiration',
+          'custom_date_' +
+            (product.created_at
+              ? new Date(product.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : main.encodeDate(new Date(), 'long')),
+        ];
+        rows.push({ _id: String(product.product_id), columnsData });
       });
-      tabCacheMem[3] = rows;
-      setTabCache(3, rows);
-    }
+
+      const prevRows = getTabCache(3) || tabCacheMem[3];
+      const changed = !prevRows || dataSignature(prevRows) !== dataSignature(rows);
+      if (changed) {
+        main.deleteAllAtSectionOne(SECTION_NAME, 3, () => {
+          rows.forEach((entry) => {
+            const existing = document
+              .querySelector(`#${SECTION_NAME}SectionOneListEmpty3`)
+              ?.parentElement?.parentElement?.querySelector(`[data-id=\"${entry._id}\"]`);
+            if (existing) return;
+            main.createAtSectionOne(SECTION_NAME, entry.columnsData, 3, (createResult) => {
+              createResult.dataset.id = entry._id;
+              setupRowEditing(createResult, 'supplement', {});
+            });
+          });
+          tabCacheMem[3] = rows;
+          setTabCache(3, rows);
+        });
+      }
+    });
   } catch (error) {
     console.error('Error loading supplements:', error);
     main.toast('Error loading supplements', 'error');
@@ -599,62 +811,62 @@ async function loadReservations() {
 
           tableData.reservations = normalized;
 
-          main.deleteAllAtSectionOne(SECTION_NAME, 4);
-
-          tableData.reservations.forEach((reservation) => {
-            const resTypeRaw = reservation.reservationType || reservation.serviceType || 'gym';
-            const dateStr = reservation.date || reservation.reservationDate || '';
-            const startTime = reservation.startTime || '';
-            const endTime = reservation.endTime || '';
-            const amount = reservation.amount != null ? reservation.amount : reservation.price || 0;
-            const customerNameEncoded = reservation.customerName || '';
-            let displayName = 'Unknown';
-            try {
-              const { fullName } = main.decodeName(customerNameEncoded);
-              displayName = fullName || 'Unknown';
-            } catch (_) {
-              displayName = customerNameEncoded || 'Unknown';
-            }
-
-            // Normalize reservation type to human-readable label
-            let reservationTypeText = 'Unknown';
-            try {
-              if (typeof resTypeRaw === 'number') {
-                const typeLabels = ['Basketball', 'Zumba'];
-                reservationTypeText = typeLabels[resTypeRaw] || String(resTypeRaw);
-              } else if (typeof resTypeRaw === 'string') {
-                reservationTypeText = main.fixText(resTypeRaw);
-              } else {
-                reservationTypeText = 'Basketball';
+          main.deleteAllAtSectionOne(SECTION_NAME, 4, () => {
+            tableData.reservations.forEach((reservation) => {
+              const resTypeRaw = reservation.reservationType || reservation.serviceType || 'gym';
+              const dateStr = reservation.date || reservation.reservationDate || '';
+              const startTime = reservation.startTime || '';
+              const endTime = reservation.endTime || '';
+              const amount = reservation.amount != null ? reservation.amount : reservation.price || 0;
+              const customerNameEncoded = reservation.customerName || '';
+              let displayName = 'Unknown';
+              try {
+                const { fullName } = main.decodeName(customerNameEncoded);
+                displayName = fullName || 'Unknown';
+              } catch (_) {
+                displayName = customerNameEncoded || 'Unknown';
               }
-            } catch (_) {
-              reservationTypeText = String(resTypeRaw || 'Basketball');
-            }
 
-            const columnsData = [
-              'id_' + reservation.id,
-              reservationTypeText,
-              displayName,
-              startTime ? main.decodeTime(startTime) : 'N/A',
-              endTime ? main.decodeTime(endTime) : 'N/A',
-              dateStr ? main.decodeDate(dateStr) : main.decodeDate(new Date()),
-              main.encodePrice(amount),
-            ];
+              // Normalize reservation type to human-readable label
+              let reservationTypeText = 'Unknown';
+              try {
+                if (typeof resTypeRaw === 'number') {
+                  const typeLabels = ['Basketball', 'Zumba'];
+                  reservationTypeText = typeLabels[resTypeRaw] || String(resTypeRaw);
+                } else if (typeof resTypeRaw === 'string') {
+                  reservationTypeText = main.fixText(resTypeRaw);
+                } else {
+                  reservationTypeText = 'Basketball';
+                }
+              } catch (_) {
+                reservationTypeText = String(resTypeRaw || 'Basketball');
+              }
 
-            const existing = document
-              .querySelector(`#${SECTION_NAME}SectionOneListEmpty4`)
-              ?.parentElement?.parentElement?.querySelector(`[data-id="${reservation.id}"]`);
-            if (existing) return;
-            main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
-              setupRowEditing(createResult, 'reservation', reservation);
+              const columnsData = [
+                'id_' + reservation.id,
+                reservationTypeText,
+                displayName,
+                startTime ? main.decodeTime(startTime) : 'N/A',
+                endTime ? main.decodeTime(endTime) : 'N/A',
+                dateStr ? main.decodeDate(dateStr) : main.decodeDate(new Date()),
+                main.encodePrice(amount),
+              ];
+
+              const existing = document
+                .querySelector(`#${SECTION_NAME}SectionOneListEmpty4`)
+                ?.parentElement?.parentElement?.querySelector(`[data-id="${reservation.id}"]`);
+              if (existing) return;
+              main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
+                setupRowEditing(createResult, 'reservation', reservation);
+              });
             });
+            if (!reservationsLoadedOnce) {
+              reservationsLoadedOnce = true;
+              try {
+                main.toast('Reservations loaded', 'success');
+              } catch (_) {}
+            }
           });
-          if (!reservationsLoadedOnce) {
-            reservationsLoadedOnce = true;
-            try {
-              main.toast('Reservations loaded', 'success');
-            } catch (_) {}
-          }
         } catch (e) {
           console.error('Reservations listener processing error:', e);
         }

@@ -3,7 +3,7 @@ import main from '../admin_main.js';
 import customers from './inquiry_customers.js';
 import payments from './payments.js';
 import accesscontrol from './maintenance_accesscontrol.js';
-import { refreshDashboardStats } from './dashboard.js';
+import { computeAndUpdateDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 
 const SECTION_NAME = 'inquiry-reservations';
@@ -109,17 +109,20 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
       title = 'Reservations';
     }
 
-    try { setTitle?.(title); } catch (_) {}
+    try {
+      setTitle?.(title);
+    } catch (_) {}
 
-    const items = rows.map((r) => {
-      const img = r.querySelector('img')?.src || '/src/images/client_logo.jpg';
-      const id = r.dataset?.id || '';
-      // cells: [0]=Reservation ID, [1]=Customer (object_cid), [2]=Type, [3]=Schedule, [4]=Status
-      const name = (r.children?.[1]?.innerText || '').trim();
-      const typeText = (r.children?.[2]?.innerText || '').trim();
-      const schedText = (r.children?.[3]?.innerText || '').trim();
-      const meta = [typeText, schedText].filter(Boolean).join(' • ');
-      return `
+    const items = rows
+      .map((r) => {
+        const img = r.querySelector('img')?.src || '/src/images/client_logo.jpg';
+        const id = r.dataset?.id || '';
+        // cells: [0]=Reservation ID, [1]=Customer (object_cid), [2]=Type, [3]=Schedule, [4]=Status
+        const name = (r.children?.[1]?.innerText || '').trim();
+        const typeText = (r.children?.[2]?.innerText || '').trim();
+        const schedText = (r.children?.[3]?.innerText || '').trim();
+        const meta = [typeText, schedText].filter(Boolean).join(' • ');
+        return `
         <div style="background:#fff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center">
           <img src="${img}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover"/>
           <div style="flex:1;min-width:0">
@@ -127,9 +130,12 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
             <div style="color:#6b7280;font-size:12px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${id}</span>${meta ? ` • ${meta}` : ''}</div>
           </div>
         </div>`;
-    }).join('');
+      })
+      .join('');
 
-    container.innerHTML = items || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No matching reservations.</div>';
+    container.innerHTML =
+      items ||
+      '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No matching reservations.</div>';
     container.dataset.filled = '1';
   } catch (_) {}
 });
@@ -775,8 +781,10 @@ async function sectionTwoMainBtnFunction() {
           return;
         }
 
-        const durationOpt = (result.spinner2 && result.spinner2[0] && DURATION_OPTIONS[result.spinner2[0].selected - 1]) || null;
-        const startOpt = (result.spinner2 && result.spinner2[1] && buildHourOptions()[result.spinner2[1].selected - 1]) || null;
+        const durationOpt =
+          (result.spinner2 && result.spinner2[0] && DURATION_OPTIONS[result.spinner2[0].selected - 1]) || null;
+        const startOpt =
+          (result.spinner2 && result.spinner2[1] && buildHourOptions()[result.spinner2[1].selected - 1]) || null;
         if (!durationOpt) {
           main.toast('Please select a valid duration.', 'error');
           return;
@@ -789,9 +797,10 @@ async function sectionTwoMainBtnFunction() {
         const startTime = startOpt.value;
         const startParts = startTime.split(':').map((n) => parseInt(n, 10));
         const endTotal = startParts[0] * 60 + startParts[1] + selectedDuration * 60;
-        const endTime = endTotal === 24 * 60
-          ? '00:00'
-          : `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
+        const endTime =
+          endTotal === 24 * 60
+            ? '00:00'
+            : `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
 
         try {
           const start = new Date(`1970-01-01T${startTime}:00`);
@@ -854,11 +863,8 @@ async function sectionTwoMainBtnFunction() {
                 )}`
               : 'the same time';
 
-            throw new Error(
-              `This time slot is already booked by ${conflictingCustomerName} (${conflictingTime}).`
-            );
+            throw new Error(`This time slot is already booked by ${conflictingCustomerName} (${conflictingTime}).`);
           }
-
         } catch (error) {
           main.toast(error.message, 'error');
           return;
@@ -962,7 +968,7 @@ function render() {
   renderHeader();
   renderCalendar();
   updateReservationStats();
-  refreshDashboardStats();
+  computeAndUpdateDashboardStats();
 }
 
 // Updates the calendar header with current month and year

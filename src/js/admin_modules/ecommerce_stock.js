@@ -33,10 +33,10 @@ export const CATEGORIES = [
   { value: 'supplements-nutrition', label: 'Supplements & Nutrition' },
   { value: 'food-meals', label: 'Food & Meals' },
   { value: 'beverages', label: 'Beverages' },
-  { value: 'fitness-equipment', label: 'Fitness Equipment' },
+  // { value: 'fitness-equipment', label: 'Fitness Equipment' },
   { value: 'apparel', label: 'Apparel' },
   { value: 'merchandise', label: 'Merchandise' },
-  { value: 'other', label: 'Other' },
+  // { value: 'other', label: 'Other' },
 ];
 
 export default { CATEGORIES };
@@ -650,20 +650,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -723,20 +715,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -796,20 +780,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -869,20 +845,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -942,20 +910,12 @@ const FILTER_CATEGORIES = [
         value: 'beverages',
       },
       {
-        label: 'Category: Fitness Equipment',
-        value: 'equipment',
-      },
-      {
         label: 'Category: Apparel',
         value: 'apparel',
       },
       {
         label: 'Category: Merchandise',
         value: 'merchandise',
-      },
-      {
-        label: 'Category: Others',
-        value: 'others',
       },
       {
         label: 'Price: Specific',
@@ -1037,6 +997,21 @@ function addDataForTab(tabNumber, newData) {
   tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
 }
 
+function updateDataById(tabNumber, newData) {
+  tabsData = tabsData.map((tab) => {
+    if (tab.tab !== tabNumber) return tab;
+
+    const exists = tab.data.some((d) => d.product_id === newData.product_id);
+
+    return {
+      ...tab,
+      data: exists
+        ? tab.data.map((d) => (d.product_id === newData.product_id ? { ...d, ...newData } : d))
+        : [...tab.data, newData],
+    };
+  });
+}
+
 async function filterDataForTab(tabNumber, selectedFilter) {
   const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
   if (!selectedFilter) {
@@ -1084,6 +1059,7 @@ async function filterDataForTab(tabNumber, selectedFilter) {
         'custom_date_today',
       ];
       main.createAtSectionOne(SECTION_NAME, columnsData, tabNumber, (createResult) => {
+        addDataForTab(tabNumber, product);
         if (product.created_at) {
           const date = main.encodeDate(product.created_at, 'long');
           createResult.dataset.date = date;
@@ -1530,6 +1506,9 @@ function setupProductDetailsButton(result) {
   if (!productDetailsBtn) return;
 
   productDetailsBtn.addEventListener('click', () => {
+    const [day, month, year] = main.encodeDate(result.dataset.custom8, 'numeric').split('-');
+    const expirationDate = `${year}-${month}-${day}`;
+
     const productData = {
       image: result.dataset.image,
       name: main.decodeText(result.dataset.text),
@@ -1538,7 +1517,7 @@ function setupProductDetailsButton(result) {
       measurement: result.dataset.custom5,
       measurementUnit: result.dataset.custom6,
       category: result.dataset.custom7,
-      expirationDate: result.dataset.custom8,
+      expirationDate,
     };
 
     const inputs = createModalInputs(true, productData);
@@ -1744,6 +1723,26 @@ async function updateProduct(result, newResult, name) {
         },
         'product_update'
       );
+
+      const newProductData = {
+        product_id: result.dataset.id,
+        product_name: newName,
+        product_name_encoded: main.encodeText(newName),
+        price: +newPrice,
+        price_encoded: main.encodePrice(newPrice),
+        quantity: +newQuantity,
+        measurement_value: newMeasurement,
+        measurement_unit: measurementUnit,
+        category: category,
+        image_url: newResult.image.src,
+        expiration_date: newExpirationDate || null,
+        created_at: result.dataset.date,
+      };
+      updateDataById(1, newProductData);
+      updateDataById(2, newProductData);
+      updateDataById(3, newProductData);
+      updateDataById(4, newProductData);
+      updateDataById(5, newProductData);
 
       main.toast('Successfully updated product details!', 'info');
       main.closeConfirmationModal();

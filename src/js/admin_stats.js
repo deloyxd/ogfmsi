@@ -230,7 +230,27 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
   async function renderPaymentsBreakdown(list, filterFn, title, explain) {
     const rows = list.filter(filterFn);
-    const total = rows.reduce((s, p) => s + (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0), 0);
+    const total = rows.reduce((s, p) => {
+      let displayAmount =
+        s +
+        (Number(p.payment_amount_paid_cash) || 0) +
+        (Number(p.payment_amount_paid_cashless) || 0) -
+        (Number(p.payment_amount_change) || 0);
+      if (title === "Today's Cash Sales" || title === "Today's Cashless Sales") {
+        if (p.payment_method === 'cash') {
+          displayAmount = s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0);
+        } else if (p.payment_method === 'cashless') {
+          displayAmount = s + (Number(p.payment_amount_paid_cashless) || 0);
+        } else if (p.payment_method === 'hybrid') {
+          if (title === "Today's Cash Sales") {
+            displayAmount = s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0);
+          } else if (title === "Today's Cashless Sales") {
+            displayAmount = s + (Number(p.payment_amount_paid_cashless) || 0);
+          }
+        }
+      }
+      return displayAmount;
+    }, 0);
     const htmlRows = rows
       .map((p) => {
         const date = (p.created_at && new Date(p.created_at)) || null;
@@ -239,17 +259,32 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
           : '';
         const cash = Number(p.payment_amount_paid_cash) || 0;
         const cashless = Number(p.payment_amount_paid_cashless) || 0;
+        const change = Number(p.payment_amount_change) || 0;
+        let displayAmount = fmt(cash + cashless - change);
+        if (title === "Today's Cash Sales" || title === "Today's Cashless Sales") {
+          if (p.payment_method === 'cash') {
+            displayAmount = fmt(cash - change);
+          } else if (p.payment_method === 'cashless') {
+            displayAmount = fmt(cashless);
+          } else if (p.payment_method === 'hybrid') {
+            if (title === "Today's Cash Sales") {
+              displayAmount = fmt(cash - change) + ' (Hybrid)';
+            } else if (title === "Today's Cashless Sales") {
+              displayAmount = fmt(cashless) + ' (Hybrid)';
+            }
+          }
+        }
         return `
-          <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:4px;line-height:1.4">${(p.payment_purpose || '').trim()}</div>
-                <div style="color:#6b7280;font-size:13px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px;font-size:12px">${p.payment_id || ''}</span></div>
-              </div>
-              <div style="font-weight:800;color:#10b981;font-size:17px;white-space:nowrap">${fmt(cash + cashless)}</div>
+        <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:4px;line-height:1.4">${(p.payment_purpose || '').trim()}</div>
+              <div style="color:#6b7280;font-size:13px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px;font-size:12px">${p.payment_id || ''}</span></div>
             </div>
-            ${dateText ? `<div style="color:#9ca3af;font-size:12px;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">🕐 ${dateText}</div>` : ''}
-          </div>`;
+            <div style="font-weight:800;color:#10b981;font-size:17px;white-space:nowrap">${displayAmount}</div>
+          </div>
+          ${dateText ? `<div style="color:#9ca3af;font-size:12px;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">🕐 ${dateText}</div>` : ''}
+        </div>`;
       })
       .join('');
     container.innerHTML = `
@@ -268,9 +303,13 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     if (String(section || '').toLowerCase() !== 'dashboard') return false;
     if (t.includes('overall total sales')) {
       const payments = await getPayments('/payment/complete');
+      const isComplete = (p) => {
+        const s = (p.payment_type || '').toLowerCase();
+        return s.includes('service') || s.includes('sales');
+      };
       await renderPaymentsBreakdown(
         payments,
-        () => true,
+        isComplete,
         'Overall Total Sales',
         'Sum of all completed payments: amount_paid_cash + amount_paid_cashless per transaction.'
       );
@@ -280,7 +319,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const payments = await getPayments('/payment/complete');
       const isGym = (p) => {
         const s = (p.payment_purpose || '').toLowerCase();
-        return s.includes('monthly') || s.includes('membership') || s.includes('gym') || s.includes('pass') || s.includes('subscription');
+        const s2 = (p.payment_type || '').toLowerCase();
+        return !s.includes('reservation') && s2.includes('service');
       };
       await renderPaymentsBreakdown(
         payments,
@@ -294,7 +334,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const payments = await getPayments('/payment/complete');
       const isRes = (p) => {
         const s = (p.payment_purpose || '').toLowerCase();
-        return s.includes('reservation') || s.includes('booking') || s.includes('facility') || s.includes('class') || s.includes('session');
+        const s2 = (p.payment_type || '').toLowerCase();
+        return s.includes('reservation') && s2.includes('service');
       };
       await renderPaymentsBreakdown(
         payments,
@@ -306,11 +347,15 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     }
     if (t.includes('product') && t.includes('sales')) {
       const payments = await getPayments('/payment/sales');
+      const isProd = (p) => {
+        const s = (p.payment_type || '').toLowerCase();
+        return s.includes('sales');
+      };
       await renderPaymentsBreakdown(
         payments,
-        () => true,
+        isProd,
         'Product Sales',
-        'Sales Transactions Log. Total = cash + cashless per transaction.'
+        'Product Sales Transactions Log. Total = cash + cashless per transaction.'
       );
       return true;
     }
@@ -349,9 +394,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
           const daysLeft = endDate ? Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))) : null;
           const rate = m.customer_rate ? String(m.customer_rate).toUpperCase() : '';
           const fmtDate = (d) =>
-            d
-              ? d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-              : '';
+            d ? d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
           return `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;align-items:flex-start;gap:12px">
@@ -362,12 +405,16 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
                   <span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-weight:700;font-size:11px;padding:2px 6px;border-radius:999px">Active</span>
                 </div>
                 <div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:2px">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${m.customer_id || ''}</span>${rate ? ` • ${rate}` : ''}</div>
-                ${(contact || email)
-                  ? `<div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:4px">${contact ? `📞 ${contact}` : ''}${contact && email ? ' • ' : ''}${email ? `✉️ ${email}` : ''}</div>`
-                  : ''}
-                ${(startDate || endDate)
-                  ? `<div style="color:#374151;font-size:12px;line-height:1.6;margin-top:6px">${fmtDate(startDate)} – ${fmtDate(endDate)}${daysLeft !== null ? ` • ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ''}</div>`
-                  : ''}
+                ${
+                  contact || email
+                    ? `<div style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:4px">${contact ? `📞 ${contact}` : ''}${contact && email ? ' • ' : ''}${email ? `✉️ ${email}` : ''}</div>`
+                    : ''
+                }
+                ${
+                  startDate || endDate
+                    ? `<div style="color:#374151;font-size:12px;line-height:1.6;margin-top:6px">${fmtDate(startDate)} – ${fmtDate(endDate)}${daysLeft !== null ? ` • ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ''}</div>`
+                    : ''
+                }
               </div>
             </div>
           </div>`;
@@ -393,8 +440,12 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         const now = new Date();
         const parseDate = (mmddyyyy, time) => {
           if (!mmddyyyy) return null;
-          const [m, d, y] = String(mmddyyyy).split('-').map((n) => parseInt(n, 10));
-          const [hh, mm] = String(time || '00:00').split(':').map((n) => parseInt(n, 10));
+          const [m, d, y] = String(mmddyyyy)
+            .split('-')
+            .map((n) => parseInt(n, 10));
+          const [hh, mm] = String(time || '00:00')
+            .split(':')
+            .map((n) => parseInt(n, 10));
           const dt = new Date(y || 1970, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
           return isNaN(dt) ? null : dt;
         };
@@ -419,9 +470,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
               ? `${start.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })} · ${start.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true })} – ${end ? end.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true }) : ''}`
               : '';
             const amount = Number(r.amount) || 0;
-            const typeLabel = typeof r.reservationType === 'number'
-              ? ['Basketball', 'Zumba'][r.reservationType] || String(r.reservationType)
-              : String(r.reservationType || '').trim();
+            const typeLabel =
+              typeof r.reservationType === 'number'
+                ? ['Basketball', 'Zumba'][r.reservationType] || String(r.reservationType)
+                : String(r.reservationType || '').trim();
             return `
               <div style="background:#ffffff;border:1px solid #e5e7eb;padding:16px;border-radius:12px;margin-bottom:12px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
@@ -463,7 +515,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
   async function handlePayments() {
     if (t.includes('avg') && t.includes('overall') && t.includes('total')) {
       const list = await getPayments('/payment/complete');
-      const sumAmt = (p) => (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+      const sumAmt = (p) =>
+        (Number(p.payment_amount_paid_cash) || 0) +
+        (Number(p.payment_amount_paid_cashless) || 0) -
+        (Number(p.payment_amount_change) || 0);
       const todaysCash = list
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
@@ -471,7 +526,9 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
         .reduce((s, p) => s + sumAmt(p), 0);
       const total = todaysCash + todaysCashless;
-      try { setTitle('Avg Overall Total'); } catch (e) {}
+      try {
+        setTitle('Avg Overall Total');
+      } catch (e) {}
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
           <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
@@ -482,17 +539,28 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       container.dataset.filled = '1';
       return true;
     }
-    if (t.includes("overall total sales")) {
+    if (t.includes('overall total sales')) {
       const list = await getPayments('/payment/complete');
-      const sumAmt = (p) => (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
       const todaysCash = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
+        .filter(
+          (p) =>
+            (String(p.payment_method || '').toLowerCase() === 'cash' ||
+              String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+            isTodayLocal(p.created_at)
+        )
+        .reduce((s, p) => s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0), 0);
       const todaysCashless = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
+        .filter(
+          (p) =>
+            (String(p.payment_method || '').toLowerCase() === 'cashless' ||
+              String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+            isTodayLocal(p.created_at)
+        )
+        .reduce((s, p) => s + (Number(p.payment_amount_paid_cashless) || 0), 0);
       const total = todaysCash + todaysCashless;
-      try { setTitle('Avg Overall Total'); } catch (e) {}
+      try {
+        setTitle('Avg Overall Total');
+      } catch (e) {}
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
           <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
@@ -507,7 +575,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const list = await getPayments('/payment/complete');
       await renderPaymentsBreakdown(
         list,
-        (p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at),
+        (p) =>
+          (String(p.payment_method || '').toLowerCase() === 'cash' ||
+            String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+          isTodayLocal(p.created_at),
         "Today's Cash Sales",
         'Filter: payment_method = cash AND created_at is today.'
       );
@@ -517,7 +588,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       const list = await getPayments('/payment/complete');
       await renderPaymentsBreakdown(
         list,
-        (p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at),
+        (p) =>
+          (String(p.payment_method || '').toLowerCase() === 'cashless' ||
+            String(p.payment_method || '').toLowerCase() === 'hybrid') &&
+          isTodayLocal(p.created_at),
         "Today's Cashless Sales",
         'Filter: payment_method = cashless AND created_at is today.'
       );
@@ -525,111 +599,183 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     }
     if (t.includes('average daily sales')) {
       const list = await getPayments('/payment/complete');
-      // Exclude canceled payments and limit to last 30 days to match Payments metrics
-      const nowLocal = new Date();
-      const startWindow = new Date(nowLocal);
-      startWindow.setDate(startWindow.getDate() - 29); // inclusive 30-day window including today
-      const toLocalDateStr = (d) => new Date(d).toLocaleDateString('en-CA'); // YYYY-MM-DD
-      const startKey = toLocalDateStr(startWindow);
 
+      // Filter only sales and service payments (matching backend logic)
       const filtered = list.filter((p) => {
-        if (String(p.payment_type || '').toLowerCase() === 'canceled') return false;
-        const key = String(p.created_at || '').slice(0, 10);
-        return key >= startKey; // only last 30 days
+        const type = String(p.payment_type || '').toLowerCase();
+        return type === 'sales' || type === 'service';
       });
 
+      // Calculate total income (matching backend logic)
+      const totalIncome = filtered.reduce((sum, p) => {
+        return sum + (Number(p.payment_amount_to_pay) || 0);
+      }, 0);
+
+      // Count distinct days (matching backend logic)
+      const distinctDays = new Set();
+      filtered.forEach((p) => {
+        const day = String(p.created_at || '').slice(0, 10);
+        if (day) distinctDays.add(day);
+      });
+
+      const totalDays = Math.max(distinctDays.size, 1); // Avoid division by zero
+      const averageDaily = totalIncome / totalDays;
+
+      // Generate display data (optional - for showing daily breakdown)
       const byDay = new Map();
       filtered.forEach((p) => {
         const day = String(p.created_at || '').slice(0, 10);
-        const amt = (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
+        const amt = Number(p.payment_amount_to_pay) || 0;
         byDay.set(day, (byDay.get(day) || 0) + amt);
       });
+
       const entries = Array.from(byDay.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-      const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
-        .map(([day, sum]) => `
+        .map(
+          ([day, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
               <div style="color:#374151;font-weight:600;font-size:14px">${day}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
-        `)
+        `
+        )
         .join('');
+
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(139,92,246,0.2)">
           <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Average Daily Sales</div>
-          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(avg)}</div>
-          <div style="color:#ede9fe;font-size:13px;margin-top:8px">${entries.length} day${entries.length !== 1 ? 's' : ''} recorded</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(averageDaily)}</div>
+          <div style="color:#ede9fe;font-size:13px;margin-top:8px">${distinctDays.size} distinct day${distinctDays.size !== 1 ? 's' : ''}</div>
         </div>
         <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No records found.</div>'}</div>
       `;
       container.dataset.filled = '1';
       return true;
     }
+
     if (t.includes('average weekly sales')) {
       const list = await getPayments('/payment/complete');
-      function isoWeek(d) {
-        const date = new Date(Date.UTC(new Date(d).getFullYear(), new Date(d).getMonth(), new Date(d).getDate()));
-        const dayNum = date.getUTCDay() || 7;
-        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-        return `${date.getUTCFullYear()}-W${String(Math.ceil(((date - yearStart) / 86400000 + 1) / 7)).padStart(2, '0')}`;
-      }
-      const byWeek = new Map();
-      list.forEach((p) => {
-        const key = isoWeek(p.created_at || new Date());
-        const amt = (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
-        byWeek.set(key, (byWeek.get(key) || 0) + amt);
+
+      // Filter only sales and service payments
+      const filtered = list.filter((p) => {
+        const type = String(p.payment_type || '').toLowerCase();
+        return type === 'sales' || type === 'service';
       });
+
+      // Calculate total income
+      const totalIncome = filtered.reduce((sum, p) => {
+        return sum + (Number(p.payment_amount_to_pay) || 0);
+      }, 0);
+
+      // Count distinct weeks (matching backend YEARWEEK logic)
+      const distinctWeeks = new Set();
+      function getYearWeek(date) {
+        const d = new Date(date);
+        // Get Thursday of current week (to handle year boundaries correctly)
+        const thursday = new Date(d);
+        thursday.setDate(d.getDate() + (4 - (d.getDay() || 7)));
+        // Get first day of year
+        const yearStart = new Date(thursday.getFullYear(), 0, 1);
+        // Calculate week number
+        const weekNum = Math.ceil(((thursday - yearStart) / 86400000 + 1) / 7);
+        return `${thursday.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      }
+
+      filtered.forEach((p) => {
+        const week = getYearWeek(p.created_at || new Date());
+        distinctWeeks.add(week);
+      });
+
+      const totalWeeks = Math.max(distinctWeeks.size, 1);
+      const averageWeekly = totalIncome / totalWeeks;
+
+      // Generate display data
+      const byWeek = new Map();
+      filtered.forEach((p) => {
+        const week = getYearWeek(p.created_at || new Date());
+        const amt = Number(p.payment_amount_to_pay) || 0;
+        byWeek.set(week, (byWeek.get(week) || 0) + amt);
+      });
+
       const entries = Array.from(byWeek.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-      const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
-        .map(([w, sum]) => `
+        .map(
+          ([week, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
-              <div style="color:#374151;font-weight:600;font-size:14px">${w}</div>
+              <div style="color:#374151;font-weight:600;font-size:14px">${week}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
-        `)
+        `
+        )
         .join('');
+
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#ec4899,#db2777);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(236,72,153,0.2)">
           <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Average Weekly Sales</div>
-          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(avg)}</div>
-          <div style="color:#fce7f3;font-size:13px;margin-top:8px">${entries.length} week${entries.length !== 1 ? 's' : ''} recorded</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(averageWeekly)}</div>
+          <div style="color:#fce7f3;font-size:13px;margin-top:8px">${distinctWeeks.size} distinct week${distinctWeeks.size !== 1 ? 's' : ''}</div>
         </div>
         <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No records found.</div>'}</div>
       `;
       container.dataset.filled = '1';
       return true;
     }
+
     if (t.includes('average monthly sales')) {
       const list = await getPayments('/payment/complete');
-      const byMon = new Map();
-      list.forEach((p) => {
-        const key = String(p.created_at || '').slice(0, 7);
-        const amt = (Number(p.payment_amount_paid_cash) || 0) + (Number(p.payment_amount_paid_cashless) || 0);
-        byMon.set(key, (byMon.get(key) || 0) + amt);
+
+      // Filter only sales and service payments
+      const filtered = list.filter((p) => {
+        const type = String(p.payment_type || '').toLowerCase();
+        return type === 'sales' || type === 'service';
       });
+
+      // Calculate total income
+      const totalIncome = filtered.reduce((sum, p) => {
+        return sum + (Number(p.payment_amount_to_pay) || 0);
+      }, 0);
+
+      // Count distinct months
+      const distinctMonths = new Set();
+      filtered.forEach((p) => {
+        const month = String(p.created_at || '').slice(0, 7); // YYYY-MM
+        if (month) distinctMonths.add(month);
+      });
+
+      const totalMonths = Math.max(distinctMonths.size, 1);
+      const averageMonthly = totalIncome / totalMonths;
+
+      // Generate display data
+      const byMon = new Map();
+      filtered.forEach((p) => {
+        const month = String(p.created_at || '').slice(0, 7);
+        const amt = Number(p.payment_amount_to_pay) || 0;
+        byMon.set(month, (byMon.get(month) || 0) + amt);
+      });
+
       const entries = Array.from(byMon.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-      const avg = entries.length ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
       const html = entries
-        .map(([m, sum]) => `
+        .map(
+          ([month, sum]) => `
           <div style="background:#ffffff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:10px;transition:all 0.2s ease;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.borderColor='#d1d5db'" onmouseleave="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';this.style.borderColor='#e5e7eb'">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
-              <div style="color:#374151;font-weight:600;font-size:14px">${m}</div>
+              <div style="color:#374151;font-weight:600;font-size:14px">${month}</div>
               <div style="font-weight:800;color:#10b981;font-size:16px">${fmt(sum)}</div>
             </div>
           </div>
-        `)
+        `
+        )
         .join('');
+
       container.innerHTML = `
         <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 4px 12px rgba(245,158,11,0.2)">
           <div style="font-weight:800;color:#ffffff;margin-bottom:6px;font-size:16px;letter-spacing:-0.01em">Average Monthly Sales</div>
-          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(avg)}</div>
-          <div style="color:#fef3c7;font-size:13px;margin-top:8px">${entries.length} month${entries.length !== 1 ? 's' : ''} recorded</div>
+          <div style="font-weight:800;color:#ffffff;font-size:28px;letter-spacing:-0.02em">${fmt(averageMonthly)}</div>
+          <div style="color:#fef3c7;font-size:13px;margin-top:8px">${distinctMonths.size} distinct month${distinctMonths.size !== 1 ? 's' : ''}</div>
         </div>
         <div>${html || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No records found.</div>'}</div>
       `;

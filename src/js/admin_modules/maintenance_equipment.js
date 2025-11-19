@@ -753,8 +753,8 @@ async function filterDataForTab(tabNumber, selectedFilter) {
             } else {
               const dateCell = createResult.children[2];
               const timeCell = createResult.children[3];
-              if (dateCell) dateCell.textContent = disposedDateDisp;
-              if (timeCell) timeCell.textContent = disposedTimeDisp;
+              if (dateCell) dateCell.textContent = columnsData[2];
+              if (timeCell) timeCell.textContent = columnsData[3];
               setupDisposedItemButtons(createResult, equipment);
             }
             break;
@@ -1696,6 +1696,7 @@ async function registerNewProduct(image, name, quantity, category) {
           notes: '',
           created_at: new Date().toISOString(),
         };
+        addDataForTab(1, equipmentData);
 
         frontendResult.dataset.equipmentId = result.result.equipment_id;
 

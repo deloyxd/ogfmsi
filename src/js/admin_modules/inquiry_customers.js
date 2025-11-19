@@ -2,17 +2,37 @@ import main from '../admin_main.js';
 import checkins from './inquiry_checkins.js';
 import reservations from './inquiry_reservations.js';
 import payments from './payments.js';
-import { refreshDashboardStats } from './dashboard.js';
+import { computeAndUpdateDashboardStats } from './dashboard.js';
 import { API_BASE_URL } from '../_global.js';
 import * as pagination from '../admin_pagination.js';
 import {
   getAuth,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 import { app } from '../firebase.js';
 const auth = getAuth(app);
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    if (user.emailVerified) {
+      try {
+        await fetch(`${API_BASE_URL}/inquiry/activate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_contact: user.email,
+          }),
+        });
+      } catch (_) {}
+    }
+  }
+});
 
 const SECTION_NAME = 'inquiry-customers';
 
@@ -212,6 +232,21 @@ function addDataForTab(tabNumber, newData) {
   tabsData = tabsData.map((t) => (t.tab === tabNumber ? { ...t, data: [...t.data, newData] } : t));
 }
 
+function updateDataById(tabNumber, newData) {
+  tabsData = tabsData.map((tab) => {
+    if (tab.tab !== tabNumber) return tab;
+
+    const exists = tab.data.some((d) => d.customer_id === newData.customer_id);
+
+    return {
+      ...tab,
+      data: exists
+        ? tab.data.map((d) => (d.customer_id === newData.customer_id ? { ...d, ...newData } : d))
+        : [...tab.data, newData],
+    };
+  });
+}
+
 async function filterDataForTab(tabNumber, selectedFilter) {
   const unfilteredTab = tabsData.find((t) => t.tab === tabNumber);
   if (!selectedFilter) {
@@ -271,7 +306,7 @@ async function filterDataForTab(tabNumber, selectedFilter) {
                 },
                 main.encodeDate(customer.customer_start_date, 'long'),
                 main.encodeDate(customer.customer_end_date, 'long'),
-                daysLeft + ' days',
+                daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : daysLeft + ' days',
                 main.formatPrice(
                   customer.customer_months * PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
                 ),
@@ -890,7 +925,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                 findResult.dataset.tid = customer.customer_tid;
               } else {
                 // Check if monthly subscription has expired
-                if (daysLeft <= 0) {
+                if (daysLeft < 0) {
                   // Move to Past Monthly Customers tab (tab 3)
                   findResult.dataset.custom2 = 'Daily';
                   findResult.children[2].innerText = findResult.dataset.custom2;
@@ -926,6 +961,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                     ],
                     3,
                     (createResult) => {
+                      addDataForTab(3, customer);
                       const customerDetailsBtn = createResult.querySelector(`#customerDetailsBtn`);
                       customerDetailsBtn.addEventListener('click', () =>
                         customerDetailsBtnFunction(createResult.dataset.id, 'Past Monthly Details', '📅')
@@ -977,7 +1013,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
                         customer.customer_end_date,
                         main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
                       ),
-                      daysLeft + ' days',
+                      daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : daysLeft + ' days',
                       main.formatPrice(
                         customer.customer_months *
                           PRICES_AUTOFILL[findResult.dataset.custom3.toLowerCase() + '_monthly']
@@ -1660,6 +1696,7 @@ async function mainBtnFunction(
               goBackCallback,
               null,
               true,
+              true,
               !isMonthlyCustomerAlready
             );
           } else {
@@ -1669,6 +1706,7 @@ async function mainBtnFunction(
                 columnsData,
                 goBackCallback,
                 null,
+                true,
                 true,
                 !isMonthlyCustomerAlready
               );
@@ -1712,6 +1750,13 @@ async function mainBtnFunction(
                 'custom_datetime_today',
               ];
               main.createAtSectionOne(SECTION_NAME, columnsData, 4, (createResult) => {
+                addDataForTab(4, {
+                  customer_id: customer.id,
+                  customer_image_url: customer.image,
+                  customer_first_name: customer.firstName,
+                  customer_last_name: customer.lastName,
+                  customer_contact: customer.contact,
+                });
                 main.createNotifDot(SECTION_NAME, 4);
                 main.deleteAtSectionOne(SECTION_NAME, 1, customer.id);
                 seenCustomerIds.delete(customer.id);
@@ -1753,6 +1798,7 @@ function checkIfSameData(newData, oldData) {
   );
 }
 
+const DEFAULT_PASSWORD_MESSAGE = `Placing an email for customer sets up an online account:<br><br>Customer:<br>Email:<br>Default Password:<br><br>Where default password is the customer's last name + "FITWORXGYM" in all uppercase without spaces.`;
 const STUDENT_VERIFICATION_MESSAGE = `Verification of student discount rate via:<br><br>${getEmoji('📌')} Student ID's picture matches the customer's face<br>${getEmoji('📌')} Student ID's school name is legitimate<br>${getEmoji('📌')} Student ID's validity duration still not expired yet`;
 
 function validateCustomer(
@@ -1760,14 +1806,47 @@ function validateCustomer(
   columnsData,
   goBackCallback,
   renewalData = null,
+  noteForDefaultPassword = true,
   checkPriceRate = true,
   checkCustomerType = true
 ) {
+  const emailValue = columnsData[1].data[2];
+  if (noteForDefaultPassword) {
+    if (emailValue !== '') {
+      const { firstName, lastName, fullName } = main.decodeName(columnsData[1].data[1]);
+      const passwordValue = lastName.toUpperCase() + 'FITWORXGYM';
+      const updatedMessage = DEFAULT_PASSWORD_MESSAGE.replace('Customer:', '<b class="text-lg">' + fullName + '</b>')
+        .replace('Email:', 'Email: ' + emailValue)
+        .replace('Password:', 'Password: ' + passwordValue);
+      main.openConfirmationModal(updatedMessage, () => {
+        validateCustomer(
+          customerId,
+          columnsData,
+          goBackCallback,
+          renewalData,
+          false,
+          checkPriceRate,
+          checkCustomerType
+        );
+        main.closeConfirmationModal();
+      });
+      return;
+    }
+  }
+
   const priceRate = columnsData[3].toLowerCase();
   if (checkPriceRate) {
     if (priceRate.toLowerCase().includes('student')) {
       main.openConfirmationModal(STUDENT_VERIFICATION_MESSAGE, () => {
-        validateCustomer(customerId, columnsData, goBackCallback, renewalData, false, checkCustomerType);
+        validateCustomer(
+          customerId,
+          columnsData,
+          goBackCallback,
+          renewalData,
+          noteForDefaultPassword,
+          false,
+          checkCustomerType
+        );
         main.closeConfirmationModal();
       });
       return;
@@ -1989,7 +2068,7 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
           customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
         );
         updateCustomerStats();
-        refreshDashboardStats();
+        computeAndUpdateDashboardStats();
 
         const [customer_id, customer_image_url, customer_contact, customerType, customerPriceRate] = [
           createResult.dataset.id,
@@ -1999,6 +2078,18 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
           createResult.dataset.custom3,
         ];
         const { firstName, lastName } = main.decodeName(createResult.dataset.text);
+        addDataForTab(1, {
+          customer_id: customer_id,
+          customer_image_url: customer_image_url,
+          customer_first_name: firstName,
+          customer_last_name: lastName,
+          customer_contact: customer_contact,
+          customer_type: customerType,
+          customer_tid: '',
+          customer_pending: 0,
+          customer_rate: customerPriceRate,
+          created_at: main.encodeDate(new Date(), 'long'),
+        });
 
         try {
           const response = await fetch(`${API_BASE_URL}/inquiry/customers`, {
@@ -2029,13 +2120,15 @@ function registerNewCustomer(customerId, columnsData, isMonthlyCustomer, amount,
         }
 
         if (customer_contact !== '') {
-          await createUserWithEmailAndPassword(auth, customer_contact, lastName.toUpperCase() + 'FITWORXGYM');
-          if (customer_contact.includes('gmail')) {
-            main.toast(`An online account for ${customer_contact} can now be used to sign in using Google.`, 'success');
-          } else {
-            await sendPasswordResetEmail(auth, customer_contact);
-            main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
-          }
+          main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            customer_contact,
+            lastName.toUpperCase() + 'FITWORXGYM'
+          );
+          const user = userCredential.user;
+          await sendEmailVerification(user);
+          await sendPasswordResetEmail(auth, customer_contact);
         }
       });
     } else {
@@ -2097,7 +2190,7 @@ async function updateCustomer(newData, oldData, tabIndex) {
     console.error('Error updating customer:', error);
   }
   updateCustomerStats();
-  refreshDashboardStats();
+  computeAndUpdateDashboardStats();
   try {
     if (oldData.dataset.contact !== '') {
       const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
@@ -2110,14 +2203,14 @@ async function updateCustomer(newData, oldData, tabIndex) {
       }
       main.toast(`Previous online account (${oldData.dataset.contact}) has been deactivated.`, 'warning');
     }
-    if (newData[1].data[2] !== '') {
-      await createUserWithEmailAndPassword(auth, newData[1].data[2], lastName.toUpperCase() + 'FITWORXGYM');
-      if (newData[1].data[2].includes('gmail')) {
-        main.toast(`An online account for ${newData[1].data[2]} can now be used to sign in using Google.`, 'success');
-      } else {
-        await sendPasswordResetEmail(auth, newData[1].data[2]);
-        main.toast(`An email has sent to ${newData[1].data[2]} to set up their online account.`, 'success');
-      }
+    if (tabIndex === 1 && newData[1].data[2] !== '') {
+      const customer_contact = newData[1].data[2];
+      const defaultPassword = lastName.toUpperCase() + 'FITWORXGYM';
+      main.toast(`An email has sent to ${customer_contact} to set up their online account.`, 'success');
+      const userCredential = await createUserWithEmailAndPassword(auth, customer_contact, defaultPassword);
+      const user = userCredential.user;
+      await sendEmailVerification(user);
+      await sendPasswordResetEmail(auth, customer_contact);
     }
   } catch (error) {
     console.error('Error online account:', error);
@@ -2135,6 +2228,20 @@ async function updateCustomer(newData, oldData, tabIndex) {
       oldData.dataset.custom3 = newData[3];
       oldData.children[2].innerHTML = newData[2];
       oldData.children[3].innerHTML = newData[3];
+
+      const newCustomerData = {
+        customer_id: oldData.dataset.id,
+        customer_image_url: newData[1].data[0],
+        customer_first_name: firstName,
+        customer_last_name: lastName,
+        customer_contact: newData[1].data[2],
+        customer_type: newData[2],
+        customer_tid: '',
+        customer_pending: 0,
+        customer_rate: newData[3],
+        created_at: main.encodeDate(oldData.children[4].innerText, 'long'),
+      };
+      updateDataById(1, newCustomerData);
       break;
     case 2:
       break;
@@ -2317,10 +2424,11 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
                     continueCustomerProcessBtnFunction,
                     selectedProcess.includes('renew')
                       ? {
-                        startDate: customer.dataset.startDate,
-                        endDate: customer.dataset.endDate,
-                      }
+                          startDate: customer.dataset.startDate,
+                          endDate: customer.dataset.endDate,
+                        }
                       : null,
+                    true,
                     true,
                     true
                   );
@@ -2403,10 +2511,11 @@ function customerProcessBtnFunction(customer, { firstName, lastName, fullName })
               continueCustomerProcessBtnFunction,
               selectedProcess.includes('renew')
                 ? {
-                  startDate: customer.dataset.startDate,
-                  endDate: customer.dataset.endDate,
-                }
+                    startDate: customer.dataset.startDate,
+                    endDate: customer.dataset.endDate,
+                  }
                 : null,
+              true,
               true,
               true
             );
@@ -2541,6 +2650,15 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
           ];
 
           main.createAtSectionOne(SECTION_NAME, columnsData, 2, async (createResult) => {
+            addDataForTab(2, {
+              customer_id: findResult1.dataset.id,
+              customer_start_date: startDisplay,
+              customer_end_date: endDisplay,
+              customer_months: Math.round(daysVal / 30),
+              customer_tid: '',
+              customer_pending: 0,
+              created_at: main.encodeDate(new Date(), 'long'),
+            });
             main.createNotifDot(SECTION_NAME, 2);
 
             const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
@@ -2595,7 +2713,7 @@ export function completeCheckinPayment(transactionId, amountPaid, priceRate) {
               console.error('Error updating customer:', error);
             }
             updateCustomerStats();
-            refreshDashboardStats();
+            computeAndUpdateDashboardStats();
           });
         })();
 
@@ -2693,6 +2811,19 @@ export function customerDetailsBtnFunction(customerId, title, emoji) {
             ];
 
             main.createAtSectionOne(SECTION_NAME, columnsData, 1, (createResult) => {
+              const { firstName, lastName } = main.decodeName(customer.dataset.text);
+              addDataForTab(1, {
+                customer_id: customerId,
+                customer_image_url: customer.dataset.image,
+                customer_first_name: firstName,
+                customer_last_name: lastName,
+                customer_contact: customer.dataset.contact,
+                customer_type: uiCustomerType,
+                customer_tid: '',
+                customer_pending: 0,
+                customer_rate: uiRate,
+                created_at: main.encodeDate(new Date(), 'long'),
+              });
               seenCustomerIds.add(customerId);
               const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
               customerProcessBtn.addEventListener('click', () =>

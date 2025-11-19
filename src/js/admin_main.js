@@ -1128,10 +1128,7 @@ export function openConfirmationModal(action, callback) {
 
   const data = {
     title: `Are you sure? ${getEmoji('🔍', 26)}`,
-    subtitle:
-      'Please double check or review any details you may have provided<br>before proceeding with the action stated below:<br><br><b>' +
-      action.trim() +
-      '</b>',
+    subtitle: '<b>' + action.trim() + '</b>',
     button: {
       main: `Confirm ${getEmoji('🔍')}`,
       sub: 'Cancel',

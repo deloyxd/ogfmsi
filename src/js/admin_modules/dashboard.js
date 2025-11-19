@@ -91,18 +91,132 @@ document.addEventListener('ogfmsiAdminMainLoaded', function () {
 
 document.addEventListener('newTab', function () {
   if (main.sharedState.sectionName != 'dashboard') return;
+  const searchContainer = document.getElementById(`dashboardSectionOneSearch`)?.parentElement;
+  const filterSelect = document.getElementById(`dashboardCategoryFilter`);
+
   if (main.sharedState.activeTab == 2) {
-    document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.remove('hidden');
+    if (searchContainer) searchContainer.classList.remove('hidden');
+    if (filterSelect) filterSelect.classList.remove('hidden');
+    setupDashboardFilter(2);
     loadUpcomingRenewals();
   } else {
-    document.getElementById(`dashboardSectionOneSearch`).parentElement.classList.add('hidden');
+    if (searchContainer) searchContainer.classList.add('hidden');
+    if (filterSelect) filterSelect.classList.add('hidden');
     if (main.sharedState.activeTab == 1) {
       loadMonthlyGrowthData();
     }
   }
   // Refresh dashboard stats when switching tabs
-  refreshDashboardStats();
+  computeAndUpdateDashboardStats();
 });
+
+const DASHBOARD_FILTER_CATEGORIES = [
+  {
+    tab: 2,
+    filter: [
+      {
+        label: 'Ends today',
+        value: 'today',
+      },
+      {
+        label: 'Ends tomorrow',
+        value: 'tomorrow',
+      },
+      {
+        label: '0-3 days left',
+        value: '0-3',
+      },
+      {
+        label: '4-7 days left',
+        value: '4-7',
+      },
+      {
+        label: '8-14 days left',
+        value: '8-14',
+      },
+    ],
+  },
+];
+
+function setupDashboardFilter(tabNumber = 2) {
+  const searchInput = document.getElementById(`dashboardSectionOneSearch`);
+  if (!searchInput) return;
+
+  const existingSelect = document.getElementById(`dashboardCategoryFilter`);
+  const select = existingSelect ? existingSelect : document.createElement('select');
+
+  if (!existingSelect) {
+    select.id = `dashboardCategoryFilter`;
+    select.className =
+      'rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ml-2';
+
+    select.addEventListener('change', (e) => {
+      const value = e.target.value || 'all';
+      applyUpcomingRenewalsFilter(value);
+    });
+
+    if (searchInput.parentElement) {
+      if (searchInput.nextSibling) searchInput.parentElement.insertBefore(select, searchInput.nextSibling);
+      else searchInput.parentElement.appendChild(select);
+    }
+  }
+
+  select.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'All';
+  select.appendChild(optAll);
+
+  const tabFilter = DASHBOARD_FILTER_CATEGORIES.find((t) => t.tab === tabNumber);
+  if (!tabFilter) return;
+
+  tabFilter.filter.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.value;
+    opt.textContent = f.label;
+    select.appendChild(opt);
+  });
+}
+
+function applyUpcomingRenewalsFilter(filterValue) {
+  const tabContainer = document.querySelector('[data-sectionindex="1"][data-tabindex="2"]');
+  if (!tabContainer) return;
+
+  const rows = tabContainer.querySelectorAll('.dynamic-renewal-row');
+  if (!rows.length) return;
+
+  rows.forEach((row) => {
+    const daysLeft = Number(row.dataset.daysLeft || '0');
+    let show = true;
+
+    switch (filterValue) {
+      case 'today':
+        show = daysLeft === 0;
+        break;
+      case 'tomorrow':
+        show = daysLeft === 1;
+        break;
+      case '0-3':
+        show = daysLeft >= 0 && daysLeft <= 3;
+        break;
+      case '4-7':
+        show = daysLeft >= 4 && daysLeft <= 7;
+        break;
+      case '8-14':
+        show = daysLeft >= 8 && daysLeft <= 14;
+        break;
+      default:
+        show = true;
+    }
+
+    if (show) {
+      row.classList.remove('hidden');
+    } else {
+      row.classList.add('hidden');
+    }
+  });
+}
 
 const maxAnnouncementCount = 3;
 let announcementCount = 0;
@@ -835,7 +949,7 @@ async function loadUpcomingRenewals() {
 
         const endDate = new Date(monthlyCustomer.customer_end_date);
         const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-        const daysText = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
+        const daysText = daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : daysLeft + ' days';
 
         const columnsData = [
           'id_' + customer.customer_id,
@@ -862,6 +976,11 @@ async function loadUpcomingRenewals() {
           createResult.classList.add('dynamic-renewal-row');
         });
       });
+      const filterSelect = document.getElementById('dashboardCategoryFilter');
+      if (filterSelect) {
+        const value = filterSelect.value || 'all';
+        applyUpcomingRenewalsFilter(value);
+      }
     }
   } catch (error) {
     console.error('Failed to load upcoming renewals:', error);
@@ -914,17 +1033,33 @@ async function loadDashboardStats() {
 }
 
 // Computes dashboard stats from cached data
-async function computeAndUpdateDashboardStats() {
-  const stats = {
-    gym_revenue: calculateGymRevenue(dashboardStatsCache.payments),
-    product_sales: await calculateProductSales(dashboardStatsCache.payments),
-    reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
-    overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
-    active_monthly_customers: getActiveMonthlyCustomersCount(),
-    active_reservations: getActiveReservationsCount(),
-  };
+export async function computeAndUpdateDashboardStats() {
+  try {
+    // Fetch revenue data
+    const revenueResponse = await fetch(`${API_BASE_URL}/payment/summary/revenue`);
+    if (!revenueResponse.ok) {
+      throw new Error(`HTTP error! status: ${revenueResponse.status}`);
+    }
+    const revenueData = await revenueResponse.json();
 
-  updateDashboardStatsDisplay(stats);
+    const gymRevenue = Number(revenueData.result.gym_revenue) || 0;
+    const productsRevenue = Number(revenueData.result.products_revenue) || 0;
+    const reservationRevenue = Number(revenueData.result.reservation_revenue) || 0;
+    const allIncome = gymRevenue + productsRevenue + reservationRevenue;
+
+    const stats = {
+      gym_revenue: gymRevenue,
+      product_sales: productsRevenue,
+      reservation_revenue: reservationRevenue,
+      overall_total_sales: allIncome,
+      active_monthly_customers: getActiveMonthlyCustomersCount(),
+      active_reservations: getActiveReservationsCount(),
+    };
+
+    updateDashboardStatsDisplay(stats);
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+  }
 }
 
 // Calculates gym revenue from payment data (membership fees, gym services)
@@ -1067,17 +1202,17 @@ function updateDashboardStatsDisplay(stats) {
 
       const label = (header.textContent || '').toLowerCase();
 
-      if (label.includes('overall') && label.includes('total') && label.includes('sales')) {
+      if (label.includes('overall')) {
         valueEl.textContent = main.encodePrice(stats.overall_total_sales || 0);
-      } else if (label.includes('gym') && label.includes('revenue')) {
+      } else if (label.includes('gym')) {
         valueEl.textContent = main.encodePrice(stats.gym_revenue || 0);
       } else if (label.includes('reservation') && label.includes('revenue')) {
         valueEl.textContent = main.encodePrice(stats.reservation_revenue || 0);
-      } else if (label.includes('product') && label.includes('sales')) {
+      } else if (label.includes('product')) {
         valueEl.textContent = main.encodePrice(stats.product_sales || 0);
-      } else if (label.includes('monthly') && label.includes('customer')) {
+      } else if (label.includes('monthly')) {
         valueEl.textContent = stats.active_monthly_customers || 0;
-      } else if (label.includes('reservation') && !label.includes('revenue')) {
+      } else if (label.includes('reservation')) {
         valueEl.textContent = stats.active_reservations || 0;
       }
     });
@@ -1094,18 +1229,4 @@ function getIsoWeek(date) {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   return weekNo;
-}
-
-// Refreshes dashboard stats (called when new payments are added)
-export async function refreshDashboardStats() {
-  const stats = {
-    gym_revenue: calculateGymRevenue(dashboardStatsCache.payments),
-    product_sales: await calculateProductSales(dashboardStatsCache.payments),
-    reservation_revenue: calculateReservationRevenue(dashboardStatsCache.payments),
-    overall_total_sales: calculateOverallTotalSales(dashboardStatsCache.payments),
-    active_monthly_customers: getActiveMonthlyCustomersCount(),
-    active_reservations: getActiveReservationsCount(),
-  };
-
-  updateDashboardStatsDisplay(stats);
 }

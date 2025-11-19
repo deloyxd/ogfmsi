@@ -389,9 +389,9 @@ async function submitClicked(e) {
     if (!sanitizedEmail || !sanitizedPassword) {
       throw new Error('Please enter your email and password.');
     }
-    if (sanitizedEmail.includes('@gmail.com')) {
-      throw new Error('auth/wrong-button');
-    }
+    // if (sanitizedEmail.includes('@gmail.com')) {
+    //   throw new Error('auth/wrong-button');
+    // }
     // 🔹 Login
     if (!sanitizedEmail.includes('@') && !sanitizedEmail.includes('.com')) {
       const response = await fetch(`${API_BASE_URL}/admin/login`, {
