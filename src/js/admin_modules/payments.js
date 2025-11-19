@@ -681,10 +681,12 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             async (findResult) => {
-              if (!findResult) return;
+              if (!findResult && !pendingPayment.payment_customer_id.toLowerCase().includes('sales')) return;
               if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
               seenPendingPaymentIds.add(pendingPayment.payment_id);
-              let imageSrc = '';
+              let imageSrc = pendingPayment.payment_customer_id.toLowerCase().includes('sales')
+                ? '/src/images/🛒.png'
+                : '';
               let customerIdText = pendingPayment.payment_customer_id;
               let fullName = '';
               if (findResult) {
@@ -782,7 +784,11 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                   const transactionProcessBtn = createResult.querySelector('#transactionProcessBtn');
                   transactionProcessBtn.addEventListener('click', () => {
                     completePayment(
-                      isOnlineFacility ? 'reservations' : 'customers',
+                      pendingPayment.payment_customer_id.toLowerCase().includes('sales')
+                        ? 'cart'
+                        : isOnlineFacility
+                          ? 'reservations'
+                          : 'customers',
                       createResult.dataset.id,
                       isOnlineTransaction
                         ? customer?.customer_image_url || '/src/images/client_logo.jpg'
@@ -1080,8 +1086,8 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
                 6, // Sales Transactions tab (all sales transactions)
                 (createResult) => {
                   addDataForTab(6, completePayment);
-                  
-                if (!salesCalculatedToday) totalCashlessSalesToday += completePayment.payment_amount_to_pay;
+
+                  if (!salesCalculatedToday) totalCashlessSalesToday += completePayment.payment_amount_to_pay;
                   const transactionDetailsBtn = createResult.querySelector(`#transactionDetailsBtn`);
                   transactionDetailsBtn.addEventListener('click', () => openTransactionDetails('sales', createResult));
                 }
@@ -3857,13 +3863,13 @@ async function openTransactionDetails(type, row) {
   main.openModal('gray', inputs, () => main.closeModal());
 }
 
-export function processCheckoutPayment(purpose, amountToPay, productImage = '') {
+export function processCheckoutPayment(purpose, amountToPay, productImage = '/src/images/🛒.png') {
   const priceRate = 'Regular';
   const columnsData = [
     'id_T_random',
     {
       type: 'object',
-      data: [productImage, 'Sales: Cart Checkout'],
+      data: ['/src/images/🛒.png', 'Sales: Cart Checkout'],
     },
     purpose,
     main.formatPrice(amountToPay),
@@ -3880,7 +3886,7 @@ export function processCheckoutPayment(purpose, amountToPay, productImage = '') 
       completePayment(
         'cart',
         createResult.dataset.id,
-        productImage,
+        '/src/images/🛒.png',
         createResult.dataset.text + ' ' + createResult.dataset.custom2,
         createResult.dataset.custom2,
         createResult.dataset.text,

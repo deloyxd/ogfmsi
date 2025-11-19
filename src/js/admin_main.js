@@ -1101,6 +1101,167 @@ export function openModal(btn, inputs, ...callback) {
   originalModalContainer.insertAdjacentElement('afterend', tempModalContainer);
   tempModalContainer.classList.add('z-20');
 
+  const isPaymentModule = inputs.header.title.toLowerCase().includes('transaction');
+  if (isPaymentModule) {
+    tempModalContainer.children[0].classList.add('max-w-5xl');
+    tempModalContainer.children[0].children[1].classList.add('cols-span-1');
+
+    const newBodyContainer = document.createElement('div');
+    newBodyContainer.className = 'grid grid-cols-2';
+    newBodyContainer.appendChild(leftBodyContainer);
+
+    let displayPurpose = fixText(inputs.header.subtitle);
+    let itemsTableHtml = '';
+    try {
+      if (/^Purchasing\s/i.test(displayPurpose)) {
+        const itemsText = displayPurpose.replace(/^Purchasing\s*/i, '');
+        let parsed = [];
+        // Primary: robust regex to capture each item even when names contain commas
+        // Pattern: "<qty>x <name> ₱<amount>"; name is non-greedy up to the amount
+        const itemRe = /(\d+)x\s+(.+?)\s+₱([\d,]+(?:\.\d{2})?)/g;
+        let mm;
+        while ((mm = itemRe.exec(itemsText)) !== null) {
+          let qty = Number(mm[1]);
+          let name = mm[2].trim();
+          let amount = `₱${mm[3]}`;
+          name = name
+            .replace(/\b\d+(?:\.\d+)?\s*(?:ml|mL|l|L|g|kg|KG|Lb|LB|lb|lbs|LBS|oz|OZ)\b/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+          parsed.push({ name, qty, amount });
+        }
+        // Fallback: split on commas that are NOT thousand separators (i.e., not followed by exactly 3 digits)
+        if (parsed.length === 0) {
+          const rawItems = itemsText.split(/,(?!\d{3})\s*/).filter(Boolean);
+          parsed = rawItems.map((raw) => {
+            const str = raw.trim();
+            const pesoIdx = str.lastIndexOf('₱');
+            let amount = '';
+            let nameAndQty = str;
+            if (pesoIdx >= 0) {
+              amount = str.slice(pesoIdx).trim();
+              nameAndQty = str.slice(0, pesoIdx).trim();
+            }
+            const qtyMatch = nameAndQty.match(/^(\d+)x\s+(.+)$/i);
+            let qty = 1;
+            let name = nameAndQty;
+            if (qtyMatch) {
+              qty = Number(qtyMatch[1]);
+              name = qtyMatch[2].trim();
+            }
+            name = name
+              .replace(/\b\d+(?:\.\d+)?\s*(?:ml|mL|l|L|g|kg|KG|Lb|LB|lb|lbs|LBS|oz|OZ)\b/g, '')
+              .replace(/\s{2,}/g, ' ')
+              .trim();
+            return { name, qty, amount };
+          });
+        }
+
+        // Build table-like HTML
+        const header = `
+          <div style="display:flex; padding:6px 0; border-bottom:1px solid #000; font-weight:700; font-size:13px;">
+            <div style="flex:1; text-align:left;">Item</div>
+            <div style="width:80px; text-align:center;">Qty</div>
+            <div style="width:120px; text-align:right; white-space:nowrap;">Amount</div>
+          </div>`;
+        const rows = parsed
+          .map(
+            (it) => `
+            <div style="display:flex; padding:6px 0; font-size:13px;">
+              <div style="flex:1; text-align:left; word-break:break-word; padding-right:8px;">${it.name}</div>
+              <div style="width:80px; text-align:center;">${it.qty}</div>
+              <div style="width:120px; text-align:right; font-family:'Courier New',Courier,monospace; white-space:nowrap;">${it.amount}</div>
+            </div>`
+          )
+          .join('');
+        itemsTableHtml = `<div style="margin:8px 0; width:100%;">${header}${rows}</div>`;
+
+        // Set concise purpose label only
+        displayPurpose = 'Purchasing';
+      }
+    } catch (_) {}
+
+    const receiptRows = [{ k: 'Transaction ID', v: inputs.header.title }];
+
+    if (!displayPurpose.toLowerCase().includes('purchasing')) {
+      receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
+    }
+
+    // Insert items table as a full-width row after Purpose
+    let rowsHtml = receiptRows
+      .map(
+        (r) => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0;">
+          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`
+      )
+      .join('');
+
+    // Add items table if present
+    if (itemsTableHtml) {
+      rowsHtml += itemsTableHtml;
+    }
+
+    // Add remaining rows
+    const remainingRows = [
+      {
+        k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount',
+        v: formatPrice(decodePrice(inputs.short[1].value)),
+        mono: true,
+        b: true,
+      },
+      { k: 'Price rate', v: inputs.short[5].value },
+      { k: 'Reference', v: inputs.short[6].value !== '' ? inputs.short[6].value : 'N/A' },
+    ];
+
+    rowsHtml += remainingRows
+      .map(
+        (r) => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0;">
+          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`
+      )
+      .join('');
+
+    const nowInfo = getDateOrTimeOrBoth();
+    const headerHtml = `
+      <div style="text-align:center; padding-bottom:16px; border-bottom:2px dashed #000;">
+        <div style="font-size:18px; font-weight:700; margin-bottom:2px;">FITWORX GYM</div>
+        <div style="font-size:12px; font-weight:600; color:#111; margin-bottom:4px;">Payment Reciept</div>
+        <div style="font-size:11px; color:#6b7280;">${nowInfo.date}</div>
+        <div style="font-size:11px; color:#6b7280;">${nowInfo.time}</div>
+      </div>`;
+
+    const footerHtml = `
+      <div style="text-align:center; padding-top:16px; border-top:2px dashed #000; margin-top:12px;">
+        <div style="font-size:11px; color:#6b7280;">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
+        <div style="font-size:10px; color:#9ca3af; margin-top:4px;">Please keep this receipt for your records</div>
+      </div>`;
+
+    const confirmationHtml = `
+      <div style="text-align:left; padding:20px 0">
+        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:20px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
+          ${headerHtml}
+          <div style="padding:16px 0;">
+            ${rowsHtml}
+          </div>
+          ${footerHtml}
+        </div>
+        <div style="max-width:600px; margin:8px auto 0; display:flex; justify-content:center;">
+          <button id="receiptPrintBtn" style="background:#111; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer">Print receipt</button>
+        </div>
+      </div>
+    `;
+
+    const rightBodyContainer = document.createElement('div');
+    rightBodyContainer.className = 'cols-span-1';
+    rightBodyContainer.innerHTML = confirmationHtml;
+
+    newBodyContainer.appendChild(rightBodyContainer.firstElementChild);
+  }
+
   setupModalTheme(btn, tempModalContainer);
   setupModalBase(btn, inputs, callback);
 
@@ -1122,7 +1283,8 @@ export function openConfirmationModal(action, callback) {
   tempModalConfirmationContainer = originalModalContainer.cloneNode(true);
   originalModalContainer.insertAdjacentElement('afterend', tempModalConfirmationContainer);
   tempModalConfirmationContainer.classList.add('z-30');
-  tempModalConfirmationContainer.children[0].classList.add('max-w-md');
+  tempModalConfirmationContainer.children[0].classList.remove('max-w-lg');
+  tempModalConfirmationContainer.children[0].classList.add('max-w-2xl');
 
   setupModalTheme('green', tempModalConfirmationContainer);
 
@@ -1146,28 +1308,14 @@ export function openConfirmationModal(action, callback) {
   modalSubBtn.innerHTML = data.button.sub;
 
   // Simple backdrop
-  tempModalConfirmationContainer.classList.add(
-    'backdrop-blur-sm',
-    'bg-black/40',
-    'p-4',
-    'ease-out'
-  );
+  tempModalConfirmationContainer.classList.add('backdrop-blur-sm', 'bg-black/40', 'p-4', 'ease-out');
 
   // Clean panel
   const panel = tempModalConfirmationContainer.children[0];
-  panel.classList.add(
-    'shadow-2xl',
-    'ring-1',
-    'ring-black/5',
-    'rounded-2xl'
-  );
+  panel.classList.add('shadow-2xl', 'ring-1', 'ring-black/5', 'rounded-2xl');
 
   // Clean title
-  modalTitle.classList.add(
-    'text-2xl',
-    'font-semibold',
-    'tracking-tight'
-  );
+  modalTitle.classList.add('text-2xl', 'font-semibold', 'tracking-tight');
 
   // Information highlight - make the subtitle stand out
   modalSubtitle.classList.add(
