@@ -34,7 +34,7 @@ function renderEquipmentCard(equip) {
   const general = equip.general_status || 'All Available';
   const uid = `equip_${equip.equipment_id}`.replace(/[^a-zA-Z0-9_\-]/g, '');
   return `
-    <div class="rounded-2xl overflow-hidden bg-white border border-orange-100 shadow hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+    <div id="${uid}" data-equipment-name="${equip.equipment_name}" class="rounded-2xl overflow-hidden bg-white border border-orange-100 shadow hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
       <div class="relative">
         <img src="${img}" alt="${equip.equipment_name}" class="w-full h-40 object-cover cursor-pointer" onclick="window.showImageModal && window.showImageModal('${img}', '${equip.equipment_name}')" />
       </div>

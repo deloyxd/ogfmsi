@@ -18,6 +18,66 @@ function setupMobileDropdown() {
 import { signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { auth } from './customer_login.js';
 
+// Smooth scroll to the Equipment Status section container
+function scrollToEquipmentSection() {
+  const section = document.getElementById('equipment-container');
+  if (!section) return;
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Highlight a specific equipment card by its name
+function highlightEquipmentByName(equipmentName) {
+  if (!equipmentName) return;
+  const container = document.getElementById('equipment-container');
+  if (!container) return;
+
+  const targetName = equipmentName.trim().toLowerCase();
+  let targetCard = null;
+
+  // Prefer matching via data-equipment-name set by equipment-loader.js
+  const cards = Array.from(container.querySelectorAll('[data-equipment-name]'));
+  targetCard =
+    cards.find((card) => (card.getAttribute('data-equipment-name') || '').trim().toLowerCase() === targetName) || null;
+
+  // Fallback: match by the visible title text
+  if (!targetCard) {
+    const headings = Array.from(container.querySelectorAll('h4'));
+    const match = headings.find((h) => h.textContent.trim().toLowerCase() === targetName);
+    if (match) targetCard = match.closest('div');
+  }
+
+  if (!targetCard) return;
+
+  // Ensure section is visible, then scroll the specific card into view and apply a temporary glow
+  scrollToEquipmentSection();
+  setTimeout(() => {
+    try {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (_) {}
+
+    const glowClasses = ['ring-4', 'ring-yellow-400', 'animate-pulse'];
+    targetCard.classList.add(...glowClasses);
+    setTimeout(() => {
+      targetCard.classList.remove(...glowClasses);
+    }, 2500);
+  }, 400);
+}
+
+// Handle clicks on equipment-type notifications
+function handleEquipmentNotificationClick(message) {
+  if (!message) return;
+
+  // Expect format like: "Hack Squat Machine status is now: Warning - (3) Need Repair"
+  const m = message.match(/^(.*?)\s+status is now:\s*(.+)$/i);
+  const equipmentName = m ? m[1].trim() : null;
+
+  // Even if parsing fails, still try to scroll to the section
+  scrollToEquipmentSection();
+  if (equipmentName) {
+    highlightEquipmentByName(equipmentName);
+  }
+}
+
 function setupLogout() {
   const logoutButtons = [];
   logoutButtons.push(document.getElementById('logout'));
@@ -144,7 +204,24 @@ function loadCustomerNotifications() {
           const p = document.createElement('p');
           p.className = 'text-xs text-gray-500';
 
-          const msg = n.notif_body || n.message || '';
+          const rawMsg = n.notif_body || n.message || '';
+          let msg = rawMsg;
+
+          // Detect equipment-related notifications either by explicit type or by message pattern
+          const isEquipmentMessage = /status is now:/i.test(rawMsg);
+
+          // For equipment notifications, normalize status wording to only Available / Unavailable for customers
+          if (n.notif_type === 'equipment' || isEquipmentMessage) {
+            const m = rawMsg.match(/^(.*?)\s+status is now:\s*(.+)$/i);
+            if (m) {
+              const name = m[1].trim();
+              const generalStatus = m[2].trim();
+              // Map complex admin general statuses to a simple customer-facing availability
+              const simpleStatus = generalStatus.startsWith('All Available') ? 'Available' : 'Unavailable';
+              msg = `${name} is now: ${simpleStatus}`;
+            }
+          }
+
           const dt = n.created_at || n.createdAt || n.created || '';
           let dateStr = '';
           if (dt) {
@@ -153,16 +230,22 @@ function loadCustomerNotifications() {
           }
           p.innerHTML = dateStr ? `${msg}<br><br>${dateStr}` : msg;
 
+          // Clicking the X only marks as read; prevent it from triggering the li click handler
+
           // X button to mark as read (remove locally)
           const x = document.createElement('button');
+
           x.type = 'button';
           x.title = 'Mark as read';
           x.className = 'float-right -mt-1 rounded px-2 py-0.5 text-xs text-red-600 hover:bg-red-50 hover:text-red-700';
           x.textContent = '✖';
-          x.addEventListener('click', () => {
+          x.addEventListener('click', (ev) => {
+            ev.stopPropagation();
             // Persist as read
             const existing = JSON.parse(localStorage.getItem(readKey) || '{}') || {};
+
             existing[key] = true;
+
             localStorage.setItem(readKey, JSON.stringify(existing));
 
             // UI: turn X to ✓ and fade, then remove
@@ -178,6 +261,19 @@ function loadCustomerNotifications() {
             countEl.textContent = String(remaining);
             // Keep item visible until dropdown closes
           });
+
+          // Make equipment notifications clickable to focus the Equipment Status section
+          if (n.notif_type === 'equipment' || /status is now:/i.test(rawMsg)) {
+            li.classList.add('cursor-pointer', 'hover:bg-slate-50');
+            li.addEventListener('click', () => {
+              // Close the notification panel so it doesn't overlap the highlighted equipment card
+              const panel = document.getElementById('notificationPanel');
+              if (panel) {
+                panel.classList.add('hidden');
+              }
+              handleEquipmentNotificationClick(rawMsg);
+            });
+          }
 
           li.appendChild(b);
           li.appendChild(x);
