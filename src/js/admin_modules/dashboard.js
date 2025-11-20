@@ -1028,6 +1028,7 @@ async function loadDashboardStats() {
       overall_total_sales: 0,
       active_monthly_customers: 0,
       active_reservations: 0,
+      nearly_expiring_monthly_passes: 0,
     });
   }
 }
@@ -1047,6 +1048,9 @@ export async function computeAndUpdateDashboardStats() {
     const reservationRevenue = Number(revenueData.result.reservation_revenue) || 0;
     const allIncome = gymRevenue + productsRevenue + reservationRevenue;
 
+    // Compute count of nearly expiring monthly passes (within 14 days, pending = 0)
+    const upcomingCount = await getUpcomingRenewalsCount();
+
     const stats = {
       gym_revenue: gymRevenue,
       product_sales: productsRevenue,
@@ -1054,6 +1058,7 @@ export async function computeAndUpdateDashboardStats() {
       overall_total_sales: allIncome,
       active_monthly_customers: getActiveMonthlyCustomersCount(),
       active_reservations: getActiveReservationsCount(),
+      nearly_expiring_monthly_passes: upcomingCount,
     };
 
     updateDashboardStatsDisplay(stats);
@@ -1189,6 +1194,31 @@ function getActiveReservationsCount() {
   }
 }
 
+// Gets count of nearly expiring monthly passes (within 14 days, pending = 0)
+async function getUpcomingRenewalsCount() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/inquiry/monthly`);
+    if (!response.ok) return 0;
+    const data = await response.json();
+    const list = Array.isArray(data.result) ? data.result : [];
+
+    const today = new Date();
+    const twoWeeksFromNow = new Date();
+    twoWeeksFromNow.setDate(today.getDate() + 14);
+
+    const matches = list.filter((m) => {
+      const endDate = new Date(m.customer_end_date);
+      if (!(endDate instanceof Date) || isNaN(endDate)) return false;
+      if (Number(m.customer_pending) !== 0) return false;
+      return endDate >= today && endDate <= twoWeeksFromNow;
+    });
+    return matches.length;
+  } catch (error) {
+    console.error('Error counting upcoming renewals:', error);
+    return 0;
+  }
+}
+
 // Updates dashboard stats display
 function updateDashboardStatsDisplay(stats) {
   try {
@@ -1210,6 +1240,8 @@ function updateDashboardStatsDisplay(stats) {
         valueEl.textContent = main.encodePrice(stats.reservation_revenue || 0);
       } else if (label.includes('product')) {
         valueEl.textContent = main.encodePrice(stats.product_sales || 0);
+      } else if (label.includes('nearly') && label.includes('expiring')) {
+        valueEl.textContent = stats.nearly_expiring_monthly_passes || 0;
       } else if (label.includes('monthly')) {
         valueEl.textContent = stats.active_monthly_customers || 0;
       } else if (label.includes('reservation')) {

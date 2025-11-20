@@ -3019,11 +3019,17 @@ export function startRenewCustomer(customerId) {
 document.addEventListener('ogfmsi:statsBreakdown', (e) => {
   try {
     const { section, type, container, setTitle } = e.detail || {};
-    const sec = String(section || '');
-    const current = String(main.sharedState.sectionName || '');
-    if (!(sec.includes(SECTION_NAME) || (!sec && current === SECTION_NAME))) return;
-
+    let sec = String(section || '');
     const t = String(type || '').toLowerCase();
+    const current = String(main.sharedState.sectionName || '');
+
+    // When invoked from the dashboard for "Active monthly customers",
+    // allow this module to handle the breakdown as well.
+    if (sec.toLowerCase() === 'dashboard' && t.includes('active') && t.includes('monthly')) {
+      sec = SECTION_NAME;
+    }
+
+    if (!(sec.includes(SECTION_NAME) || (!sec && current === SECTION_NAME))) return;
 
     function rowsFromTab(tabIndex) {
       const emptyText = document.getElementById(`${SECTION_NAME}SectionOneListEmpty${tabIndex}`);
@@ -3054,26 +3060,228 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
       rows = rowsFromTab(1);
       title = 'All Customers';
     }
-
     try { setTitle?.(title); } catch (_) {}
 
-    const items = rows.map((r) => {
-      const img = r.querySelector('img')?.src || '/src/images/client_logo.jpg';
-      const name = r.dataset?.text ? main.decodeName(r.dataset.text).fullName : (r.querySelector('b, strong')?.textContent || '').trim();
+    const data = rows.map((r) => {
       const id = r.dataset?.id || '';
+      const name = r.dataset?.text
+        ? main.decodeName(r.dataset.text).fullName
+        : (r.querySelector('b, strong')?.textContent || '').trim();
       const meta = r.dataset?.custom2 || r.dataset?.custom3 || '';
-      return `
-        <div style="background:#fff;border:1px solid #e5e7eb;padding:14px 16px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center">
-          <img src="${img}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover"/>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;color:#111827;font-size:14px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name || 'Customer'}</div>
-            <div style="color:#6b7280;font-size:12px;line-height:1.5">ID: <span style="font-family:monospace;background:#f9fafb;padding:2px 6px;border-radius:4px">${id}</span>${meta ? ` • ${meta}` : ''}</div>
-          </div>
-        </div>`;
-    }).join('');
 
-    container.innerHTML = items || '<div style="text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px">📭 No matching customers.</div>';
-    container.dataset.filled = '1';
+      // For Active Monthly Customers, try to read a usable end-date for filtering
+      let rawDate = r.dataset?.endDate || '';
+      // Fallback: use the visible "Details" cell text if present
+      if (!rawDate) {
+        const detailsCell = r.children?.[4 - 1] || r.children?.[2];
+        const text = (detailsCell?.innerText || '').trim();
+        if (text) rawDate = text;
+      }
+
+      let dateIso = '';
+      if (rawDate) {
+        const txt = String(rawDate).trim();
+        // Try to parse formats like 'October 25, 2025'
+        const monthNames = {
+          january: 1,
+          february: 2,
+          march: 3,
+          april: 4,
+          may: 5,
+          june: 6,
+          july: 7,
+          august: 8,
+          september: 9,
+          october: 10,
+          november: 11,
+          december: 12,
+        };
+        let y = '', m = '', da = '';
+        const mdy = txt.match(/^(\w+)\s+(\d{1,2}),\s*(\d{4})$/); // October 25, 2025
+        if (mdy) {
+          const mon = monthNames[mdy[1].toLowerCase()] || 0;
+          if (mon) {
+            y = mdy[3];
+            m = String(mon).padStart(2, '0');
+            da = String(parseInt(mdy[2], 10)).padStart(2, '0');
+          }
+        }
+
+        // Fallback: let Date parse it
+        if (!y) {
+          const d = new Date(txt);
+          if (d instanceof Date && !isNaN(d)) {
+            y = String(d.getFullYear());
+            m = String(d.getMonth() + 1).padStart(2, '0');
+            da = String(d.getDate()).padStart(2, '0');
+          }
+        }
+
+        if (y && m && da) {
+          dateIso = `${y}-${m}-${da}`;
+        }
+      }
+
+      return { id, name, meta, dateIso };
+    });
+
+    const pageSize = 10;
+    let currentPage = 1;
+    let filtered = data.slice();
+    let currentFilter = '';
+    let currentDate = '';
+
+    function renderPage(page) {
+      const total = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      currentPage = page;
+      const start = (page - 1) * pageSize;
+      const slice = filtered.slice(start, start + pageSize);
+      const rowsHtml =
+        slice
+          .map(
+            (d) => `
+            <tr style="border-bottom:1px solid #e5e7eb">
+              <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#374151">${d.id || ''}</td>
+              <td style="padding:10px 12px;font-size:13px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name || 'Customer'}</td>
+              <td style="padding:10px 12px;font-size:12px;color:#4b5563">${d.meta || ''}</td>
+            </tr>
+          `
+          )
+          .join('') ||
+        '<tr><td colspan="3" style="padding:32px 12px;text-align:center;font-size:14px;color:#9ca3af">📭 No matching customers.</td></tr>';
+      const showDateFilter = title.toLowerCase().includes('active monthly');
+
+      container.innerHTML = `
+        <div style="margin-bottom:16px;padding:12px 14px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="font-weight:700;font-size:14px">${title}</div>
+          <div style="font-size:12px;opacity:.9">${total} customer${total === 1 ? '' : 's'} total</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          ${showDateFilter
+            ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4b5563">
+                 <span>Date</span>
+                 <input type="date" data-role="filter-date" style="padding:5px 8px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none" />
+               </div>`
+            : ''}
+          <select data-role="filter-type" style="padding:7px 10px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none">
+            <option value="">All customers</option>
+            <option value="monthly-active">Monthly - Active</option>
+            <option value="monthly-expired">Monthly - Expired</option>
+            <option value="daily">Daily</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div style="border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;background:#ffffff">
+          <div style="max-height:420px;overflow:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                <tr>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">ID</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">Customer</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#4b5563">
+            <div>Page ${page} of ${totalPages}</div>
+            <div style="display:flex;gap:8px">
+              <button data-role="first" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;background:#ffffff;color:#374151;font-size:12px;cursor:pointer;min-width:64px" ${page === 1 ? 'disabled style="padding:6px 10px;border-radius:8px;border:1px solid #e5e7eb;background:#f3f4f6;color:#9ca3af;font-size:12px;cursor:default;min-width:64px"' : ''}>First</button>
+              <button data-role="prev" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;background:#ffffff;color:#374151;font-size:12px;cursor:pointer;min-width:64px" ${page === 1 ? 'disabled style="padding:6px 10px;border-radius:8px;border:1px solid #e5e7eb;background:#f3f4f6;color:#9ca3af;font-size:12px;cursor:default;min-width:64px"' : ''}>Prev</button>
+              <button data-role="next" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;background:#ffffff;color:#374151;font-size:12px;cursor:pointer;min-width:64px" ${page === totalPages ? 'disabled style="padding:6px 10px;border-radius:8px;border:1px solid #e5e7eb;background:#f3f4f6;color:#9ca3af;font-size:12px;cursor:default;min-width:64px"' : ''}>Next</button>
+              <button data-role="last" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;background:#ffffff;color:#374151;font-size:12px;cursor:pointer;min-width:64px" ${page === totalPages ? 'disabled style="padding:6px 10px;border-radius:8px;border:1px solid #e5e7eb;background:#f3f4f6;color:#9ca3af;font-size:12px;cursor:default;min-width:64px"' : ''}>Last</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.dataset.filled = '1';
+
+      const firstBtn = container.querySelector('button[data-role="first"]');
+      const prevBtn = container.querySelector('button[data-role="prev"]');
+      const nextBtn = container.querySelector('button[data-role="next"]');
+      const lastBtn = container.querySelector('button[data-role="last"]');
+
+      if (firstBtn && page > 1) {
+        firstBtn.addEventListener('click', () => renderPage(1));
+      }
+      if (prevBtn && page > 1) {
+        prevBtn.addEventListener('click', () => renderPage(page - 1));
+      }
+      if (nextBtn && page < totalPages) {
+        nextBtn.addEventListener('click', () => renderPage(page + 1));
+      }
+      if (lastBtn && page < totalPages) {
+        lastBtn.addEventListener('click', () => renderPage(totalPages));
+      }
+
+      const filterSelect = container.querySelector('select[data-role="filter-type"]');
+      const dateInput = container.querySelector('input[data-role="filter-date"]');
+      if (filterSelect) filterSelect.value = currentFilter;
+      if (dateInput) dateInput.value = currentDate;
+
+      function applyFilter() {
+        const v = (filterSelect?.value || '').toLowerCase();
+        currentFilter = v;
+        if (!v) {
+          filtered = data.slice();
+        } else if (v === 'monthly-active') {
+          filtered = data.filter((d) =>
+            String(d.meta || '').toLowerCase().includes('monthly') &&
+            String(d.meta || '').toLowerCase().includes('active')
+          );
+        } else if (v === 'monthly-expired') {
+          const metaLower = (m) => String(m || '').toLowerCase();
+          filtered = data.filter((d) => {
+            const m = metaLower(d.meta);
+            return m.includes('monthly') && (m.includes('expired') || m.includes('inactive'));
+          });
+        } else if (v === 'daily') {
+          filtered = data.filter((d) => String(d.meta || '').toLowerCase().includes('daily'));
+        } else if (v === 'archived') {
+          filtered = data.filter((d) => String(d.meta || '').toLowerCase().includes('archiv'));
+        } else {
+          filtered = data.slice();
+        }
+
+        // Single date filter for Active Monthly Customers
+        let dateVal = (dateInput?.value || '').trim();
+        currentDate = dateVal;
+        if (showDateFilter && dateVal) {
+          // Normalize user input (supports both yyyy-mm-dd from picker and mm/dd/yyyy typed)
+          let targetIso = '';
+          const parsed = new Date(dateVal);
+          if (parsed instanceof Date && !isNaN(parsed)) {
+            const y = parsed.getFullYear();
+            const m = String(parsed.getMonth() + 1).padStart(2, '0');
+            const da = String(parsed.getDate()).padStart(2, '0');
+            targetIso = `${y}-${m}-${da}`;
+          } else {
+            targetIso = dateVal;
+          }
+
+          filtered = filtered.filter((d) => d.dateIso === targetIso);
+        }
+
+        renderPage(1);
+      }
+
+      if (filterSelect) {
+        filterSelect.addEventListener('change', applyFilter);
+      }
+      if (dateInput) {
+        dateInput.addEventListener('change', applyFilter);
+      }
+
+    }
+
+    renderPage(1);
   } catch (_) {}
 });
 
