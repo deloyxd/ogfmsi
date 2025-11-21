@@ -176,7 +176,7 @@
                 <div class="flex items-center space-x-2">
                   <span class="font-bold text-orange-300">⏰</span>
                   <!-- 🔑 CLIENT -->
-                  <span class="text-sm font-medium" id="storeHours">9:00 AM - 11:59 PM</span>
+                  <span class="text-sm font-medium" id="storeHours">9:00 AM - 12:00 AM</span>
                 </div>
                 <div class="mt-1 text-xs text-orange-200">Operating Hours</div>
               </div>
@@ -256,7 +256,7 @@
                 <div class="flex items-center space-x-3">
                   <span class="font-bold text-orange-300">⏰</span>
                   <!-- 🔑 CLIENT -->
-                  <span class="text-sm font-medium">9:00 AM - 11:59 PM</span>
+                  <span class="text-sm font-medium">9:00 AM - 12:00 AM</span>
                 </div>
                 <span class="text-xs text-orange-200">Operating Hours</span>
               </div>
@@ -510,15 +510,13 @@
 
                 <!-- Quick Booking Tip -->
                 <div class="rounded-md border border-orange-200 bg-orange-50 p-3 text-xs text-orange-900">
-                  <p class="mb-1 font-semibold">Quick Reservation Tip!</p>
-                  <p class="mb-2">
-                    Reservations are now in fixed 1-hour blocks. Choose a time slot that works for you.
-                  </p>
-                  <ul class="list-disc space-y-1 pl-4 text-xs">
-                    <li>Operating hours: 9:00 AM – 11:59 PM</li>
-                    <li>Each booking reserves a 1-hour slot (e.g., 10:00–11:00)</li>
-                  </ul>
-                  <p class="mt-2 text-xs">Check our live calendar to see availability.</p>
+                  <p class="mb-1 font-semibold">How to reserve</p>
+                  <ol class="list-decimal space-y-1 pl-4 text-xs">
+                    <li>Click a <span class="font-semibold">date</span> on the calendar.</li>
+                    <li>Select your <span class="font-semibold">duration</span>.</li>
+                    <li>Choose an available <span class="font-semibold">time slot</span>.</li>
+                  </ol>
+                  <!-- <p class="mt-2 text-xs">Slots are 1 hour each. Longer durations combine slots automatically. Hours: 9:00 AM – 12:00 AM.</p> -->
                 </div>
 
                 <!-- Duration -->
@@ -542,51 +540,22 @@
                 </div>
                 <p id="timeError" class="hidden text-xs text-red-600" aria-live="polite"></p>
 
-                <!-- Time inputs in grid -->
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <!-- Start Time (hour-only select) -->
-                  <div>
-                    <label for="startTime" class="mb-1 block text-xs font-semibold text-gray-700">Start Time</label>
-                    <select
-                      id="startTime"
-                      name="startTime"
-                      class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      required
-                    >
-                      <option value="">Select start time</option>
-                      <option value="09:00">9 AM</option>
-                      <option value="10:00">10 AM</option>
-                      <option value="11:00">11 AM</option>
-                      <option value="12:00">12 PM</option>
-                      <option value="13:00">1 PM</option>
-                      <option value="14:00">2 PM</option>
-                      <option value="15:00">3 PM</option>
-                      <option value="16:00">4 PM</option>
-                      <option value="17:00">5 PM</option>
-                      <option value="18:00">6 PM</option>
-                      <option value="19:00">7 PM</option>
-                      <option value="20:00">8 PM</option>
-                      <option value="21:00">9 PM</option>
-                      <option value="22:00">10 PM</option>
-                      <option value="23:00">11 PM</option>
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">Gym opens at 9:00 AM</p>
-                  </div>
-
-                  <!-- End Time (auto-filled, read-only) -->
-                  <div>
-                    <label for="endTime" class="mb-1 block text-xs font-semibold text-gray-700">End Time</label>
-                    <input
-                      id="endTime"
-                      name="endTime"
-                      type="time"
-                      min="09:00"
-                      max="23:59"
-                      class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      disabled
-                    />
-                    <p class="mt-1 text-xs text-gray-500">Last session ends at 12:00 AM</p>
-                  </div>
+                <!-- Time slot selection -->
+                <div>
+                  <label for="startTime" class="mb-1 block text-xs font-semibold text-gray-700">Time Slot</label>
+                  <select
+                    id="startTime"
+                    name="startTime"
+                    class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    required
+                  >
+                    <option value="">Select a time slot</option>
+                  </select>
+                  <p class="mt-1 text-xs text-gray-500">
+                    Available time slots will appear after you choose a date and duration.
+                  </p>
+                  <input id="endTime" name="endTime" type="hidden" />
+                  <div id="slotPreview" class="mt-2 space-y-1 text-[11px] text-gray-700"></div>
                 </div>
 
                 <!-- Select Date -->
@@ -713,7 +682,7 @@
             <h3 class="border-b border-gray-600 pb-2 text-lg font-semibold">Operating Hours</h3>
             <ul class="flex grid space-y-2 text-sm">
               <span class="text-gray-300"><b>Monday - Sunday:</b></span>
-              <span class="text-gray-400">9:00 AM - 11:59 PM</span>
+              <span class="text-gray-400">9:00 AM - 12:00 AM</span>
             </ul>
           </div>
 

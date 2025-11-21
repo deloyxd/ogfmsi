@@ -51,6 +51,27 @@ function isToday(year, month, day) {
   return year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 }
 
+// Fixed one-hour facility slots (9:00 AM - 12:00 AM)
+const FIXED_TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
+  const hour = 9 + i; // 9..23
+  const h = String(hour).padStart(2, '0');
+  const labelHour = ((hour + 11) % 12) + 1;
+  const ap = hour >= 12 ? 'PM' : 'AM';
+  const nextTotal = hour * 60 + 60;
+  const endLabel = (() => {
+    if (nextTotal === 24 * 60) return '12:00 AM';
+    const eh = Math.floor(nextTotal / 60);
+    const em = nextTotal % 60;
+    const lblH = ((eh + 11) % 12) + 1;
+    const lblAp = eh >= 12 && nextTotal !== 24 * 60 ? 'PM' : 'AM';
+    return `${lblH}:${String(em).padStart(2, '0')} ${lblAp}`;
+  })();
+  return {
+    start: `${h}:00`,
+    label: `${labelHour}:00 ${ap} – ${endLabel}`,
+  };
+});
+
 function renderHeader(container) {
   container.querySelector('[data-cal="month"]').textContent = monthNames[state.currentDate.getMonth()];
   container.querySelector('[data-cal="year"]').textContent = state.currentDate.getFullYear();
@@ -366,6 +387,11 @@ function createDayElement(day, month, year) {
       bookingDateInput.value = `${monthNames[month]} ${day}, ${year}`;
     }
 
+    // Refresh available booking slots when date changes
+    try {
+      window.__ogf_refreshCustomerSlots?.();
+    } catch (e) {}
+
     // Open modal listing reservations for this date only if there is at least 1 reservation
     const mm = String(month + 1).padStart(2, '0');
     const dd = String(day).padStart(2, '0');
@@ -552,6 +578,7 @@ function mount() {
     const endInput = document.getElementById('endTime');
     const durationSelect = document.getElementById('duration');
     const timeError = document.getElementById('timeError');
+    const slotPreview = document.getElementById('slotPreview');
 
     const toMinutes = (val) => {
       const [h, m] = (val || '0:0').split(':').map((v) => parseInt(v, 10));
@@ -569,6 +596,44 @@ function mount() {
         timeError.textContent = '';
         timeError.classList.add('hidden');
       }
+    };
+
+    const showStepError = (msg) => {
+      if (timeError) {
+        timeError.textContent = msg;
+        timeError.classList.remove('hidden');
+      }
+      try {
+        if (typeof Toastify === 'function') {
+          Toastify({ text: msg, duration: 3000, gravity: 'top', position: 'right', close: true }).showToast();
+        }
+      } catch (_) {}
+    };
+
+    // Prevent using Duration before picking a date
+    const guardDurationAccess = () => {
+      const bookingDateInput = document.getElementById('bookingDate');
+      let dateMMDDYYYY = '';
+      if (
+        state.selectedDate?.dataset?.day &&
+        state.selectedDate?.dataset?.month &&
+        state.selectedDate?.dataset?.year
+      ) {
+        const mm = String(parseInt(state.selectedDate.dataset.month, 10)).padStart(2, '0');
+        const dd = String(parseInt(state.selectedDate.dataset.day, 10)).padStart(2, '0');
+        const yyyy = state.selectedDate.dataset.year;
+        dateMMDDYYYY = `${mm}-${dd}-${yyyy}`;
+      } else if (bookingDateInput?.value) {
+        dateMMDDYYYY = parseHumanDateToMMDDYYYY(bookingDateInput.value);
+      }
+
+      if (!dateMMDDYYYY) {
+        showStepError('Step 1: Please select a date on the calendar before choosing a duration.');
+        if (durationSelect instanceof HTMLSelectElement) durationSelect.blur();
+        return true;
+      }
+      clearError();
+      return false;
     };
 
     const computeAndSetEndTime = () => {
@@ -599,12 +664,318 @@ function mount() {
         }
         // Update price by selected duration
         updatePriceDisplay(calculateDynamicPrice(startVal, dur));
+        renderSlotPreview();
       } catch (_) {}
     };
 
-    startInput?.addEventListener('change', computeAndSetEndTime);
-    durationSelect?.addEventListener('change', computeAndSetEndTime);
+    // Render visual preview of consecutive time slots for the selected date/duration/start
+    const renderSlotPreview = () => {
+      if (!slotPreview) return;
+      try {
+        slotPreview.innerHTML = '';
+
+        // Resolve selected date in mm-dd-yyyy
+        const bookingDateInput = document.getElementById('bookingDate');
+        let dateMMDDYYYY = '';
+        if (
+          state.selectedDate?.dataset?.day &&
+          state.selectedDate?.dataset?.month &&
+          state.selectedDate?.dataset?.year
+        ) {
+          const mm = String(parseInt(state.selectedDate.dataset.month, 10)).padStart(2, '0');
+          const dd = String(parseInt(state.selectedDate.dataset.day, 10)).padStart(2, '0');
+          const yyyy = state.selectedDate.dataset.year;
+          dateMMDDYYYY = `${mm}-${dd}-${yyyy}`;
+        } else if (bookingDateInput?.value) {
+          dateMMDDYYYY = parseHumanDateToMMDDYYYY(bookingDateInput.value);
+        }
+
+        if (!dateMMDDYYYY) return;
+
+        const dur = parseInt(durationSelect?.value || '0', 10);
+        const startVal = startInput?.value || '';
+        if (!dur || dur < 1 || !/^\d{2}:\d{2}$/.test(startVal)) return;
+
+        const toMinutesLocal = (val) => {
+          const [h, m] = (val || '0:0').split(':').map((v) => parseInt(v, 10));
+          return h * 60 + m;
+        };
+
+        // Map start time string to index in FIXED_TIME_SLOTS
+        const indexByStart = {};
+        FIXED_TIME_SLOTS.forEach((slot, idx) => {
+          indexByStart[slot.start] = idx;
+        });
+        const baseIndex = indexByStart[startVal];
+        if (typeof baseIndex !== 'number') return;
+
+        const selectedIndices = new Set();
+        for (let i = 0; i < dur; i++) {
+          const idx = baseIndex + i;
+          if (idx >= FIXED_TIME_SLOTS.length) break;
+          selectedIndices.add(idx);
+        }
+
+        const WORK_START = 9 * 60;
+        const WORK_END = 24 * 60;
+        const now = new Date();
+
+        FIXED_TIME_SLOTS.forEach((slot, idx) => {
+          try {
+            const startMins = toMinutesLocal(slot.start);
+            const endTotal = startMins + dur * 60;
+            if (startMins < WORK_START || endTotal > WORK_END) return;
+
+            const [mm, dd, yyyy] = dateMMDDYYYY.split('-').map((n) => parseInt(n, 10));
+            const slotStart = new Date(yyyy, mm - 1, dd, Math.floor(startMins / 60), startMins % 60, 0, 0);
+            if (slotStart < now) return;
+
+            const endHHMM = (() => {
+              if (endTotal === WORK_END) return '00:00';
+              const eh = String(Math.floor(endTotal / 60)).padStart(2, '0');
+              const em = String(endTotal % 60).padStart(2, '0');
+              return `${eh}:${em}`;
+            })();
+
+            // Reuse conflict + gap helpers so preview only shows truly available slots
+            if (hasTimeConflict(dateMMDDYYYY, slot.start, endHHMM)) return;
+            if (hasMinimumGap(dateMMDDYYYY, slot.start, endHHMM)) return;
+
+            const row = document.createElement('div');
+            const isSelected = selectedIndices.has(idx);
+            row.className = `flex items-center justify-between rounded px-2 py-1 border text-[11px] ${
+              isSelected
+                ? 'bg-orange-100 border-orange-400 text-orange-900 font-semibold'
+                : 'bg-gray-50 border-gray-200 text-gray-700'
+            }`;
+            row.innerHTML = `
+              <span>${slot.label}</span>
+              ${isSelected ? '<span class="text-[10px] uppercase tracking-wide">Included</span>' : ''}
+            `;
+            slotPreview.appendChild(row);
+          } catch (_) {}
+        });
+      } catch (e) {}
+    };
+
+    if (startInput instanceof HTMLSelectElement) {
+      startInput.disabled = true;
+      startInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+    }
+
+    // Refresh available fixed slots for the current date and duration
+    const refreshAvailableSlots = () => {
+      try {
+        if (!(startInput instanceof HTMLSelectElement) || !durationSelect) return;
+
+        // Resolve selected date in mm-dd-yyyy
+        const bookingDateInput = document.getElementById('bookingDate');
+        let dateMMDDYYYY = '';
+        if (
+          state.selectedDate?.dataset?.day &&
+          state.selectedDate?.dataset?.month &&
+          state.selectedDate?.dataset?.year
+        ) {
+          const mm = String(parseInt(state.selectedDate.dataset.month, 10)).padStart(2, '0');
+          const dd = String(parseInt(state.selectedDate.dataset.day, 10)).padStart(2, '0');
+          const yyyy = state.selectedDate.dataset.year;
+          dateMMDDYYYY = `${mm}-${dd}-${yyyy}`;
+        } else if (bookingDateInput?.value) {
+          dateMMDDYYYY = parseHumanDateToMMDDYYYY(bookingDateInput.value);
+        }
+
+        const rawDur = durationSelect.value || '';
+
+        // Reset options
+        startInput.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = !dateMMDDYYYY
+          ? 'Select a date first'
+          : !rawDur
+          ? 'Select duration first'
+          : 'Select a time slot';
+        startInput.appendChild(placeholder);
+
+        // If no valid date yet, fully block duration + time slot selection
+        if (!dateMMDDYYYY) {
+          if (durationSelect instanceof HTMLSelectElement) {
+            durationSelect.disabled = true;
+            durationSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
+          }
+          startInput.value = '';
+          endInput && (endInput.value = '');
+          startInput.disabled = true;
+          startInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+          return;
+        }
+
+        // Date is chosen: enable duration, but if duration is still empty, block time slot usage
+        if (durationSelect instanceof HTMLSelectElement) {
+          durationSelect.disabled = false;
+          durationSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        }
+
+        // If date is chosen but duration is still empty, also block time slot usage
+        if (!rawDur) {
+          startInput.value = '';
+          endInput && (endInput.value = '');
+          startInput.disabled = true;
+          startInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+          return;
+        }
+
+        const dur = parseInt(rawDur, 10) || 1;
+
+        const now = new Date();
+        const sameDateReservations = state.reservations.filter((r) => r.date === dateMMDDYYYY);
+
+        const WORK_START = 9 * 60;
+        const WORK_END = 24 * 60;
+
+        const toMinutes = (val) => {
+          const [h, m] = (val || '0:0').split(':').map((v) => parseInt(v, 10));
+          return h * 60 + m;
+        };
+
+        FIXED_TIME_SLOTS.forEach((slot) => {
+          const startMins = toMinutes(slot.start);
+          const endTotal = startMins + dur * 60;
+          if (startMins < WORK_START || endTotal > WORK_END) return;
+
+          // Same-day past time filter
+          const [mm, dd, yyyy] = dateMMDDYYYY.split('-').map((n) => parseInt(n, 10));
+          const slotStart = new Date(yyyy, mm - 1, dd, Math.floor(startMins / 60), startMins % 60, 0, 0);
+          if (slotStart < now) return;
+
+          const endHHMM = (() => {
+            if (endTotal === WORK_END) return '00:00';
+            const eh = String(Math.floor(endTotal / 60)).padStart(2, '0');
+            const em = String(endTotal % 60).padStart(2, '0');
+            return `${eh}:${em}`;
+          })();
+
+          // Skip if any existing reservation (non-canceled) conflicts or violates gap rules
+          const conflicts = sameDateReservations.some((r) => {
+            const existingStart = parseDateTime(r.date, r.startTime);
+            const existingEnd = parseDateTime(r.date, r.endTime);
+            const newStart = parseDateTime(dateMMDDYYYY, slot.start);
+            const newEnd = parseDateTime(dateMMDDYYYY, endHHMM === '00:00' ? '23:59' : endHHMM);
+            const overlap = newStart < existingEnd && newEnd > existingStart;
+            const gapAfter = newStart - existingEnd >= 60000;
+            const gapBefore = existingStart - newEnd >= 60000;
+            const violatesGap = !(gapAfter || gapBefore) && !overlap ? false : overlap;
+            return overlap || violatesGap;
+          });
+
+          if (conflicts) return;
+
+          const opt = document.createElement('option');
+          opt.value = slot.start;
+          opt.textContent = slot.label;
+          startInput.appendChild(opt);
+        });
+
+        // If only placeholder exists, keep value empty and keep disabled
+        if (startInput.options.length === 1) {
+          startInput.value = '';
+          endInput && (endInput.value = '');
+          startInput.disabled = true;
+          startInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+        } else {
+          // Try to preserve previous selection if still valid
+          const prev = startInput.value;
+          if (prev && !Array.from(startInput.options).some((o) => o.value === prev)) {
+            startInput.value = '';
+            endInput && (endInput.value = '');
+          }
+          startInput.disabled = false;
+          startInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        }
+
+        if (startInput.value) computeAndSetEndTime();
+      } catch (e) {}
+    };
+
+    // Expose refresher for calendar date click handler
+    try {
+      window.__ogf_refreshCustomerSlots = () => {
+        // Reset duration and time fields when a new date is selected
+        if (durationSelect instanceof HTMLSelectElement) {
+          durationSelect.value = '';
+        }
+        if (startInput instanceof HTMLSelectElement) {
+          startInput.value = '';
+        }
+        if (endInput) {
+          endInput.value = '';
+        }
+
+        refreshAvailableSlots();
+        renderSlotPreview();
+      };
+    } catch (e) {}
+
+    const guardTimeSlotAccess = () => {
+      const bookingDateInput = document.getElementById('bookingDate');
+      let dateMMDDYYYY = '';
+      if (
+        state.selectedDate?.dataset?.day &&
+        state.selectedDate?.dataset?.month &&
+        state.selectedDate?.dataset?.year
+      ) {
+        const mm = String(parseInt(state.selectedDate.dataset.month, 10)).padStart(2, '0');
+        const dd = String(parseInt(state.selectedDate.dataset.day, 10)).padStart(2, '0');
+        const yyyy = state.selectedDate.dataset.year;
+        dateMMDDYYYY = `${mm}-${dd}-${yyyy}`;
+      } else if (bookingDateInput?.value) {
+        dateMMDDYYYY = parseHumanDateToMMDDYYYY(bookingDateInput.value);
+      }
+
+      if (!dateMMDDYYYY) {
+        showStepError('Step 1: Please select a date from the calendar before choosing a time slot.');
+        if (startInput instanceof HTMLSelectElement) startInput.blur();
+        return true;
+      }
+
+      const durVal = durationSelect?.value || '';
+      if (!durVal) {
+        showStepError('Step 2: Please select a duration before choosing a time slot.');
+        if (startInput instanceof HTMLSelectElement) startInput.blur();
+        return true;
+      }
+
+      clearError();
+      return false;
+    };
+
+    startInput?.addEventListener('focus', () => {
+      if (guardTimeSlotAccess()) return;
+    });
+    startInput?.addEventListener('click', () => {
+      if (guardTimeSlotAccess()) return;
+    });
+
+    startInput?.addEventListener('change', () => {
+      computeAndSetEndTime();
+      renderSlotPreview();
+    });
+    durationSelect?.addEventListener('focus', () => {
+      if (guardDurationAccess()) return;
+    });
+    durationSelect?.addEventListener('click', () => {
+      if (guardDurationAccess()) return;
+    });
+    durationSelect?.addEventListener('change', () => {
+      refreshAvailableSlots();
+      computeAndSetEndTime();
+      renderSlotPreview();
+    });
     endInput?.addEventListener('change', clearError);
+
+    // Initial population (in case a date is already selected)
+    refreshAvailableSlots();
+    renderSlotPreview();
 
     bookingForm.addEventListener('submit', async (e) => {
       const startVal = startInput?.value || '';

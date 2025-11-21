@@ -124,7 +124,6 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
       const name = (r.children?.[1]?.innerText || '').trim();
       const typeText = (r.children?.[2]?.innerText || '').trim();
       const schedText = (r.children?.[3]?.innerText || '').trim();
-      const statusText = (r.children?.[4]?.innerText || '').trim();
 
       // Extract date part before the first dash, e.g. "Oct 25, 2025 - ..."
       let dateIso = '';
@@ -139,7 +138,7 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
         }
       }
 
-      return { id, name, typeText, schedText, statusText, dateIso };
+      return { id, name, typeText, schedText, dateIso };
     });
 
     const pageSize = 10;
@@ -165,14 +164,14 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
               <td style="padding:10px 12px;font-size:13px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name || 'Reservation'}</td>
               <td style="padding:10px 12px;font-size:13px;color:#4b5563">${d.typeText || ''}</td>
               <td style="padding:10px 12px;font-size:13px;color:#4b5563">${d.schedText || ''}</td>
-              <td style="padding:10px 12px;font-size:12px;color:#2563eb;font-weight:600">${d.statusText || ''}</td>
             </tr>
           `
           )
           .join('') ||
-        '<tr><td colspan="5" style="padding:32px 12px;text-align:center;font-size:14px;color:#9ca3af">📭 No matching reservations.</td></tr>';
+        '<tr><td colspan="4" style="padding:32px 12px;text-align:center;font-size:14px;color:#9ca3af">📭 No matching reservations.</td></tr>';
 
-      const showDateFilter = title.toLowerCase().includes('active reservations');
+      const tTitle = title.toLowerCase();
+      const showDateFilter = tTitle.includes('active reservations') || tTitle.includes('total reservations');
 
       container.innerHTML = `
         <div style="margin-bottom:16px;padding:12px 14px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px">
@@ -201,7 +200,6 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
                   <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">Customer</th>
                   <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">Type</th>
                   <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">Schedule</th>
-                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.05em;text-transform:uppercase">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -818,17 +816,85 @@ async function sectionTwoMainBtnFunction() {
       const { fullName } = main.decodeName(customer.dataset.text);
 
       const buildHourOptions = () => {
-        const to12 = (hour24) => {
-          const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
-          const ap = hour24 >= 12 ? 'PM' : 'AM';
-          return `${h}:00 ${ap}`;
+        const formatRangeLabel = (hour24) => {
+          // Start label (e.g., 9:00 AM)
+          const startHour12 = ((hour24 + 11) % 12) + 1;
+          const startAp = hour24 >= 12 ? 'PM' : 'AM';
+
+          // End of one-hour block
+          const nextTotal = hour24 * 60 + 60; // minutes from midnight
+          const endLabel = (() => {
+            if (nextTotal === 24 * 60) return '12:00 AM';
+            const eh = Math.floor(nextTotal / 60);
+            const em = nextTotal % 60;
+            const endHour12 = ((eh + 11) % 12) + 1;
+            const endAp = eh >= 12 && nextTotal !== 24 * 60 ? 'PM' : 'AM';
+            return `${endHour12}:${String(em).padStart(2, '0')} ${endAp}`;
+          })();
+
+          return `${startHour12}:00 ${startAp} – ${endLabel}`;
         };
+
+        // Determine target reservation date (mm-dd-yyyy)
+        let dateStr = '';
+        if (selectedDate?.dataset?.day && selectedDate?.dataset?.month && selectedDate?.dataset?.year) {
+          const mm = String(selectedDate.dataset.month).padStart(2, '0');
+          const dd = String(selectedDate.dataset.day).padStart(2, '0');
+          const yyyy = selectedDate.dataset.year;
+          dateStr = `${mm}-${dd}-${yyyy}`;
+        }
+
         const opts = [];
         for (let h = 9; h <= 23; h++) {
           const startH = String(h).padStart(2, '0');
-          opts.push({ value: `${startH}:00`, label: `${to12(h)}` });
+          const startVal = `${startH}:00`;
+          opts.push({ value: startVal, label: formatRangeLabel(h) });
         }
         return opts;
+      };
+
+      // Render a simple summary of included time blocks under the Duration/Start controls
+      const renderSlotPreview = (duration, startHHMM, container) => {
+        try {
+          const dur = parseInt(duration || '0', 10);
+          if (!dur || dur < 1 || !/^\d{2}:\d{2}$/.test(startHHMM || '')) return;
+          if (!container) return;
+
+          const [sh] = String(startHHMM).split(':').map((n) => parseInt(n, 10));
+          if (!Number.isFinite(sh)) return;
+
+          const labels = [];
+          for (let i = 0; i < dur; i++) {
+            const hour = sh + i;
+            if (hour < 9 || hour > 23) break;
+            labels.push(formatRangeLabel(hour));
+          }
+          if (!labels.length) return;
+
+          // Inline helper text directly under Duration/Start row
+          let summary = container.querySelector('#adminSlotPreview');
+          if (!summary) {
+            summary = document.createElement('div');
+            summary.id = 'adminSlotPreview';
+            summary.className = 'mt-2 text-[11px] text-gray-700';
+            container.appendChild(summary);
+          }
+          const text = `Included time blocks: ${labels.join(', ')}`;
+          summary.textContent = text;
+
+          // Also update the dedicated read-only short3 field if present
+          try {
+            const modalRoot = document.getElementById('admin_modal');
+            if (modalRoot) {
+              const inputs = Array.from(modalRoot.querySelectorAll('input'));
+              const includedField = inputs.find((inp) => {
+                const label = inp.previousElementSibling;
+                return label && label.textContent && label.textContent.trim().startsWith('Included time blocks');
+              });
+              if (includedField) includedField.value = labels.join(', ');
+            }
+          } catch (_) {}
+        } catch (e) {}
       };
 
       // Track current selections to compute price reliably regardless of DOM order
@@ -872,6 +938,7 @@ async function sectionTwoMainBtnFunction() {
               try {
                 __currentDuration = DURATION_OPTIONS[selectedIndex - 1]?.value || 0;
                 updatePriceDisplay(__currentDuration, __currentStart, container);
+                renderSlotPreview(__currentDuration, __currentStart, container);
               } catch (_) {}
             },
           },
@@ -885,6 +952,7 @@ async function sectionTwoMainBtnFunction() {
               try {
                 __currentStart = buildHourOptions()[selectedIndex - 1]?.value || '09:00';
                 updatePriceDisplay(__currentDuration, __currentStart, container);
+                renderSlotPreview(__currentDuration, __currentStart, container);
               } catch (_) {}
             },
           },
@@ -1590,15 +1658,21 @@ function rescheduleReservation(reservation) {
   } catch (e) {}
 
   const buildHourOptions = () => {
-    const to12 = (hour24) => {
-      const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
-      const ap = hour24 >= 12 ? 'PM' : 'AM';
-      return `${h}:00 ${ap}`;
+    const formatRangeLabel = (startHour24) => {
+      const to12 = (hour24) => {
+        const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
+        const ap = hour24 >= 12 ? 'PM' : 'AM';
+        return `${h}:00 ${ap}`;
+      };
+      const startLabel = to12(startHour24);
+      const endHour = startHour24 + 1;
+      const endLabel = endHour === 24 ? '12:00 AM' : to12(endHour);
+      return `${startLabel} – ${endLabel}`;
     };
     const opts = [];
     for (let h = 9; h <= 23; h++) {
       const startH = String(h).padStart(2, '0');
-      opts.push({ value: `${startH}:00`, label: `${to12(h)}` });
+      opts.push({ value: `${startH}:00`, label: formatRangeLabel(h) });
     }
     return opts;
   };

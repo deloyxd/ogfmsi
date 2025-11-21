@@ -1103,14 +1103,28 @@ export function openModal(btn, inputs, ...callback) {
 
   const isPaymentModule = inputs.header.title.toLowerCase().includes('transaction');
   if (isPaymentModule) {
-    tempModalContainer.children[0].classList.add('max-w-5xl');
-    tempModalContainer.children[0].children[1].classList.add('cols-span-1');
+    const panel = tempModalContainer.children[0];
+    panel.classList.add('max-w-5xl');
+
+    const bodyWrapper = panel.children[1];
+    const leftBodyContainer = bodyWrapper; // existing form/body section becomes the left column
 
     const newBodyContainer = document.createElement('div');
-    newBodyContainer.className = 'grid grid-cols-2';
+    newBodyContainer.className = `${leftBodyContainer.className} grid md:grid-cols-2 gap-4`;
+
+    // Replace original body wrapper with the new two-column container
+    panel.replaceChild(newBodyContainer, leftBodyContainer);
+
+    // Left column: original body/form
     newBodyContainer.appendChild(leftBodyContainer);
 
-    let displayPurpose = fixText(inputs.header.subtitle);
+    const hasReceiptData = inputs && inputs.receipt && inputs.receiptData;
+    const d = hasReceiptData ? inputs.receiptData : null;
+
+    // Prefer explicit purpose from receiptData; otherwise derive from header subtitle
+    let displayPurpose = hasReceiptData ? (d.purpose || '') : fixText(inputs.header.subtitle || '');
+    // Strip leading "Purpose:" label if present so we don't duplicate it on the receipt row
+    displayPurpose = displayPurpose.replace(/^Purpose:\s*/i, '');
     let itemsTableHtml = '';
     try {
       if (/^Purchasing\s/i.test(displayPurpose)) {
@@ -1176,26 +1190,78 @@ export function openModal(btn, inputs, ...callback) {
           .join('');
         itemsTableHtml = `<div style="margin:8px 0; width:100%;">${header}${rows}</div>`;
 
-        // Set concise purpose label only
-        displayPurpose = 'Purchasing';
+        // For Purchasing lists, we only want the itemized table, not a long Purpose row
+        displayPurpose = '';
       }
     } catch (_) {}
 
-    const receiptRows = [{ k: 'Transaction ID', v: inputs.header.title }];
+    const receiptRows = [];
 
-    if (!displayPurpose.toLowerCase().includes('purchasing')) {
-      receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
+    if (hasReceiptData) {
+      const totalTendered = (() => {
+        try {
+          const n1 = Number(String(d.paidCash || '0').replace(/[^0-9.\-]/g, '')) || 0;
+          const n2 = Number(String(d.paidCashless || '0').replace(/[^0-9.\-]/g, '')) || 0;
+          const sum = n1 + n2;
+          return d.amountToPay && String(d.amountToPay).includes('₱')
+            ? `₱${sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : `${sum}`;
+        } catch (_) {
+          return d.amountToPay || '₱0.00';
+        }
+      })();
+
+      receiptRows.push({ k: 'Transaction ID', v: d.transactionId || '' });
+      if (d.partyLabel || d.partyValue) {
+        receiptRows.push({ k: d.partyLabel || 'For', v: d.partyValue || '' });
+      }
+      if (displayPurpose) {
+        receiptRows.push({ k: 'Purpose', v: displayPurpose, ml: false });
+      }
+
+      receiptRows.push({ k: 'Amount to pay', v: d.amountToPay || '₱0.00', mono: true, b: true });
+      receiptRows.push({ k: 'Paid (cash)', v: d.paidCash || '₱0.00', mono: true });
+      receiptRows.push({ k: 'Paid (cashless)', v: d.paidCashless || '₱0.00', mono: true });
+      receiptRows.push({ k: 'Total tendered', v: totalTendered, mono: true, b: true });
+      receiptRows.push({ k: 'Change', v: d.changeAmount || '₱0.00', mono: true });
+      receiptRows.push({ k: 'Price rate', v: d.priceRate || 'N/A' });
+      receiptRows.push({ k: 'Payment method', v: d.paymentMethod || 'N/A' });
+      if (d.refNum) {
+        receiptRows.push({ k: 'GCash Ref. No.', v: d.refNum });
+      }
+    } else {
+      const rawTitle = inputs.header && inputs.header.title ? String(inputs.header.title) : '';
+      let cleanId = rawTitle;
+      try {
+        const m = rawTitle.match(/Transaction ID:\s*([^\s]+)/i);
+        if (m && m[1]) cleanId = m[1];
+        // Strip any leftover emoji/whitespace
+        cleanId = cleanId.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+      } catch (_) {}
+
+      receiptRows.push({ k: 'Transaction ID', v: cleanId || rawTitle });
+
+      if (displayPurpose) {
+        receiptRows.push({ k: 'Purpose', v: displayPurpose, ml: false });
+      }
     }
 
     // Insert items table as a full-width row after Purpose
     let rowsHtml = receiptRows
-      .map(
-        (r) => `
+      .map((r) => {
+        const isAmtTendered = r.k === 'Amount tendered';
+        const isChangeAmt = r.k === 'Change amount';
+        const dataAttr = isAmtTendered
+          ? 'data-receipt-field="amount-tendered"'
+          : isChangeAmt
+            ? 'data-receipt-field="change-amount"'
+            : '';
+        return `
         <div style="display:flex; justify-content:space-between; padding:4px 0;">
           <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
-        </div>`
-      )
+          <div ${dataAttr} style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`;
+      })
       .join('');
 
     // Add items table if present
@@ -1204,26 +1270,33 @@ export function openModal(btn, inputs, ...callback) {
     }
 
     // Add remaining rows
-    const remainingRows = [
-      {
-        k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount',
-        v: formatPrice(decodePrice(inputs.short[1].value)),
-        mono: true,
-        b: true,
-      },
-      { k: 'Price rate', v: inputs.short[5].value },
-      { k: 'Reference', v: inputs.short[6].value !== '' ? inputs.short[6].value : 'N/A' },
-    ];
+    if (!hasReceiptData) {
+      const remainingRows = [
+        {
+          k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount',
+          v: encodePrice(decodePrice(inputs.short[1].value)),
+          mono: true,
+          b: true,
+        },
+      ];
 
-    rowsHtml += remainingRows
-      .map(
-        (r) => `
-        <div style="display:flex; justify-content:space-between; padding:4px 0;">
-          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
-        </div>`
-      )
-      .join('');
+      // Amount tendered & Change amount (initial values; will be kept in sync from live inputs)
+      remainingRows.push({ k: 'Amount tendered', v: '₱0.00', mono: true });
+      remainingRows.push({ k: 'Change amount', v: '₱0.00', mono: true });
+
+      remainingRows.push({ k: 'Price rate', v: inputs.short[5].value });
+      remainingRows.push({ k: 'Reference', v: inputs.short[6].value !== '' ? inputs.short[6].value : 'N/A' });
+
+      rowsHtml += remainingRows
+        .map(
+          (r) => `
+          <div style="display:flex; justify-content:space-between; padding:4px 0;">
+            <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+            <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+          </div>`
+        )
+        .join('');
+    }
 
     const nowInfo = getDateOrTimeOrBoth();
     const headerHtml = `
@@ -1249,17 +1322,74 @@ export function openModal(btn, inputs, ...callback) {
           </div>
           ${footerHtml}
         </div>
-        <div style="max-width:600px; margin:8px auto 0; display:flex; justify-content:center;">
-          <button id="receiptPrintBtn" style="background:#111; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer">Print receipt</button>
-        </div>
       </div>
     `;
 
     const rightBodyContainer = document.createElement('div');
-    rightBodyContainer.className = 'cols-span-1';
+    rightBodyContainer.className = 'col-span-1';
     rightBodyContainer.innerHTML = confirmationHtml;
 
-    newBodyContainer.appendChild(rightBodyContainer.firstElementChild);
+    // Right column: receipt/confirmation content
+    newBodyContainer.appendChild(rightBodyContainer);
+
+    // For the green payment modal (no receiptData yet), keep key receipt fields in sync
+    if (!hasReceiptData) {
+      const receiptCard = rightBodyContainer.querySelector('#receiptCard');
+      const form = leftBodyContainer.querySelector('form');
+
+      const amountTenderedInput = document.getElementById('input-short-7');
+      const changeInput = document.getElementById('input-short-9');
+      const refInput = form?.querySelector('#input-short-6');
+
+      // Keep Amount tendered and Change amount in the receipt in sync with the live form values
+      const amountTenderedEl = receiptCard?.querySelector('[data-receipt-field="amount-tendered"]');
+      const changeValueEl = receiptCard?.querySelector('[data-receipt-field="change-amount"]');
+
+      if (amountTenderedEl || changeValueEl) {
+        const syncPaymentSummary = () => {
+          try {
+            if (amountTenderedEl) {
+              const rawAmtTendered = amountTenderedInput?.value || '₱0.00';
+              amountTenderedEl.textContent = rawAmtTendered;
+            }
+            if (changeValueEl && changeInput) {
+              const rawChange = changeInput.value || '₱0.00';
+              changeValueEl.textContent = rawChange;
+            }
+          } catch (_) {}
+        };
+
+        amountTenderedInput?.addEventListener('input', syncPaymentSummary);
+        amountTenderedInput?.addEventListener('change', syncPaymentSummary);
+        changeInput?.addEventListener('input', syncPaymentSummary);
+        changeInput?.addEventListener('change', syncPaymentSummary);
+
+        // Initial sync
+        syncPaymentSummary();
+
+        // Also poll periodically so we catch programmatic updates that don't fire events
+        const poll = setInterval(() => {
+          if (!document.body.contains(form)) {
+            clearInterval(poll);
+            return;
+          }
+          syncPaymentSummary();
+        }, 250);
+      }
+
+      if (refInput) {
+        const refValueEl = findRowValueEl('Reference');
+        if (refValueEl) {
+          const syncRef = () => {
+            const raw = refInput.value || 'N/A';
+            refValueEl.textContent = raw === '' ? 'N/A' : raw;
+          };
+          refInput.addEventListener('input', syncRef);
+          // Initial sync
+          syncRef();
+        }
+      }
+    }
   }
 
   setupModalTheme(btn, tempModalContainer);
@@ -1638,6 +1768,8 @@ function setupModalBase(defaultData, inputs, callback) {
 
           <div class="grid grid-cols-2 gap-y-1 font-mono text-[13px]">
             <div>Amount</div><div class="text-right font-semibold">${d.amountToPay || '₱0.00'}</div>
+            <div>Amount tendered</div><div class="text-right">${amountTendered}</div>
+            <div>Change amount</div><div class="text-right">${d.changeAmount || '₱0.00'}</div>
             <div>Price rate</div><div class="text-right">${d.priceRate || 'N/A'}</div>
             <div>Payment method</div><div class="text-right">${d.paymentMethod || 'N/A'}</div>
             ${reference ? `<div>GCash Reference No.</div><div class="text-right">${reference}</div>` : d.refNum ? `<div>GCash Reference No.</div><div class="text-right">${d.refNum}</div>` : ''}

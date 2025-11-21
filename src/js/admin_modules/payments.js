@@ -681,7 +681,6 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
             'equal_id',
             1,
             async (findResult) => {
-              if (!findResult && !pendingPayment.payment_customer_id.toLowerCase().includes('sales')) return;
               if (seenPendingPaymentIds.has(pendingPayment.payment_id)) return;
               seenPendingPaymentIds.add(pendingPayment.payment_id);
               let imageSrc = pendingPayment.payment_customer_id.toLowerCase().includes('sales')
@@ -3381,12 +3380,23 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     }
 
     // Add remaining rows
+    const tenderedTotal = (cashVal || 0) + (cashlessVal || 0);
     const remainingRows = [
       {
         k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount',
         v: main.formatPrice(amountToPay),
         mono: true,
         b: true,
+      },
+      {
+        k: 'Amount tendered',
+        v: main.formatPrice(tenderedTotal),
+        mono: true,
+      },
+      {
+        k: 'Change',
+        v: change ? main.formatPrice(main.decodePrice(change)) : main.formatPrice(0),
+        mono: true,
       },
       { k: 'Price rate', v: main.fixText(priceRate) },
       { k: 'Payment method', v: main.fixText(paymentMethod) },
