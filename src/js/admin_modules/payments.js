@@ -699,7 +699,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
               const isOnlineTransaction = pendingPayment.payment_purpose.toLowerCase().includes('online');
               const isOnlineFacility = pendingPayment.payment_purpose.toLowerCase().includes('facility');
 
-              if (isOnlineTransaction && !isOnlineFacility && pendingPayment.payment_customer_id !== 'U123') {
+              if (!customerIdText.toLowerCase().includes('sales') && pendingPayment.payment_customer_id !== 'U123') {
                 try {
                   const ci = await resolveCustomerInfo(customerIdText);
                   imageSrc = ci.image || imageSrc;
@@ -2503,6 +2503,10 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       subtitle: `Purpose: ${isOnlineTransaction ? purpose.split(' - Reference: ')[0] : purpose}`,
     },
     payment: {
+      customer: {
+        id: customerId,
+        name: fullName,
+      },
       amount: amountToPay,
       rate: priceRate,
       ref: {

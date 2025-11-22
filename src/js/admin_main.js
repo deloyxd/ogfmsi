@@ -1103,8 +1103,8 @@ export function openModal(btn, inputs, ...callback) {
 
   const isPaymentModule = inputs.header.title.toLowerCase().includes('transaction');
   if (isPaymentModule) {
-    // const panel = tempModalContainer.children[0];
-    // panel.classList.add('max-w-5xl');
+    const panel = tempModalContainer.children[0];
+    panel.classList.add('max-w-2xl');
 
     // const bodyWrapper = panel.children[1];
     // const leftBodyContainer = bodyWrapper; // existing form/body section becomes the left column
@@ -1204,7 +1204,9 @@ export function openModal(btn, inputs, ...callback) {
     } catch (_) {}
 
     if (displayPurpose) {
-      receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
+      receiptRows.push({ k: 'Customer ID', v: inputs.payment.customer.id, b: false });
+      receiptRows.push({ k: 'Customer Name', v: inputs.payment.customer.name, b: true });
+      receiptRows.push({ k: 'Description', v: displayPurpose, b: true });
     }
 
     // Insert items table as a full-width row after Purpose
