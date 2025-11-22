@@ -1103,26 +1103,23 @@ export function openModal(btn, inputs, ...callback) {
 
   const isPaymentModule = inputs.header.title.toLowerCase().includes('transaction');
   if (isPaymentModule) {
-    const panel = tempModalContainer.children[0];
-    panel.classList.add('max-w-5xl');
+    // const panel = tempModalContainer.children[0];
+    // panel.classList.add('max-w-5xl');
 
-    const bodyWrapper = panel.children[1];
-    const leftBodyContainer = bodyWrapper; // existing form/body section becomes the left column
+    // const bodyWrapper = panel.children[1];
+    // const leftBodyContainer = bodyWrapper; // existing form/body section becomes the left column
 
-    const newBodyContainer = document.createElement('div');
-    newBodyContainer.className = `${leftBodyContainer.className} grid md:grid-cols-2 gap-4`;
+    // const newBodyContainer = document.createElement('div');
+    // newBodyContainer.className = `${leftBodyContainer.className} grid md:grid-cols-2 gap-4`;
 
-    // Replace original body wrapper with the new two-column container
-    panel.replaceChild(newBodyContainer, leftBodyContainer);
+    // // Replace original body wrapper with the new two-column container
+    // panel.replaceChild(newBodyContainer, leftBodyContainer);
 
-    // Left column: original body/form
-    newBodyContainer.appendChild(leftBodyContainer);
-
-    const hasReceiptData = inputs && inputs.receipt && inputs.receiptData;
-    const d = hasReceiptData ? inputs.receiptData : null;
+    // // Left column: original body/form
+    // newBodyContainer.appendChild(leftBodyContainer);
 
     // Prefer explicit purpose from receiptData; otherwise derive from header subtitle
-    let displayPurpose = hasReceiptData ? (d.purpose || '') : fixText(inputs.header.subtitle || '');
+    let displayPurpose = fixText(inputs.header.subtitle || '');
     // Strip leading "Purpose:" label if present so we don't duplicate it on the receipt row
     displayPurpose = displayPurpose.replace(/^Purpose:\s*/i, '');
     let itemsTableHtml = '';
@@ -1197,53 +1194,17 @@ export function openModal(btn, inputs, ...callback) {
 
     const receiptRows = [];
 
-    if (hasReceiptData) {
-      const totalTendered = (() => {
-        try {
-          const n1 = Number(String(d.paidCash || '0').replace(/[^0-9.\-]/g, '')) || 0;
-          const n2 = Number(String(d.paidCashless || '0').replace(/[^0-9.\-]/g, '')) || 0;
-          const sum = n1 + n2;
-          return d.amountToPay && String(d.amountToPay).includes('₱')
-            ? `₱${sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            : `${sum}`;
-        } catch (_) {
-          return d.amountToPay || '₱0.00';
-        }
-      })();
+    const rawTitle = inputs.header && inputs.header.title ? String(inputs.header.title) : '';
+    let cleanId = rawTitle;
+    try {
+      const m = rawTitle.match(/Transaction ID:\s*([^\s]+)/i);
+      if (m && m[1]) cleanId = m[1];
+      // Strip any leftover emoji/whitespace
+      cleanId = cleanId.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+    } catch (_) {}
 
-      receiptRows.push({ k: 'Transaction ID', v: d.transactionId || '' });
-      if (d.partyLabel || d.partyValue) {
-        receiptRows.push({ k: d.partyLabel || 'For', v: d.partyValue || '' });
-      }
-      if (displayPurpose) {
-        receiptRows.push({ k: 'Purpose', v: displayPurpose, ml: false });
-      }
-
-      receiptRows.push({ k: 'Amount to pay', v: d.amountToPay || '₱0.00', mono: true, b: true });
-      receiptRows.push({ k: 'Paid (cash)', v: d.paidCash || '₱0.00', mono: true });
-      receiptRows.push({ k: 'Paid (cashless)', v: d.paidCashless || '₱0.00', mono: true });
-      receiptRows.push({ k: 'Total tendered', v: totalTendered, mono: true, b: true });
-      receiptRows.push({ k: 'Change', v: d.changeAmount || '₱0.00', mono: true });
-      receiptRows.push({ k: 'Price rate', v: d.priceRate || 'N/A' });
-      receiptRows.push({ k: 'Payment method', v: d.paymentMethod || 'N/A' });
-      if (d.refNum) {
-        receiptRows.push({ k: 'GCash Ref. No.', v: d.refNum });
-      }
-    } else {
-      const rawTitle = inputs.header && inputs.header.title ? String(inputs.header.title) : '';
-      let cleanId = rawTitle;
-      try {
-        const m = rawTitle.match(/Transaction ID:\s*([^\s]+)/i);
-        if (m && m[1]) cleanId = m[1];
-        // Strip any leftover emoji/whitespace
-        cleanId = cleanId.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
-      } catch (_) {}
-
-      receiptRows.push({ k: 'Transaction ID', v: cleanId || rawTitle });
-
-      if (displayPurpose) {
-        receiptRows.push({ k: 'Purpose', v: displayPurpose, ml: false });
-      }
+    if (displayPurpose) {
+      receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
     }
 
     // Insert items table as a full-width row after Purpose
@@ -1270,33 +1231,31 @@ export function openModal(btn, inputs, ...callback) {
     }
 
     // Add remaining rows
-    if (!hasReceiptData) {
-      const remainingRows = [
-        {
-          k: displayPurpose.toLowerCase().includes('purchasing') ? 'Total Amount' : 'Amount',
-          v: encodePrice(decodePrice(inputs.short[1].value)),
-          mono: true,
-          b: true,
-        },
-      ];
+    const remainingRows = [
+      {
+        k: 'Total amount',
+        v: encodePrice(decodePrice(inputs.payment.amount)),
+        mono: true,
+        b: true,
+      },
+    ];
 
-      // Amount tendered & Change amount (initial values; will be kept in sync from live inputs)
-      remainingRows.push({ k: 'Amount tendered', v: '₱0.00', mono: true });
-      remainingRows.push({ k: 'Change amount', v: '₱0.00', mono: true });
+    // Amount tendered & Change amount (initial values; will be kept in sync from live inputs)
+    remainingRows.push({ k: 'Amount tendered', v: '₱0.00', mono: true });
+    remainingRows.push({ k: 'Change amount', v: '₱0.00', mono: true });
 
-      remainingRows.push({ k: 'Price rate', v: inputs.short[5].value });
-      remainingRows.push({ k: 'Reference', v: inputs.short[6].value !== '' ? inputs.short[6].value : 'N/A' });
+    remainingRows.push({ k: 'Price rate', v: inputs.payment.rate });
+    remainingRows.push({ k: 'Reference', v: inputs.payment.ref.number });
 
-      rowsHtml += remainingRows
-        .map(
-          (r) => `
-          <div style="display:flex; justify-content:space-between; padding:4px 0;">
-            <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-            <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
-          </div>`
-        )
-        .join('');
-    }
+    rowsHtml += remainingRows
+      .map(
+        (r) => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0;">
+          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+        </div>`
+      )
+      .join('');
 
     const nowInfo = getDateOrTimeOrBoth();
     const headerHtml = `
@@ -1314,82 +1273,24 @@ export function openModal(btn, inputs, ...callback) {
       </div>`;
 
     const confirmationHtml = `
-      <div style="text-align:left; padding:20px 0">
-        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:20px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
-          ${headerHtml}
-          <div style="padding:16px 0;">
+      <div style="text-align:left; padding-bottom: 10px;">
+        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:10px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
+          <div>
             ${rowsHtml}
           </div>
-          ${footerHtml}
         </div>
       </div>
     `;
 
-    const rightBodyContainer = document.createElement('div');
-    rightBodyContainer.className = 'col-span-1';
-    rightBodyContainer.innerHTML = confirmationHtml;
+    const receiptContainer = document.createElement('div');
+    // rightBodyContainer.className = 'col-span-1';
+    receiptContainer.innerHTML = confirmationHtml;
 
     // Right column: receipt/confirmation content
-    newBodyContainer.appendChild(rightBodyContainer);
-
-    // For the green payment modal (no receiptData yet), keep key receipt fields in sync
-    if (!hasReceiptData) {
-      const receiptCard = rightBodyContainer.querySelector('#receiptCard');
-      const form = leftBodyContainer.querySelector('form');
-
-      const amountTenderedInput = document.getElementById('input-short-7');
-      const changeInput = document.getElementById('input-short-9');
-      const refInput = form?.querySelector('#input-short-6');
-
-      // Keep Amount tendered and Change amount in the receipt in sync with the live form values
-      const amountTenderedEl = receiptCard?.querySelector('[data-receipt-field="amount-tendered"]');
-      const changeValueEl = receiptCard?.querySelector('[data-receipt-field="change-amount"]');
-
-      if (amountTenderedEl || changeValueEl) {
-        const syncPaymentSummary = () => {
-          try {
-            if (amountTenderedEl) {
-              const rawAmtTendered = amountTenderedInput?.value || '₱0.00';
-              amountTenderedEl.textContent = rawAmtTendered;
-            }
-            if (changeValueEl && changeInput) {
-              const rawChange = changeInput.value || '₱0.00';
-              changeValueEl.textContent = rawChange;
-            }
-          } catch (_) {}
-        };
-
-        amountTenderedInput?.addEventListener('input', syncPaymentSummary);
-        amountTenderedInput?.addEventListener('change', syncPaymentSummary);
-        changeInput?.addEventListener('input', syncPaymentSummary);
-        changeInput?.addEventListener('change', syncPaymentSummary);
-
-        // Initial sync
-        syncPaymentSummary();
-
-        // Also poll periodically so we catch programmatic updates that don't fire events
-        const poll = setInterval(() => {
-          if (!document.body.contains(form)) {
-            clearInterval(poll);
-            return;
-          }
-          syncPaymentSummary();
-        }, 250);
-      }
-
-      if (refInput) {
-        const refValueEl = findRowValueEl('Reference');
-        if (refValueEl) {
-          const syncRef = () => {
-            const raw = refInput.value || 'N/A';
-            refValueEl.textContent = raw === '' ? 'N/A' : raw;
-          };
-          refInput.addEventListener('input', syncRef);
-          // Initial sync
-          syncRef();
-        }
-      }
-    }
+    tempModalContainer.children[0].children[1].insertBefore(
+      receiptContainer,
+      tempModalContainer.children[0].children[1].children[0]
+    );
   }
 
   setupModalTheme(btn, tempModalContainer);

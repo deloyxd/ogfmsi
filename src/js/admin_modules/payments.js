@@ -2451,41 +2451,65 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
   const isOnlineFacility = isOnlineTransaction && purpose.includes('Online facility');
   const isStudent = priceRate.toLowerCase().includes('student');
   const effectiveId = id;
+  // const inputs = {
+  //   header: {
+  //     title: `Transaction ID: ${effectiveId} ${getEmoji('🔏', 26)}`,
+  //     subtitle: `Purpose: ${isOnlineTransaction ? purpose.split(' - Reference: ')[0] : purpose}`,
+  //   },
+  //   short: [
+  //     {
+  //       placeholder: type === 'cart' ? 'Purchase details' : 'Service details',
+  //       value: type === 'cart' ? `${fullName}` : `for customer ${fullName} (${customerId})`,
+  //       locked: true,
+  //     },
+  //     { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
+  //     { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
+  //     {
+  //       placeholder: 'Amount tendered',
+  //       value: isOnlineTransaction ? main.encodePrice(amountToPay) : 0,
+  //       required: !isOnlineTransaction,
+  //       hidden: !isOnlineTransaction,
+  //       locked: isOnlineTransaction,
+  //     },
+  //     {
+  //       placeholder: 'Change amount',
+  //       value: main.encodePrice(0),
+  //       locked: true,
+  //       live: '1|+2|-3:arithmetic',
+  //       hidden: isOnlineTransaction,
+  //     },
+  //     { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
+  //     {
+  //       placeholder: `Reference number${isOnlineTransaction ? ` from: <b>${purpose.split(' from Account: ')[1]}</b>` : ''}`,
+  //       value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
+  //       required: !isOnlineTransaction,
+  //       locked: isOnlineTransaction,
+  //     },
+  //   ],
+  //   radio: [
+  //     {
+  //       label: isOnlineTransaction && !isOnlineFacility ? 'Pictures provided' : 'Payment method',
+  //       selected: isOnlineTransaction && !isStudent ? 2 : 1,
+  //     },
+  //   ],
+  //   footer: {
+  //     main: `Complete payment transaction ${getEmoji('🔏')}`,
+  //   },
+  // };
+
   const inputs = {
     header: {
       title: `Transaction ID: ${effectiveId} ${getEmoji('🔏', 26)}`,
       subtitle: `Purpose: ${isOnlineTransaction ? purpose.split(' - Reference: ')[0] : purpose}`,
     },
-    short: [
-      {
-        placeholder: type === 'cart' ? 'Purchase details' : 'Service details',
-        value: type === 'cart' ? `${fullName}` : `for customer ${fullName} (${customerId})`,
-        locked: true,
+    payment: {
+      amount: amountToPay,
+      rate: priceRate,
+      ref: {
+        name: isOnlineTransaction ? purpose.split(' from Account: ')[1] : 'N/A',
+        number: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
       },
-      { placeholder: 'Amount to pay', value: main.encodePrice(amountToPay), locked: true },
-      { placeholder: 'Amount tendered', value: 0, required: true, autoformat: 'price', hidden: isOnlineTransaction },
-      {
-        placeholder: 'Amount tendered',
-        value: isOnlineTransaction ? main.encodePrice(amountToPay) : 0,
-        required: !isOnlineTransaction,
-        hidden: !isOnlineTransaction,
-        locked: isOnlineTransaction,
-      },
-      {
-        placeholder: 'Change amount',
-        value: main.encodePrice(0),
-        locked: true,
-        live: '1|+2|-3:arithmetic',
-        hidden: isOnlineTransaction,
-      },
-      { placeholder: 'Price rate', value: main.fixText(priceRate), locked: true },
-      {
-        placeholder: `Reference number${isOnlineTransaction ? ` from: <b>${purpose.split(' from Account: ')[1]}</b>` : ''}`,
-        value: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
-        required: !isOnlineTransaction,
-        locked: isOnlineTransaction,
-      },
-    ],
+    },
     radio: [
       {
         label: isOnlineTransaction && !isOnlineFacility ? 'Pictures provided' : 'Payment method',
@@ -2534,8 +2558,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       listener: seePhotoProvidedListener,
     });
   } else {
-    if (!inputs.short[3].locked) inputs.short[3].autoformat = 'price';
-    if (!inputs.short[3].locked) inputs.radio[0].autoformat = { type: 'short', index: 11 };
+    // if (!inputs.short[3].locked) inputs.short[3].autoformat = 'price';
+    // if (!inputs.short[3].locked) inputs.radio[0].autoformat = { type: 'short', index: 11 };
     inputs.radio[0].locked = isOnlineTransaction;
     inputs.radio.push({
       icon: `${getEmoji('💵', 26)}`,
