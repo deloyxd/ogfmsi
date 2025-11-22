@@ -1212,8 +1212,13 @@ export function openModal(btn, inputs, ...callback) {
       },
     ];
 
-    remainingRows.push({ k: 'Amount tendered', v: '₱0.00', mono: true });
-    remainingRows.push({ k: 'Change amount', v: '₱0.00', mono: true });
+    remainingRows.push({
+      k: 'Amount tendered',
+      v: encodePrice(inputs.payment.method === 'Cashless' ? inputs.payment.amount : 0),
+      l: inputs.payment.method === 'Cashless',
+      mono: true,
+    });
+    remainingRows.push({ k: 'Change amount', v: encodePrice(0), mono: true });
 
     remainingRows.push({ k: 'Price rate', v: inputs.payment.rate });
     remainingRows.push({ k: 'Payment method', v: inputs.payment.method });
@@ -1224,7 +1229,7 @@ export function openModal(btn, inputs, ...callback) {
     rowsHtml += remainingRows
       .map((r) => {
         const valueHtml =
-          r.k === 'Amount tendered'
+          r.k === 'Amount tendered' && !r.l
             ? `<input type="text" value="${r.v}" style="
                text-align:right; 
                width:250px;
@@ -1273,37 +1278,41 @@ export function openModal(btn, inputs, ...callback) {
     );
 
     const amountTenderedInput = receiptContainer.querySelector(`#amountTenderedInput`);
-    amountTenderedInput.addEventListener('input', () => {
-      amountTenderedInput.value = amountTenderedInput.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-      if (amountTenderedInput.parentElement.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
-        amountTenderedInput.parentElement.nextElementSibling.children[1].innerText = encodePrice(
-          Math.max(+amountTenderedInput.value - inputs.payment.amount, 0)
-        );
-      } else {
-        amountTenderedInput.parentElement.nextElementSibling.nextElementSibling.children[1].innerText = encodePrice(
-          Math.max(
-            +amountTenderedInput.value +
-              +decodePrice(amountTenderedInput.parentElement.nextElementSibling.children[1].value) -
-              inputs.payment.amount,
-            0
-          )
-        );
-      }
-    });
-    amountTenderedInput.addEventListener('focus', () => {
-      amountTenderedInput.value = decodePrice(amountTenderedInput.value);
-      setTimeout(() => {
-        amountTenderedInput.select();
-      }, 0);
-    });
-    amountTenderedInput.addEventListener('blur', () => {
-      amountTenderedInput.value = encodePrice(amountTenderedInput.value);
-    });
-    amountTenderedInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
-        amountTenderedInput.blur();
-      }
-    });
+    if (amountTenderedInput) {
+      amountTenderedInput.addEventListener('input', () => {
+        amountTenderedInput.value = amountTenderedInput.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+        if (
+          amountTenderedInput.parentElement.nextElementSibling.children[0].innerText.toLowerCase().includes('change')
+        ) {
+          amountTenderedInput.parentElement.nextElementSibling.children[1].innerText = encodePrice(
+            Math.max(+amountTenderedInput.value - inputs.payment.amount, 0)
+          );
+        } else {
+          amountTenderedInput.parentElement.nextElementSibling.nextElementSibling.children[1].innerText = encodePrice(
+            Math.max(
+              +amountTenderedInput.value +
+                +decodePrice(amountTenderedInput.parentElement.nextElementSibling.children[1].value) -
+                inputs.payment.amount,
+              0
+            )
+          );
+        }
+      });
+      amountTenderedInput.addEventListener('focus', () => {
+        amountTenderedInput.value = decodePrice(amountTenderedInput.value);
+        setTimeout(() => {
+          amountTenderedInput.select();
+        }, 0);
+      });
+      amountTenderedInput.addEventListener('blur', () => {
+        amountTenderedInput.value = encodePrice(amountTenderedInput.value);
+      });
+      amountTenderedInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
+          amountTenderedInput.blur();
+        }
+      });
+    }
   }
 
   setupModalTheme(btn, tempModalContainer);
