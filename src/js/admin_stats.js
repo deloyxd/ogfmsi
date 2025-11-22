@@ -257,6 +257,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     let filteredRows = [];
     let currentPurpose = '';
     let currentDate = '';
+    let currentSearch = '';
 
     // Whitelisted purposes for this breakdown (plus method entries for the dropdown)
     let PURPOSE_FILTERS = [
@@ -384,7 +385,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
           <div style="color:#dbeafe;font-size:12px">${totalRows} transaction${totalRows !== 1 ? 's' : ''}</div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <input type="text" data-role="filter-search" placeholder="Search by ID or purpose..." style="padding:7px 12px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none;min-width:200px;max-width:300px" />
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4b5563">
             <span>Date</span>
             <input type="date" data-role="filter-date" style="padding:5px 8px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none" />
@@ -448,8 +450,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       // Re-wire filters on each render so controls are interactive
       const purposeSelect = container.querySelector('select[data-role="filter-purpose"]');
       const dateInput = container.querySelector('input[data-role="filter-date"]');
+      const searchInput = container.querySelector('input[data-role="filter-search"]');
       if (purposeSelect) purposeSelect.value = currentPurpose;
       if (dateInput) dateInput.value = currentDate;
+      if (searchInput) searchInput.value = currentSearch;
 
       function applyFilters() {
         const selected = (purposeSelect?.value || '').toLowerCase();
@@ -457,6 +461,15 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
         const dateVal = (dateInput?.value || '').trim();
         currentDate = dateVal;
+
+        // Preserve focus state and cursor position BEFORE getting the value
+        const hadSearchFocus = document.activeElement === searchInput;
+        const searchCursorPos = hadSearchFocus ? (searchInput.selectionStart || searchInput.value.length) : null;
+
+        // Store raw value (with spaces) for display, but use trimmed for filtering
+        const searchRaw = (searchInput?.value || '');
+        currentSearch = searchRaw; // Store raw value to preserve spaces
+        const searchVal = searchRaw.trim().toLowerCase(); // Use trimmed for filtering
 
         // First, only keep whitelisted purposes (purpose-based)
         let base = rows.filter((p) => isWhitelistedPurpose(p.payment_purpose));
@@ -502,7 +515,31 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
           });
         }
 
+        // Search filter by ID or purpose
+        if (searchVal) {
+          filteredRows = filteredRows.filter((p) => {
+            const id = String(p.payment_id || '').toLowerCase();
+            const purpose = String(p.payment_purpose || '').toLowerCase();
+            return id.includes(searchVal) || purpose.includes(searchVal);
+          });
+        }
+
         renderPage(1);
+
+        // Restore focus and cursor position after re-rendering
+        if (hadSearchFocus) {
+          const newSearchInput = container.querySelector('input[data-role="filter-search"]');
+          if (newSearchInput) {
+            // Use setTimeout to ensure DOM is fully updated
+            setTimeout(() => {
+              newSearchInput.focus();
+              // Ensure cursor position is within valid range
+              const maxPos = newSearchInput.value.length;
+              const cursorPos = searchCursorPos !== null ? Math.min(searchCursorPos, maxPos) : maxPos;
+              newSearchInput.setSelectionRange(cursorPos, cursorPos);
+            }, 0);
+          }
+        }
       }
 
       if (purposeSelect) {
@@ -510,6 +547,9 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       }
       if (dateInput) {
         dateInput.addEventListener('change', applyFilters);
+      }
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
       }
     }
 
@@ -587,6 +627,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         let currentPage = 1;
         let filtered = rows.slice();
         let currentFilter = '';
+        let currentSearch = '';
 
         function renderUpcoming(page) {
           const totalRows = filtered.length;
@@ -623,7 +664,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
               <div style="font-weight:700;font-size:14px">Nearly Expiring Monthly Passes</div>
               <div style="font-size:12px;opacity:.9">${totalRows} customer${totalRows === 1 ? '' : 's'} within 14 days</div>
             </div>
-            <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+              <input type="text" data-role="filter-search" placeholder="Search by ID or name..." style="padding:7px 12px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none;min-width:200px;max-width:300px" />
               <select data-role="filter-days" style="padding:7px 10px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none">
                 <option value="">All passes</option>
                 <option value="today">Ends today</option>
@@ -695,33 +737,71 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
           // Wire filter dropdown
           const filterSelect = container.querySelector('select[data-role="filter-days"]');
+          const searchInput = container.querySelector('input[data-role="filter-search"]');
           if (filterSelect) filterSelect.value = currentFilter;
+          if (searchInput) searchInput.value = currentSearch;
 
           function applyFilter() {
             const v = (filterSelect?.value || '').toLowerCase();
             currentFilter = v;
 
-            if (!v) {
-              filtered = rows.slice();
-            } else if (v === 'today') {
-              filtered = rows.filter((r) => r.daysLeft === 0);
+            // Preserve focus state and cursor position BEFORE getting the value
+            const hadSearchFocus = document.activeElement === searchInput;
+            const searchCursorPos = hadSearchFocus ? (searchInput.selectionStart || searchInput.value.length) : null;
+
+            // Store raw value (with spaces) for display, but use trimmed for filtering
+            const searchRaw = (searchInput?.value || '');
+            currentSearch = searchRaw; // Store raw value to preserve spaces
+            const searchVal = searchRaw.trim().toLowerCase(); // Use trimmed for filtering
+
+            let tempFiltered = rows.slice();
+
+            if (v === 'today') {
+              tempFiltered = rows.filter((r) => r.daysLeft === 0);
             } else if (v === 'tomorrow') {
-              filtered = rows.filter((r) => r.daysLeft === 1);
+              tempFiltered = rows.filter((r) => r.daysLeft === 1);
             } else if (v === '0-3') {
-              filtered = rows.filter((r) => r.daysLeft >= 0 && r.daysLeft <= 3);
+              tempFiltered = rows.filter((r) => r.daysLeft >= 0 && r.daysLeft <= 3);
             } else if (v === '4-7') {
-              filtered = rows.filter((r) => r.daysLeft >= 4 && r.daysLeft <= 7);
+              tempFiltered = rows.filter((r) => r.daysLeft >= 4 && r.daysLeft <= 7);
             } else if (v === '8-14') {
-              filtered = rows.filter((r) => r.daysLeft >= 8 && r.daysLeft <= 14);
+              tempFiltered = rows.filter((r) => r.daysLeft >= 8 && r.daysLeft <= 14);
+            }
+
+            // Apply search filter
+            if (searchVal) {
+              filtered = tempFiltered.filter((r) => {
+                const id = String(r.id || '').toLowerCase();
+                const name = String(r.name || '').toLowerCase();
+                return id.includes(searchVal) || name.includes(searchVal);
+              });
             } else {
-              filtered = rows.slice();
+              filtered = tempFiltered;
             }
 
             renderUpcoming(1);
+
+            // Restore focus and cursor position after re-rendering
+            if (hadSearchFocus) {
+              const newSearchInput = container.querySelector('input[data-role="filter-search"]');
+              if (newSearchInput) {
+                // Use setTimeout to ensure DOM is fully updated
+                setTimeout(() => {
+                  newSearchInput.focus();
+                  // Ensure cursor position is within valid range
+                  const maxPos = newSearchInput.value.length;
+                  const cursorPos = searchCursorPos !== null ? Math.min(searchCursorPos, maxPos) : maxPos;
+                  newSearchInput.setSelectionRange(cursorPos, cursorPos);
+                }, 0);
+              }
+            }
           }
 
           if (filterSelect) {
             filterSelect.addEventListener('change', applyFilter);
+          }
+          if (searchInput) {
+            searchInput.addEventListener('input', applyFilter);
           }
         }
 

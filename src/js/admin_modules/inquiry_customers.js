@@ -3130,6 +3130,7 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
     let filtered = data.slice();
     let currentFilter = '';
     let currentDate = '';
+    let currentSearch = '';
 
     function renderPage(page) {
       const total = filtered.length;
@@ -3159,7 +3160,8 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
           <div style="font-weight:700;font-size:14px">${title}</div>
           <div style="font-size:12px;opacity:.9">${total} customer${total === 1 ? '' : 's'} total</div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <input type="text" data-role="filter-search" placeholder="Search by ID or name..." style="padding:7px 12px;border-radius:999px;border:1px solid #d1d5db;font-size:12px;background:#ffffff;color:#374151;outline:none;min-width:200px;max-width:300px" />
           ${showDateFilter
             ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4b5563">
                  <span>Date</span>
@@ -3223,31 +3225,36 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
 
       const filterSelect = container.querySelector('select[data-role="filter-type"]');
       const dateInput = container.querySelector('input[data-role="filter-date"]');
+      const searchInput = container.querySelector('input[data-role="filter-search"]');
       if (filterSelect) filterSelect.value = currentFilter;
       if (dateInput) dateInput.value = currentDate;
+      if (searchInput) searchInput.value = currentSearch;
 
       function applyFilter() {
         const v = (filterSelect?.value || '').toLowerCase();
         currentFilter = v;
-        if (!v) {
-          filtered = data.slice();
-        } else if (v === 'monthly-active') {
-          filtered = data.filter((d) =>
+        
+        // Preserve focus state and cursor position BEFORE getting the value
+        const hadSearchFocus = document.activeElement === searchInput;
+        const searchCursorPos = hadSearchFocus ? (searchInput.selectionStart || searchInput.value.length) : null;
+        
+        let tempFiltered = data.slice();
+        
+        if (v === 'monthly-active') {
+          tempFiltered = data.filter((d) =>
             String(d.meta || '').toLowerCase().includes('monthly') &&
             String(d.meta || '').toLowerCase().includes('active')
           );
         } else if (v === 'monthly-expired') {
           const metaLower = (m) => String(m || '').toLowerCase();
-          filtered = data.filter((d) => {
+          tempFiltered = data.filter((d) => {
             const m = metaLower(d.meta);
             return m.includes('monthly') && (m.includes('expired') || m.includes('inactive'));
           });
         } else if (v === 'daily') {
-          filtered = data.filter((d) => String(d.meta || '').toLowerCase().includes('daily'));
+          tempFiltered = data.filter((d) => String(d.meta || '').toLowerCase().includes('daily'));
         } else if (v === 'archived') {
-          filtered = data.filter((d) => String(d.meta || '').toLowerCase().includes('archiv'));
-        } else {
-          filtered = data.slice();
+          tempFiltered = data.filter((d) => String(d.meta || '').toLowerCase().includes('archiv'));
         }
 
         // Single date filter for Active Monthly Customers
@@ -3266,10 +3273,40 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
             targetIso = dateVal;
           }
 
-          filtered = filtered.filter((d) => d.dateIso === targetIso);
+          tempFiltered = tempFiltered.filter((d) => d.dateIso === targetIso);
+        }
+
+        // Apply search filter
+        // Store raw value (with spaces) for display, but use trimmed for filtering
+        const searchRaw = (searchInput?.value || '');
+        currentSearch = searchRaw; // Store raw value to preserve spaces
+        const searchVal = searchRaw.trim().toLowerCase(); // Use trimmed for filtering
+        if (searchVal) {
+          filtered = tempFiltered.filter((d) => {
+            const id = String(d.id || '').toLowerCase();
+            const name = String(d.name || '').toLowerCase();
+            return id.includes(searchVal) || name.includes(searchVal);
+          });
+        } else {
+          filtered = tempFiltered;
         }
 
         renderPage(1);
+
+        // Restore focus and cursor position after re-rendering
+        if (hadSearchFocus) {
+          const newSearchInput = container.querySelector('input[data-role="filter-search"]');
+          if (newSearchInput) {
+            // Use setTimeout to ensure DOM is fully updated
+            setTimeout(() => {
+              newSearchInput.focus();
+              // Ensure cursor position is within valid range
+              const maxPos = newSearchInput.value.length;
+              const cursorPos = searchCursorPos !== null ? Math.min(searchCursorPos, maxPos) : maxPos;
+              newSearchInput.setSelectionRange(cursorPos, cursorPos);
+            }, 0);
+          }
+        }
       }
 
       if (filterSelect) {
@@ -3277,6 +3314,9 @@ document.addEventListener('ogfmsi:statsBreakdown', (e) => {
       }
       if (dateInput) {
         dateInput.addEventListener('change', applyFilter);
+      }
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilter);
       }
 
     }
