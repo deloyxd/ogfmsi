@@ -2366,7 +2366,7 @@ function activeRadioListener(title, input, container, inputGroup) {
         .includes('reference')
     ) {
       const reference = input.cloneNode(true);
-      reference.children[0].innerText = 'Reference Number';
+      reference.children[0].innerText = 'Reference number';
       reference.children[1].value = '';
       input.parentElement.appendChild(reference);
       const refInput = reference.children[1];

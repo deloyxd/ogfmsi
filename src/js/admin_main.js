@@ -1217,7 +1217,9 @@ export function openModal(btn, inputs, ...callback) {
 
     remainingRows.push({ k: 'Price rate', v: inputs.payment.rate });
     remainingRows.push({ k: 'Payment method', v: inputs.payment.method });
-    if (inputs.payment.ref.number !== 'N/A') remainingRows.push({ k: 'Reference', v: inputs.payment.ref.number });
+    if (inputs.payment.ref.name !== 'N/A') remainingRows.push({ k: 'Account name', v: inputs.payment.ref.name });
+    if (inputs.payment.ref.number !== 'N/A')
+      remainingRows.push({ k: 'Reference number', v: inputs.payment.ref.number });
 
     rowsHtml += remainingRows
       .map((r) => {
