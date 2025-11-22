@@ -519,6 +519,19 @@
                   <!-- <p class="mt-2 text-xs">Slots are 1 hour each. Longer durations combine slots automatically. Hours: 9:00 AM – 12:00 AM.</p> -->
                 </div>
 
+                <!-- Select Date -->
+                <div>
+                  <label for="bookingDate" class="mb-1 block text-xs font-semibold text-gray-700">Select Date</label>
+                  <input
+                    id="bookingDate"
+                    name="bookingDate"
+                    type="text"
+                    readonly
+                    class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-800 focus:outline-none"
+                    placeholder="Pick a date from the calendar"
+                  />
+                </div>
+
                 <!-- Duration -->
                 <div>
                   <label for="duration" class="mb-1 block text-xs font-semibold text-gray-700">Duration</label>
@@ -556,19 +569,6 @@
                   </p>
                   <input id="endTime" name="endTime" type="hidden" />
                   <div id="slotPreview" class="mt-2 space-y-1 text-[11px] text-gray-700"></div>
-                </div>
-
-                <!-- Select Date -->
-                <div>
-                  <label for="bookingDate" class="mb-1 block text-xs font-semibold text-gray-700">Select Date</label>
-                  <input
-                    id="bookingDate"
-                    name="bookingDate"
-                    type="text"
-                    readonly
-                    class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-800 focus:outline-none"
-                    placeholder="Pick a date from the calendar"
-                  />
                 </div>
 
                 <!-- Team Members -->

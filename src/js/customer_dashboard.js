@@ -742,92 +742,11 @@ document.addEventListener('DOMContentLoaded', async function () {
       document.getElementById('monthlyInfo')?.addEventListener('click', showPopup);
       document.getElementById('monthlyInfoMobile')?.addEventListener('click', showPopup);
       document.getElementById('closePopup')?.addEventListener('click', closePopup);
-      popup?.addEventListener('click', (e) => {
-        if (e.target.id === 'monthlyPopup') closePopup(); // close when clicking outside
-      });
-    } catch (_) {}
-  }
-
-  const openMessage = document.getElementById('openMessage');
-  const openMessageMobile = document.getElementById('openMessageMobile');
-  const storeHours = document.getElementById('storeHours');
-
-  if (storeHours) {
-    const operatingHoursText = storeHours.textContent.trim();
-    const [openingTimeStr, closingTimeStr] = operatingHoursText.split(' - ');
-    const convertTo24Hour = (timeStr) => {
-      const [time, modifier] = timeStr.split(' ');
-      let [hours, minutes] = time.split(':').map(Number);
-
-      if (modifier === 'PM' && hours !== 12) {
-        hours += 12;
-      } else if (modifier === 'AM' && hours === 12) {
-        hours = 0;
-      }
-
-      return hours;
-    };
-
-    const openingTime = convertTo24Hour(openingTimeStr);
-    const closingTime = convertTo24Hour(closingTimeStr);
-
-    const currentDate = new Date();
-    const currentHour = currentDate.getHours();
-
-    // Check if the store is open
-    const isOpen = currentHour >= openingTime && currentHour < closingTime;
-
-    if (!isOpen) {
-      if (openMessage) {
-        openMessage.innerHTML = `
-          <div class="text-center">
-            <div class="flex items-center justify-center space-x-2">
-              <span class="font-bold text-orange-300">🏦</span>
-              <span class="text-sm font-medium">Facility Closed</span>
-            </div>
-            <div class="mt-1 text-xs text-orange-200">Come back during our operating hours</div>
-          </div>
-        `;
-      }
-      if (openMessageMobile) {
-        openMessageMobile.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <span class="font-bold text-orange-300">🏦</span>
-              <span class="text-sm font-medium">Facility Closed</span>
-            </div>
-            <span class="text-xs text-orange-200">Come back during our operating hours</span>
-          </div>
-        `;
-      }
+    } catch (error) {
+      callback();
+      return;
     }
   }
-
-  const startTimeInput = document.getElementById('startTime');
-  const durationSelect = document.getElementById('duration');
-  const endTimeInput = document.getElementById('endTime');
-
-  if (startTimeInput && durationSelect && endTimeInput) {
-    const updateEndTime = () => {
-      const startTimeValue = startTimeInput.value;
-      const durationValue = durationSelect.value;
-      if (!startTimeValue || !durationValue) return;
-      const [hours, minutes] = startTimeValue.split(':').map(Number);
-      const startDate = new Date();
-      startDate.setHours(hours, minutes, 0, 0);
-      const durationHours = parseInt(durationValue);
-      startDate.setHours(startDate.getHours() + durationHours);
-      const endHours = startDate.getHours().toString().padStart(2, '0');
-      const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
-      endTimeInput.value = `${endHours}:${endMinutes}`;
-    };
-
-    startTimeInput.addEventListener('change', updateEndTime);
-    durationSelect.addEventListener('change', updateEndTime);
-  }
-
-  // Load notifications on dashboard init
-  loadCustomerNotifications();
 
   // Realtime polling for notifications
   let notifPoller = null;
@@ -854,4 +773,86 @@ document.addEventListener('DOMContentLoaded', async function () {
       stopNotifPolling();
     }
   });
+
+  // Facility Open/Closed status based on Operating Hours (supports 12:00 AM as midnight)
+  (function setupOpenStatus() {
+    const openMessage = document.getElementById('openMessage');
+    const openMessageMobile = document.getElementById('openMessageMobile');
+    const hoursEl = document.getElementById('storeHours');
+    if (!openMessage && !openMessageMobile) return;
+
+    const toMinutes = (label) => {
+      const [time, mer] = label.split(' ');
+      let [h, m] = time.split(':').map(Number);
+      if (mer === 'PM' && h !== 12) h += 12;
+      if (mer === 'AM' && h === 12) h = 0;
+      return h * 60 + m;
+    };
+
+    const compute = () => {
+      const hoursText = (hoursEl?.textContent || '9:00 AM - 12:00 AM').trim();
+      const parts = hoursText.split(' - ');
+      if (parts.length !== 2) return;
+      const [openStr, closeStr] = parts;
+      const openMins = toMinutes(openStr);
+      let closeMins = toMinutes(closeStr);
+      // Treat 12:00 AM close as midnight 24:00
+      if (closeMins === 0) closeMins = 24 * 60;
+
+      const now = new Date();
+      const currMins = now.getHours() * 60 + now.getMinutes();
+      let isOpen;
+      if (closeMins > openMins) {
+        isOpen = currMins >= openMins && currMins < closeMins;
+      } else {
+        // overnight window
+        isOpen = currMins >= openMins || currMins < closeMins;
+      }
+
+      const openHtml = `
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-2">
+            <span class="font-bold text-orange-300">🏦</span>
+            <span class="text-sm font-medium">Facility Open</span>
+          </div>
+          <div class="mt-1 text-xs text-orange-200">Ready to serve you</div>
+        </div>
+      `;
+      const closedHtml = `
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-2">
+            <span class="font-bold text-orange-300">🏦</span>
+            <span class="text-sm font-medium">Facility Closed</span>
+          </div>
+          <div class="mt-1 text-xs text-orange-200">Come back during our operating hours</div>
+        </div>
+      `;
+
+      if (openMessage) openMessage.innerHTML = isOpen ? openHtml : closedHtml;
+      if (openMessageMobile) {
+        const openMobile = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="font-bold text-orange-300">🏦</span>
+              <span class="text-sm font-medium">Facility Open</span>
+            </div>
+            <span class="text-xs text-orange-200">Ready to serve you</span>
+          </div>
+        `;
+        const closedMobile = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="font-bold text-orange-300">🏦</span>
+              <span class="text-sm font-medium">Facility Closed</span>
+            </div>
+            <span class="text-xs text-orange-200">Come back during our operating hours</span>
+          </div>
+        `;
+        openMessageMobile.innerHTML = isOpen ? openMobile : closedMobile;
+      }
+    };
+
+    compute();
+    setInterval(compute, 60 * 1000);
+  })();
 });
