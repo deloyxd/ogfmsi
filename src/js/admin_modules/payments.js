@@ -663,6 +663,7 @@ document.addEventListener('ogfmsiAdminMainLoaded', async function () {
     }, 5000);
 
     async function fetchAllPendingPayments() {
+      if (document.getElementById('admin_modal').children.length > 1) return;
       try {
         const response = await fetch(`${API_BASE_URL}/payment/pending`);
         if (!response.ok) {
@@ -2284,129 +2285,108 @@ function attachSelectAll(el) {
 }
 
 function activeRadioListener(title, input, container, inputGroup) {
-  const amountToPay = main.decodePrice(inputGroup.short[1].value);
-  const cashInput = container.querySelector(`#input-short-7`);
-  const cashlessInput = container.querySelector(`#input-short-8`);
-  const refInput = container.querySelector(`#input-short-11`);
-  const titleLower = title.toLowerCase();
-  // Clean up any previous hybrid auto-fill listener to prevent duplicates
-  if (cashInput && cashInput.__autoFillListener) {
-    cashInput.removeEventListener('input', cashInput.__autoFillListener);
-    cashInput.__autoFillListener = null;
+  if (
+    input.parentElement.children[input.parentElement.children.length - 1].children[0].innerText
+      .toLowerCase()
+      .includes('method')
+  ) {
+    input.parentElement.children[input.parentElement.children.length - 1].children[1].innerText = title;
+    input.parentElement.children[input.parentElement.children.length - 3].children[1].innerText = main.encodePrice(0);
+  } else if (
+    input.parentElement.children[input.parentElement.children.length - 2].children[0].innerText
+      .toLowerCase()
+      .includes('method')
+  ) {
+    input.parentElement.children[input.parentElement.children.length - 2].children[1].innerText = title;
+    input.parentElement.children[input.parentElement.children.length - 4].children[1].innerText = main.encodePrice(0);
+  } else if (
+    input.parentElement.children[input.parentElement.children.length - 3].children[0].innerText
+      .toLowerCase()
+      .includes('method')
+  ) {
+    input.parentElement.children[input.parentElement.children.length - 3].children[1].innerText = title;
+    input.parentElement.children[input.parentElement.children.length - 5].children[1].innerText = main.encodePrice(0);
   }
-  switch (title.toLowerCase()) {
-    case 'cash':
-      if (input.value.trim() == '') input.value = 'N/A';
-      cashInput.parentElement.classList.remove('hidden');
-      cashlessInput.parentElement.classList.add('hidden');
-      // Hide reference number for cash
-      if (refInput) {
-        refInput.parentElement.classList.add('hidden');
-        refInput.value = 'N/A';
-      }
-      // Focus cash amount on cash method
-      requestAnimationFrame(() => {
-        if (cashInput) cashInput.focus();
+  if (title.toLowerCase().includes('hybrid')) {
+    if (input.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
+      const cashlessInput = input.cloneNode(true);
+      cashlessInput.children[0].innerText = 'Amount tendered (Cashless)';
+      cashlessInput.children[1].value = main.encodePrice(Math.floor(inputGroup.payment.amount / 2));
+      input.parentElement.insertBefore(cashlessInput, input.nextElementSibling);
+      cashlessInput.children[1].addEventListener('input', () => {
+        let val = cashlessInput.children[1].value;
+        val = val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+        if (val === '') val = 0;
+        let num = parseFloat(val);
+        if (!isNaN(num) && num > inputGroup.payment.amount - 1) {
+          num = inputGroup.payment.amount - 1;
+        }
+        if (!isNaN(num) && num < 1) {
+          num = 1;
+        }
+        cashlessInput.children[1].value = isNaN(num) ? '' : String(num);
+        input.children[1].value = main.encodePrice(inputGroup.payment.amount - num);
       });
-      break;
-    case 'cashless':
-      if (input.value == 'N/A') input.value = '';
-      cashInput.parentElement.classList.add('hidden');
-      cashlessInput.parentElement.classList.remove('hidden');
-      // Show reference number for cashless
-      if (refInput) {
-        refInput.parentElement.classList.remove('hidden');
-        if (refInput.value == 'N/A') refInput.value = '';
-      }
-      // Focus cashless amount on cashless method
-      requestAnimationFrame(() => {
-        if (cashlessInput) cashlessInput.focus();
+      cashlessInput.children[1].addEventListener('focus', () => {
+        cashlessInput.children[1].value = main.decodePrice(cashlessInput.children[1].value);
+        setTimeout(() => {
+          cashlessInput.children[1].select();
+        }, 0);
       });
-      // Autofill cashless tendered to the full amount due when Cashless is selected
-      if (cashlessInput) {
-        cashlessInput.value = main.encodePrice(amountToPay);
-      }
-      break;
-    case 'hybrid':
-      if (input.value == 'N/A') input.value = '';
-      cashInput.parentElement.classList.remove('hidden');
-      cashlessInput.parentElement.classList.remove('hidden');
-      // Show reference number for hybrid
-      if (refInput) {
-        refInput.parentElement.classList.remove('hidden');
-        if (refInput.value == 'N/A') refInput.value = '';
-      }
-      // Prefer focusing cash amount first on hybrid
-      requestAnimationFrame(() => {
-        if (cashInput) cashInput.focus();
+      cashlessInput.children[1].addEventListener('blur', () => {
+        cashlessInput.children[1].value = main.encodePrice(cashlessInput.children[1].value);
       });
-      // In Hybrid: set cashless to the remaining needed (amountToPay - cash)
-      if (cashInput && cashlessInput) {
-        const updateCashlessRemaining = () => {
-          const cashVal = cashInput.value.includes('₱')
-            ? +main.decodePrice(cashInput.value)
-            : Number(cashInput.value) || 0;
-          const remaining = Math.max(0, Number(amountToPay) - cashVal);
-          cashlessInput.value = main.encodePrice(remaining);
-          cashlessInput.dispatchEvent(new Event('input'));
-        };
-        // Attach and remember the listener for cleanup on next switch
-        cashInput.__autoFillListener = updateCashlessRemaining;
-        cashInput.addEventListener('input', updateCashlessRemaining);
-        // Initialize once immediately
-        updateCashlessRemaining();
-      }
-      break;
-  }
-  inputGroup.short[2].hidden = cashInput.parentElement.classList.contains('hidden');
-  inputGroup.short[3].hidden = cashlessInput.parentElement.classList.contains('hidden');
-  if (refInput) {
-    inputGroup.short[6].hidden = refInput.parentElement.classList.contains('hidden');
-  }
-  if (inputGroup.short[2].hidden) {
-    cashInput.previousElementSibling.innerHTML =
-      inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
-    cashInput.value = main.encodePrice(0);
+      cashlessInput.children[1].addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
+          cashlessInput.children[1].blur();
+        }
+      });
+    }
+    input.children[0].innerText = 'Amount tendered (Cash)';
+    input.children[1].value = main.encodePrice(Math.ceil(inputGroup.payment.amount / 2));
   } else {
-    if (title.toLowerCase() == 'hybrid') {
-      cashInput.previousElementSibling.innerHTML =
-        inputGroup.short[2].placeholder + ' (cash)' + (inputGroup.short[2].required ? ' *' : '');
-      cashInput.value = main.encodePrice(0);
-    } else {
-      cashInput.previousElementSibling.innerHTML =
-        inputGroup.short[2].placeholder + (inputGroup.short[2].required ? ' *' : '');
-      cashInput.value = main.encodePrice(0);
+    if (!input.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
+      input.nextElementSibling.remove();
     }
+    input.children[0].innerText = 'Amount tendered';
+    input.children[1].value = main.encodePrice(0);
   }
-  if (inputGroup.short[3].hidden) {
-    cashlessInput.previousElementSibling.innerHTML =
-      inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
+  if (title.toLowerCase().includes('cash') && !title.toLowerCase().includes('less')) {
+    if (
+      input.parentElement.children[input.parentElement.children.length - 1].children[0].innerText
+        .toLowerCase()
+        .includes('reference')
+    ) {
+      input.parentElement.children[input.parentElement.children.length - 1].remove();
+    }
   } else {
-    if (title.toLowerCase() == 'hybrid') {
-      cashlessInput.previousElementSibling.innerHTML =
-        inputGroup.short[3].placeholder + ' (cashless)' + (inputGroup.short[3].required ? ' *' : '');
-    } else {
-      cashlessInput.previousElementSibling.innerHTML =
-        inputGroup.short[3].placeholder + (inputGroup.short[3].required ? ' *' : '');
+    if (
+      !input.parentElement.children[input.parentElement.children.length - 1].children[0].innerText
+        .toLowerCase()
+        .includes('reference')
+    ) {
+      const reference = input.cloneNode(true);
+      reference.children[0].innerText = 'Reference Number';
+      reference.children[1].value = '';
+      input.parentElement.appendChild(reference);
+      const refInput = reference.children[1];
+      refInput.addEventListener('input', () => {
+        refInput.value = refInput.value.replace(/\D/g, '');
+        if (refInput.value.length > 13) {
+          refInput.value = refInput.value.slice(0, 13);
+        }
+      });
+      refInput.addEventListener('focus', () => {
+        setTimeout(() => {
+          refInput.select();
+        }, 0);
+      });
+      refInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
+          refInput.blur();
+        }
+      });
     }
-  }
-  // Default autofill behavior after visibility/labels are set
-  // If payment is locked (online) OR Cashless tab is selected, autofill cashless with amount to pay.
-  // Hybrid is handled above with a live listener, so do not override here for hybrid.
-  if (titleLower !== 'hybrid') {
-    if (inputGroup.radio[0].locked || titleLower === 'cashless') {
-      cashlessInput.value = main.encodePrice(amountToPay);
-    } else {
-      cashlessInput.value = main.encodePrice(0);
-    }
-  }
-  cashInput.dispatchEvent(new Event('input'));
-  cashlessInput.dispatchEvent(new Event('input'));
-
-  // Ensure quick editing UX: auto-select contents on focus/click
-  if (!inputGroup.radio[0].locked) {
-    attachSelectAll(cashInput);
-    attachSelectAll(cashlessInput);
   }
 }
 
@@ -2509,6 +2489,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       },
       amount: amountToPay,
       rate: priceRate,
+      method: isOnlineTransaction ? 'Cashless' : 'Cash',
       ref: {
         name: isOnlineTransaction ? purpose.split(' from Account: ')[1] : 'N/A',
         number: isOnlineTransaction ? purpose.split(' - Reference: ')[1].split(' from Account: ')[0] : 'N/A',
@@ -2565,6 +2546,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
     // if (!inputs.short[3].locked) inputs.short[3].autoformat = 'price';
     // if (!inputs.short[3].locked) inputs.radio[0].autoformat = { type: 'short', index: 11 };
     inputs.radio[0].locked = isOnlineTransaction;
+    inputs.radio[0].autoformat = { type: 'normal', index: type === 'cart' ? 2 : 4 };
     inputs.radio.push({
       icon: `${getEmoji('💵', 26)}`,
       title: 'Cash',

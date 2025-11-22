@@ -1106,29 +1106,13 @@ export function openModal(btn, inputs, ...callback) {
     const panel = tempModalContainer.children[0];
     panel.classList.add('max-w-2xl');
 
-    // const bodyWrapper = panel.children[1];
-    // const leftBodyContainer = bodyWrapper; // existing form/body section becomes the left column
-
-    // const newBodyContainer = document.createElement('div');
-    // newBodyContainer.className = `${leftBodyContainer.className} grid md:grid-cols-2 gap-4`;
-
-    // // Replace original body wrapper with the new two-column container
-    // panel.replaceChild(newBodyContainer, leftBodyContainer);
-
-    // // Left column: original body/form
-    // newBodyContainer.appendChild(leftBodyContainer);
-
-    // Prefer explicit purpose from receiptData; otherwise derive from header subtitle
     let displayPurpose = fixText(inputs.header.subtitle || '');
-    // Strip leading "Purpose:" label if present so we don't duplicate it on the receipt row
     displayPurpose = displayPurpose.replace(/^Purpose:\s*/i, '');
     let itemsTableHtml = '';
     try {
       if (/^Purchasing\s/i.test(displayPurpose)) {
         const itemsText = displayPurpose.replace(/^Purchasing\s*/i, '');
         let parsed = [];
-        // Primary: robust regex to capture each item even when names contain commas
-        // Pattern: "<qty>x <name> ₱<amount>"; name is non-greedy up to the amount
         const itemRe = /(\d+)x\s+(.+?)\s+₱([\d,]+(?:\.\d{2})?)/g;
         let mm;
         while ((mm = itemRe.exec(itemsText)) !== null) {
@@ -1141,7 +1125,6 @@ export function openModal(btn, inputs, ...callback) {
             .trim();
           parsed.push({ name, qty, amount });
         }
-        // Fallback: split on commas that are NOT thousand separators (i.e., not followed by exactly 3 digits)
         if (parsed.length === 0) {
           const rawItems = itemsText.split(/,(?!\d{3})\s*/).filter(Boolean);
           parsed = rawItems.map((raw) => {
@@ -1168,7 +1151,6 @@ export function openModal(btn, inputs, ...callback) {
           });
         }
 
-        // Build table-like HTML
         const header = `
           <div style="display:flex; padding:6px 0; border-bottom:1px solid #000; font-weight:700; font-size:13px;">
             <div style="flex:1; text-align:left;">Item</div>
@@ -1187,7 +1169,6 @@ export function openModal(btn, inputs, ...callback) {
           .join('');
         itemsTableHtml = `<div style="margin:8px 0; width:100%;">${header}${rows}</div>`;
 
-        // For Purchasing lists, we only want the itemized table, not a long Purpose row
         displayPurpose = '';
       }
     } catch (_) {}
@@ -1199,7 +1180,6 @@ export function openModal(btn, inputs, ...callback) {
     try {
       const m = rawTitle.match(/Transaction ID:\s*([^\s]+)/i);
       if (m && m[1]) cleanId = m[1];
-      // Strip any leftover emoji/whitespace
       cleanId = cleanId.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
     } catch (_) {}
 
@@ -1209,74 +1189,72 @@ export function openModal(btn, inputs, ...callback) {
       receiptRows.push({ k: 'Description', v: displayPurpose, b: true });
     }
 
-    // Insert items table as a full-width row after Purpose
     let rowsHtml = receiptRows
       .map((r) => {
-        const isAmtTendered = r.k === 'Amount tendered';
-        const isChangeAmt = r.k === 'Change amount';
-        const dataAttr = isAmtTendered
-          ? 'data-receipt-field="amount-tendered"'
-          : isChangeAmt
-            ? 'data-receipt-field="change-amount"'
-            : '';
         return `
         <div style="display:flex; justify-content:space-between; padding:4px 0;">
           <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-          <div ${dataAttr} style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
+          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
         </div>`;
       })
       .join('');
 
-    // Add items table if present
     if (itemsTableHtml) {
       rowsHtml += itemsTableHtml;
     }
 
-    // Add remaining rows
     const remainingRows = [
       {
         k: 'Total amount',
-        v: encodePrice(decodePrice(inputs.payment.amount)),
+        v: encodePrice(inputs.payment.amount),
         mono: true,
         b: true,
       },
     ];
 
-    // Amount tendered & Change amount (initial values; will be kept in sync from live inputs)
     remainingRows.push({ k: 'Amount tendered', v: '₱0.00', mono: true });
     remainingRows.push({ k: 'Change amount', v: '₱0.00', mono: true });
 
     remainingRows.push({ k: 'Price rate', v: inputs.payment.rate });
-    remainingRows.push({ k: 'Reference', v: inputs.payment.ref.number });
+    remainingRows.push({ k: 'Payment method', v: inputs.payment.method });
+    if (inputs.payment.ref.number !== 'N/A') remainingRows.push({ k: 'Reference', v: inputs.payment.ref.number });
 
     rowsHtml += remainingRows
-      .map(
-        (r) => `
-        <div style="display:flex; justify-content:space-between; padding:4px 0;">
-          <div style="color:#4b5563; font-size:13px;">${r.k}</div>
-          <div style="text-align:right; color:#111; ${r.mono ? "font-family: 'Courier New', Courier, monospace;" : ''} font-size:13px; ${r.b ? 'font-weight:700;' : 'font-weight:400;'}">${r.v}</div>
-        </div>`
-      )
+      .map((r) => {
+        const valueHtml =
+          r.k === 'Amount tendered'
+            ? `<input type="text" value="${r.v}" style="
+               text-align:right; 
+               width:250px;
+               border:1px solid #000;
+               margin-right: -4px;
+               padding:2px 4px;
+               font-size:13px;
+               font-family:'Courier New', Courier, monospace;
+             "
+             id="amountTenderedInput"
+           />`
+            : `<div style="
+             text-align:right; 
+             color:#111; 
+             ${r.mono ? "font-family:'Courier New', Courier, monospace;" : ''} 
+             font-size:13px; 
+             ${r.b ? 'font-weight:700;' : 'font-weight:400;'}
+           ">
+             ${r.v}
+           </div>`;
+
+        return `
+      <div style="display:flex; justify-content:space-between; padding:4px 0;">
+        <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+        ${valueHtml}
+      </div>`;
+      })
       .join('');
-
-    const nowInfo = getDateOrTimeOrBoth();
-    const headerHtml = `
-      <div style="text-align:center; padding-bottom:16px; border-bottom:2px dashed #000;">
-        <div style="font-size:18px; font-weight:700; margin-bottom:2px;">FITWORX GYM</div>
-        <div style="font-size:12px; font-weight:600; color:#111; margin-bottom:4px;">Payment Reciept</div>
-        <div style="font-size:11px; color:#6b7280;">${nowInfo.date}</div>
-        <div style="font-size:11px; color:#6b7280;">${nowInfo.time}</div>
-      </div>`;
-
-    const footerHtml = `
-      <div style="text-align:center; padding-top:16px; border-top:2px dashed #000; margin-top:12px;">
-        <div style="font-size:11px; color:#6b7280;">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
-        <div style="font-size:10px; color:#9ca3af; margin-top:4px;">Please keep this receipt for your records</div>
-      </div>`;
 
     const confirmationHtml = `
       <div style="text-align:left; padding-bottom: 10px;">
-        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:10px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
+        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:10px 32px; font-family: 'Courier New', Courier, monospace;">
           <div>
             ${rowsHtml}
           </div>
@@ -1285,14 +1263,45 @@ export function openModal(btn, inputs, ...callback) {
     `;
 
     const receiptContainer = document.createElement('div');
-    // rightBodyContainer.className = 'col-span-1';
     receiptContainer.innerHTML = confirmationHtml;
 
-    // Right column: receipt/confirmation content
     tempModalContainer.children[0].children[1].insertBefore(
       receiptContainer,
       tempModalContainer.children[0].children[1].children[0]
     );
+
+    const amountTenderedInput = receiptContainer.querySelector(`#amountTenderedInput`);
+    amountTenderedInput.addEventListener('input', () => {
+      amountTenderedInput.value = amountTenderedInput.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+      if (amountTenderedInput.parentElement.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
+        amountTenderedInput.parentElement.nextElementSibling.children[1].innerText = encodePrice(
+          Math.max(+amountTenderedInput.value - inputs.payment.amount, 0)
+        );
+      } else {
+        amountTenderedInput.parentElement.nextElementSibling.nextElementSibling.children[1].innerText = encodePrice(
+          Math.max(
+            +amountTenderedInput.value +
+              +decodePrice(amountTenderedInput.parentElement.nextElementSibling.children[1].value) -
+              inputs.payment.amount,
+            0
+          )
+        );
+      }
+    });
+    amountTenderedInput.addEventListener('focus', () => {
+      amountTenderedInput.value = decodePrice(amountTenderedInput.value);
+      setTimeout(() => {
+        amountTenderedInput.select();
+      }, 0);
+    });
+    amountTenderedInput.addEventListener('blur', () => {
+      amountTenderedInput.value = encodePrice(amountTenderedInput.value);
+    });
+    amountTenderedInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
+        amountTenderedInput.blur();
+      }
+    });
   }
 
   setupModalTheme(btn, tempModalContainer);
@@ -1534,282 +1543,6 @@ function setupModalBase(defaultData, inputs, callback) {
     };
   }
 
-  if (inputs && inputs.receipt && inputs.receiptData) {
-    const form = tempModalContainer.querySelector('form');
-    const buttonsContainer = tempModalContainer.querySelector('#modalMainBtn')?.parentElement;
-    if (form && buttonsContainer) {
-      const d = inputs.receiptData;
-      const amountTendered = (() => {
-        try {
-          const n1 = Number(String(d.paidCash || '0').replace(/[^0-9.\-]/g, '')) || 0;
-          const n2 = Number(String(d.paidCashless || '0').replace(/[^0-9.\-]/g, '')) || 0;
-          const sum = n1 + n2;
-          return d.paidCash || d.paidCashless
-            ? d.amountToPay && d.amountToPay.includes('₱')
-              ? `₱${sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : `${sum}`
-            : d.amountToPay || '₱0.00';
-        } catch (_) {
-          return d.amountToPay || '₱0.00';
-        }
-      })();
-
-      const card = document.createElement('div');
-      card.className = 'mx-auto mb-3 w-full max-w-2xl';
-
-      // Derive items from purpose when formatted as a Purchasing list
-      const rawPurpose = (d.purpose || '').toString();
-      const parsedFromPurpose = (function () {
-        try {
-          if (!/^Purchasing\s/i.test(rawPurpose)) return [];
-          const itemsText = rawPurpose.replace(/^Purchasing\s*/i, '');
-          const out = [];
-          const itemRe = /(\d+)x\s+(.+?)\s+₱([\d,]+(?:\.\d{2})?)/g;
-          let m;
-          while ((m = itemRe.exec(itemsText)) !== null) {
-            let qty = Number(m[1]);
-            let name = m[2]
-              .trim()
-              .replace(/\b\d+(?:\.\d+)?\s*(?:ml|mL|l|L|g|kg|KG|Lb|LB|lb|lbs|LBS|oz|OZ)\b/g, '')
-              .replace(/\s{2,}/g, ' ')
-              .trim();
-            let amount = `₱${m[3]}`;
-            out.push({ name, qty, amount });
-          }
-          if (out.length === 0) {
-            const rawItems = itemsText.split(/,(?!\d{3})\s*/).filter(Boolean);
-            rawItems.forEach((raw) => {
-              const str = raw.trim();
-              const pesoIdx = str.lastIndexOf('₱');
-              let amount = '';
-              let nameAndQty = str;
-              if (pesoIdx >= 0) {
-                amount = str.slice(pesoIdx).trim();
-                nameAndQty = str.slice(0, pesoIdx).trim();
-              }
-              const qtyMatch = nameAndQty.match(/^(\d+)x\s+(.+)$/i);
-              let qty = 1;
-              let name = nameAndQty;
-              if (qtyMatch) {
-                qty = Number(qtyMatch[1]);
-                name = qtyMatch[2].trim();
-              }
-              name = name
-                .replace(/\b\d+(?:\.\d+)?\s*(?:ml|mL|l|L|g|kg|KG|Lb|LB|lb|lbs|LBS|oz|OZ)\b/g, '')
-                .replace(/\s{2,}/g, ' ')
-                .trim();
-              out.push({ name, qty, amount });
-            });
-          }
-          return out;
-        } catch (_) {
-          return [];
-        }
-      })();
-
-      const itemsArr = Array.isArray(d.items) && d.items.length > 0 ? d.items : parsedFromPurpose;
-      const purposeShown =
-        parsedFromPurpose.length > 0 ? 'Purchasing' : rawPurpose.split('<b>').join('').split('</b>').join('');
-
-      const itemsTable =
-        Array.isArray(itemsArr) && itemsArr.length > 0
-          ? `
-          <div class="mt-2 font-mono text-[13px]">
-            <div class="grid grid-cols-[1fr_auto_auto] gap-x-3 border-b border-black pb-1">
-              <div class="font-semibold">Item</div>
-              <div class="text-right font-semibold w-10">Qty</div>
-              <div class="text-right font-semibold w-24">Amount</div>
-            </div>
-            ${itemsArr
-              .map((it) => {
-                const name = (it.name || '').toString();
-                const qty = it.qty != null ? it.qty : it.quantity != null ? it.quantity : 1;
-                const amt = it.amount || it.price || it.total || '₱0.00';
-                return `<div class=\"grid grid-cols-[1fr_auto_auto] gap-x-3 py-1\">\
-                <div>${name}</div>\
-                <div class=\"text-right w-10\">${qty}</div>\
-                <div class=\"text-right w-24\">${amt}</div>\
-              </div>`;
-              })
-              .join('')}
-          </div>
-        `
-          : '';
-
-      // Extract details from purposeShown
-      let description = purposeShown;
-      let reference = '';
-      let account = '';
-
-      const refMatch = purposeShown.match(/Reference:\s*([0-9]+)/i);
-      const accMatch = purposeShown.match(/Account:\s*([A-Za-z\s]+)/i);
-
-      if (refMatch) reference = refMatch[1];
-      if (accMatch) account = accMatch[1];
-
-      // Remove reference/account info from main description
-      description = purposeShown.split('- Reference:')[0].trim();
-
-      // Then your HTML:
-      card.innerHTML = `
-        <div class="mx-auto max-w-xl border-2 border-black bg-white p-5 shadow-sm">
-          <div class="text-center">
-            <div class="text-base font-extrabold tracking-wide">FITWORX GYM</div>
-            <div class="text-xs font-semibold">Payment Receipt</div>
-            <div class="mt-1 text-[11px]">${d.dateTime || ''}</div>
-          </div>
-
-          <div class="my-2 border-t-2 border-dashed border-black"></div>
-
-          <div class="grid grid-cols-2 gap-y-1 font-mono text-[13px]">
-            <div>Transaction ID</div><div class="text-right">${d.transactionId || ''}</div>
-            ${description.toLowerCase().trim().includes('purchasing') ? '' : `<div>Description</div><div class="text-right">${description}</div>`}
-          </div>
-
-          ${itemsTable}
-          ${itemsTable ? '<div class="my-2 border-t border-black"></div>' : ''}
-
-          <div class="grid grid-cols-2 gap-y-1 font-mono text-[13px]">
-            <div>Amount</div><div class="text-right font-semibold">${d.amountToPay || '₱0.00'}</div>
-            <div>Amount tendered</div><div class="text-right">${amountTendered}</div>
-            <div>Change amount</div><div class="text-right">${d.changeAmount || '₱0.00'}</div>
-            <div>Price rate</div><div class="text-right">${d.priceRate || 'N/A'}</div>
-            <div>Payment method</div><div class="text-right">${d.paymentMethod || 'N/A'}</div>
-            ${reference ? `<div>GCash Reference No.</div><div class="text-right">${reference}</div>` : d.refNum ? `<div>GCash Reference No.</div><div class="text-right">${d.refNum}</div>` : ''}
-            ${account ? `<div>Account Name</div><div class="text-right">${account}</div>` : ''}
-          </div>
-
-          <div class="my-2 border-t-2 border-dashed border-black"></div>
-
-          <div class="mt-1 text-center font-mono text-[11px] opacity-80">
-            Q2BV+QMG, Capt. F. S. Samano, Caloocan, Metro Manila
-          </div>
-          <div class="text-center font-mono text-[11px] opacity-60">
-            Please keep this receipt for your records
-          </div>
-        </div>
-
-        <div class="mt-2 flex justify-center">
-          <button type="button" id="__print_receipt_btn"
-            class="rounded-md bg-gray-800 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-gray-700">
-            Print receipt
-          </button>
-        </div>
-      `;
-      form.insertBefore(card, buttonsContainer);
-
-      const printBtn = card.querySelector('#__print_receipt_btn');
-      printBtn?.addEventListener('click', () => {
-        try {
-          const nowText = d.dateTime || '';
-          const headerHtml =
-            '<div style="text-align:center; padding-bottom:16px; border-bottom:2px dashed #000;">\
-            <div style="font-size:18px; font-weight:700; margin-bottom:2px;">FITWORX GYM</div>\
-            <div style="font-size:12px; font-weight:600; color:#111; margin-bottom:4px;">Payment Reciept</div>\
-            <div style="font-size:11px; color:#6b7280;">' +
-            nowText +
-            '</div>\
-          </div>';
-          const itemsHtml =
-            Array.isArray(itemsArr) && itemsArr.length > 0
-              ? (function () {
-                  let h =
-                    '<div style="font-family: \'Courier New\', Courier, monospace; font-size:12px; margin-top:6px;">';
-                  h +=
-                    '<div style="display:grid; grid-template-columns: 1fr auto auto; gap: 12px; border-bottom:1px solid #000; padding-bottom:4px;">';
-                  h +=
-                    '<div style="font-weight:700;">Item</div><div style="text-align:right; min-width:32px; font-weight:700;">Qty</div><div style="text-align:right; min-width:72px; font-weight:700;">Amount</div></div>';
-                  itemsArr.forEach(function (it) {
-                    const name = (it.name || '').toString();
-                    const qty = it.qty != null ? it.qty : it.quantity != null ? it.quantity : 1;
-                    const amt = it.amount || it.price || it.total || '₱0.00';
-                    h +=
-                      '<div style="display:grid; grid-template-columns: 1fr auto auto; gap: 12px; padding:4px 0;">' +
-                      '<div>' +
-                      name +
-                      '</div>' +
-                      '<div style="text-align:right; min-width:32px;">' +
-                      qty +
-                      '</div>' +
-                      '<div style="text-align:right; min-width:72px;">' +
-                      amt +
-                      '</div>' +
-                      '</div>';
-                  });
-                  h += '</div>';
-                  return h;
-                })()
-              : '';
-          const rowsHtml =
-            '<div style="font-size:12px; line-height:1.65;">' +
-            '<div style="display:flex; justify-content:space-between;"><span>Transaction ID</span><span>' +
-            (d.transactionId || '') +
-            '</span></div>' +
-            (description.toLowerCase().trim().includes('purchasing')
-              ? ''
-              : '<div style="display:flex; justify-content:space-between;"><span>Description</span><span>' +
-                description +
-                '</span></div>') +
-            (itemsHtml ? itemsHtml + '<div style="border-top:1px solid #000; margin:6px 0 0 0;"></div>' : '') +
-            '<div style="display:flex; justify-content:space-between;"><span>Amount</span><span style="font-weight:700;">' +
-            (d.amountToPay || '₱0.00') +
-            '</span></div>' +
-            '<div style="display:flex; justify-content:space-between;"><span>Price rate</span><span>' +
-            (d.priceRate || 'N/A') +
-            '</span></div>' +
-            '<div style="display:flex; justify-content:space-between;"><span>Payment method</span><span>' +
-            (d.paymentMethod || 'N/A') +
-            '</span></div>' +
-            (reference
-              ? '<div style="display:flex; justify-content:space-between;"><span>GCash Reference No.</span><span>' +
-                reference +
-                '</span></div>'
-              : d.refNum
-                ? '<div style="display:flex; justify-content:space-between;"><span>GCash Reference No.</span><span>' +
-                  d.refNum +
-                  '</span></div>'
-                : '') +
-            (account
-              ? '<div style="display:flex; justify-content:space-between;"><span>Account Name</span><span>' +
-                account +
-                '</span></div>'
-              : '') +
-            '</div>';
-          const footerHtml =
-            '<div style="margin-top:12px; padding-top:12px; border-top:2px dashed #000; text-align:center; font-size:11px; color:#6b7280;">' +
-            'Q2BV+QMG, Capt. F. S. Samano, Caloocan, Metro Manila<br>\
-            Please keep this receipt for your records' +
-            '</div>';
-          const docHtml =
-            '<!doctype html><html><head><meta charset="utf-8" />' +
-            '<title>Receipt ' +
-            (d.transactionId || '') +
-            '</title>' +
-            "<style>html, body { font-family: 'Courier New', Courier, monospace; color: #111; margin: 0; } .wrap { padding: 24px; } .card { border: 2px solid #000; padding: 20px 32px; max-width: 720px; margin: 0 auto; } @media print { .card { box-shadow: none; } }</style>" +
-            '</head><body><div class="wrap"><div class="card">' +
-            headerHtml +
-            '<div style="padding:16px 0;">' +
-            rowsHtml +
-            '</div>' +
-            footerHtml +
-            '</div></div></body></html>';
-          const w = window.open('', '_blank', 'width=900,height=650');
-          if (!w) return;
-          w.document.open();
-          w.document.write(docHtml);
-          w.document.close();
-          w.focus();
-          setTimeout(() => {
-            try {
-              w.print();
-            } catch (_) {}
-          }, 300);
-        } catch (_) {}
-      });
-    }
-    return;
-  }
-
   if (inputs.image) {
     const originalContainer =
       tempModalContainer.querySelector('#input-image').parentElement.parentElement.parentElement;
@@ -1944,6 +1677,15 @@ function setupModalBase(defaultData, inputs, callback) {
               }
             } else if (autoformatType.includes('online')) {
               input.listener(input.title, input.id);
+            } else if (autoformatType.includes('normal')) {
+              if (autoformatIndex >= 0) {
+                input.listener(
+                  input.title,
+                  tempModalContainer.querySelector(`#receiptCard`).children[0].children[autoformatIndex],
+                  tempModalContainer,
+                  inputs
+                );
+              }
             } else {
               if (autoformatIndex > 0) {
                 input.listener(
