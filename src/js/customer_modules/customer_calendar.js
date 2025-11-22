@@ -1602,19 +1602,24 @@ function openDateReservationsModal(dateMMDDYYYY) {
       ? reservationsForDay
           .map((r) => {
             const status = String(r.status || 'Pending');
+            const knownStatuses = ['Pending', 'Approved', 'Completed', 'Canceled'];
+            const showStatus = knownStatuses.includes(status);
             const statusColor =
               status === 'Pending'
                 ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
                 : 'bg-green-100 text-green-800 border-green-200';
             const time = `${to12h(r.startTime)} – ${to12h(r.endTime)}`;
             const type = r.reservationType.replace(/\b\w/g, (char) => char.toUpperCase()) || '—';
+            const statusHtml = showStatus
+              ? `<span class="whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${statusColor}">${status}</span>`
+              : '';
             return `
               <li class="flex items-start justify-between gap-3 rounded-md border p-3 text-sm">
                 <div class="flex flex-col">
                   <span class="font-semibold text-gray-800">${time}</span>
                   <span class="text-gray-600">${type}</span>
                 </div>
-                <span class="whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${statusColor}">${status}</span>
+                ${statusHtml}
               </li>`;
           })
           .join('')

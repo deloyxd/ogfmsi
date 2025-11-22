@@ -859,12 +859,9 @@ async function sectionTwoMainBtnFunction() {
 
       const buildHourOptions = () => {
         const formatRangeLabel = (hour24) => {
-          // Start label (e.g., 9:00 AM)
           const startHour12 = ((hour24 + 11) % 12) + 1;
           const startAp = hour24 >= 12 ? 'PM' : 'AM';
-
-          // End of one-hour block
-          const nextTotal = hour24 * 60 + 60; // minutes from midnight
+          const nextTotal = hour24 * 60 + 60;
           const endLabel = (() => {
             if (nextTotal === 24 * 60) return '12:00 AM';
             const eh = Math.floor(nextTotal / 60);
@@ -873,7 +870,6 @@ async function sectionTwoMainBtnFunction() {
             const endAp = eh >= 12 && nextTotal !== 24 * 60 ? 'PM' : 'AM';
             return `${endHour12}:${String(em).padStart(2, '0')} ${endAp}`;
           })();
-
           return `${startHour12}:00 ${startAp} – ${endLabel}`;
         };
 
@@ -886,11 +882,28 @@ async function sectionTwoMainBtnFunction() {
           dateStr = `${mm}-${dd}-${yyyy}`;
         }
 
+        const sameDate = (existingReservations || []).filter((r) => r.date === dateStr);
+        const overlaps = (startMins, endMins) => {
+          // adjacency allowed: [a,b) vs [c,d) overlap iff a < d && b > c
+          return sameDate.some((res) => {
+            const [sh, sm] = String(res.startTime || '00:00').split(':').map(Number);
+            const [eh, em] = String(res.endTime || '00:00').split(':').map(Number);
+            const resStart = (sh * 60 + sm);
+            let resEnd = (eh * 60 + em);
+            if (resEnd === 0) resEnd = 24 * 60; // treat 00:00 as midnight
+            return startMins < resEnd && endMins > resStart;
+          });
+        };
+
         const opts = [];
         for (let h = 9; h <= 23; h++) {
-          const startH = String(h).padStart(2, '0');
-          const startVal = `${startH}:00`;
-          opts.push({ value: startVal, label: formatRangeLabel(h) });
+          const startM = h * 60;
+          const endM = startM + 60;
+          if (!overlaps(startM, endM)) {
+            const startH = String(h).padStart(2, '0');
+            const startVal = `${startH}:00`;
+            opts.push({ value: startVal, label: formatRangeLabel(h) });
+          }
         }
         return opts;
       };
