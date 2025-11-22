@@ -421,7 +421,7 @@ function openPaymentModal(preparedRegistrationData) {
             </div>
             <div class="space-y-1">
               <p class="font-semibold">Account Details:</p>
-              <p>Name: Enzo Daniela</p>
+              <p>Name: Gerald Luna</p>
               <p>Number: 09633226873</p>
             </div>
             <form id="paymentForm" class="space-y-3">
