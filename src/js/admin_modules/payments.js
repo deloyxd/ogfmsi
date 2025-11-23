@@ -3860,11 +3860,12 @@ async function openTransactionDetails(type, row) {
     }
   }
 
-  const partyLabel = type === 'cart' ? 'Product Sales' : 'Service';
-  const partyValue =
+  const partyLabel = type === 'sales' ? 'Product Sales' : 'Service for';
+  let partyValue =
     customerId && typeof customerId === 'string' && customerId.includes(':')
       ? customerId.split(':')[1].split('Purchasing')[0].trim()
       : customerId || 'N/A';
+  if (type !== 'sales') partyValue = `${row.dataset.custom2} (${partyValue})`; 
 
   const inputs = {
     header: {

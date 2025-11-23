@@ -1105,8 +1105,11 @@ export function openModal(btn, inputs, ...callback) {
   if (isPaymentModule) {
     const panel = tempModalContainer.children[0];
     panel.classList.add('max-w-2xl');
+    
+    const hasReceiptData = inputs && inputs.receipt && inputs.receiptData;
+    const d = hasReceiptData ? inputs.receiptData : null;
 
-    let displayPurpose = fixText(inputs.header.subtitle || '');
+    let displayPurpose = hasReceiptData ? d.purpose : fixText(inputs.header.subtitle);
     displayPurpose = displayPurpose.replace(/^Purpose:\s*/i, '');
     let itemsTableHtml = '';
     try {
@@ -1175,18 +1178,28 @@ export function openModal(btn, inputs, ...callback) {
 
     const receiptRows = [];
 
-    const rawTitle = inputs.header && inputs.header.title ? String(inputs.header.title) : '';
-    let cleanId = rawTitle;
-    try {
-      const m = rawTitle.match(/Transaction ID:\s*([^\s]+)/i);
-      if (m && m[1]) cleanId = m[1];
-      cleanId = cleanId.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
-    } catch (_) {}
+    if (hasReceiptData) {
+      receiptRows.push({ k: 'Transaction ID', v: d.transactionId || '' });
+      if (d.partyLabel || d.partyValue) {
+        receiptRows.push({ k: d.partyLabel || 'For', v: d.partyValue || '' });
+      }
+      if (displayPurpose) {
+        receiptRows.push({ k: 'Description', v: displayPurpose, ml: false });
+      }
+    } else {
+      const rawTitle = inputs.header && inputs.header.title ? String(inputs.header.title) : '';
+      let cleanId = rawTitle;
+      try {
+        const m = rawTitle.match(/Transaction ID:\s*([^\s]+)/i);
+        if (m && m[1]) cleanId = m[1];
+        cleanId = cleanId.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+      } catch (_) {}
 
-    if (displayPurpose) {
-      receiptRows.push({ k: 'Customer ID', v: inputs.payment.customer.id, b: false });
-      receiptRows.push({ k: 'Customer Name', v: inputs.payment.customer.name, b: true });
-      receiptRows.push({ k: 'Description', v: displayPurpose, b: true });
+      if (displayPurpose) {
+        receiptRows.push({ k: 'Customer ID', v: inputs.payment.customer.id, b: false });
+        receiptRows.push({ k: 'Customer Name', v: inputs.payment.customer.name, b: true });
+        receiptRows.push({ k: 'Description', v: displayPurpose, b: true });
+      }
     }
 
     let rowsHtml = receiptRows
@@ -1203,34 +1216,80 @@ export function openModal(btn, inputs, ...callback) {
       rowsHtml += itemsTableHtml;
     }
 
-    const remainingRows = [
-      {
-        k: 'Total amount',
-        v: encodePrice(inputs.payment.amount),
+    if (hasReceiptData) {
+      const remainingRows = [];
+
+      const totalTendered = (() => {
+        try {
+          const n1 = Number(String(d.paidCash || '0').replace(/[^0-9.\-]/g, '')) || 0;
+          const n2 = Number(String(d.paidCashless || '0').replace(/[^0-9.\-]/g, '')) || 0;
+          const sum = n1 + n2;
+          return d.amountToPay && String(d.amountToPay).includes('₱')
+            ? `₱${sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : `${sum}`;
+        } catch (_) {
+          return d.amountToPay || '₱0.00';
+        }
+      })();
+
+      remainingRows.push({ k: 'Total amount', v: d.amountToPay || '₱0.00', mono: true, b: true });
+      remainingRows.push({ k: 'Cash amount', v: d.paidCash || '₱0.00', mono: true });
+      remainingRows.push({ k: 'Cashless amount', v: d.paidCashless || '₱0.00', mono: true });
+      remainingRows.push({ k: 'Amount tendered', v: totalTendered, mono: true, b: true });
+      remainingRows.push({ k: 'Change', v: d.changeAmount || '₱0.00', mono: true });
+      remainingRows.push({ k: 'Price rate', v: d.priceRate || 'N/A' });
+      remainingRows.push({ k: 'Payment method', v: d.paymentMethod || 'N/A' });
+      if (d.refNum) {
+        remainingRows.push({ k: 'Reference number', v: d.refNum });
+      }
+
+      rowsHtml += remainingRows
+        .map((r) => {
+          return `
+            <div style="display:flex; justify-content:space-between; padding:4px 0;">
+              <div style="color:#4b5563; font-size:13px;">${r.k}</div>
+              <div style="
+                  text-align:right; 
+                  color:#111; 
+                  ${r.mono ? "font-family:'Courier New', Courier, monospace;" : ''} 
+                  font-size:13px; 
+                  ${r.b ? 'font-weight:700;' : 'font-weight:400;'}
+                ">
+                ${r.v}
+              </div>
+            </div>
+            `;
+        })
+        .join('');
+    } else {
+      const remainingRows = [
+        {
+          k: 'Total amount',
+          v: encodePrice(inputs.payment.amount),
+          mono: true,
+          b: true,
+        },
+      ];
+
+      remainingRows.push({
+        k: 'Amount tendered',
+        v: encodePrice(inputs.payment.method === 'Cashless' ? inputs.payment.amount : 0),
+        l: inputs.payment.method === 'Cashless',
         mono: true,
-        b: true,
-      },
-    ];
+      });
+      remainingRows.push({ k: 'Change amount', v: encodePrice(0), mono: true });
 
-    remainingRows.push({
-      k: 'Amount tendered',
-      v: encodePrice(inputs.payment.method === 'Cashless' ? inputs.payment.amount : 0),
-      l: inputs.payment.method === 'Cashless',
-      mono: true,
-    });
-    remainingRows.push({ k: 'Change amount', v: encodePrice(0), mono: true });
+      remainingRows.push({ k: 'Price rate', v: inputs.payment.rate });
+      remainingRows.push({ k: 'Payment method', v: inputs.payment.method });
+      if (inputs.payment.ref.name !== 'N/A') remainingRows.push({ k: 'Account name', v: inputs.payment.ref.name });
+      if (inputs.payment.ref.number !== 'N/A')
+        remainingRows.push({ k: 'Reference number', v: inputs.payment.ref.number });
 
-    remainingRows.push({ k: 'Price rate', v: inputs.payment.rate });
-    remainingRows.push({ k: 'Payment method', v: inputs.payment.method });
-    if (inputs.payment.ref.name !== 'N/A') remainingRows.push({ k: 'Account name', v: inputs.payment.ref.name });
-    if (inputs.payment.ref.number !== 'N/A')
-      remainingRows.push({ k: 'Reference number', v: inputs.payment.ref.number });
-
-    rowsHtml += remainingRows
-      .map((r) => {
-        const valueHtml =
-          r.k === 'Amount tendered' && !r.l
-            ? `<input type="text" value="${r.v}" style="
+      rowsHtml += remainingRows
+        .map((r) => {
+          const valueHtml =
+            r.k === 'Amount tendered' && !r.l
+              ? `<input type="text" value="${r.v}" style="
                text-align:right; 
                width:250px;
                border:1px solid #000;
@@ -1241,7 +1300,7 @@ export function openModal(btn, inputs, ...callback) {
              "
              id="amountTenderedInput"
            />`
-            : `<div style="
+              : `<div style="
              text-align:right; 
              color:#111; 
              ${r.mono ? "font-family:'Courier New', Courier, monospace;" : ''} 
@@ -1251,15 +1310,46 @@ export function openModal(btn, inputs, ...callback) {
              ${r.v}
            </div>`;
 
-        return `
+          return `
       <div style="display:flex; justify-content:space-between; padding:4px 0;">
         <div style="color:#4b5563; font-size:13px;">${r.k}</div>
         ${valueHtml}
       </div>`;
-      })
-      .join('');
+        })
+        .join('');
+    }
 
-    const confirmationHtml = `
+    let confirmationHtml = '';
+
+    if (hasReceiptData) {
+      const nowInfo = getDateOrTimeOrBoth();
+      const headerHtml = `
+      <div style="text-align:center; padding-bottom:16px; border-bottom:2px dashed #000;">
+        <div style="font-size:18px; font-weight:700; margin-bottom:2px;">FITWORX GYM</div>
+        <div style="font-size:12px; font-weight:600; color:#111; margin-bottom:4px;">Payment Reciept</div>
+        <div style="font-size:11px; color:#6b7280;">${nowInfo.date}</div>
+        <div style="font-size:11px; color:#6b7280;">${nowInfo.time}</div>
+      </div>`;
+
+      const footerHtml = `
+      <div style="text-align:center; padding-top:16px; border-top:2px dashed #000; margin-top:12px;">
+        <div style="font-size:11px; color:#6b7280;">Q28V+QMG, Capt. F. S. Samano, Caloocan, Metro Manila</div>
+        <div style="font-size:10px; color:#9ca3af; margin-top:4px;">Please keep this receipt for your records</div>
+      </div>`;
+
+      confirmationHtml = `
+      <div style="text-align:left; padding:20px 0">
+        <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:20px 32px; max-width:600px; margin:0 auto; font-family: 'Courier New', Courier, monospace;">
+          ${headerHtml}
+          <div style="padding:16px 0;">
+            ${rowsHtml}
+          </div>
+          ${footerHtml}
+        </div>
+      </div>
+    `;
+    } else {
+      confirmationHtml = `
       <div style="text-align:left; padding-bottom: 10px;">
         <div id="receiptCard" style="background:#ffffff; color:#111; border:2px solid #000; padding:10px 32px; font-family: 'Courier New', Courier, monospace;">
           <div>
@@ -1268,6 +1358,7 @@ export function openModal(btn, inputs, ...callback) {
         </div>
       </div>
     `;
+    }
 
     const receiptContainer = document.createElement('div');
     receiptContainer.innerHTML = confirmationHtml;
@@ -1277,43 +1368,45 @@ export function openModal(btn, inputs, ...callback) {
       tempModalContainer.children[0].children[1].children[0]
     );
 
-    const amountTenderedInput = receiptContainer.querySelector(`#amountTenderedInput`);
-    if (amountTenderedInput) {
-      amountTenderedInput.addEventListener('input', () => {
-        amountTenderedInput.value = amountTenderedInput.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-        if (
-          amountTenderedInput.parentElement.nextElementSibling.children[0].innerText.toLowerCase().includes('change')
-        ) {
-          amountTenderedInput.parentElement.nextElementSibling.children[1].innerText = encodePrice(
-            Math.max(+amountTenderedInput.value - inputs.payment.amount, 0)
-          );
-        } else {
-          amountTenderedInput.parentElement.nextElementSibling.nextElementSibling.children[1].innerText = encodePrice(
-            Math.max(
-              +amountTenderedInput.value +
-                +decodePrice(amountTenderedInput.parentElement.nextElementSibling.children[1].value) -
-                inputs.payment.amount,
-              0
-            )
-          );
-        }
-        if (inputs.payment.method === 'Cashless') inputs.payment.cashless = +amountTenderedInput.value;
-        else inputs.payment.cash = +amountTenderedInput.value;
-      });
-      amountTenderedInput.addEventListener('focus', () => {
-        amountTenderedInput.value = decodePrice(amountTenderedInput.value);
-        setTimeout(() => {
-          amountTenderedInput.select();
-        }, 0);
-      });
-      amountTenderedInput.addEventListener('blur', () => {
-        amountTenderedInput.value = encodePrice(amountTenderedInput.value);
-      });
-      amountTenderedInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
-          amountTenderedInput.blur();
-        }
-      });
+    if (!hasReceiptData) {
+      const amountTenderedInput = receiptContainer.querySelector(`#amountTenderedInput`);
+      if (amountTenderedInput) {
+        amountTenderedInput.addEventListener('input', () => {
+          amountTenderedInput.value = amountTenderedInput.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+          if (
+            amountTenderedInput.parentElement.nextElementSibling.children[0].innerText.toLowerCase().includes('change')
+          ) {
+            amountTenderedInput.parentElement.nextElementSibling.children[1].innerText = encodePrice(
+              Math.max(+amountTenderedInput.value - inputs.payment.amount, 0)
+            );
+          } else {
+            amountTenderedInput.parentElement.nextElementSibling.nextElementSibling.children[1].innerText = encodePrice(
+              Math.max(
+                +amountTenderedInput.value +
+                  +decodePrice(amountTenderedInput.parentElement.nextElementSibling.children[1].value) -
+                  inputs.payment.amount,
+                0
+              )
+            );
+          }
+          if (inputs.payment.method === 'Cashless') inputs.payment.cashless = +amountTenderedInput.value;
+          else inputs.payment.cash = +amountTenderedInput.value;
+        });
+        amountTenderedInput.addEventListener('focus', () => {
+          amountTenderedInput.value = decodePrice(amountTenderedInput.value);
+          setTimeout(() => {
+            amountTenderedInput.select();
+          }, 0);
+        });
+        amountTenderedInput.addEventListener('blur', () => {
+          amountTenderedInput.value = encodePrice(amountTenderedInput.value);
+        });
+        amountTenderedInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
+            amountTenderedInput.blur();
+          }
+        });
+      }
     }
   }
 
