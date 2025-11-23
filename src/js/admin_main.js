@@ -1110,6 +1110,7 @@ export function openModal(btn, inputs, ...callback) {
     const d = hasReceiptData ? inputs.receiptData : null;
 
     let displayPurpose = hasReceiptData ? d.purpose : fixText(inputs.header.subtitle);
+    if (inputs.header.subtitle.toLowerCase().includes('purchasing')) inputs.header.subtitle = '';
     displayPurpose = displayPurpose.replace(/^Purpose:\s*/i, '');
     let itemsTableHtml = '';
     try {
