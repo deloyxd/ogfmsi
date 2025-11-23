@@ -71,7 +71,10 @@ router.get('/summary/today', async (req, res) => {
       ) AS total_cashless
     FROM payment_tbl
     WHERE payment_type IN ('sales', 'service')
-      AND DATE(created_at) = CURDATE()
+      AND (
+        DATE(created_at) = CURDATE()
+        OR DATE(updated_at) = CURDATE()
+      )
   `;
 
   try {

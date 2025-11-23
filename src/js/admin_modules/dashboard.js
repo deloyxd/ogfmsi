@@ -1236,16 +1236,16 @@ function updateDashboardStatsDisplay(stats) {
         valueEl.textContent = main.encodePrice(stats.overall_total_sales || 0);
       } else if (label.includes('gym')) {
         valueEl.textContent = main.encodePrice(stats.gym_revenue || 0);
-      } else if (label.includes('reservation') && label.includes('revenue')) {
-        valueEl.textContent = main.encodePrice(stats.reservation_revenue || 0);
+      } else if (label.includes('reservations')) {
+        valueEl.textContent = stats.active_reservations || 0;
       } else if (label.includes('product')) {
         valueEl.textContent = main.encodePrice(stats.product_sales || 0);
-      } else if (label.includes('nearly') && label.includes('expiring')) {
+      } else if (label.includes('expiring')) {
         valueEl.textContent = stats.nearly_expiring_monthly_passes || 0;
       } else if (label.includes('monthly')) {
         valueEl.textContent = stats.active_monthly_customers || 0;
       } else if (label.includes('reservation')) {
-        valueEl.textContent = stats.active_reservations || 0;
+        valueEl.textContent = main.encodePrice(stats.reservation_revenue || 0);
       }
     });
   } catch (error) {

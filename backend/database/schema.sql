@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS ecommerce_orders_tbl (
     order_id VARCHAR(50) UNIQUE NOT NULL,
     session_id VARCHAR(100) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
-    payment_method ENUM('cash', 'cashless') DEFAULT 'cash',
+    payment_method ENUM('cash', 'cashless', 'hybrid') DEFAULT 'cash',
     customer_payment DECIMAL(10,2),
     change_amount DECIMAL(10,2),
     status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',

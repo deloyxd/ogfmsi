@@ -252,6 +252,8 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
       }
       return displayAmount;
     }, 0);
+    const breakdownButton = document.querySelector(`div[title="See list"][data-type="${type}"]`);
+    breakdownButton.parentElement.children[breakdownButton.parentElement.children.length - 1].innerText = fmt(total);
     const pageSize = 10;
     let currentPage = 1;
     let filteredRows = [];
@@ -321,7 +323,9 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
     }
 
     function isWhitelistedPurpose(purposeRaw) {
-      const s = String(purposeRaw || '').trim().toLowerCase();
+      const s = String(purposeRaw || '')
+        .trim()
+        .toLowerCase();
       if (!s) return false;
       // Only purpose-based entries (with a match function) participate in whitelist
       return PURPOSE_FILTERS.some((f) => typeof f.match === 'function' && f.match(s));
@@ -464,10 +468,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
         // Preserve focus state and cursor position BEFORE getting the value
         const hadSearchFocus = document.activeElement === searchInput;
-        const searchCursorPos = hadSearchFocus ? (searchInput.selectionStart || searchInput.value.length) : null;
+        const searchCursorPos = hadSearchFocus ? searchInput.selectionStart || searchInput.value.length : null;
 
         // Store raw value (with spaces) for display, but use trimmed for filtering
-        const searchRaw = (searchInput?.value || '');
+        const searchRaw = searchInput?.value || '';
         currentSearch = searchRaw; // Store raw value to preserve spaces
         const searchVal = searchRaw.trim().toLowerCase(); // Use trimmed for filtering
 
@@ -487,16 +491,16 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
           else if (def.value === 'method-hybrid') method = 'hybrid';
 
           if (method) {
-            filteredRows = base.filter(
-              (p) => String(p.payment_method || '').toLowerCase() === method
-            );
+            filteredRows = base.filter((p) => String(p.payment_method || '').toLowerCase() === method);
           } else {
             filteredRows = base;
           }
         } else {
           // Purpose-based option
           filteredRows = base.filter((p) => {
-            const s = String(p.payment_purpose || '').trim().toLowerCase();
+            const s = String(p.payment_purpose || '')
+              .trim()
+              .toLowerCase();
             return def.match(s);
           });
         }
@@ -610,8 +614,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
             if (!c) return null;
             const endDate = new Date(m.customer_end_date);
             const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-            const daysText =
-              daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : `${daysLeft} days`;
+            const daysText = daysLeft === 0 ? 'Ends today' : daysLeft === 1 ? 'Ends tomorrow' : `${daysLeft} days`;
 
             return {
               id: c.customer_id,
@@ -642,9 +645,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
             slice
               .map((r) => {
                 const contact = (r.contact || '').trim();
-                const contactLine = contact && contact.toLowerCase() !== 'n/a'
-                  ? `<div style="font-size:11px;color:#6b7280">${contact}</div>`
-                  : '';
+                const contactLine =
+                  contact && contact.toLowerCase() !== 'n/a'
+                    ? `<div style="font-size:11px;color:#6b7280">${contact}</div>`
+                    : '';
                 return `
                 <tr style="border-bottom:1px solid #e5e7eb">
                   <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#374151">id_${r.id || ''}</td>
@@ -747,10 +751,10 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
 
             // Preserve focus state and cursor position BEFORE getting the value
             const hadSearchFocus = document.activeElement === searchInput;
-            const searchCursorPos = hadSearchFocus ? (searchInput.selectionStart || searchInput.value.length) : null;
+            const searchCursorPos = hadSearchFocus ? searchInput.selectionStart || searchInput.value.length : null;
 
             // Store raw value (with spaces) for display, but use trimmed for filtering
-            const searchRaw = (searchInput?.value || '');
+            const searchRaw = searchInput?.value || '';
             currentSearch = searchRaw; // Store raw value to preserve spaces
             const searchVal = searchRaw.trim().toLowerCase(); // Use trimmed for filtering
 
@@ -868,62 +872,14 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
   }
 
   async function handlePayments() {
-    if (t.includes('avg') && t.includes('overall') && t.includes('total')) {
-      const list = await getPayments('/payment/complete');
-      const sumAmt = (p) =>
-        (Number(p.payment_amount_paid_cash) || 0) +
-        (Number(p.payment_amount_paid_cashless) || 0) -
-        (Number(p.payment_amount_change) || 0);
-      const todaysCash = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'cash' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
-      const todaysCashless = list
-        .filter((p) => String(p.payment_method || '').toLowerCase() === 'cashless' && isTodayLocal(p.created_at))
-        .reduce((s, p) => s + sumAmt(p), 0);
-      const total = todaysCash + todaysCashless;
-      try {
-        setTitle('Avg Overall Total');
-      } catch (e) {}
-      container.innerHTML = `
-        <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
-          <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
-          <div style="font-weight:900;font-size:28px">${fmt(total)}</div>
-          <div style="color:#dbeafe;font-size:13px;margin-top:8px">Today's Cash (${fmt(todaysCash)}) + Today's Cashless (${fmt(todaysCashless)})</div>
-        </div>
-      `;
-      container.dataset.filled = '1';
-      return true;
-    }
     if (t.includes('overall total sales')) {
       const list = await getPayments('/payment/complete');
-      const todaysCash = list
-        .filter(
-          (p) =>
-            (String(p.payment_method || '').toLowerCase() === 'cash' ||
-              String(p.payment_method || '').toLowerCase() === 'hybrid') &&
-            isTodayLocal(p.created_at)
-        )
-        .reduce((s, p) => s + (Number(p.payment_amount_paid_cash) || 0) - (Number(p.payment_amount_change) || 0), 0);
-      const todaysCashless = list
-        .filter(
-          (p) =>
-            (String(p.payment_method || '').toLowerCase() === 'cashless' ||
-              String(p.payment_method || '').toLowerCase() === 'hybrid') &&
-            isTodayLocal(p.created_at)
-        )
-        .reduce((s, p) => s + (Number(p.payment_amount_paid_cashless) || 0), 0);
-      const total = todaysCash + todaysCashless;
-      try {
-        setTitle('Avg Overall Total');
-      } catch (e) {}
-      container.innerHTML = `
-        <div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px;border-radius:12px;margin-bottom:12px;color:#fff">
-          <div style="font-weight:800;margin-bottom:6px;font-size:16px">Avg Overall Total</div>
-          <div style="font-weight:900;font-size:28px">${fmt(total)}</div>
-          <div style="color:#dbeafe;font-size:13px;margin-top:8px">Today's Cash (${fmt(todaysCash)}) + Today's Cashless (${fmt(todaysCashless)})</div>
-        </div>
-      `;
-      container.dataset.filled = '1';
+      await renderPaymentsBreakdown(
+        list,
+        (p) => isTodayLocal(p.created_at) || isTodayLocal(p.updated_at),
+        "Today's Overall Income",
+        ''
+      );
       return true;
     }
     if (t.includes('cash sales today')) {
@@ -933,7 +889,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         (p) =>
           (String(p.payment_method || '').toLowerCase() === 'cash' ||
             String(p.payment_method || '').toLowerCase() === 'hybrid') &&
-          isTodayLocal(p.created_at),
+          (isTodayLocal(p.created_at) || isTodayLocal(p.updated_at)),
         "Today's Cash Sales",
         'Filter: payment_method = cash AND created_at is today.'
       );
@@ -946,7 +902,7 @@ document.addEventListener('ogfmsi:statsBreakdown', async (e) => {
         (p) =>
           (String(p.payment_method || '').toLowerCase() === 'cashless' ||
             String(p.payment_method || '').toLowerCase() === 'hybrid') &&
-          isTodayLocal(p.created_at),
+          (isTodayLocal(p.created_at) || isTodayLocal(p.updated_at)),
         "Today's Cashless Sales",
         'Filter: payment_method = cashless AND created_at is today.'
       );

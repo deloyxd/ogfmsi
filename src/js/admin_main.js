@@ -1297,6 +1297,8 @@ export function openModal(btn, inputs, ...callback) {
             )
           );
         }
+        if (inputs.payment.method === 'Cashless') inputs.payment.cashless = +amountTenderedInput.value;
+        else inputs.payment.cash = +amountTenderedInput.value;
       });
       amountTenderedInput.addEventListener('focus', () => {
         amountTenderedInput.value = decodePrice(amountTenderedInput.value);
@@ -1693,7 +1695,6 @@ function setupModalBase(defaultData, inputs, callback) {
                 input.listener(
                   input.title,
                   tempModalContainer.querySelector(`#receiptCard`).children[0].children[autoformatIndex],
-                  tempModalContainer,
                   inputs
                 );
               }

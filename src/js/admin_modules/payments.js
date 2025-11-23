@@ -2284,7 +2284,8 @@ function attachSelectAll(el) {
   el.__selectAllBound = true;
 }
 
-function activeRadioListener(title, input, container, inputGroup) {
+function activeRadioListener(title, input, inputGroup) {
+  inputGroup.payment.method = title;
   if (
     input.parentElement.children[input.parentElement.children.length - 1].children[0].innerText
       .toLowerCase()
@@ -2308,48 +2309,54 @@ function activeRadioListener(title, input, container, inputGroup) {
     input.parentElement.children[input.parentElement.children.length - 5].children[1].innerText = main.encodePrice(0);
   }
   if (title.toLowerCase().includes('hybrid')) {
-    if (input.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
-      const cashlessInput = input.cloneNode(true);
-      cashlessInput.children[0].innerText = 'Amount tendered (Cashless)';
-      cashlessInput.children[1].value = main.encodePrice(Math.floor(inputGroup.payment.amount / 2));
-      input.parentElement.insertBefore(cashlessInput, input.nextElementSibling);
-      cashlessInput.children[1].addEventListener('input', () => {
-        let val = cashlessInput.children[1].value;
-        val = val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-        if (val === '') val = 0;
-        let num = parseFloat(val);
-        if (!isNaN(num) && num > inputGroup.payment.amount - 1) {
-          num = inputGroup.payment.amount - 1;
-        }
-        if (!isNaN(num) && num < 1) {
-          num = 1;
-        }
-        cashlessInput.children[1].value = isNaN(num) ? '' : String(num);
-        input.children[1].value = main.encodePrice(inputGroup.payment.amount - num);
-      });
-      cashlessInput.children[1].addEventListener('focus', () => {
-        cashlessInput.children[1].value = main.decodePrice(cashlessInput.children[1].value);
-        setTimeout(() => {
-          cashlessInput.children[1].select();
-        }, 0);
-      });
-      cashlessInput.children[1].addEventListener('blur', () => {
-        cashlessInput.children[1].value = main.encodePrice(cashlessInput.children[1].value);
-      });
-      cashlessInput.children[1].addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
-          cashlessInput.children[1].blur();
-        }
-      });
+    if (!input.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
+      input.nextElementSibling.remove();
     }
+    const cashlessInput = input.cloneNode(true);
+    cashlessInput.children[0].innerText = 'Amount tendered (Cashless)';
+    cashlessInput.children[1].value = main.encodePrice(Math.floor(inputGroup.payment.amount / 2));
+    input.parentElement.insertBefore(cashlessInput, input.nextElementSibling);
+    inputGroup.payment.cashless = Math.floor(inputGroup.payment.amount / 2);
+    cashlessInput.children[1].addEventListener('input', () => {
+      let val = cashlessInput.children[1].value;
+      val = val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+      if (val === '') val = 0;
+      let num = parseFloat(val);
+      if (!isNaN(num) && num > inputGroup.payment.amount - 1) {
+        num = inputGroup.payment.amount - 1;
+      }
+      if (!isNaN(num) && num < 1) {
+        num = 1;
+      }
+      cashlessInput.children[1].value = isNaN(num) ? '' : String(num);
+      input.children[1].value = main.encodePrice(inputGroup.payment.amount - num);
+      inputGroup.payment.cashless = num;
+    });
+    cashlessInput.children[1].addEventListener('focus', () => {
+      cashlessInput.children[1].value = main.decodePrice(cashlessInput.children[1].value);
+      setTimeout(() => {
+        cashlessInput.children[1].select();
+      }, 0);
+    });
+    cashlessInput.children[1].addEventListener('blur', () => {
+      cashlessInput.children[1].value = main.encodePrice(cashlessInput.children[1].value);
+    });
+    cashlessInput.children[1].addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc' || e.key === 'Tab' || e.key === 'Enter') {
+        cashlessInput.children[1].blur();
+      }
+    });
     input.children[0].innerText = 'Amount tendered (Cash)';
     input.children[1].value = main.encodePrice(Math.ceil(inputGroup.payment.amount / 2));
+    inputGroup.payment.cash = Math.ceil(inputGroup.payment.amount / 2);
   } else {
     if (!input.nextElementSibling.children[0].innerText.toLowerCase().includes('change')) {
       input.nextElementSibling.remove();
     }
     input.children[0].innerText = 'Amount tendered';
     input.children[1].value = main.encodePrice(0);
+    inputGroup.payment.cash = 0;
+    inputGroup.payment.cashless = 0;
   }
   if (title.toLowerCase().includes('cash') && !title.toLowerCase().includes('less')) {
     if (
@@ -2359,6 +2366,9 @@ function activeRadioListener(title, input, container, inputGroup) {
     ) {
       input.parentElement.children[input.parentElement.children.length - 1].remove();
     }
+    input.children[1].value = main.encodePrice(0);
+    inputGroup.payment.cash = 0;
+    inputGroup.payment.ref.number = 'N/A';
   } else {
     if (
       !input.parentElement.children[input.parentElement.children.length - 1].children[0].innerText
@@ -2369,12 +2379,14 @@ function activeRadioListener(title, input, container, inputGroup) {
       reference.children[0].innerText = 'Reference number';
       reference.children[1].value = '';
       input.parentElement.appendChild(reference);
+      inputGroup.payment.ref.number = 'N/A';
       const refInput = reference.children[1];
       refInput.addEventListener('input', () => {
         refInput.value = refInput.value.replace(/\D/g, '');
         if (refInput.value.length > 13) {
           refInput.value = refInput.value.slice(0, 13);
         }
+        inputGroup.payment.ref.number = refInput.value;
       });
       refInput.addEventListener('focus', () => {
         setTimeout(() => {
@@ -2488,6 +2500,8 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
         name: fullName,
       },
       amount: amountToPay,
+      cash: 0,
+      cashless: isOnlineTransaction ? amountToPay : 0,
       rate: priceRate,
       method: isOnlineTransaction ? 'Cashless' : 'Cash',
       ref: {
@@ -2579,19 +2593,15 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       return;
     }
     const paymentMethod = isOnlineTransaction ? 'cashless' : main.getSelectedRadio(result.radio).toLowerCase();
-    const cashVal = result.short[2].value.includes('₱')
-      ? +main.decodePrice(result.short[2].value)
-      : Number(result.short[2].value) || 0;
-    const cashlessVal = result.short[3].value.includes('₱')
-      ? +main.decodePrice(result.short[3].value)
-      : Number(result.short[3].value) || 0;
+    const cashVal = result.payment.cash;
+    const cashlessVal = result.payment.cashless;
 
     // Show specific message when no amount entered at all
     if (cashVal === 0 && cashlessVal === 0) {
       main.toast('No amount tendered', 'error');
       return;
     }
-    if (!main.isValidPaymentAmount(+cashVal) && paymentMethod == 'cash') {
+    if (!main.isValidPaymentAmount(cashVal) && paymentMethod == 'cash') {
       main.toast(`Invalid payment amount (cash): ${cashVal}`, 'error');
       return;
     }
@@ -2602,42 +2612,42 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
       main.toast(`Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)}`, 'error');
       return;
     }
-    if ((paymentMethod.includes('cashless') || paymentMethod.includes('hybrid')) && +cashlessVal > +amountToPay) {
+    if ((paymentMethod.includes('cashless') || paymentMethod.includes('hybrid')) && cashlessVal > amountToPay) {
       main.toast(
         `Invalid payment amount (cashless): ${main.encodePrice(cashlessVal)} cannot exceed ${main.encodePrice(amountToPay)} (total amount to pay)`,
         'error'
       );
       return;
     }
-    let amountPaid = Number(cashVal) + cashlessVal;
+    const amountPaid = cashVal + cashlessVal;
     // Validate numeric/format first
-    if (!main.isValidPaymentAmount(+amountPaid)) {
+    if (!main.isValidPaymentAmount(amountPaid)) {
       main.toast(`Invalid payment amount: ${amountPaid}`, 'error');
       return;
     }
     // Then check for insufficiency against amount due
-    if (+amountPaid < +amountToPay) {
-      const shortBy = +amountToPay - +amountPaid;
+    if (amountPaid < amountToPay) {
+      const shortBy = amountToPay - amountPaid;
       main.toast(
         `Insufficient payment amount. Short by ${main.encodePrice(shortBy)} (Required: ${main.encodePrice(amountToPay)}, Tendered: ${main.encodePrice(amountPaid)})`,
         'error'
       );
       return;
     }
-    const change = result.short[4].value;
+    const change = amountPaid - amountToPay;
 
-    let refNum = result.short[6].value;
+    let refNum = result.payment.ref.number;
     if (result.radio[0].selected > 1) {
       if (!isOnlineTransaction) {
         const refDigits = String(refNum || '').replace(/\D/g, '');
-        if (refNum == 'N/A' || refDigits.length !== 13) {
+        if (refNum === 'N/A' || refDigits.length !== 13) {
           main.toast('Reference number must be exactly 13 digits', 'error');
           return;
         }
       } else {
         refNum = purpose.split(' - Reference: ')[1].split(' from Account: ')[0];
       }
-    } else if (!isOnlineTransaction && refNum != 'N/A') {
+    } else if (!isOnlineTransaction && refNum !== 'N/A') {
       main.toast(`Cash payment method doesn't need reference number: ${refNum}`, 'error');
       return;
     }
@@ -2802,9 +2812,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               case 'cart':
                 cart.completeProcessCheckout(
                   amountToPay,
-                  main.fixText(paymentMethod),
+                  paymentMethod.toLowerCase(),
                   cashVal + cashlessVal,
-                  main.decodePrice(change),
+                  +main.decodePrice(change),
                   refNum
                 );
             }
@@ -2877,6 +2887,7 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               } catch (_) {}
 
               // Ensure backend flags for customer/monthly are set to active (defensive for portal-created pending rows)
+              if (customerId.toLowerCase().includes('sales')) return;
               try {
                 await fetch(`${API_BASE_URL}/inquiry/customers/pending/${encodeURIComponent(customerId)}`, {
                   method: 'PUT',
@@ -3024,9 +3035,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
               case 'cart':
                 cart.completeProcessCheckout(
                   amountToPay,
-                  main.fixText(paymentMethod),
+                  paymentMethod.toLowerCase(),
                   cashVal + cashlessVal,
-                  main.decodePrice(change),
+                  +main.decodePrice(change),
                   refNum
                 );
             }
@@ -3196,9 +3207,9 @@ function completePayment(type, id, image, customerId, purpose, fullName, amountT
             case 'cart':
               cart.completeProcessCheckout(
                 amountToPay,
-                main.fixText(paymentMethod),
+                paymentMethod.toLowerCase(),
                 cashVal + cashlessVal,
-                main.decodePrice(change),
+                +main.decodePrice(change),
                 refNum
               );
           }
