@@ -1105,7 +1105,7 @@ export function openModal(btn, inputs, ...callback) {
   if (isPaymentModule) {
     const panel = tempModalContainer.children[0];
     panel.classList.add('max-w-2xl');
-    
+
     const hasReceiptData = inputs && inputs.receipt && inputs.receiptData;
     const d = hasReceiptData ? inputs.receiptData : null;
 
@@ -1320,6 +1320,7 @@ export function openModal(btn, inputs, ...callback) {
     }
 
     let confirmationHtml = '';
+    const receiptDataHtml = {};
 
     if (hasReceiptData) {
       const nowInfo = getDateOrTimeOrBoth();
@@ -1346,8 +1347,14 @@ export function openModal(btn, inputs, ...callback) {
           </div>
           ${footerHtml}
         </div>
+        <div style="max-width:600px; margin:8px auto 0; display:flex; justify-content:center;">
+          <button id="receiptPrintBtn" style="background:#111; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer">Print receipt</button>
+        </div>
       </div>
     `;
+      receiptDataHtml.header = headerHtml;
+      receiptDataHtml.body = rowsHtml;
+      receiptDataHtml.footer = footerHtml;
     } else {
       confirmationHtml = `
       <div style="text-align:left; padding-bottom: 10px;">
@@ -1407,6 +1414,53 @@ export function openModal(btn, inputs, ...callback) {
           }
         });
       }
+    } else {
+      setTimeout(() => {
+        try {
+          const btn = receiptContainer.querySelector('#receiptPrintBtn');
+          if (btn) {
+            btn.addEventListener('click', () => {
+              try {
+                const docHtml = `
+                <html>
+                  <head>
+                    <meta charset="utf-8" />
+                    <title>Receipt ${d.transactionId}</title>
+                    <style>
+                      html, body { font-family: 'Courier New', Courier, monospace; color: #111; margin: 0; }
+                      .wrap { padding: 24px; }
+                      .card { border: 2px solid #000; padding: 20px 32px; max-width: 720px; margin: 0 auto; }
+                      @media print { .card { box-shadow: none; } }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="wrap">
+                      <div class="card">
+                        ${receiptDataHtml.header}
+                        <div style="padding:16px 0;">
+                          ${receiptDataHtml.body}
+                        </div>
+                        ${receiptDataHtml.footer}
+                      </div>
+                    </div>
+                  </body>
+                </html>`;
+                const w = window.open('', '_blank', 'width=900,height=650');
+                if (!w) return;
+                w.document.open();
+                w.document.write(docHtml);
+                w.document.close();
+                w.focus();
+                setTimeout(() => {
+                  try {
+                    w.print();
+                  } catch (_) {}
+                }, 300);
+              } catch (_) {}
+            });
+          }
+        } catch (_) {}
+      }, 0);
     }
   }
 

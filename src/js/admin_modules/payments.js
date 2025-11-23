@@ -3865,7 +3865,7 @@ async function openTransactionDetails(type, row) {
     customerId && typeof customerId === 'string' && customerId.includes(':')
       ? customerId.split(':')[1].split('Purchasing')[0].trim()
       : customerId || 'N/A';
-  if (type !== 'sales') partyValue = `${row.dataset.custom2} (${partyValue})`; 
+  if (type !== 'sales') partyValue = `${row.dataset.custom2} (${partyValue})`;
 
   const inputs = {
     header: {
