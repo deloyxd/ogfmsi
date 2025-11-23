@@ -82,23 +82,23 @@ function toMinutes(timeStr) {
 function minutesToTime(mins) {
   let h = Math.floor(mins / 60);
   const m = mins % 60;
-  const suffix = h >= 12 ? "PM" : "AM";
+  const suffix = h >= 12 && h < 24 ? 'PM' : 'AM';
   h = h % 12 || 12;
-  return `${h}:${m.toString().padStart(2, "0")} ${suffix}`;
+  return `${h}:${m.toString().padStart(2, '0')} ${suffix}`;
 }
 
 function generateTimeSlots(reserved) {
-  const container = document.getElementById("timeSlotsContainer");
-  container.innerHTML = "";
+  const container = document.getElementById('timeSlotsContainer');
+  container.innerHTML = '';
 
   const OPEN_HOUR = 9;
   const CLOSE_HOUR = 24;
-  
+
   for (let hour = OPEN_HOUR; hour < CLOSE_HOUR; hour++) {
     const slotStart = hour * 60;
     const slotEnd = (hour + 1) * 60;
 
-    const isReserved = reserved.some(r => {
+    const isReserved = reserved.some((r) => {
       const rStart = toMinutes(r.startTime);
       const rEnd = toMinutes(r.endTime);
       return slotStart < rEnd && slotEnd > rStart;
@@ -107,7 +107,7 @@ function generateTimeSlots(reserved) {
     // Check if slot is in the past
     const now = new Date();
     const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    
+
     // Get the selected date from state
     let selectedDate = todayMidnight;
     if (state.selectedDate?.dataset?.year && state.selectedDate?.dataset?.month && state.selectedDate?.dataset?.day) {
@@ -116,7 +116,7 @@ function generateTimeSlots(reserved) {
       const day = parseInt(state.selectedDate.dataset.day, 10);
       selectedDate = new Date(year, month, day, 0, 0, 0, 0);
     }
-    
+
     // Check if the slot time has passed
     const slotDateTime = new Date(selectedDate);
     slotDateTime.setHours(hour, 0, 0, 0);
@@ -124,49 +124,47 @@ function generateTimeSlots(reserved) {
 
     const isDisabled = isReserved || isPastTime;
 
-    const label = document.createElement("label");
+    const label = document.createElement('label');
     label.className =
-      "flex items-center p-2 rounded-md border cursor-pointer " +
+      'flex items-center p-2 rounded-md border cursor-pointer ' +
       (isDisabled
-        ? "bg-gray-200 border-gray-300 cursor-not-allowed opacity-50"
-        : "bg-white border-orange-300 hover:bg-orange-50");
+        ? 'bg-gray-200 border-gray-300 cursor-not-allowed opacity-50'
+        : 'bg-white border-orange-300 hover:bg-orange-50');
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
     checkbox.value = `${minutesToTime(slotStart)} - ${minutesToTime(slotEnd)}`;
     checkbox.dataset.index = hour - OPEN_HOUR;
-    checkbox.className = "mr-2";
+    checkbox.className = 'mr-2';
 
     checkbox.disabled = isDisabled;
     if (isReserved) {
-      checkbox.dataset.reserved = "true";
+      checkbox.dataset.reserved = 'true';
     }
     if (isPastTime) {
-      checkbox.dataset.past = "true";
+      checkbox.dataset.past = 'true';
     }
 
     label.appendChild(checkbox);
-    label.append(minutesToTime(slotStart) + " - " + minutesToTime(slotEnd));
+    label.append(minutesToTime(slotStart) + ' - ' + minutesToTime(slotEnd));
 
     container.appendChild(label);
   }
 
   // --- HANDLE CONSECUTIVE SELECTION RULE ---
-  container.querySelectorAll("input[type='checkbox']").forEach(cb => {
-    cb.addEventListener("change", (e) => {
+  container.querySelectorAll("input[type='checkbox']").forEach((cb) => {
+    cb.addEventListener('change', (e) => {
       const checkboxes = [...container.querySelectorAll("input[type='checkbox']")];
-      const selected = checkboxes.filter(c => c.checked);
+      const selected = checkboxes.filter((c) => c.checked);
 
       // Check if user is trying to uncheck a middle slot
       if (!e.target.checked && selected.length > 0) {
-        const indices = selected
-          .map(s => Number(s.dataset.index))
-          .sort((a, b) => a - b);
-        
+        const indices = selected.map((s) => Number(s.dataset.index)).sort((a, b) => a - b);
+
         const uncheckedIndex = Number(e.target.dataset.index);
         const first = indices[0];
         const last = indices[indices.length - 1];
-        
+
         // If unchecked slot is in the middle, prevent it
         if (uncheckedIndex > first && uncheckedIndex < last) {
           e.target.checked = true;
@@ -176,40 +174,37 @@ function generateTimeSlots(reserved) {
 
       // If none selected → reset everything
       if (selected.length === 0) {
-        checkboxes.forEach(c => {
+        checkboxes.forEach((c) => {
           if (!c.dataset.reserved) {
             c.disabled = false;
-            c.parentElement.classList.remove("opacity-50", "cursor-not-allowed");
+            c.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
           }
         });
         return;
       }
 
-      const indices = selected
-        .map(s => Number(s.dataset.index))
-        .sort((a, b) => a - b);
+      const indices = selected.map((s) => Number(s.dataset.index)).sort((a, b) => a - b);
 
       const first = indices[0];
       const last = indices[indices.length - 1];
 
       // Disable ALL non-reserved slots that are not consecutive
-      checkboxes.forEach(c => {
+      checkboxes.forEach((c) => {
         const idx = Number(c.dataset.index);
 
         // Skip already-reserved slots
         if (c.dataset.reserved) return;
 
         // Allowed slots: only those between the first and last selected, + 1 step outward
-        const allowed =
-          idx === first - 1 || idx === last + 1 || (idx >= first && idx <= last);
+        const allowed = idx === first - 1 || idx === last + 1 || (idx >= first && idx <= last);
 
         // If the slot is outside the consecutive range → disable it
         if (!allowed && !c.checked) {
           c.disabled = true;
-          c.parentElement.classList.add("opacity-50", "cursor-not-allowed");
+          c.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
         } else if (!c.checked) {
           c.disabled = false;
-          c.parentElement.classList.remove("opacity-50", "cursor-not-allowed");
+          c.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
         }
       });
     });
@@ -550,12 +545,12 @@ function createDayElement(day, month, year) {
     const dd = String(day).padStart(2, '0');
     const dateStr = `${mm}-${dd}-${year}`;
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
     const dateSelected = new Date(year, month, day);
-    dateSelected.setHours(0,0,0,0);
+    dateSelected.setHours(0, 0, 0, 0);
     timeError.classList.add('hidden');
-    const container = document.getElementById("timeSlotsContainer");
-    container.innerHTML = "";
+    const container = document.getElementById('timeSlotsContainer');
+    container.innerHTML = '';
     if (dateSelected >= today) {
       generateTimeSlots(getReservationsForDate(dateStr));
     }
@@ -645,9 +640,8 @@ function render(container) {
   renderCalendar(container);
 }
 
-
-  const bookingForm = document.getElementById('bookingForm');
-  const timeError = document.getElementById('timeError');
+const bookingForm = document.getElementById('bookingForm');
+const timeError = document.getElementById('timeError');
 
 function mount() {
   const mountPoint = document.getElementById(CONTAINER_ID);
@@ -739,7 +733,7 @@ function mount() {
   }
 
   // Booking form validation and time suggestions
-if (bookingForm) {
+  if (bookingForm) {
     bookingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       timeError.classList.add('hidden');
@@ -782,29 +776,27 @@ if (bookingForm) {
       }
 
       // Get selected time slots
-      const container = document.getElementById("timeSlotsContainer");
+      const container = document.getElementById('timeSlotsContainer');
       const selectedCheckboxes = [...container.querySelectorAll("input[type='checkbox']:checked")];
-      
+
       if (selectedCheckboxes.length === 0) {
         showError('Please select at least one time slot.');
         return;
       }
 
       // Extract start and end times from selected slots
-      const indices = selectedCheckboxes
-        .map(cb => Number(cb.dataset.index))
-        .sort((a, b) => a - b);
-      
+      const indices = selectedCheckboxes.map((cb) => Number(cb.dataset.index)).sort((a, b) => a - b);
+
       const OPEN_HOUR = 9;
       const firstIndex = indices[0];
       const lastIndex = indices[indices.length - 1];
-      
+
       const startHour = OPEN_HOUR + firstIndex;
       const endHour = OPEN_HOUR + lastIndex + 1; // +1 because slot ends at next hour
-      
+
       const startVal = `${String(startHour).padStart(2, '0')}:00`;
       const endVal = `${String(endHour).padStart(2, '0')}:00`;
-      
+
       const durationHours = endHour - startHour;
 
       // Build reservation object (admin parity fields)
@@ -1044,7 +1036,13 @@ function openPaymentModal(reservation, preparedRegistrationData) {
       if (nameEl) nameEl.classList.add('border-red-500');
       try {
         if (typeof Toastify === 'function') {
-          Toastify({ text: 'Account Name cannot contain numbers', duration: 2500, gravity: 'top', position: 'right', close: true }).showToast();
+          Toastify({
+            text: 'Account Name cannot contain numbers',
+            duration: 2500,
+            gravity: 'top',
+            position: 'right',
+            close: true,
+          }).showToast();
         }
       } catch (_) {}
       return;
@@ -1160,8 +1158,8 @@ function openDateReservationsModal(dateMMDDYYYY) {
       let h = parseInt(m[1], 10);
       const min = parseInt(m[2] || '0', 10);
       if (!Number.isFinite(h) || !Number.isFinite(min)) return '--:--';
-      if (h < 0 || h > 23 || min < 0 || min > 59) return '--:--';
-      const ap = h >= 12 ? 'PM' : 'AM';
+      if (h < 0 || h > 24 || min < 0 || min > 59) return '--:--';
+      const ap = h >= 12 && h < 24 ? 'PM' : 'AM';
       h = h % 12;
       if (h === 0) h = 12;
       const mm2 = String(min).padStart(2, '0');
