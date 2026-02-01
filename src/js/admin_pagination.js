@@ -1,5 +1,8 @@
 /* Pagination utility for admin tables */
 /* Default page size: 12 rows per page (between 10-15) */
+/* BACKEND-POWERED PAGINATION */
+
+import { API_BASE_URL } from './_global.js';
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -8,6 +11,9 @@ const paginationState = new Map();
 
 // Store calculated page sizes per section/tab to maintain consistency
 const calculatedPageSizes = new Map();
+
+// Store fetch callbacks per section/tab
+const fetchCallbacks = new Map();
 
 /**
  * Get pagination key for a section/tab combination
@@ -19,7 +25,7 @@ function getPaginationKey(sectionName, tabIndex) {
 /**
  * Calculate optimal page size based on table container height
  */
-function calculatePageSize(sectionName, tabIndex) {
+export function calculatePageSize(sectionName, tabIndex) {
   const key = getPaginationKey(sectionName, tabIndex);
 
   // Return cached calculation if available
@@ -143,8 +149,12 @@ function parseHeightFromClasses(element) {
 
 /**
  * Initialize pagination for a table
+ * @param {string} sectionName - Section name
+ * @param {number} tabIndex - Tab index
+ * @param {number} pageSize - Page size (optional)
+ * @param {Function} fetchCallback - Async function to fetch data: (page, pageSize) => { data, totalRows }
  */
-export function initPagination(sectionName, tabIndex, pageSize = null) {
+export function initPagination(sectionName, tabIndex, pageSize = null, fetchCallback = null) {
   const key = getPaginationKey(sectionName, tabIndex);
 
   // Use calculated page size if not provided
@@ -154,7 +164,14 @@ export function initPagination(sectionName, tabIndex, pageSize = null) {
     currentPage: 1,
     pageSize: Math.max(1, Math.min(100, finalPageSize)),
     totalRows: 0,
+    isBackendPagination: !!fetchCallback,
+    loading: false,
   });
+
+  // Store the fetch callback if provided
+  if (fetchCallback) {
+    fetchCallbacks.set(key, fetchCallback);
+  }
 }
 
 /**
@@ -162,7 +179,13 @@ export function initPagination(sectionName, tabIndex, pageSize = null) {
  */
 export function getPaginationState(sectionName, tabIndex) {
   const key = getPaginationKey(sectionName, tabIndex);
-  return paginationState.get(key) || { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE, totalRows: 0 };
+  return paginationState.get(key) || { 
+    currentPage: 1, 
+    pageSize: DEFAULT_PAGE_SIZE, 
+    totalRows: 0,
+    isBackendPagination: false,
+    loading: false,
+  };
 }
 
 /**
@@ -174,6 +197,8 @@ function setPaginationState(sectionName, tabIndex, updates) {
     currentPage: 1,
     pageSize: DEFAULT_PAGE_SIZE,
     totalRows: 0,
+    isBackendPagination: false,
+    loading: false,
   };
   paginationState.set(key, { ...current, ...updates });
 }
@@ -196,11 +221,20 @@ function countTableRows(sectionName, tabIndex) {
  */
 export function updatePaginationControls(sectionName, tabIndex) {
   const state = getPaginationState(sectionName, tabIndex);
-  const totalRows = countTableRows(sectionName, tabIndex);
-  const totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
-
-  // Update state with actual total
-  setPaginationState(sectionName, tabIndex, { totalRows });
+  
+  let totalRows, totalPages;
+  
+  if (state.isBackendPagination) {
+    // Use totalRows from state (fetched from backend)
+    totalRows = state.totalRows;
+    totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+  } else {
+    // Count visible rows in DOM
+    totalRows = countTableRows(sectionName, tabIndex);
+    totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+    // Update state with actual total
+    setPaginationState(sectionName, tabIndex, { totalRows });
+  }
 
   const paginationContainer = document.getElementById(`${sectionName}PaginationContainer${tabIndex}`);
   if (!paginationContainer) return;
@@ -221,25 +255,27 @@ export function updatePaginationControls(sectionName, tabIndex) {
   const firstBtn = paginationContainer.querySelector('.pagination-first');
   const lastBtn = paginationContainer.querySelector('.pagination-last');
 
+  const isDisabled = state.loading;
+  
   if (prevBtn) {
-    prevBtn.disabled = state.currentPage <= 1;
-    prevBtn.classList.toggle('opacity-50', state.currentPage <= 1);
-    prevBtn.classList.toggle('cursor-not-allowed', state.currentPage <= 1);
+    prevBtn.disabled = state.currentPage <= 1 || isDisabled;
+    prevBtn.classList.toggle('opacity-50', state.currentPage <= 1 || isDisabled);
+    prevBtn.classList.toggle('cursor-not-allowed', state.currentPage <= 1 || isDisabled);
   }
   if (nextBtn) {
-    nextBtn.disabled = state.currentPage >= totalPages;
-    nextBtn.classList.toggle('opacity-50', state.currentPage >= totalPages);
-    nextBtn.classList.toggle('cursor-not-allowed', state.currentPage >= totalPages);
+    nextBtn.disabled = state.currentPage >= totalPages || isDisabled;
+    nextBtn.classList.toggle('opacity-50', state.currentPage >= totalPages || isDisabled);
+    nextBtn.classList.toggle('cursor-not-allowed', state.currentPage >= totalPages || isDisabled);
   }
   if (firstBtn) {
-    firstBtn.disabled = state.currentPage <= 1;
-    firstBtn.classList.toggle('opacity-50', state.currentPage <= 1);
-    firstBtn.classList.toggle('cursor-not-allowed', state.currentPage <= 1);
+    firstBtn.disabled = state.currentPage <= 1 || isDisabled;
+    firstBtn.classList.toggle('opacity-50', state.currentPage <= 1 || isDisabled);
+    firstBtn.classList.toggle('cursor-not-allowed', state.currentPage <= 1 || isDisabled);
   }
   if (lastBtn) {
-    lastBtn.disabled = state.currentPage >= totalPages;
-    lastBtn.classList.toggle('opacity-50', state.currentPage >= totalPages);
-    lastBtn.classList.toggle('cursor-not-allowed', state.currentPage >= totalPages);
+    lastBtn.disabled = state.currentPage >= totalPages || isDisabled;
+    lastBtn.classList.toggle('opacity-50', state.currentPage >= totalPages || isDisabled);
+    lastBtn.classList.toggle('cursor-not-allowed', state.currentPage >= totalPages || isDisabled);
   }
 
   // Show/hide pagination container
@@ -376,8 +412,13 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
     if (lastBtn) {
       lastBtn.addEventListener('click', () => {
         const state = getPaginationState(sectionName, tabIndex);
-        const totalRows = countTableRows(sectionName, tabIndex);
-        const totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+        let totalPages;
+        if (state.isBackendPagination) {
+          totalPages = Math.max(1, Math.ceil(state.totalRows / state.pageSize));
+        } else {
+          const totalRows = countTableRows(sectionName, tabIndex);
+          totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+        }
         goToPage(sectionName, tabIndex, totalPages);
       });
     }
@@ -404,28 +445,78 @@ export function createPaginationControls(sectionName, tabIndex, mainColor = 'ora
 /**
  * Navigate to a specific page
  */
-export function goToPage(sectionName, tabIndex, targetPage) {
+export async function goToPage(sectionName, tabIndex, targetPage) {
   const state = getPaginationState(sectionName, tabIndex);
+  
+  // Prevent navigation if loading
+  if (state.loading) {
+    return;
+  }
+  
   let newPage = targetPage;
 
   if (targetPage === 'prev') {
     newPage = Math.max(1, state.currentPage - 1);
   } else if (targetPage === 'next') {
-    const totalRows = countTableRows(sectionName, tabIndex);
-    const totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
-    newPage = Math.min(totalPages, state.currentPage + 1);
+    if (state.isBackendPagination) {
+      const totalPages = Math.max(1, Math.ceil(state.totalRows / state.pageSize));
+      newPage = Math.min(totalPages, state.currentPage + 1);
+    } else {
+      const totalRows = countTableRows(sectionName, tabIndex);
+      const totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+      newPage = Math.min(totalPages, state.currentPage + 1);
+    }
   }
 
   setPaginationState(sectionName, tabIndex, { currentPage: newPage });
-  renderPage(sectionName, tabIndex);
+  await renderPage(sectionName, tabIndex);
   updatePaginationControls(sectionName, tabIndex);
 }
 
 /**
  * Render rows for current page
  */
-export function renderPage(sectionName, tabIndex, skipSearchCheck = false) {
+export async function renderPage(sectionName, tabIndex, skipSearchCheck = false) {
   const state = getPaginationState(sectionName, tabIndex);
+  const key = getPaginationKey(sectionName, tabIndex);
+  
+  // If backend pagination is enabled, fetch data from backend
+  if (state.isBackendPagination) {
+    const fetchCallback = fetchCallbacks.get(key);
+    if (!fetchCallback) {
+      console.error('Backend pagination enabled but no fetch callback provided');
+      return;
+    }
+    
+    try {
+      // Set loading state
+      setPaginationState(sectionName, tabIndex, { loading: true });
+      updatePaginationControls(sectionName, tabIndex);
+      
+      // Fetch data from backend
+      const result = await fetchCallback(state.currentPage, state.pageSize);
+      
+      // Update total rows
+      if (result && typeof result.totalRows === 'number') {
+        setPaginationState(sectionName, tabIndex, { 
+          totalRows: result.totalRows,
+          loading: false,
+        });
+      } else {
+        setPaginationState(sectionName, tabIndex, { loading: false });
+      }
+      
+      // The fetch callback should handle rendering the data
+      updatePaginationControls(sectionName, tabIndex);
+    } catch (error) {
+      console.error('Error fetching paginated data:', error);
+      setPaginationState(sectionName, tabIndex, { loading: false });
+      updatePaginationControls(sectionName, tabIndex);
+    }
+    return;
+  }
+  
+  // Frontend pagination (legacy behavior)
   const emptyText = document.getElementById(`${sectionName}SectionOneListEmpty${tabIndex}`);
   if (!emptyText) return;
 

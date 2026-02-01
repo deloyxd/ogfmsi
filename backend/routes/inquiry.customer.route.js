@@ -22,8 +22,14 @@ router.get('/customers', async (req, res) => {
       });
     }
 
-    // 🔁 otherwise, return all customers (existing behavior)
-    const { useLimit, limit, offset } = parsePageParams(req);
+    // 🔁 otherwise, return all customers with pagination
+    const { useLimit, limit, offset, page, pageSize } = parsePageParams(req);
+    
+    // Get total count
+    const countResult = await db.query('SELECT COUNT(*) as total FROM customer_tbl');
+    const total = countResult[0]?.total || 0;
+    
+    // Get paginated data
     let sql = 'SELECT * FROM customer_tbl ORDER BY created_at DESC';
     const params = [];
     if (useLimit) {
@@ -31,7 +37,18 @@ router.get('/customers', async (req, res) => {
       params.push(limit, offset);
     }
     const rows = await db.query(sql, params);
-    return res.status(200).json({ message: 'Fetching regular check-ins successful', result: rows });
+    
+    // Return paginated response
+    if (useLimit) {
+      const { createPaginatedResponse } = require('../utils/pagination');
+      return res.status(200).json({
+        message: 'Fetching customers successful',
+        result: rows,
+        ...createPaginatedResponse(rows, total, page, pageSize)
+      });
+    }
+    
+    return res.status(200).json({ message: 'Fetching customers successful', result: rows });
   } catch (err) {
     console.error('Fetching customers failed:', err);
     res.status(500).json({ error: 'Fetching customers failed' });

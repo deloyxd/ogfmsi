@@ -787,94 +787,121 @@ document.addEventListener('ogfmsiAdminMainLoaded', async () => {
 
     async function fetchAllCustomers() {
       try {
-        const response = await fetch(`${API_BASE_URL}/inquiry/customers`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const customers = await response.json();
-
+        // Clear existing data
         resetDataForTab(1);
-
-        customers.result.forEach((customer) => {
-          if (!customer || !customer.customer_id) return;
-          // Skip archived customers from the "All Registered Customers" tab
-          const customerTypeLower = String(customer.customer_type || '').toLowerCase();
-          if (customerTypeLower.includes('archiv')) return;
-          if (seenCustomerIds.has(customer.customer_id)) return;
-
-          addDataForTab(1, customer);
-
-          main.createAtSectionOne(
-            SECTION_NAME,
-            [
-              'id_' + customer.customer_id,
-              {
-                type: 'object_contact',
-                data: [
-                  customer.customer_image_url,
-                  customer.customer_first_name + ' ' + customer.customer_last_name,
-                  customer.customer_contact,
-                ],
-              },
-              main.fixText(customer.customer_type),
-              main.fixText(customer.customer_rate),
-              'custom_date_' +
-                main.encodeDate(
-                  customer.created_at,
-                  main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
-                ),
-            ],
-            1,
-            (createResult) => {
-              seenCustomerIds.add(customer.customer_id);
-              createResult.dataset.text = customer.customer_first_name + ':://' + customer.customer_last_name;
-              if (customer.customer_type.includes('monthly')) {
-                if (customer.customer_pending == 1) {
-                  createResult.dataset.tid = customer.customer_tid;
-                  createResult.dataset.status = 'pending';
-                  createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Pending';
-                } else {
-                  createResult.dataset.status = 'fetching';
-                  createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Fetching';
-                  fetchingCustomerIds.add(customer.customer_id);
-                }
-                createResult.children[2].textContent = createResult.dataset.custom2;
-              } else {
-                if (customer.customer_pending == 1) {
-                  createResult.dataset.tid = customer.customer_tid;
-                  createResult.dataset.status = 'pending';
-                }
-              }
-              const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
-              customerProcessBtn.addEventListener('click', () =>
-                customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-              );
-              const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
-              customerEditDetailsBtn.addEventListener('click', () =>
-                customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
-              );
-              updateCustomerStats();
+        seenCustomerIds.clear();
+        
+        // Initialize backend pagination with fetch callback
+        const fetchCallback = async (page, pageSize) => {
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/inquiry/customers?page=${page}&pageSize=${pageSize}`
+            );
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
             }
-          );
-        });
+            
+            const data = await response.json();
+            
+            // Clear table before adding new page data
+            main.clearSectionOne(SECTION_NAME, 1);
+            seenCustomerIds.clear();
+            
+            // Render the page data
+            if (data.result && Array.isArray(data.result)) {
+              data.result.forEach((customer) => {
+                if (!customer || !customer.customer_id) return;
+                // Skip archived customers from the "All Registered Customers" tab
+                const customerTypeLower = String(customer.customer_type || '').toLowerCase();
+                if (customerTypeLower.includes('archiv')) return;
+                if (seenCustomerIds.has(customer.customer_id)) return;
 
-        // Refresh pagination after all customers are loaded and ensure rows are paginated
+                addDataForTab(1, customer);
+
+                main.createAtSectionOne(
+                  SECTION_NAME,
+                  [
+                    'id_' + customer.customer_id,
+                    {
+                      type: 'object_contact',
+                      data: [
+                        customer.customer_image_url,
+                        customer.customer_first_name + ' ' + customer.customer_last_name,
+                        customer.customer_contact,
+                      ],
+                    },
+                    main.fixText(customer.customer_type),
+                    main.fixText(customer.customer_rate),
+                    'custom_date_' +
+                      main.encodeDate(
+                        customer.created_at,
+                        main.getUserPrefs().dateFormat === 'DD-MM-YYYY' ? 'numeric' : 'long'
+                      ),
+                  ],
+                  1,
+                  (createResult) => {
+                    seenCustomerIds.add(customer.customer_id);
+                    createResult.dataset.text = customer.customer_first_name + ':://' + customer.customer_last_name;
+                    if (customer.customer_type.includes('monthly')) {
+                      if (customer.customer_pending == 1) {
+                        createResult.dataset.tid = customer.customer_tid;
+                        createResult.dataset.status = 'pending';
+                        createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Pending';
+                      } else {
+                        createResult.dataset.status = 'fetching';
+                        createResult.dataset.custom2 = main.fixText(customer.customer_type) + ' - Fetching';
+                        fetchingCustomerIds.add(customer.customer_id);
+                      }
+                      createResult.children[2].textContent = createResult.dataset.custom2;
+                    } else {
+                      if (customer.customer_pending == 1) {
+                        createResult.dataset.tid = customer.customer_tid;
+                        createResult.dataset.status = 'pending';
+                      }
+                    }
+                    const customerProcessBtn = createResult.querySelector(`#customerProcessBtn`);
+                    customerProcessBtn.addEventListener('click', () =>
+                      customerProcessBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                    );
+                    const customerEditDetailsBtn = createResult.querySelector(`#customerEditDetailsBtn`);
+                    customerEditDetailsBtn.addEventListener('click', () =>
+                      customerEditDetailsBtnFunction(createResult, main.decodeName(createResult.dataset.text))
+                    );
+                    updateCustomerStats();
+                  }
+                );
+              });
+            }
+            
+            // Return pagination info
+            return {
+              data: data.result || [],
+              totalRows: data.pagination?.totalRows || 0,
+            };
+          } catch (error) {
+            console.error('Error fetching customers page:', error);
+            return { data: [], totalRows: 0 };
+          }
+        };
+        
+        // Initialize pagination with backend support
+        const pageSize = pagination.calculatePageSize?.(SECTION_NAME, 1) || 12;
+        pagination.initPagination(SECTION_NAME, 1, pageSize, fetchCallback);
+        
+        // Create pagination controls if they don't exist
         setTimeout(() => {
-          // Ensure pagination controls exist for tab 1
           const existingPagination = document.getElementById(`${SECTION_NAME}PaginationContainer1`);
           if (!existingPagination) {
-            // Controls don't exist yet, create them (use default color)
             pagination.createPaginationControls(SECTION_NAME, 1, 'blue');
           }
-
-          // Now refresh and apply pagination
-          pagination.refreshPagination(SECTION_NAME, 1);
-          // Also explicitly render page to ensure pagination is applied
-          pagination.renderPage(SECTION_NAME, 1, true); // skipSearchCheck = true
-          pagination.updatePaginationControls(SECTION_NAME, 1);
-        }, 200);
+        }, 100);
+        
+        // Fetch first page
+        await pagination.renderPage(SECTION_NAME, 1);
+        
       } catch (error) {
-        console.error('Error fetching customers:', error);
+        console.error('Error initializing customer pagination:', error);
       }
     }
 
