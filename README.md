@@ -1,6 +1,6 @@
-# OGFMSI - Online Gym Facility Management with Sales and Inventory
+# Online Gym Facility Management with Sales and Inventory (OGFMSI)
 
-![OGFMSI (Online Gym Facility Management with Sales and Inventory)](https://fitworxgymph.web.app/) is a comprehensive web application developed for **Fitworx Gym**. The system is designed to replace manual gym management processes with a centralized digital platform for managing gym operations, sales, inventory, equipment, reservations, and transactions.
+[**OGFMSI**](https://fitworxgymph.web.app/) is a comprehensive web application developed for **Fitworx Gym**. The system is designed to replace manual gym management processes with a centralized digital platform for managing gym operations, sales, inventory, equipment, reservations, and transactions.
 
 ## 📸 Screenshots
 
