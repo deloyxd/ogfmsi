@@ -2,7 +2,23 @@
 
 **OGFMSI** is a comprehensive web application developed for [**Fitworx Gym**](https://fitworxgymph.web.app/). The system is designed to replace manual gym management processes with a centralized digital platform for managing gym operations, sales, inventory, equipment, reservations, and transactions.
 
-## 📸 Screenshots
+## 👥 Developed By
+
+This project was proudly developed by the following hardworking students of **STI College Fairview**, under the guidance, support, and mentorship of their dedicated adviser.
+
+| Team Member | Role |
+|---|---|
+| **Enzo P. Daniela** | Chief Executive Officer (CEO) / Project Leader / Backend Developer |
+| **Jun Gin Xenon M. De Jose** | Chief Technology Officer (CTO) / Business Analyst / Quality Assurance |
+| **Kyan Ray I. Villarin** | Systems Analyst / UI/UX Designer / Frontend Developer |
+| **Jestley Charles R. Estipona** | DevOps / Cloud Engineer / Full-Stack Developer |
+
+**Adviser:**  
+- **Rubinato "Flux" Lubian III**
+
+---
+
+## 📸 Quick Tour
 
 ### Dashboard
 
