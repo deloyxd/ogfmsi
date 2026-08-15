@@ -8,13 +8,13 @@ This project was proudly developed by the following hardworking students of **ST
 
 | Team Member | Role |
 |---|---|
-| **Enzo P. Daniela** | Chief Executive Officer (CEO) / Project Leader / Backend Developer |
-| **Jun Gin Xenon M. De Jose** | Chief Technology Officer (CTO) / Business Analyst / Quality Assurance |
-| **Kyan Ray I. Villarin** | Systems Analyst / UI/UX Designer / Frontend Developer |
-| **Jestley Charles R. Estipona** | DevOps / Cloud Engineer / Full-Stack Developer |
+| 👑 **Enzo P. Daniela** | Chief Executive Officer (CEO) / Project Leader / Backend Developer |
+| 🎩 **Jun Gin Xenon M. De Jose** | Chief Technology Officer (CTO) / Business Analyst / Quality Assurance |
+| 📝 **Kyan Ray I. Villarin** | Systems Analyst / UI/UX Designer / Frontend Developer |
+| 💻 **Jestley Charles R. Estipona** | DevOps / Cloud Engineer / Full-Stack Developer |
 
 **Adviser:**  
-- **Rubinato "Flux" Lubian III**
+- **Rubinato "Flux" Lubian III** 💪
 
 ---
 
